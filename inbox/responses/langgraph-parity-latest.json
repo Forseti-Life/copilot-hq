@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-04-19T23:43:21.323533+00:00",
+  "parity_ok": false,
+  "selected_agents": {
+    "match": true,
+    "actual": [
+      "dev-forseti",
+      "pm-forseti",
+      "qa-forseti"
+    ]
+  },
+  "steps": {
+    "match": false,
+    "expected": [
+      "consume_replies",
+      "dispatch_commands",
+      "release_cycle",
+      "coordinated_push",
+      "pick_agents",
+      "exec_agents",
+      "health_check",
+      "publish"
+    ],
+    "actual": [
+      "consume_replies",
+      "pick_agents",
+      "exec_agents",
+      "publish"
+    ]
+  },
+  "errors": [
+    "missing steps: coordinated_push, dispatch_commands, health_check, release_cycle"
+  ]
+}
