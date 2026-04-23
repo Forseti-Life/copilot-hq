@@ -255,7 +255,8 @@ agents:
     role: accountant
     supervisor: ceo-copilot-2
     website_scope: ["forseti.life"]
-    notes: "CEO-supervised finance seat for Forseti. Tracks income and expenses across AWS, GitHub, payment systems, and related vendors; produces reconciliations, close summaries, forecasts, and control recommendations."
+    paused: true
+    notes: "Paused by CEO on 2026-04-23 pending access restoration for AWS Cost Explorer, GitHub org billing, and confirmed income/cash evidence sources."
 
   # Forseti observability: agent tracking module
   - id: pm-forseti-agent-tracker

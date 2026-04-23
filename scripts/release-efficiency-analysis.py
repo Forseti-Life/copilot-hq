@@ -70,6 +70,28 @@ def mtime_dt(p: pathlib.Path) -> Optional[datetime]:
         return None
 
 
+def filename_dt(p: pathlib.Path) -> Optional[datetime]:
+    """Parse a UTC timestamp from a leading outbox filename prefix when present."""
+    stem = p.stem
+    for pattern, fmt in (
+        (r"^(\d{8})-(\d{6})(?:-|$)", "%Y%m%d%H%M%S"),
+        (r"^(\d{8})T(\d{6})Z(?:-|$)", "%Y%m%d%H%M%S"),
+    ):
+        m = re.match(pattern, stem)
+        if not m:
+            continue
+        try:
+            return datetime.strptime("".join(m.groups()), fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def artifact_dt(p: pathlib.Path) -> Optional[datetime]:
+    """Best-effort event time for an artifact: filename timestamp first, then mtime."""
+    return filename_dt(p) or mtime_dt(p)
+
+
 def hours_between(a: Optional[datetime], b: Optional[datetime]) -> Optional[float]:
     if a is None or b is None:
         return None
@@ -96,6 +118,19 @@ def outbox_status(path: pathlib.Path) -> str:
     except OSError:
         pass
     return ""
+
+
+def is_canonical_outbox(path: pathlib.Path) -> bool:
+    """Treat transcript-like markdown as noise; only count actual outbox artifacts."""
+    try:
+        for line in path.read_text(errors="ignore").splitlines():
+            stripped = line.strip()
+            if not stripped:
+                continue
+            return stripped.startswith("#") or bool(re.match(r"^-\s+[A-Za-z]", stripped))
+    except OSError:
+        return False
+    return False
 
 
 def active_release_ids() -> set[str]:
@@ -252,7 +287,7 @@ def dev_outbox_files_for_feature(feat_id: str, dev_agent: str) -> list[pathlib.P
     outbox = ROOT / "sessions" / dev_agent / "outbox"
     if not outbox.exists():
         return []
-    return sorted([f for f in outbox.glob(f"*{feat_id}*.md")])
+    return sorted([f for f in outbox.glob(f"*{feat_id}*.md") if is_canonical_outbox(f)])
 
 
 def agent_outbox_files_for_release(agent: str, release_id: str,
@@ -279,26 +314,26 @@ def find_r5_audit_time(site: str, push_time: datetime) -> Optional[datetime]:
     """Find the Gate R5 production audit time after push_time."""
     # CEO outbox entries named like *site-audit* or *qa-findings* or *r5*
     ceo_outbox = ROOT / "sessions" / "ceo-copilot-2" / "outbox"
-    if not ceo_outbox.exists():
-        return None
     # Also check qa-<site> outbox for auto-site-audit artifacts
     candidates: list[pathlib.Path] = []
-    for pattern in (
-        f"*site-audit*{site}*",
-        f"*{site}*audit*",
-        f"*gate*r5*",
-        f"*r5*audit*",
-        f"*qa-findings*{site}*",
-        f"*recovery-pass*",
-    ):
-        candidates += list(ceo_outbox.glob(pattern))
+    if ceo_outbox.exists():
+        for pattern in (
+            f"*site-audit*{site}*",
+            f"*{site}*audit*",
+            f"*gate*r5*",
+            f"*r5*audit*",
+            f"*qa-findings*{site}*",
+            f"*recovery-pass*",
+        ):
+            candidates += list(ceo_outbox.glob(pattern))
     for qa_outbox in ROOT.glob(f"sessions/qa-{site}/outbox/*.md"):
         if "gate2" in qa_outbox.name or "audit" in qa_outbox.name:
             candidates.append(qa_outbox)
-    # Return earliest mtime after push_time
+    # Return earliest artifact time after push_time. Prefer the filename timestamp
+    # because repo sync/push operations can flatten mtimes and distort the timeline.
     result = None
     for f in candidates:
-        dt = mtime_dt(f)
+        dt = artifact_dt(f)
         if dt and dt > push_time:
             if result is None or dt < result:
                 result = dt
@@ -333,17 +368,7 @@ def find_release_activation_time(release_id: str, pm_agent: str) -> Optional[dat
 
     if pm_outbox.exists():
         for f in pm_outbox.glob(f"*scope-activate*{release_id}*"):
-            # Prefer embedded timestamp in filename (YYYYMMDD-HHMMSS prefix)
-            m = re.match(r"(\d{8})-(\d{6})-", f.name)
-            if m:
-                try:
-                    dt = datetime.strptime(m.group(1) + m.group(2), "%Y%m%d%H%M%S")
-                    dt = dt.replace(tzinfo=timezone.utc)
-                    scope_times.append(dt)
-                    continue
-                except ValueError:
-                    pass
-            dt = mtime_dt(f)
+            dt = artifact_dt(f)
             if dt:
                 scope_times.append(dt)
 
@@ -400,6 +425,8 @@ def ceo_proxy_sessions(release_id: str, feature_ids: list[str],
 
     for f in sorted(ceo_outbox.glob("*.md")):
         name = f.name.lower()
+        if re.search(r"(?:^|-)needs-(?:pm|qa|dev|ba|architect|ceo-copilot-2)-", name):
+            continue
 
         # Fast path: filename match
         name_match = any(kw in name for kw in keywords)
@@ -540,7 +567,7 @@ def main() -> int:
         if len(files) > THRESH_REDUNDANT_PASSES:
             redundant_features.append(feat_id)
         for f in files:
-            dt = mtime_dt(f)
+            dt = artifact_dt(f)
             if dt:
                 all_dev_mtimes.append(dt)
 
@@ -685,11 +712,11 @@ def main() -> int:
     section("CEO Proxy Load")
 
     proxy = ceo_proxy_sessions(release_id, feature_ids, co_release_id, push_time)
-    total_proxy = sum(len(v) for v in proxy.values())
     dev_proxy   = len(proxy.get("dev", []))
     qa_proxy    = len(proxy.get("qa", []))
     pm_proxy    = len(proxy.get("pm", []))
     other_proxy = len(proxy.get("other", []))
+    total_proxy = dev_proxy + qa_proxy + pm_proxy
 
     print(f"  CEO sessions acting as dev proxy:  {dev_proxy}")
     print(f"  CEO sessions acting as QA proxy:   {qa_proxy}")
