@@ -3,6 +3,11 @@
 - Work item id: forseti-agent-tracker-payload-size-limit
 - Website: forseti.life
 - Module: copilot_agent_tracker
+- Project: PROJ-001
+- Group Order: 2
+- Group: agent-tracker
+- Group Title: Agent Tracker
+- Group Sort: 2
 - Status: shipped
 - Release: 20260409-forseti-release-j
 - Priority: P2

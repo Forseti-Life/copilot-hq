@@ -11,40 +11,39 @@ This is the **source of truth** for who owns what in the HQ repo.
 - **Supervisor responsibility**: supervisors are responsible for keeping subordinate scopes clear and preventing concurrent edits to the same file.
 - **Seat scope authority**: per-seat scope is defined in `org-chart/agents/instructions/<agent-id>.instructions.md`.
 
-## Ownership by area (HQ repo: /home/ubuntu/copilot-sessions-hq)
+## Ownership by area (HQ repo: /home/ubuntu/forseti.life)
 
 ### Repo root files
-- `README.md` — owner: `ceo-copilot`
-- `.gitignore` — owner: `ceo-copilot`
-- Runtime pid/state files at repo root (e.g., `.agent-exec-loop.pid`, `.ceo-ops-loop.pid`) — owner: `ceo-copilot`
+- `README.md` — owner: `ceo-copilot-2`
+- `.gitignore` — owner: `ceo-copilot-2`
+- Runtime pid/state files at repo root (e.g., `.agent-exec-loop.pid`, `.ceo-ops-loop.pid`) — owner: `ceo-copilot-2`
 
 ### Org authority
-- `org-chart/org-wide.instructions.md` — owner: `ceo-copilot`
-- `org-chart/org-chart.yaml` and `org-chart/ORG_CHART.md` — owner: `ceo-copilot`
-- `org-chart/ownership/**` — owner: `ceo-copilot`
-- `org-chart/roles/*.instructions.md` — owner: `ceo-copilot` (roles may directly edit content; CEO curates for conflict resolution)
+- `org-chart/org-wide.instructions.md` — owner: `ceo-copilot-2`
+- `org-chart/org-chart.yaml` and `org-chart/ORG_CHART.md` — owner: `ceo-copilot-2`
+- `org-chart/ownership/**` — owner: `ceo-copilot-2`
+- `org-chart/roles/*.instructions.md` — owner: `ceo-copilot-2` (roles may directly edit content; CEO curates for conflict resolution)
 
 ### Seat (agent) instructions
 - `org-chart/agents/instructions/<agent-id>.instructions.md` — owner: `<agent-id>`
-- `org-chart/agents/agents.yaml` — owner: `ceo-copilot`
+- `org-chart/agents/agents.yaml` — owner: `ceo-copilot-2`
 
 ### Runbooks and automation
-- `runbooks/**` — owner: `ceo-copilot`
+- `runbooks/**` — owner: `ceo-copilot-2`
 - `scripts/**` — owner: `dev-infra` (sysadmin automation implementation; CEO retains orchestration/policy authority)
-- `templates/**` — owner: `ceo-copilot` (roles may directly edit content)
-- `dashboards/**` — owner: `ceo-copilot`
+- `templates/**` — owner: `ceo-copilot-2` (roles may directly edit content)
+- `dashboards/**` — owner: `ceo-copilot-2`
 
 ### Work product
 - `features/infrastructure-*/**` — owner: `pm-infra`
 - `features/infra-*/**` — owner: `pm-infra`
 - `features/**` — owner: owning PM seat for that website/module (as delegated by CEO)
-- `knowledgebase/**` — curator: `ceo-copilot`; contributors: any role may add lessons/proposals/reviews
+- `knowledgebase/**` — curator: `ceo-copilot-2`; contributors: any role may add lessons/proposals/reviews
 
 ### Inbox/outbox/audit trails
 - `sessions/<seat-id>/**` — owner: `<seat-id>` (others read-only unless explicitly delegated)
-- `inbox/**` — owner: `ceo-copilot` (command intake and processing)
-- `tmp/**` — owner: `ceo-copilot` (operational state)
+- `inbox/**` — owner: `ceo-copilot-2` (command intake and processing)
+- `tmp/**` — owner: `ceo-copilot-2` (operational state)
 
 ## Target repo module ownership (reference)
 Module ownership for Drupal work is defined in `org-chart/ownership/module-ownership.yaml`.
-

@@ -321,18 +321,21 @@ Stage 0 is instant: scope selection from a fully-groomed ready list.
 
 **PM grooming work during Stage 3:**
 
-1. **Pull community suggestions** (run once at the start of Stage 3):
+1. **Audit the existing next-release backlog first**:
+   - Scan for next-release features already in `planned`, `ready`, or `in_progress` that are missing `01-acceptance-criteria.md` or `03-test-plan.md`
+   - Finish those backlog items before treating suggestion intake as complete
+2. **Pull community suggestions** (run once at the start of Stage 3):
    ```bash
    ./scripts/suggestion-intake.sh forseti
    ```
-2. **Triage** each suggestion (accept/defer/decline/escalate) per `runbooks/feature-intake.md`
+3. **Triage** each suggestion (accept/defer/decline/escalate) per `runbooks/feature-intake.md`
   - Security/integrity/stability-risk suggestions must be `escalate`d for human board review (not accepted directly by PM)
-3. **Write Acceptance Criteria** for each accepted feature (`features/<id>/01-acceptance-criteria.md`)
-4. **Hand off to QA** for test generation (one per accepted feature):
+4. **Write or complete Acceptance Criteria** for each accepted or already-tracked backlog feature missing `features/<id>/01-acceptance-criteria.md`
+5. **Hand off to QA** for test generation (one per accepted/backlog feature that has AC but lacks `03-test-plan.md`):
    ```bash
    ./scripts/pm-qa-handoff.sh forseti <feature-id>
    ```
-5. **QA generates test cases** → `qa-suites/products/forseti/suite.json` + `features/<id>/03-test-plan.md`
+6. **QA generates test cases** → `qa-suites/products/forseti/suite.json` + `features/<id>/03-test-plan.md`
 
 When all three artifacts exist for a feature (`feature.md` + `01-acceptance-criteria.md` + `03-test-plan.md`), it is **groomed and ready** — it enters the candidate pool for the next Stage 0 scope selection.
 

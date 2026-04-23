@@ -3,8 +3,8 @@
 - Work item id: dc-ui-sidebar-drawers
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: ready
-- Release: unscoped
+- Status: done
+- Release: 20260412-dungeoncrawler-release-n
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

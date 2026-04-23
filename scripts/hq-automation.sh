@@ -48,7 +48,6 @@ start_loops() {
   else
     ./scripts/site-audit-loop.sh stop >/dev/null 2>&1 || true
   fi
-  ./scripts/publish-forseti-agent-tracker-loop.sh start 60 >/dev/null 2>&1 || true
   ./scripts/auto-checkpoint-loop.sh start 7200 >/dev/null 2>&1 || true
 }
 
@@ -72,7 +71,6 @@ status() {
   for s in \
     orchestrator-loop \
     site-audit-loop \
-    publish-forseti-agent-tracker-loop \
     auto-checkpoint-loop
   do
     if [ -x "./scripts/${s}.sh" ]; then
@@ -81,8 +79,8 @@ status() {
   done
 
   echo
-  echo "Legacy loops (should be stopped):"
-  for s in improvement-round-loop ceo-inbox-loop inbox-loop ceo-health-loop 2-ceo-opsloop agent-exec-loop; do
+  echo "Disabled/legacy loops (should be stopped):"
+  for s in publish-forseti-agent-tracker-loop improvement-round-loop ceo-inbox-loop inbox-loop ceo-health-loop 2-ceo-opsloop agent-exec-loop; do
     if [ -x "./scripts/${s}.sh" ]; then
       printf '  %-32s %s\n' "${s}:" "$(./scripts/${s}.sh status 2>/dev/null || echo 'unknown')"
     fi

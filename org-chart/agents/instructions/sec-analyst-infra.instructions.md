@@ -41,7 +41,7 @@ This file is owned by the `sec-analyst-infra` seat.
 0. **Outbox self-check**: scan `sessions/sec-analyst-infra/outbox/*.md` for any file where the first non-blank line is NOT `- Status:`. If found, that is a stub — regenerate before proceeding. Command: `grep -L "^- Status:" sessions/sec-analyst-infra/outbox/*.md 2>/dev/null`.
 0. **Post-merge artifact check**: run `git --no-pager log --oneline -5 | grep "merge:"` (from HQ repo root). If any merge commit is present in the last 5, verify that `sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md` exists and is current (compare `git ls-files sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md`). If absent or stale, recreate from code inspection before proceeding.
 1. Read `sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md`.
-   - If this file does not exist (`git ls-files sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md` returns empty), recreate it from prior outboxes and code inspection, then commit with `git add -f`.
+   - If this file does not exist (`git ls-files sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md` returns empty), recreate it from prior outboxes and code inspection, then commit with normal `git add`.
 2. For each OPEN finding with a patch provided: verify against the Drupal repo directly (e.g., `grep -n -A10 "<route_name>" <routing.yml>` — confirm `_csrf_token: 'TRUE'` appears under `requirements:`, not `options:`).
 3. Update registry status per finding: `CLOSED: <commit>` or `STILL OPEN — confirmed <date>`.
 4. Check `sessions/dev-infra/artifacts/` for any `patch-applied.txt` from delegated tools.
@@ -59,7 +59,7 @@ Any artifact delegating a security tool (e.g., csrf-route-scan.sh --patch-mode) 
 ## Open findings registry (required in outboxes)
 Any outbox referencing open security findings MUST include:
 `See: sessions/sec-analyst-infra/artifacts/csrf-open-findings-registry.md for current route-level status.`
-When creating or updating this file, always commit with `git add -f` (file is in a .gitignored path).
+When creating or updating this file, commit with normal `git add` unless the root `.gitignore` explicitly ignores the path.
 
 ## Improvement-round / post-release gap review commands
 - If you receive a command labeled `improvement round` or `post-release process and gap review`, interpret it as a **security process retrospective** — focus on: tool adoption lag, finding lifecycle/verification gaps, CSRF/credential/shell audit patterns, and recurring missed steps.
@@ -80,7 +80,7 @@ Known synthetic release IDs seen this session (fast-exit on any recurrence):
 When fast-exiting due to a synthetic dispatch, reference: `sessions/dev-infra/inbox/20260405-scope-filter-improvement-round-dispatch` (ROI 89) as the root-cause fix item.
 
 ## Owned file scope
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/sec-analyst-infra/**
 - org-chart/agents/instructions/sec-analyst-infra.instructions.md
 

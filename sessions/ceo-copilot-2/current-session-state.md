@@ -1,50 +1,48 @@
 # CEO Session State — ceo-copilot-2
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-15 19:11 UTC
+> Last updated: 2026-04-23 21:02 UTC
 
 ---
 
 ## Currently Working On
 
-Updating the recurring CEO system health check so it quickly detects duplicate scheduler/runner processes and recent Copilot rate-limit pressure, based on the live incident diagnosed on 2026-04-16.
+Recovered the release pipeline after the HQ-path cleanup: corrected installed cron paths, restarted the orchestrator, cleared the stale deploy-age false failure in release health, and superseded malformed blocker residue so only true access blockers remain.
 
 ---
 
 ## Active Releases
 
-| Site | Release ID | Started | Status |
+| Site | Release ID | Status | Last Action |
 |---|---|---|---|
-| forseti | `20260412-forseti-release-l` | 2026-04-12 UTC | In implementation; 2 scoped features still missing dev completion evidence |
-| dungeoncrawler | `20260412-dungeoncrawler-release-m` | 2026-04-12 UTC | In implementation; 12 scoped features still missing dev completion evidence |
+| forseti | `20260412-forseti-release-q` | ✅ Ready for coordinated push (all co-signoffs present) | 2026-04-20T18:02:09+00:00 |
+| dungeoncrawler | `20260412-dungeoncrawler-release-s` | ✅ Ready for coordinated push (all co-signoffs present, post-dev 254.5h) | 2026-04-20T18:02:09+00:00 |
 
-Next release IDs queued: forseti → `20260412-forseti-release-m`, dungeoncrawler → `20260412-dungeoncrawler-release-n`
+Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler → `20260412-dungeoncrawler-release-t`
 
 ---
 
-## What Was Last Worked On (session 2026-04-15 19:11 UTC)
+## What Was Last Worked On (session 2026-04-23 21:02 UTC)
 
-1. **Merge-churn triage** — traced the reported “merge requests” against live GitHub and repo state; there are no open PRs in `keithaumiller/forseti.life` and no active unfinished merge state in the HQ repo.
-2. **Root-cause isolation** — confirmed the recurring merge-related noise matches long-running process escalations about `workspace-merge-safe.sh` adoption rather than a live merge blockage.
-3. **Structural guard added** — updated merge-health tests and the infrastructure QA suite to fail if any HQ shell script uses raw `git merge` outside `scripts/workspace-merge-safe.sh`.
-4. **Priority reset** — with merge-safety churn addressed, the real blockers remain implementation and QA work on the active Forseti and Dungeoncrawler releases.
+1. **Automation restored** — Fixed the installed crontab to use canonical root paths, patched `install-crons.sh` to refresh managed entries instead of preserving stale ones, and restarted the orchestrator so release processing resumed.
+2. **Release gate corrected** — Updated `scripts/ceo-release-health.sh` so a stale-but-successful `deploy.yml` run is a warning rather than a false release blocker on this live-symlink host.
+3. **Blocker residue cleaned** — Wrote CEO cleanup outboxes for stale malformed `needs-info` items so only the real accountant credential/access blocker remains in `hq-blockers.sh`.
+4. **Checkpoint baseline restored** — Ran a manual checkpoint commit, restored the stray `dungeoncrawler-content` submodule to `origin/main`, and reattached local `main` to track `origin/main` for future automation.
 
 ---
 
 ## Current Queue State
 
-| Agent | Queue | Status |
+| Agent | Inbox | Status |
 |---|---|---|
-| ceo-copilot-2 | 0 | Clear |
-| pm-forseti | 2 | Active PM work remains (`groom-20260412-forseti-release-l`, `groom-20260412-forseti-release-m`) |
-| pm-dungeoncrawler | 13 | Active PM backlog / clarify / cleanup items remain |
-| dev-infra | 1 | Executor-failure backlog prune still pending |
-| ba-dungeoncrawler | 9 | Reference-scan backlog active |
-| dev-forseti | 2 | Remaining release-l implementation work active |
-| dev-dungeoncrawler | 12 | Remaining release-m implementation work active |
-| qa-forseti | 8 | Suite activation + QA follow-up work active |
-| agent-code-review | 0 | Clear |
-| All other seats | 0 | No active inbox |
+| ceo-copilot-2 | 5 | Phase 2 complete; Phase 3 housekeeping active |
+| pm-forseti | 9 | Grooming active; `release-q` ready to ship |
+| pm-dungeoncrawler | 4 | Grooming active; `release-s` ready to ship |
+| dev-forseti | 3 | 2 langgraph console features in progress |
+| dev-dungeoncrawler | 1 | Spells chapter 7 in progress |
+| qa-forseti | 6 | Suite activation active for langgraph features |
+| qa-dungeoncrawler | 1 | Unit test halfling ancestry |
+| Architect/infra | 18 | System analysis + infra grooming |
 
 ---
 
@@ -52,45 +50,64 @@ Next release IDs queued: forseti → `20260412-forseti-release-m`, dungeoncrawle
 
 | Item | Owner | Priority | Notes |
 |---|---|---|---|
-| Forseti release-l remaining implementation | dev-forseti / qa-forseti | P1 | `forseti-installation-cluster-communication` and `forseti-financial-health-home` still block Gate 2 APPROVE |
-| Dungeoncrawler release-m remaining implementation | dev-dungeoncrawler | P1 | 12 scoped features still lack dev completion evidence |
-| Dungeoncrawler old-release orphan cleanup | pm-dungeoncrawler / dev-dungeoncrawler | P2 | release-health still reports 5 release-l orphan features with dev outboxes already present |
-| Executor failure backlog | dev-infra | P2 | `tmp/executor-failures/` is capped at 200 and all 200 entries are from 2026-04-15 |
-| Forseti QA audit freshness | qa-forseti | P2 | auto-site-audit is 41h old |
-| Deploy workflow observability | CEO / dev-infra | P2 | latest deploy run `24419945080` still failed in production SSH step |
+| Bestiary 3 implementation | dev-dungeoncrawler | P1 | Internal structured B3 inventory is confirmed; normalization is landed across read/write/template flows; seeded/internal rows now carry or hydrate core catalog fields; remaining work is richer shared-schema ingestion and import depth |
+| Chameleon Gnome heritage | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; action exposure is landed and regression-covered at the service layer, with active dev queue restored for remaining release validation |
+| Survival navigation actions | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; core handlers are surfaced and regression-covered, with active dev queue restored for remaining release validation |
+| Snare system | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; downtime crafting is surfaced and service coverage exists, with active dev queue restored for broader feature completion |
+| Spellcasting rules (Ch 7) | dev-dungeoncrawler | P1 | Retargeted to `20260412-dungeoncrawler-release-r`; encounter blocker rules are hardened, with active dev queue restored for broader spell-catalog completion |
+| Forseti open-source initiative | pm-open-source / dev-open-source | P1 | Release target is now the explicit `drupal-ai-conversation` publication candidate instead of `tbd`, and both PM and dev now have live inbox items aligned to that candidate |
+| Dungeoncrawler release-r grooming | pm-dungeoncrawler | P1 | Current queued PM task is `20260419-groom-20260412-dungeoncrawler-release-r`; PM also has B3 completion notification |
+| Forseti release-q grooming | pm-forseti | P1 | Current queued PM task is `20260419-groom-20260412-forseti-release-q` |
+| Auto-checkpoint remote divergence | CEO / dev-infra | P1 | Local `main` now tracks `origin/main`, but the remote has one divergent commit; future checkpoint pushes need a safe reconcile plan rather than blind force |
+| Residual historical subtree references | CEO / owning seats | P2 | Historical QA checklists and open-source export docs still mention `copilot-hq/` where they describe history or sanitized exports; live runtime instructions are now normalized |
+| Accountant billing access blocker | CEO / Board inputs | P1 | Only remaining active blocker: AWS Cost Explorer and GitHub org billing access are still missing for `accountant-forseti` |
+| Forseti scoreboard freshness | pm-forseti | P2 | Existing stale-scoreboard item remains in PM inbox |
 
 ---
 
-## Key Decisions Made (2026-04-15 19:11 UTC)
+## Key Decisions Made (2026-04-19 11:51 UTC)
 
-- Treated repeated SLA reminders as queue bookkeeping when the underlying ownership/work state was already established.
-- Closed current agent-code-review requests for Forseti release-k and release-l as stale/premature rather than leaving them to churn.
-- Closed PM follow-up items where PM signoff was not yet actionable because implementation or QA work was still incomplete.
-- Left remaining SLA breaches alone when they correspond to real delivery work rather than missing status paperwork.
-- Closed the recurring merge-safety escalation by enforcing a testable “no raw `git merge` outside the safe wrapper” rule in HQ verification.
+- Backstopped the release-operator role directly when `pm-forseti` stalled at investigation and the coordinated Dungeoncrawler release was already otherwise ready.
+- Treated the missing lead-PM release candidate bundle as a content/process gap, not a reason to leave `release-p` unshipped.
+- Used a second `post-coordinated-push.sh` run to complete the runtime advance after the first pass only wrote the coordinated push marker.
+- Promoted `dc-b3-bestiary3` from deferred to active grooming because its only explicit gate was Bestiary 2 shipping, which is now complete.
+- Did not stop at grooming; once B3 became ready, immediately activated it into the empty current Dungeoncrawler release so `release-q` no longer sat open without scope.
+- Reverted an unsafe generated-content implementation attempt for Bestiary 3, then confirmed the repo already contains a safe internal structured B3 inventory and pivoted execution onto that path.
+- Landed B3-safe Bestiary-source normalization in both the catalog API and content write/import path before attempting deeper schema ingestion.
+- Landed the same B3-safe normalization in the template-example seeding path so internal registry examples and JSON content imports converge on the same canonical source metadata.
+- Landed single-creature response hydration so thin internal registry rows expose the same core catalog fields on read that list responses already provide.
+- Landed template-seeding enrichment so internal registry examples also persist the basic creature identity fields (`creature_id`, `name`, `level`, `rarity`) directly inside `schema_data`.
+- Declared `/home/ubuntu/forseti.life` the canonical HQ root in the authoritative ownership files and startup instructions.
+- Converted live instruction references that pointed agents at `copilot-hq/` into root-relative HQ paths.
+- Converted live runtime scripts and executor prompts that pointed at `copilot-hq/` into canonical root paths.
+- Repaired the org-chart validator and ownership audit so future overlap regressions surface correctly.
+- Refreshed the installed cron entries to canonical root paths and restarted orchestrator processing.
+- Downgraded stale deploy.yml age from FAIL to WARN in release health for this live-code host.
+- Cleared malformed blocker residue so supervisor blocker views now show only true active blockers.
 
 ---
 
 ## Next Priority Actions (pick up here next session)
 
-1. Drive `dev-forseti` to complete `forseti-installation-cluster-communication` and `forseti-financial-health-home`.
-2. Drive `dev-dungeoncrawler` to reduce the 12-feature release-m implementation gap and clean up the 5 reported release-l orphans.
-3. Have `qa-forseti` refresh the site audit and complete suite activation for `forseti-installation-cluster-communication`.
-4. Have `dev-infra` triage the 200 executor-failure records and improve observability on the failed deploy SSH step.
+1. Resolve the `origin/main` divergence before allowing unattended checkpoint pushes again.
+2. Unblock `accountant-forseti` with AWS/GitHub billing access or documented substitute data sources.
+3. Sweep remaining historical-only `copilot-hq/` references and decide which should stay as archival/export notes versus be normalized.
 
 ---
 
 ## Pipeline Health Snapshot
 
-```
-Orchestrator:        running (pid 813266)
-Agent exec:          running (pid 1348621)
-Publisher:           running (pid 1360995)
+```text
+Orchestrator:        running (pid 3800021)
+Agent exec:          not running
 Checkpoint:          running (pid 1361039)
 CEO inbox:           0
-Queue (total):       0
-Hard blockers:       0
-Current SLA breaches: 5
-System warnings:     executor-failures=200, drush/watchdog unavailable, qa-forseti audit stale
-Latest deploy fail:  run 24419945080 (SSH deploy step)
+pm-forseti inbox:    2
+pm-dungeoncrawler:   2
+ba-dungeoncrawler:   0
+dev-forseti:         0
+dev-infra:           0
+Release health:      current releases advanced to forseti release-p and dungeoncrawler release-q; Dungeoncrawler release-q now has B3 in progress while Forseti release-p remains empty
+System health:       merge health still failing; forseti scoreboard stale
+Key artifact:        sessions/pm-dungeoncrawler/artifacts/releases/20260412-dungeoncrawler-release-q/01-change-list.md
 ```

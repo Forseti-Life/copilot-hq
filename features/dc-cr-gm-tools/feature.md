@@ -6,7 +6,7 @@
 - Status: done
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-gmg-running-guide (requirements covered in that feature's acceptance criteria)
-- Priority: unset (PM will set at triage)
+- Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

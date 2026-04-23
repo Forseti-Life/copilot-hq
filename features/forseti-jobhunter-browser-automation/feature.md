@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-browser-automation
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 3
+- Group: discovery
+- Group Title: Job Discovery & Search
+- Group Sort: 5
 - Status: shipped
 - Release: 20260409-forseti-release-d
 - Priority: P1

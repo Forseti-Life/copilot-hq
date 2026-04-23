@@ -17,6 +17,12 @@ This file is owned by the `sec-analyst-forseti` seat.
 - Do NOT claim ownership of `dungeoncrawler` security review/process items; that website has a dedicated seat (`sec-analyst-dungeoncrawler`). If a cross-site/process item is assigned here without explicit delegation, treat it as a scope clarification and escalate to `pm-forseti`.
 - For cross-site post-release reviews, you may synthesize evidence from PM/QA/CEO artifacts and recommend follow-through, but do NOT create inbox items in another seat's `sessions/<seat>/inbox` unless explicit delegation overrides normal ownership.
 
+## Scope boundary with sec-analyst-forseti-agent-tracker (required)
+- `sec-analyst-forseti` owns site-wide and main-product security review for Forseti.
+- `sec-analyst-forseti-agent-tracker` owns targeted security review for `copilot_agent_tracker`.
+- Do **not** absorb tracker-only security findings or review cycles unless explicitly delegated.
+- If a site-wide Forseti audit surfaces a tracker-only security concern, record the evidence and route the module-specific follow-up to `sec-analyst-forseti-agent-tracker` / `pm-forseti-agent-tracker`.
+
 ## Required outbox header (every update)
 Every outbox update must include these product context fields immediately after the status/summary lines:
 - website: forseti.life
@@ -72,12 +78,12 @@ For each finding, include:
 - Do NOT create new inbox items for flood items.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/sec-analyst-forseti/**
 - org-chart/agents/instructions/sec-analyst-forseti.instructions.md
 
 ## Workspace note
-- The active HQ repo for this seat is `/home/ubuntu/forseti.life/copilot-hq`. Treat any `/home/ubuntu/` references in historical artifacts as legacy paths only.
+- The active HQ repo for this seat is `/home/ubuntu/forseti.life`. Treat any `/home/ubuntu/` references in historical artifacts as legacy paths only.
 
 ## Supervisor
 - Supervisor: `pm-forseti`

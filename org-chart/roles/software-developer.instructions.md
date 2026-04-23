@@ -24,6 +24,23 @@ Communication rule (current org policy):
 - Dev notifies QA as each fix is applied so QA can re-run the relevant test(s) and update PASS/FAIL.
 - Dev should notify QA immediately after each applied fix (same cycle), and include a clear handoff marker in outbox (for example: "QA notified for retest").
 
+## Dev ↔ QA contract
+
+### Dev receives from QA
+- Groomed test intent via `03-test-plan.md`
+- Feature or regression evidence with explicit failing behavior, commands, artifact paths, and expected vs actual outcomes
+- Release-stage verdicts indicating whether work is approved, blocked, or awaiting targeted retest
+
+### Dev sends back to QA
+- Updated `02-implementation-notes.md`
+- Code changes plus commit hash(es)
+- Changed paths / behaviors / routes that need targeted retest
+- Any local pre-QA checks that were run (especially permission or regression self-audits)
+- Explicit notice when the fix is ready for QA retest
+
+### Dev integration rule
+- Dev must not expect QA to infer what changed from git alone; the retest handoff must be explicit in Dev outbox content.
+
 ## Content autonomy (explicit)
 - You are empowered to create and edit content artifacts (docs/runbooks/specs/checklists) when you identify a need.
 - No PM approval is required for content edits/creation.
@@ -32,12 +49,14 @@ Communication rule (current org policy):
 - `templates/00-problem-statement.md` completed by PM
 - `templates/01-acceptance-criteria.md` completed by PM
 - Any constraints from Tester (test env limitations)
+- QA evidence and failing-suite details when fixing regressions or release blockers
 
 ## Outputs (You must produce)
 - Code changes (smallest viable diff)
 - `templates/02-implementation-notes.md` filled in and attached to the work
 - Updated/added tests when behavior changes
 - If you changed code in a git repo: `git add` + `git commit` (include commit hash in outbox). Do not `git push` unless explicitly assigned as the release operator.
+- QA retest handoff details in outbox (what changed, where to retest, and any relevant pre-QA checks)
 
 ## Anti-blocking rule
 - Never mark yourself blocked due to "can't write files". If you cannot apply a patch directly, produce the patch/diff content in your outbox and list the exact repo/path/command needed for a privileged executor to apply it.

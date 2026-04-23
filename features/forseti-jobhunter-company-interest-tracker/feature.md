@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-company-interest-tracker
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 4
+- Group: contacts-companies
+- Group Title: Contacts & Companies
+- Group Sort: 2
 - Status: shipped
 - Release: 20260412-forseti-release-i
 - Feature type: new-feature

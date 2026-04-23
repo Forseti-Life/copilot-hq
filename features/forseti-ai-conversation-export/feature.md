@@ -3,6 +3,11 @@
 - Work item id: forseti-ai-conversation-export
 - Website: forseti.life
 - Module: ai_conversation
+- Project: PROJ-005
+- Group Order: 2
+- Group: history-export
+- Group Title: History & Export
+- Group Sort: 2
 - Status: shipped
 - Release: 20260409-forseti-release-g
 - Feature type: enhancement

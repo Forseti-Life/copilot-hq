@@ -43,11 +43,18 @@ See `runbooks/roadmap-audit.md` for the complete audit process.
 This file is owned by the `pm-dungeoncrawler` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/pm-dungeoncrawler/**
 - features/dc-*/**
 - features/dungeoncrawler-*/**
 - org-chart/agents/instructions/pm-dungeoncrawler.instructions.md
+
+## QA handshake
+- **PM -> QA (grooming):** send `feature.md`, complete `01-acceptance-criteria.md`, feature id, and the correct QA handoff item
+- **Expected QA return (grooming):** `03-test-plan.md`, suite/overlay metadata, and a QA completion signal that the feature is test-ready
+- **PM -> QA (release verification):** send active release ID, scoped feature list, and any scope/risk decisions that affect expected behavior
+- **Expected QA return (release verification):** explicit feature-level verdicts plus one release-scoped Gate 2 APPROVE/BLOCK artifact containing the exact release ID
+- **Routing rule:** do not expect qa-dungeoncrawler to create Dev inbox items; QA supplies evidence, PM/CEO route follow-up
 
 ## Stale scope-activate fast-exit rule (required — added 2026-04-09)
 
@@ -84,7 +91,7 @@ Inbox items with synthetic or malformed release IDs must be fast-exited immediat
 
 **Signoff ID pre-check (required before every `release-signoff.sh` call):**
 ```bash
-cat /home/ubuntu/forseti.life/copilot-hq/tmp/release-cycle-active/dungeoncrawler.release_id
+cat /home/ubuntu/forseti.life/tmp/release-cycle-active/dungeoncrawler.release_id
 ```
 If the inbox item's release ID does not exactly match the output, fast-exit immediately.
 
@@ -116,14 +123,37 @@ Review each pre-triage item and decide:
 grep -rl "Status: pre-triage" features/dc-*/feature.md
 ```
 
-### 2. Pull community suggestions
+### 2. Drain the existing next-release backlog before suggestion intake is considered done
+```bash
+python3 - <<'PY'
+import pathlib, re
+site = "dungeoncrawler"
+for fm in sorted(pathlib.Path("features").glob("dc-*/feature.md")):
+    text = fm.read_text(encoding="utf-8")
+    if f"- Website: {site}" not in text:
+        continue
+    m = re.search(r"^- Status:\s*(.+)$", text, re.MULTILINE)
+    if not m:
+        continue
+    status = m.group(1).strip()
+    if status not in {"planned", "ready", "in_progress"}:
+        continue
+    ac = fm.with_name("01-acceptance-criteria.md").exists()
+    tp = fm.with_name("03-test-plan.md").exists()
+    if not (ac and tp):
+        print(f"{fm.parent.name}: status={status} ac={ac} testplan={tp}")
+PY
+```
+If this prints any features, finish those backlog items before treating grooming as complete.
+
+### 3. Pull community suggestions
 ```bash
 ./scripts/suggestion-intake.sh dungeoncrawler
 ```
 Note: `suggestion-intake.sh` resolves Drupal root dynamically from `org-chart/products/product-teams.json` + environment fallbacks (`/var/www/html/...`, `/home/ubuntu/...`, `/home/ubuntu/...`).
 If it exits 1 with "could not resolve Drupal root" or "drush not found", treat this as an environment/config issue and escalate to `Board` with the failing path + host context.
 
-### 3. Triage each community suggestion
+### 4. Triage each community suggestion
 ```bash
 ./scripts/suggestion-triage.sh dungeoncrawler <nid> accept <feature-id>
 ./scripts/suggestion-triage.sh dungeoncrawler <nid> defer
@@ -131,8 +161,9 @@ If it exits 1 with "could not resolve Drupal root" or "drush not found", treat t
 ./scripts/suggestion-triage.sh dungeoncrawler <nid> escalate
 ```
 
-### 4. Write Acceptance Criteria for each accepted feature
+### 5. Write or complete Acceptance Criteria
 `features/<feature-id>/01-acceptance-criteria.md` (from templates/01-acceptance-criteria.md)
+This applies to newly accepted features and to any existing `planned`/`ready` backlog item flagged by step 2.
 
 **Required before writing AC:** Run a quick codebase audit for the feature's service layer to determine correct feature type. If existing code is found, tag criteria `[EXTEND]` or `[TEST-ONLY]` — do NOT default all criteria to `[NEW]`. See KB lesson `20260228-ba-feature-type-defaults-new-without-gap-analysis.md`.
 
@@ -155,12 +186,13 @@ for d in sorted(pathlib.Path('features').glob('dc-*/')):
 # Fully groomed = ac=True AND testplan=True AND status=ready
 ```
 
-### 5. Hand off to QA for test plan design
+### 6. Hand off to QA for test plan design
 ```bash
 ./scripts/pm-qa-handoff.sh dungeoncrawler <feature-id>
 ```
+Any next-release feature that has AC but is missing `03-test-plan.md` must be handed off.
 
-### 6. Immediately after groom: dispatch implementation inbox items to dev-dungeoncrawler
+### 7. Immediately after groom: dispatch implementation inbox items to dev-dungeoncrawler
 After all scoped features are groomed (AC + test plan + status=ready), dispatch one implementation inbox item to dev-dungeoncrawler for EACH scoped feature **in the same groom cycle**. Do not wait for Stage 0 activation.
 
 Required per-feature inbox item content:
@@ -171,7 +203,7 @@ Required per-feature inbox item content:
 
 **Lesson (2026-03-19):** In release-b (20260308 cycle), 4 features were groomed on 2026-03-08 but dev-dungeoncrawler had no implementation inbox items. Features stalled in "ready" state for 11 days.
 
-### 7. When next Stage 0 starts: activate scoped features
+### 8. When next Stage 0 starts: activate scoped features
 
 **Dev-dispatch gate (required BEFORE activation):**
 Confirm ALL dev implementation inbox items are already dispatched. Run:

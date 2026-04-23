@@ -3,8 +3,19 @@
 ## Authority
 This file is owned by the `dev-forseti-agent-tracker` seat.
 
+## Mission boundary (required)
+- This seat is **module-scoped**, not site-scoped.
+- Primary implementation target: `web/modules/custom/copilot_agent_tracker/**` only.
+- You do **not** own:
+  - `job_hunter`,
+  - `forseti_content`,
+  - `forseti_safety_content`,
+  - main Forseti release implementation outside `copilot_agent_tracker`,
+  - non-tracker `features/*/02-implementation-notes.md` artifacts.
+- Those remain with `dev-forseti` or the relevant owning seat.
+
 ## Owned file scope (source of truth)
-### HQ repo (active subtree): /home/ubuntu/forseti.life/copilot-hq
+### HQ repo (active subtree): /home/ubuntu/forseti.life
 - sessions/dev-forseti-agent-tracker/**
 - org-chart/agents/instructions/dev-forseti-agent-tracker.instructions.md
 
@@ -12,17 +23,18 @@ This file is owned by the `dev-forseti-agent-tracker` seat.
 - web/modules/custom/copilot_agent_tracker/**
 
 ## Repo access (verified 2026-03-22)
-- Active working copy: `forseti.life/copilot-hq/` (subtree mirror of HQ repo).
+- Active working copy: `forseti.life/` (subtree mirror of HQ repo).
 - Forseti Drupal: readable and writable via absolute path `/home/ubuntu/forseti.life/`. Confirmed accessible with `--allow-all` tool access.
 - Write access: direct via tool calls with `--allow-all`. Apply patches directly; do not embed in outbox prose.
-- Note: HQ repo at `/home/ubuntu/copilot-sessions-hq/` may be out of sync with the subtree; treat `forseti.life/copilot-hq/` as the active working copy until CEO confirms canonical path.
+- Note: HQ repo at `/home/ubuntu/copilot-sessions-hq/` may be out of sync with the subtree; treat `forseti.life/` as the active working copy until CEO confirms canonical path.
 
 ## Canonical inbox path
-- Active inbox path for this seat: `forseti.life/copilot-hq/sessions/dev-forseti-agent-tracker/inbox/`
+- Active inbox path for this seat: `forseti.life/sessions/dev-forseti-agent-tracker/inbox/`
 - If CEO has not confirmed which repo is canonical (HQ vs subtree), note the ambiguity in the outbox and proceed with the subtree as the active working copy.
+- If an inbox item is site-wide Forseti work and not specifically about `copilot_agent_tracker`, fast-escalate to `pm-forseti-agent-tracker` as out-of-scope rather than implementing it here.
 
 ## Workspace-merge artifact recovery (required at cycle start)
-- At the start of every cycle, verify that recent outbox artifacts are present: `git ls-tree HEAD copilot-hq/sessions/dev-forseti-agent-tracker/outbox/ | tail -5`
+- At the start of every cycle, verify that recent outbox artifacts are present: `git ls-tree HEAD sessions/dev-forseti-agent-tracker/outbox/ | tail -5`
 - If post-merge outbox entries are missing (workspace wipe or subtree migration), check `git log` to identify the last known outbox commit and recover lost delegation inbox items before proceeding.
 - Escalate workspace-merge artifact loss to `pm-forseti-agent-tracker` with ROI; do not silently skip.
 
@@ -37,7 +49,7 @@ This file is owned by the `dev-forseti-agent-tracker` seat.
 
 ## Delegation-receipt verification (required after completing implementation)
 After completing implementation work and before closing a release cycle:
-- Verify that each outgoing QA delegation was actually committed and is present in git: `git ls-tree HEAD copilot-hq/sessions/<qa-seat>/inbox/<item-id>/` or check that `command.md` exists at the expected path.
+- Verify that each outgoing QA delegation was actually committed and is present in git: `git ls-tree HEAD sessions/<qa-seat>/inbox/<item-id>/` or check that `command.md` exists at the expected path.
 - If a QA delegation was supposed to be sent but is missing (e.g., wiped by auto-checkpoint), re-create it immediately and note the recovery in your outbox.
 - Do not assume a delegation "went through" — verify it exists in the repo before closing your outbox.
 

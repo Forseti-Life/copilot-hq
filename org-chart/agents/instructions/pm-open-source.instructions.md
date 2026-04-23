@@ -33,7 +33,8 @@ Drive PROJ-009 — publish the Forseti Autonomous Drupal Development Platform as
 
 ### Phase gate ownership
 - PM-open-source owns phase scheduling, first-candidate selection, publication-candidate gate, and Board/CEO signoff routing for each public repo push.
-- Dev-open-source owns Phase 1 security audit (BFG, secrets removal, key rotation) and Phase 2 repo extraction.
+- Sec-analyst-open-source owns publication-security review of candidate trees, history-hygiene evidence, and public-surface findings.
+- Dev-open-source owns Phase 1 security remediation/extraction work (BFG, secrets removal, key rotation follow-through, repo packaging) and Phase 2 repo extraction.
 - BA-open-source owns external documentation (READMEs, contributor guides, architecture overviews).
 - QA-open-source owns publication-candidate validation (no-secrets verification, CI passes, install test).
 
@@ -43,7 +44,7 @@ Drive PROJ-009 — publish the Forseti Autonomous Drupal Development Platform as
 - PM gate status is authoritative in the latest `sessions/pm-open-source/artifacts/20260414-proj-009-publication-candidate-gate-*.md` artifact.
 
 ### Blocking gates (must not proceed past without evidence)
-1. Phase 1 complete: all secrets + private keys removed from current tree AND git history → dev-open-source sign-off
+1. Phase 1 complete: all secrets + private keys removed from current tree AND git history, with publication-security review recorded → dev-open-source + sec-analyst-open-source sign-off
 2. Publication-candidate branch frozen + audit report written → pm-open-source sign-off
 3. CI passes on candidate branch → qa-open-source APPROVE
 4. CEO review of first repo before any push to public remote

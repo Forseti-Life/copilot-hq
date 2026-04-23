@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-controller-refactor-phase2
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 6
+- Group: infrastructure
+- Group Title: Technical Infrastructure
+- Group Sort: 3
 - Status: shipped
 - Release: 20260408-forseti-release-b
 - Priority: P2

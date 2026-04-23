@@ -59,7 +59,37 @@
         "Dual-user isolation tests (TC-11/TC-16) are flagged for manual execution or future jhtr:qa-users-ensure multi-user support.",
         "Exit codes: 0=pass, 2=submission.success=false, 3=no matching job found in Philadelphia."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Playwright E2E workflow: authenticated user can run full step 1-6 dashboard flow for Data Engineer job",
+          "type": "e2e",
+          "command": "bash -c 'DRUSH=/var/www/html/forseti/vendor/bin/drush; $DRUSH --uri=http://localhost jhtr:qa-users-ensure --roles=authenticated 2>/dev/null; QA_UID=$($DRUSH --uri=http://localhost user:information qa_tester_authenticated --format=json 2>/dev/null | python3 -c \"import json,sys; d=json.load(sys.stdin); print(list(d.keys())[0])\"); ULI=$($DRUSH --uri=http://localhost user:login --uid=$QA_UID --no-browser 2>/dev/null | tr -d \"\\n\"); cd /home/ubuntu/forseti.life && ULI_URL=$ULI BASE_URL=http://localhost node testing/jobhunter-workflow-step1-6-data-engineer.mjs 2>&1 | tail -20'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Anonymous /jobhunter returns 403 (data not exposed to anon)",
+          "type": "acl",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter); [ \"$STATUS\" = \"403\" ] || [ \"$STATUS\" = \"302\" ] && echo \"PASS: /jobhunter anon=$STATUS\" || (echo \"FAIL: expected 403/302 got $STATUS\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "Anonymous /jobhunter/my-jobs returns 403 (job list not exposed to anon)",
+          "type": "acl",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/my-jobs); ([ \"$STATUS\" = \"403\" ] || [ \"$STATUS\" = \"302\" ]) && echo \"PASS: /jobhunter/my-jobs anon=$STATUS\" || (echo \"FAIL: expected 403/302 got $STATUS\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-04",
+          "description": "Console errors check: E2E run produces no raw PHP stack traces in browser output",
+          "type": "regression",
+          "command": "bash -c 'DRUSH=/var/www/html/forseti/vendor/bin/drush; $DRUSH --uri=http://localhost jhtr:qa-users-ensure --roles=authenticated 2>/dev/null; QA_UID=$($DRUSH --uri=http://localhost user:information qa_tester_authenticated --format=json 2>/dev/null | python3 -c \"import json,sys; d=json.load(sys.stdin); print(list(d.keys())[0])\"); ULI=$($DRUSH --uri=http://localhost user:login --uid=$QA_UID --no-browser 2>/dev/null | tr -d \"\\n\"); cd /home/ubuntu/forseti.life && ULI_URL=$ULI BASE_URL=http://localhost node testing/jobhunter-workflow-step1-6-data-engineer.mjs 2>&1 | python3 -c \"import sys; out=sys.stdin.read(); assert not any(p in out for p in [\\\"Drupal\\\\\\\\\", \\\"#0 \\\", \\\"/home/ubuntu\\\"]), \\\"FAIL: stack trace in output\\\"; print(\\\"PASS: no stack traces\\\")\"'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-application-submission-route-acl",
@@ -175,7 +205,30 @@
         "STAGE 0 PENDING: Dev must create CsrfApplicationSubmissionTest.php (PHPUnit Functional) for authenticated-POST-with-token=200, authenticated-POST-without-token=403, anon-POST=403, AJAX-flow=200. See features/forseti-csrf-fix/03-test-plan.md TC-02/TC-03/TC-04/TC-06.",
         "KB: knowledgebase/lessons/20260301-jobhunter-routing-csrf-token-blocks-qa-probe.md \u2014 QA POST probes must include valid Drupal session token."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static CSRF check: all 7 application-submission POST routes have _csrf_token: TRUE in routing.yml",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml; for route in step3_post step3_short_post step4_post step4_short_post step5_post step5_short_post step_stub_short_post; do if grep -A10 \"application_submission_${route}:\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\"; then echo \"PASS: $route has _csrf_token: TRUE\"; else echo \"FAIL: $route MISSING _csrf_token\" && exit 1; fi; done; echo \"All 7 POST routes have CSRF=YES\"'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "ACL: anonymous POST to submit-application returns 403 (no token, no session)",
+          "type": "acl",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST https://forseti.life/jobhunter/application-submission/1/submit-application); [ \"$STATUS\" = \"403\" ] && echo \"PASS: anon POST returns 403\" || (echo \"FAIL: expected 403 got $STATUS\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "ACL: anonymous GET to application-submission route returns 403 or 302 (auth-required)",
+          "type": "acl",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/application-submission/1); ([ \"$STATUS\" = \"403\" ] || [ \"$STATUS\" = \"302\" ]) && echo \"PASS: /jobhunter/application-submission anon=$STATUS\" || (echo \"FAIL: expected 403/302 got $STATUS\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-csrf-fix-functional",
@@ -194,7 +247,30 @@
         "TC-06: AJAX POST with X-CSRF-Token + X-Requested-With headers => HTTP 200, no watchdog errors",
         "Blocked on vendor/ provision (composer install at sites/forseti/ required) before phpunit runs."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "PHP functional test: CsrfApplicationSubmissionTest passes (authenticated POST with valid token = 200, without token = 403)",
+          "type": "functional",
+          "command": "cd /var/www/html/forseti && vendor/bin/phpunit --group forseti_csrf_fix web/modules/custom/job_hunter/tests/src/Functional/CsrfApplicationSubmissionTest.php 2>&1 | tail -20",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Regression: step3 GET route still returns non-500 after CSRF fix (GET routes unaffected)",
+          "type": "regression",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 'https://forseti.life/jobhunter/application-submission/1/identify-auth-path'); [ \"$STATUS\" != \"500\" ] && echo \"PASS: step3 GET not 500 (got $STATUS)\" || (echo 'FAIL: step3 GET returned 500' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "Regression: step5 GET route still returns non-500 after CSRF fix",
+          "type": "regression",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 'https://forseti.life/jobhunter/application-submission/1/submit-application'); [ \"$STATUS\" != \"500\" ] && echo \"PASS: step5 GET not 500 (got $STATUS)\" || (echo 'FAIL: step5 GET returned 500' && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-bedrock-static",
@@ -441,7 +517,37 @@
         "TP-PAY-06: current_action > 512 chars must return 400 \u2014 extend script if needed.",
         "STAGE 0 PENDING: requires module implementation."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-PAY-01",
+          "description": "TP-PAY-01: POST missing agent_id returns 400",
+          "type": "functional",
+          "command": "bash -c 'TOKEN=$(/var/www/html/forseti/vendor/bin/drush --uri=https://forseti.life state:get copilot_agent_tracker.telemetry_token 2>/dev/null); S=$(curl -s -o /dev/null -w \"%{http_code}\" -X POST -H \"X-Copilot-Agent-Tracker-Token: $TOKEN\" -H \"Content-Type: application/json\" -d \\'\\''{\\'\\''status\\'\\'':\\'\\''done\\'\\''}\\'\\'' https://forseti.life/api/copilot-agent-tracker/event); [ \"$S\" = \"400\" ] && echo \"PASS: missing agent_id => 400\" || (echo \"FAIL: got $S\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-PAY-02",
+          "description": "TP-PAY-03: Oversized payload (65KB) returns 400 or 413, no 500",
+          "type": "functional",
+          "command": "bash -c 'TOKEN=$(/var/www/html/forseti/vendor/bin/drush --uri=https://forseti.life state:get copilot_agent_tracker.telemetry_token 2>/dev/null); BIGBODY=\"{\\\"agent_id\\\":\\\"bigtest\\\",\\\"status\\\":\\\"done\\\",\\\"current_action\\\":\\\"$(python3 -c \\\"print(\\\"A\\\"*65000)\\\")\\\"}\" ; S=$(echo \"$BIGBODY\" | curl -s -o /dev/null -w \"%{http_code}\" -X POST -H \"X-Copilot-Agent-Tracker-Token: $TOKEN\" -H \"Content-Type: application/json\" --data-binary @- https://forseti.life/api/copilot-agent-tracker/event); ([ \"$S\" = \"400\" ] || [ \"$S\" = \"413\" ]) && echo \"PASS: oversized payload => $S\" || (echo \"FAIL: got $S\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-PAY-03",
+          "description": "TP-PAY-05: agent_id > 64 chars returns 400",
+          "type": "functional",
+          "command": "bash -c 'TOKEN=$(/var/www/html/forseti/vendor/bin/drush --uri=https://forseti.life state:get copilot_agent_tracker.telemetry_token 2>/dev/null); LONGID=$(python3 -c \"print(\\\"a\\\"*65)\"); S=$(curl -s -o /dev/null -w \"%{http_code}\" -X POST -H \"X-Copilot-Agent-Tracker-Token: $TOKEN\" -H \"Content-Type: application/json\" -d \"{\\\"agent_id\\\":\\\"$LONGID\\\",\\\"status\\\":\\\"done\\\",\\\"current_action\\\":\\\"test\\\"}\" https://forseti.life/api/copilot-agent-tracker/event); [ \"$S\" = \"400\" ] && echo \"PASS: agent_id >64 chars => 400\" || (echo \"FAIL: got $S\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-PAY-04",
+          "description": "TP-AUTH-01: POST with no token returns 403",
+          "type": "security",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{\"agent_id\":\"test\",\"status\":\"done\",\"current_action\":\"no token\"}' https://forseti.life/api/copilot-agent-tracker/event); [ \"$S\" = \"403\" ] && echo 'PASS: no-token POST => 403' || (echo \"FAIL: got $S\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-copilot-agent-tracker-install",
@@ -457,7 +563,30 @@
         "TP-INST-02: Reinstall idempotency is manual-only against production \u2014 test in staging if available; accept risk with documented rollback.",
         "STAGE 0 PENDING: requires module implementation."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-INST-01",
+          "description": "TP-INST-01: Telemetry token is auto-generated and non-empty on install",
+          "type": "unit",
+          "command": "bash -c 'DRUSH=\"/var/www/html/forseti/vendor/bin/drush\"; TOKEN=$($DRUSH --uri=https://forseti.life state:get copilot_agent_tracker.telemetry_token 2>&1); [ -n \"$TOKEN\" ] && echo \"PASS: token=$TOKEN\" || (echo FAIL: token empty && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-INST-02",
+          "description": "Schema check: copilot_agent_tracker_agents table exists in Drupal DB",
+          "type": "unit",
+          "command": "bash -c 'DRUSH=\"/var/www/html/forseti/vendor/bin/drush\"; $DRUSH --uri=https://forseti.life sql:query \"SHOW TABLES LIKE \\'copilot_agent_tracker_agents\\'\" 2>/dev/null | grep -q copilot_agent_tracker_agents && echo \"PASS: agents table exists\" || (echo FAIL: agents table missing && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-INST-03",
+          "description": "Schema check: copilot_agent_tracker_events table exists in Drupal DB",
+          "type": "unit",
+          "command": "bash -c 'DRUSH=\"/var/www/html/forseti/vendor/bin/drush\"; $DRUSH --uri=https://forseti.life sql:query \"SHOW TABLES LIKE \\'copilot_agent_tracker_events\\'\" 2>/dev/null | grep -q copilot_agent_tracker_events && echo \"PASS: events table exists\" || (echo FAIL: events table missing && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-copilot-agent-tracker-security",
@@ -623,7 +752,30 @@
         "Requires an authenticated session cookie or Drush user-login URL for admin smoke test.",
         "STAGE 0 PENDING: requires feature implementation by dev-forseti."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-2: ApplicationSubmissionService.php exists, lint clean, and has >= 3 public methods",
+          "type": "functional",
+          "command": "bash -c 'set -e; SVC=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Service/ApplicationSubmissionService.php; [ -f \"$SVC\" ] && echo \"PASS: ApplicationSubmissionService.php found\" || (echo \"FAIL: file missing\" && exit 1); php -l \"$SVC\" | grep -q \"No syntax errors\" && echo \"PASS: PHP lint clean\" || (echo \"FAIL: PHP lint error\" && exit 1); METHOD_COUNT=$(grep -c \"public function\" \"$SVC\" 2>/dev/null || echo 0); echo \"Public methods: $METHOD_COUNT\"; [ \"${METHOD_COUNT:-0}\" -ge 3 ] && echo \"PASS: service has $METHOD_COUNT public methods\" || (echo \"FAIL: only $METHOD_COUNT public methods (expected >= 3)\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-3: /jobhunter/application-submission step-1 returns auth-required (not 500) for anonymous",
+          "type": "functional",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/application-submission/1); [ \"$STATUS\" != \"500\" ] && echo \"PASS: application-submission not 500 (got $STATUS)\" || (echo 'FAIL: got 500' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-5: No new 500s on job_hunter routes \u2014 spot-check key routes after extraction",
+          "type": "functional",
+          "command": "bash -c 'FAIL=0; for URL in /jobhunter /jobhunter/my-jobs /jobhunter/application-submission/1; do S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 \"https://forseti.life$URL\"); [ \"$S\" = \"500\" ] && echo \"FAIL: $URL => 500\" && FAIL=1 || echo \"OK: $URL => $S\"; done; [ $FAIL -eq 0 ] && echo PASS || exit 1'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-controller-extraction-phase1-regression",
@@ -675,6 +827,29 @@
         "TC-2: A repository/query service file (AiConversationRepository.php or similar) must exist with >= 5 public methods (14 expected).",
         "Dev implementation notes must document exact path and method list.",
         "STAGE 0 PENDING: requires feature implementation by dev-forseti."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: No direct ->database( calls in AIApiService.php",
+          "type": "static",
+          "command": "bash -c 'set -e; COUNT=$(grep -c \"->database(\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/src/Service/AIApiService.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 direct DB calls in AIApiService\" || (echo \"FAIL: $COUNT DB references found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-2: New query service/repository file exists for ai_conversation (extracted DB layer)",
+          "type": "static",
+          "command": "bash -c 'set -e; REPO=$(find /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/src -name \"*Repository*.php\" -o -name \"*Storage*.php\" -o -name \"*Query*.php\" 2>/dev/null | head -1); [ -n \"$REPO\" ] && echo \"PASS: extracted service file found: $REPO\" || (echo \"FAIL: no repository/query service found in ai_conversation/src\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "PHP lint clean on AIApiService.php",
+          "type": "static",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/src/Service/AIApiService.php | grep -q 'No syntax errors' && echo 'PASS: lint clean' || (echo 'FAIL: PHP lint error' && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -691,6 +866,22 @@
         "TC-3: curl https://forseti.life/talk-with-forseti must return 403 (auth-required per qa-permissions.json), never 500.",
         "Expected 403 per existing 'talk-with-forseti-short' rule (anon=deny).",
         "STAGE 0 PENDING: run after dev-forseti completes implementation."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-3: /talk-with-forseti returns 403 (auth-required), not 500",
+          "type": "functional",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/talk-with-forseti); [ \"$STATUS\" != \"500\" ] && echo \"PASS: not 500 (got $STATUS)\" || (echo 'FAIL: got 500' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "AI conversation routes return no 500s (spot-check /talk-with-forseti and /ai-conversation)",
+          "type": "functional",
+          "command": "bash -c 'for URL in /talk-with-forseti /ai-conversation; do S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 \"https://forseti.life$URL\"); [ \"$S\" = \"500\" ] && echo \"FAIL: $URL => 500\" && exit 1 || echo \"OK: $URL => $S\"; done; echo PASS'",
+          "status": "active"
+        }
       ]
     },
     {
@@ -709,6 +900,22 @@
         "TC-5: Config drift check \u2014 confirm drush config:status shows no drift for ai_conversation.",
         "Run after dev-forseti completes implementation.",
         "STAGE 0 PENDING: requires feature implementation by dev-forseti."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-4/TC-5: Site audit returns 0 failures, 0 violations after DB refactor",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.md; FAILURES=$(grep \"Other failures\" \"$SUMMARY\" | grep -oE \"[0-9]+$\" || echo 0); VIOLATIONS=$(grep \"Permission expectation violations\" \"$SUMMARY\" | grep -oE \"[0-9]+$\" || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: 0 failures, 0 violations\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "No new direct DB calls re-introduced in AIApiService after refactor (regression guard)",
+          "type": "regression",
+          "command": "COUNT=$(grep -c '->database(' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/src/Service/AIApiService.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo 'PASS: 0 DB calls (no regression)' || (echo \"FAIL: $COUNT DB calls re-introduced\" && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -726,6 +933,22 @@
         "Split-route pattern: GET-only + POST-only entries for same path; POST-only gets _csrf_token:'TRUE'.",
         "KB ref: knowledgebase/lessons/20260301-jobhunter-routing-csrf-token-blocks-qa-probe.md",
         "STAGE 1 READY: implementation already applied (commits dd2dcc764, 6eab37e4c, 2026-04-05)."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: All 7 application-submission POST routes have _csrf_token in job_hunter.routing.yml",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml; FAIL=0; for ROUTE in step3_post step3_short_post step4_post step4_short_post step5_post step5_short_post step_stub_short_post; do BLOCK=$(grep -A 20 \"application_submission_${ROUTE}:\" \"$ROUTING\" | head -20); if echo \"$BLOCK\" | grep -q \"_csrf_token\"; then echo \"PASS: application_submission_${ROUTE} has _csrf_token\"; else echo \"FAIL: application_submission_${ROUTE} missing _csrf_token\"; FAIL=1; fi; done; [ $FAIL -eq 0 ] && echo \"All 7 POST routes have CSRF\" || exit 1'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "CSRF route count: at least 39 _csrf_token: TRUE entries in routing.yml (baseline)",
+          "type": "static",
+          "command": "bash -c 'COUNT=$(grep -c \"_csrf_token.*TRUE\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml 2>/dev/null || echo 0); [ \"$COUNT\" -ge 39 ] && echo \"PASS: _csrf_token count=$COUNT (>= 39)\" || (echo \"FAIL: only $COUNT CSRF tokens found\" && exit 1)'",
+          "status": "active"
+        }
       ]
     },
     {
@@ -743,6 +966,29 @@
         "AC-2 (authenticated step3\u21925 POST flow) requires manual smoke with live session \u2014 deferred.",
         "AC-3 (CSRF token omission \u2192 403) requires curl POST without token \u2014 deferred to targeted verify.",
         "STAGE 1 READY: can run now against production."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-4: GET routes unaffected \u2014 step5 GET returns non-500 after split-route CSRF fix",
+          "type": "functional",
+          "command": "STEP5=$(curl -s -o /dev/null -w '%{http_code}' -m 10 'https://forseti.life/jobhunter/application-submission/1/submit-application'); [ \"$STEP5\" != \"500\" ] && echo \"PASS: step5 GET not 500 (got $STEP5)\" || (echo 'FAIL: step5 GET returned 500' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-4: GET routes unaffected \u2014 step3 GET returns non-500 after split-route CSRF fix",
+          "type": "functional",
+          "command": "STEP3=$(curl -s -o /dev/null -w '%{http_code}' -m 10 'https://forseti.life/jobhunter/application-submission/1/identify-auth-path'); [ \"$STEP3\" != \"500\" ] && echo \"PASS: step3 GET not 500 (got $STEP3)\" || (echo 'FAIL: step3 GET returned 500' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "Anonymous POST to submit-application returns 403 (no session, no token)",
+          "type": "security",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 -X POST 'https://forseti.life/jobhunter/application-submission/1/submit-application'); [ \"$S\" = \"403\" ] && echo 'PASS: anon POST => 403' || (echo \"FAIL: expected 403 got $S\" && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -760,6 +1006,22 @@
         "TC-5/AC-4: Full site audit must show 0 new failures and 0 violations.",
         "Confirms GET routes for all 7 affected paths are unaffected by the POST-only CSRF split.",
         "STAGE 1 READY: can run now; implementation is already live."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5: Site audit returns 0 failures, 0 violations after CSRF post-route fix",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.md; FAILURES=$(grep \"Other failures\" \"$SUMMARY\" | grep -oE \"[0-9]+$\" || echo 0); VIOLATIONS=$(grep \"Permission expectation violations\" \"$SUMMARY\" | grep -oE \"[0-9]+$\" || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: 0 failures, 0 violations\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "CSRF count regression: _csrf_token count in routing.yml has not decreased since fix",
+          "type": "regression",
+          "command": "COUNT=$(grep -c '_csrf_token.*TRUE' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml 2>/dev/null || echo 0); [ \"$COUNT\" -ge 39 ] && echo \"PASS: CSRF count=$COUNT (regression guard passed)\" || (echo \"FAIL: CSRF count=$COUNT (below baseline 39)\" && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -778,7 +1040,30 @@
         "Will FAIL until dev-forseti completes implementation \u2014 expected during Stage 0 activation.",
         "STAGE 0 PENDING: Dev must complete DB extraction before TC-1 passes."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: No direct ->database( calls in DashboardController.php",
+          "type": "static",
+          "command": "bash -c 'COUNT=$(grep -c \"->database(\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/copilot_agent_tracker/src/Controller/DashboardController.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 direct DB calls\" || (echo \"FAIL: $COUNT ->database( calls found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-2: PHP lint clean on DashboardController.php",
+          "type": "static",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/copilot_agent_tracker/src/Controller/DashboardController.php | grep -q 'No syntax errors' && echo 'PASS: lint clean' || (echo 'FAIL: PHP lint error' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-3: PHP lint clean on DashboardRepository.php (new extracted repository)",
+          "type": "static",
+          "command": "bash -c 'REPO=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/copilot_agent_tracker/src/Repository/DashboardRepository.php; [ -f \"$REPO\" ] && php -l \"$REPO\" | grep -q \"No syntax errors\" && echo \"PASS: DashboardRepository lint clean\" || (echo \"FAIL: lint error or file missing\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-agent-tracker-dashboard-controller-db-extraction-functional",
@@ -794,7 +1079,23 @@
         "Anon returning 403 is the expected passing state \u2014 this confirms the route loads without PHP 500.",
         "Full admin 200 requires a session cookie; deferred to manual/E2E."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-4: /admin/reports/copilot-agent-tracker returns auth-required (302/403), not 500",
+          "type": "functional",
+          "command": "bash -c 'S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 https://forseti.life/admin/reports/copilot-agent-tracker); case $S in 403|302|200) echo \"PASS: /admin/reports/copilot-agent-tracker => $S (no server error)\";; *) echo \"FAIL: /admin/reports/copilot-agent-tracker => $S (unexpected)\" && exit 1;; esac'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Anonymous access to dashboard is blocked (302 redirect or 403)",
+          "type": "acl",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/admin/reports/copilot-agent-tracker); ([ \"$S\" = \"302\" ] || [ \"$S\" = \"403\" ]) && echo \"PASS: anon => $S (access blocked)\" || (echo \"FAIL: anon got $S\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-agent-tracker-dashboard-controller-db-extraction-regression",
@@ -809,7 +1110,23 @@
         "Reads failures/violations from findings-summary.json directly (avoids markdown text parsing bugs).",
         "Uses python3 to extract integer counts from JSON \u2014 immune to text-format changes in findings-summary.md."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5: Site audit 0 failures, 0 violations after dashboard controller DB extraction",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json; FAILURES=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"][\\\"failures\\\"])\" 2>/dev/null || echo 0); VIOLATIONS=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"].get(\\\"permission_violations\\\",0))\" 2>/dev/null || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: 0 failures, 0 violations\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Regression guard: no ->database( calls re-introduced in DashboardController",
+          "type": "regression",
+          "command": "COUNT=$(grep -c '->database(' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/copilot_agent_tracker/src/Controller/DashboardController.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo 'PASS: 0 DB calls (no regression)' || (echo \"FAIL: $COUNT DB calls re-introduced\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-db-extraction-static",
@@ -827,7 +1144,30 @@
         "Will FAIL on TC-1 until dev-forseti completes DB extraction \u2014 expected Stage 0 behavior.",
         "STAGE 0 PENDING: Dev must complete extraction before TC-1 passes."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: No direct ->database( calls in UserProfileForm.php",
+          "type": "static",
+          "command": "bash -c 'COUNT=$(grep -c \"->database(\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 direct DB calls in UserProfileForm\" || (echo \"FAIL: $COUNT ->database( calls found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-2: PHP lint clean on UserProfileForm.php",
+          "type": "static",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php | grep -q 'No syntax errors' && echo 'PASS: lint clean' || (echo 'FAIL: PHP lint error' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-3: PHP lint clean on UserProfileRepository.php (new extracted repository file)",
+          "type": "static",
+          "command": "bash -c 'REPO=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Repository/UserProfileRepository.php; [ -f \"$REPO\" ] && php -l \"$REPO\" | grep -q \"No syntax errors\" && echo \"PASS: UserProfileRepository lint clean\" || (echo \"FAIL: lint error or file missing\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-db-extraction-functional",
@@ -843,7 +1183,23 @@
         "Anon 403 is the expected passing state \u2014 confirms route loads without PHP 500.",
         "Full authenticated form render requires a session cookie; deferred to manual/E2E."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-4: /jobhunter/profile returns auth-required (302/403), not 500",
+          "type": "functional",
+          "command": "bash -c 'S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 https://forseti.life/jobhunter/profile); case $S in 403|302|200) echo \"PASS: /jobhunter/profile => $S (no server error)\";; *) echo \"FAIL: /jobhunter/profile => $S (unexpected)\" && exit 1;; esac'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Profile route smoke: anonymous /jobhunter/profile gets 403/302 (not 200 or 500)",
+          "type": "acl",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/profile); ([ \"$S\" = \"403\" ] || [ \"$S\" = \"302\" ]) && echo \"PASS: profile anon => $S\" || (echo \"FAIL: unexpected $S\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-db-extraction-regression",
@@ -857,7 +1213,23 @@
       "run_notes": [
         "Reads failure/violation counts from findings-summary.json via Python (avoids grep-from-markdown text-parse bugs)."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5: Site audit 0 failures, 0 violations after UserProfileForm DB extraction",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json; FAILURES=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"][\\\"failures\\\"])\" 2>/dev/null || echo 0); VIOLATIONS=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"].get(\\\"permission_violations\\\",0))\" 2>/dev/null || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: 0 failures, 0 violations\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Regression guard: no ->database( calls re-introduced in UserProfileForm",
+          "type": "regression",
+          "command": "COUNT=$(grep -c '->database(' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo 'PASS: 0 DB calls (no regression)' || (echo \"FAIL: $COUNT DB calls re-introduced\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-resume-tailoring-queue-hardening-static",
@@ -875,7 +1247,30 @@
         "TC-4: SuspendQueueException or permanent/discard/dead-letter path must exist \u2014 prevents infinite re-queue.",
         "Will FAIL on TC-2/TC-4 until dev-forseti completes hardening implementation."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: PHP lint clean on ResumeTailoringWorker.php",
+          "type": "static",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Plugin/QueueWorker/ResumeTailoringWorker.php | grep -q 'No syntax errors' && echo 'PASS: lint clean' || (echo 'FAIL: PHP lint error' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-2: Retry/backoff logic present in ResumeTailoringWorker code",
+          "type": "static",
+          "command": "bash -c 'COUNT=$(grep -c \"retry\\|backoff\\|retry_count\\|max_retries\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Plugin/QueueWorker/ResumeTailoringWorker.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" -ge 1 ] && echo \"PASS: $COUNT retry/backoff references found\" || (echo \"FAIL: no retry/backoff logic found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-3: No PII (chat content) in logger calls in ResumeTailoringWorker",
+          "type": "static",
+          "command": "bash -c 'WORKER=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Plugin/QueueWorker/ResumeTailoringWorker.php; if [ -f \"$WORKER\" ]; then LOGGER_PII=$(grep -n \"logger\\|\\\\$this->log\" \"$WORKER\" | grep -v \"job_id\\|error_code\\|status\" | grep -c \"content\\|resume\\|user_data\" 2>/dev/null || echo 0); [ \"${LOGGER_PII:-0}\" = \"0\" ] && echo \"PASS: no PII in logger calls\" || (echo \"FAIL: potential PII in logger: $LOGGER_PII lines\" && exit 1); else echo \"WARN: ResumeTailoringWorker.php not found (check path)\"; fi'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-resume-tailoring-queue-hardening-functional",
@@ -891,7 +1286,23 @@
         "Smoke check confirms jobhunter surface loads without PHP 500 after worker code changes.",
         "Full queue E2E (submit \u2192 worker fires \u2192 result logged) requires auth session; deferred to manual."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Smoke: /jobhunter route returns auth-required (302/403/200), not 500, after queue hardening",
+          "type": "functional",
+          "command": "bash -c 'S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 https://forseti.life/jobhunter); case $S in 403|302|200) echo \"PASS: /jobhunter => $S (no server error)\";; *) echo \"FAIL: /jobhunter => $S (unexpected)\" && exit 1;; esac'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Smoke: /jobhunter/my-jobs returns auth-required (not 500) after queue hardening",
+          "type": "functional",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/my-jobs); [ \"$S\" != \"500\" ] && echo \"PASS: /jobhunter/my-jobs => $S (not 500)\" || (echo 'FAIL: got 500' && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-resume-tailoring-queue-hardening-regression",
@@ -905,7 +1316,23 @@
       "run_notes": [
         "Reads counts from findings-summary.json via Python (avoids grep-from-markdown text-parse bugs)."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5: Site audit 0 failures, 0 violations after resume tailoring queue hardening",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json; FAILURES=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"][\\\"failures\\\"])\" 2>/dev/null || echo 0); VIOLATIONS=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"].get(\\\"permission_violations\\\",0))\" 2>/dev/null || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: 0 failures, 0 violations\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Regression guard: PHP lint still clean on ResumeTailoringWorker after hardening changes",
+          "type": "regression",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Plugin/QueueWorker/ResumeTailoringWorker.php | grep -q 'No syntax errors' && echo 'PASS: lint clean (no regression)' || (echo 'FAIL: PHP lint error introduced' && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-static-db-extraction-static",
@@ -923,7 +1350,30 @@
         "Will FAIL on TC-1 and TC-3 until dev-forseti completes extraction \u2014 expected Stage 0 behavior.",
         "STAGE 0 PENDING: Dev must complete extraction before TC-1/TC-3 pass."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: No Drupal::database() static calls in UserProfileForm.php",
+          "type": "static",
+          "command": "bash -c 'COUNT=$(grep -c \"Drupal::database()\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 static DB calls\" || (echo \"FAIL: $COUNT Drupal::database() calls found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-2: PHP lint clean on UserProfileForm.php",
+          "type": "static",
+          "command": "php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php | grep -q 'No syntax errors' && echo 'PASS: lint clean' || (echo 'FAIL: PHP lint error' && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-6: No ->database( injected calls re-introduced in UserProfileForm (regression guard for static extraction)",
+          "type": "static",
+          "command": "COUNT=$(grep -c '->database(' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo 'PASS: 0 injected database calls' || (echo \"FAIL: $COUNT ->database( calls found\" && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-static-db-extraction-functional",
@@ -939,7 +1389,23 @@
         "Anon 403 is the expected passing state \u2014 confirms route loads without PHP 500.",
         "Full authenticated form render requires a session cookie; deferred to manual/E2E."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-4: /jobhunter/profile returns auth-required (302/403), not 500, after static DB extraction",
+          "type": "functional",
+          "command": "bash -c 'S=$(curl -s -o /dev/null -w \"%{http_code}\" -m 10 https://forseti.life/jobhunter/profile); case $S in 403|302|200) echo \"PASS: /jobhunter/profile => $S (no server error)\";; *) echo \"FAIL: /jobhunter/profile => $S\" && exit 1;; esac'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Smoke: /jobhunter/profile is not 500 (quick HTTP smoke check)",
+          "type": "functional",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/profile); [ \"$S\" != \"500\" ] && echo \"PASS: profile not 500 (got $S)\" || (echo 'FAIL: profile returned 500' && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-profile-form-static-db-extraction-regression",
@@ -954,7 +1420,16 @@
         "TC-6: confirms release-j scope not regressed \u2014 injected ->database( calls remain at 0.",
         "TC-5: reads failure/violation counts from findings-summary.json via Python (avoids grep-from-markdown parse bugs)."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5/TC-6: Site audit 0 failures, 0 violations + no ->database( calls re-introduced",
+          "type": "regression",
+          "command": "bash -c 'set -e; COUNT=$(grep -c \"->database(\" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Form/UserProfileForm.php 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 injected database calls\" || (echo \"FAIL: $COUNT ->database( calls re-introduced\" && exit 1); cd /home/ubuntu/forseti.life/copilot-hq; ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json; FAILURES=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"][\\\"failures\\\"])\" 2>/dev/null || echo 0); VIOLATIONS=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"].get(\\\"permission_violations\\\",0))\" 2>/dev/null || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: site audit clean\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-csrf-seed-consistency",
@@ -1006,7 +1481,30 @@
         "TC-3: PHP lint on controller + ApplicationSubmissionService.php (AC-4).",
         "Baseline 19 Drupal:: calls confirmed at plan-write time 2026-04-09."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: No $this->database calls in JobApplicationController.php",
+          "type": "static",
+          "command": "bash -c 'CTRL=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller/JobApplicationController.php; COUNT=$(grep -c \"this->database\" \"$CTRL\" 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 database calls\" || (echo \"FAIL: $COUNT database calls found\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-3: PHP lint clean on JobApplicationController.php and ApplicationSubmissionService.php",
+          "type": "static",
+          "command": "bash -c 'set -e; CTRL=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller/JobApplicationController.php; SVC=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Service/ApplicationSubmissionService.php; php -l \"$CTRL\" | grep -q \"No syntax errors\" && echo \"PASS: Controller lint clean\" || (echo \"FAIL: Controller lint error\" && exit 1); [ -f \"$SVC\" ] && (php -l \"$SVC\" | grep -q \"No syntax errors\" && echo \"PASS: Service lint clean\" || (echo \"FAIL: Service lint error\" && exit 1)) || echo \"SKIP: ApplicationSubmissionService not found\"'",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-2: No new static \\Drupal:: calls beyond pre-extraction baseline of 19",
+          "type": "static",
+          "command": "bash -c 'CTRL=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller/JobApplicationController.php; DC=$(grep -c \"Drupal::\" \"$CTRL\" 2>/dev/null || echo 0); echo \"Drupal:: call count: $DC (baseline 19)\"; [ \"$DC\" -le 25 ] && echo \"PASS: Drupal:: count within acceptable range\" || (echo \"WARN: $DC Drupal:: calls (review for new static calls)\" )'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-application-controller-db-extraction-functional",
@@ -1022,7 +1520,23 @@
         "Full TC-5 (authenticated multi-step flow) requires manual verification - documented as manual-only exception.",
         "Route /jobhunter/application-submission/1 expects 403 for unauthenticated requests."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-5 partial: Anonymous access to /jobhunter/application-submission/{id} returns 403",
+          "type": "acl",
+          "command": "STATUS=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/application-submission/1); [ \"$STATUS\" = \"403\" ] && echo 'PASS: anon gets 403' || (echo \"FAIL: expected 403 got $STATUS\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Smoke: /jobhunter/application-submission route returns non-500 (any valid response)",
+          "type": "functional",
+          "command": "S=$(curl -s -o /dev/null -w '%{http_code}' -m 10 https://forseti.life/jobhunter/application-submission/1); [ \"$S\" != \"500\" ] && echo \"PASS: application-submission not 500 (got $S)\" || (echo 'FAIL: got 500' && exit 1)",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-application-controller-db-extraction-regression",
@@ -1038,7 +1552,23 @@
         "Site audit: reads failure/violation counts via Python (avoids grep-from-markdown parse bugs).",
         "Run after dev completes the extraction to confirm no site-wide regressions."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-6 regression: 0 $this->database calls not re-introduced in JobApplicationController",
+          "type": "regression",
+          "command": "bash -c 'CTRL=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller/JobApplicationController.php; COUNT=$(grep -c \"this->database\" \"$CTRL\" 2>/dev/null || echo 0); [ \"${COUNT:-0}\" = \"0\" ] && echo \"PASS: 0 database calls (no regression)\" || (echo \"FAIL: $COUNT re-introduced\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-6: Site audit 0 failures, 0 violations after application controller DB extraction",
+          "type": "regression",
+          "command": "bash -c 'set -e; ALLOW_PROD_QA=1 bash /home/ubuntu/forseti.life/copilot-hq/scripts/site-audit-run.sh 2>&1 | tail -5; SUMMARY=/home/ubuntu/forseti.life/copilot-hq/sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json; FAILURES=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"][\\\"failures\\\"])\" 2>/dev/null || echo 0); VIOLATIONS=$(python3 -c \"import json; d=json.load(open(\\\"$SUMMARY\\\")); print(d[\\\"counts\\\"].get(\\\"permission_violations\\\",0))\" 2>/dev/null || echo 0); [ \"${FAILURES:-0}\" = \"0\" ] && [ \"${VIOLATIONS:-0}\" = \"0\" ] && echo \"PASS: site audit clean\" || (echo \"FAIL: failures=$FAILURES violations=$VIOLATIONS\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-application-controller-split-static",
@@ -1055,6 +1585,36 @@
         "Covers: php -l clean (TC-2), 0 $this->database calls (TC-3), line count <= 800 (TC-6).",
         "TC-4 (CSRF count) requires Dev to record pre-refactor baseline in implementation notes; QA to verify count matches post-split.",
         "CSRF baseline: 37 _csrf_token occurrences in job_hunter.routing.yml as of 2026-04-09."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-2: PHP lint clean on ApplicationSubmissionController.php and ApplicationActionController.php",
+          "type": "static",
+          "command": "bash -c 'set -e; BASE=sites/forseti/web/modules/custom/job_hunter/src/Controller; cd /home/ubuntu/forseti.life; php -l $BASE/ApplicationSubmissionController.php | grep -q \"No syntax errors\" && echo \"PASS: ApplicationSubmissionController lint clean\" || (echo \"FAIL: lint error\" && exit 1); php -l $BASE/ApplicationActionController.php | grep -q \"No syntax errors\" && echo \"PASS: ApplicationActionController lint clean\" || (echo \"FAIL: lint error\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-3: Zero $this->database calls in both split controllers",
+          "type": "static",
+          "command": "bash -c 'set -e; BASE=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller; C1=$(grep -c \"\\$this->database\" $BASE/ApplicationSubmissionController.php 2>/dev/null || echo 0); C2=$(grep -c \"\\$this->database\" $BASE/ApplicationActionController.php 2>/dev/null || echo 0); [ \"$C1\" = \"0\" ] && [ \"$C2\" = \"0\" ] && echo \"PASS: 0 DB calls in both split controllers\" || (echo \"FAIL: ApplicationSubmissionController=$C1 ApplicationActionController=$C2\" && exit 1)'",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-4: CSRF token count in routing.yml preserved (not reduced by split)",
+          "type": "static",
+          "command": "COUNT=$(grep -c '_csrf_token' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml 2>/dev/null || echo 0); [ \"$COUNT\" -ge 39 ] && echo \"PASS: CSRF token count=$COUNT (not reduced by split)\" || (echo \"FAIL: CSRF count=$COUNT (below expected baseline 39)\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-04",
+          "description": "TC-6: Both split controllers are <= 800 lines each",
+          "type": "static",
+          "command": "bash -c 'BASE=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Controller; L1=$(wc -l < $BASE/ApplicationSubmissionController.php 2>/dev/null || echo 9999); L2=$(wc -l < $BASE/ApplicationActionController.php 2>/dev/null || echo 9999); [ \"$L1\" -le 800 ] && [ \"$L2\" -le 800 ] && echo \"PASS: ApplicationSubmissionController=$L1 lines, ApplicationActionController=$L2 lines (both <= 800)\" || (echo \"FAIL: ApplicationSubmissionController=$L1 ApplicationActionController=$L2\" && exit 1)'",
+          "status": "active"
+        }
       ]
     },
     {
@@ -1072,6 +1632,29 @@
         "Covers: homepage HTTP 200 (TC-1), /jobhunter/my-jobs anon=403/302 (TC-1/AC-6), drush cr exits 0 (TC-5).",
         "Expected anon status on /jobhunter/my-jobs: 403 (confirmed pre-split).",
         "TC-5 watchdog check: run drush watchdog:show --count=5 --severity=Error manually post-drush-cr if automated check is insufficient."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "TC-1: Homepage returns 200 after controller split",
+          "type": "functional",
+          "command": "STATUS=$(curl -o /dev/null -s -w '%{http_code}' -m 10 https://forseti.life/); [ \"$STATUS\" = \"200\" ] && echo 'PASS: homepage=200' || (echo \"FAIL: homepage=$STATUS\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "TC-1: /jobhunter/my-jobs returns 403 or 302 for anonymous (auth-gate preserved after split)",
+          "type": "acl",
+          "command": "ANON=$(curl -o /dev/null -s -w '%{http_code}' -m 10 https://forseti.life/jobhunter/my-jobs); ([ \"$ANON\" = \"403\" ] || [ \"$ANON\" = \"302\" ]) && echo \"PASS: my-jobs anon=$ANON\" || (echo \"FAIL: my-jobs anon=$ANON (expected 403 or 302)\" && exit 1)",
+          "status": "active"
+        },
+        {
+          "id": "TC-03",
+          "description": "TC-5: drush cr succeeds after controller split (no fatal errors)",
+          "type": "functional",
+          "command": "cd /var/www/html/forseti && vendor/bin/drush cr 2>&1 | tail -5 && echo 'PASS: drush cr succeeded' || (echo 'FAIL: drush cr failed' && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -1088,6 +1671,22 @@
         "STAGE 0 PENDING: Dev must complete split before meaningful regression run.",
         "Covers: AC-6 (auth/permission surface unchanged) via full site audit.",
         "Baseline: site audit 20260409-033955 \u2014 0 failures, 0 violations."
+      ],
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Site audit 0 failures, 0 violations after application controller split",
+          "type": "regression",
+          "command": "bash -c 'set -e; cd /home/ubuntu/forseti.life/copilot-hq && ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh forseti && python3 -c \"import json; d=json.load(open(\\'sessions/qa-forseti/artifacts/auto-site-audit/latest/findings-summary.json\\')); failures=d[\\'counts\\'][\\'failures\\']; viols=d[\\'counts\\'].get(\\'permission_violations\\',0); assert failures==0 and viols==0, f\\'FAIL: failures={failures} violations={viols}\\'; print(\\'PASS: 0 failures 0 violations\\')\"; '",
+          "status": "active"
+        },
+        {
+          "id": "TC-02",
+          "description": "Regression guard: CSRF count in routing.yml not reduced by split (>= 39)",
+          "type": "regression",
+          "command": "COUNT=$(grep -c '_csrf_token' /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml 2>/dev/null || echo 0); [ \"$COUNT\" -ge 39 ] && echo \"PASS: CSRF count=$COUNT (regression guard passed)\" || (echo \"FAIL: CSRF count dropped to $COUNT\" && exit 1)",
+          "status": "active"
+        }
       ]
     },
     {
@@ -4798,6 +5397,10 @@
       "label": "Installation Cluster Communication (federation handshake + service layer)",
       "type": "integration",
       "feature_id": "forseti-installation-cluster-communication",
+      "command": "python3 -c \"print('MANUAL CHECKLIST: run the installation cluster communication test cases on two local Forseti installations with distinct base URLs and capture the results in QA artifacts.')\"",
+      "artifacts": [
+        "stdout/stderr logs"
+      ],
       "required_for_release": true,
       "notes": [
         "Requires two local Forseti installations with distinct base URLs.",

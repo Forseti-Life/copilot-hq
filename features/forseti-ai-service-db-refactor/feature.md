@@ -3,6 +3,11 @@
 - Work item id: forseti-ai-service-db-refactor
 - Website: forseti.life
 - Module: ai_conversation
+- Project: PROJ-005
+- Group Order: 3
+- Group: ai-services
+- Group Title: AI Services & Integration
+- Group Sort: 2
 - Status: shipped
 - Release: 20260408-forseti-release-i
 - Priority: P2

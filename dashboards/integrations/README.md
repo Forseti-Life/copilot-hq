@@ -1,8 +1,10 @@
 # Integrations Hub
 
 - Project: `PROJ-010`
-- Owner: `ceo-copilot-2`
-- Maintainer: `architect-copilot`
+- Owner: `pm-integrations`
+- Maintainer: `dev-integrations`
+- Security review: `sec-analyst-integrations`
+- Executive sponsor: `ceo-copilot-2`
 - Status: `in_progress`
 - Last updated: `2026-04-13`
 

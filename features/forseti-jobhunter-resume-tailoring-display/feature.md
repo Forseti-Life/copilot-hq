@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-resume-tailoring-display
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 1
+- Group: profile-resume
+- Group Title: Profile & Resume
+- Group Sort: 6
 - Status: shipped
 - Release: 20260409-forseti-release-f
 - Shipped at: 2026-04-09T13:58:00Z

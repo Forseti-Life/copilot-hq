@@ -1,6 +1,10 @@
 # Feature: forseti-installation-cluster-communication
 
-- Status: in_progress
+- Group Order: 1
+- Group: cluster-comm
+- Group Title: Cluster Communication
+- Group Sort: 1
+- Status: done
 - Website: forseti.life
 - Module: forseti_cluster (new)
 - Release: 20260412-forseti-release-l

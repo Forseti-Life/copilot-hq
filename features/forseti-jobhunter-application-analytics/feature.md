@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-application-analytics
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 2
+- Group: application
+- Group Title: Application Management
+- Group Sort: 4
 - Status: shipped
 - Release: 20260412-forseti-release-h
 - Feature type: new-feature

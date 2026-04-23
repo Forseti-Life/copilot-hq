@@ -24,12 +24,21 @@ This map is for the **target product repo**. HQ ownership is defined separately 
   - Dev implementation: `dev-forseti`
   - QA verification: `qa-forseti`
   - BA requirements support: `ba-forseti`
+  - Security review: `sec-analyst-forseti`
 
 - `/sites/forseti/web/modules/custom/copilot_agent_tracker/**`
   - PM: `pm-forseti-agent-tracker`
   - Dev implementation: `dev-forseti-agent-tracker`
   - QA verification: `qa-forseti-agent-tracker`
   - BA requirements support: `ba-forseti-agent-tracker`
+  - Security review: `sec-analyst-forseti-agent-tracker`
+
+- `/sites/forseti/web/modules/custom/ai_conversation/**`
+  - PM: `pm-forseti`
+  - Dev implementation: `dev-forseti`
+  - QA verification: `qa-forseti`
+  - BA requirements support: `ba-forseti`
+  - Security review: `sec-analyst-forseti`
 
 ### Other custom modules
 - Any other module under `/sites/forseti/web/modules/custom/<module>/**` not explicitly assigned above:

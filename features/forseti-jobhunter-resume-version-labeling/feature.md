@@ -3,7 +3,12 @@
 - Work item id: forseti-jobhunter-resume-version-labeling
 - Website: forseti.life
 - Module: job_hunter
-- Status: in_progress
+- Project: PROJ-004
+- Group Order: 1
+- Group: profile-resume
+- Group Title: Profile & Resume
+- Group Sort: 8
+- Status: done
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti

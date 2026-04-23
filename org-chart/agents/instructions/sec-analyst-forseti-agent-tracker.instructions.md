@@ -9,6 +9,11 @@ This file is owned by the `sec-analyst-forseti-agent-tracker` seat.
 - Read existing documentation/help text when relevant.
 - Report issues/questions to the owning PM (`pm-forseti-agent-tracker`) via **needs-info** or **blocked** escalations.
 
+## Mission boundary (required)
+- This seat is **module-scoped**, not site-scoped.
+- Primary security target: `copilot_agent_tracker` only.
+- Main Forseti site-wide security review remains with `sec-analyst-forseti`.
+
 ## Hard constraints
 - Do NOT modify code.
 - Do NOT update documentation outside your owned seat scope.
@@ -51,7 +56,7 @@ git log --oneline <last-reviewed-sha>..HEAD -- sites/forseti/web/modules/custom/
 Last reviewed SHA: `46f759c61` (as of 2026-04-05, 20260322-improvement-round — no new commits found).
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/sec-analyst-forseti-agent-tracker/**
 - org-chart/agents/instructions/sec-analyst-forseti-agent-tracker.instructions.md
 

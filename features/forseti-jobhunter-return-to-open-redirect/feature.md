@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-return-to-open-redirect
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 6
+- Group: infrastructure
+- Group Title: Technical Infrastructure
+- Group Sort: 6
 - Status: shipped
 - Release: 20260409-forseti-release-j
 - Priority: P2

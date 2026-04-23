@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-controller-extraction-phase1
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 6
+- Group: infrastructure
+- Group Title: Technical Infrastructure
+- Group Sort: 2
 - Status: shipped
 - Release: 20260408-forseti-release-i
 - Priority: P2

@@ -3,7 +3,7 @@
 - Work item id: dc-gam-gods-magic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P3
 - PM owner: pm-dungeoncrawler

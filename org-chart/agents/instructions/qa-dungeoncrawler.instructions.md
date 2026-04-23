@@ -4,9 +4,31 @@
 This file is owned by the `qa-dungeoncrawler` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/qa-dungeoncrawler/**
+- qa-suites/products/dungeoncrawler/**
+- org-chart/sites/dungeoncrawler/qa-permissions.json
 - org-chart/agents/instructions/qa-dungeoncrawler.instructions.md
+- features/dc-**/03-test-plan.md
+- features/dc-**/04-verification-report.md
+
+## Inputs
+- **PM grooming handoff:** `feature.md`, `01-acceptance-criteria.md`, and the QA inbox item for test generation or suite activation
+- **Dev verification handoff:** Dev outbox / implementation notes, feature acceptance criteria, suite metadata, and any prior QA evidence
+- **Release verification handoff:** active release ID, scoped feature list, feature-level QA verdicts, latest audit outputs, and any existing Gate 2 artifact
+- **Continuous audit input:** `qa-suites/products/dungeoncrawler/suite.json`, `org-chart/sites/dungeoncrawler/qa-permissions.json`, role/session coverage, and latest audit artifacts
+
+## Outputs
+- **Grooming / suite prep:** `features/<feature-id>/03-test-plan.md` plus updated suite/overlay metadata
+- **Feature verification:** explicit QA verdict artifact with APPROVE/BLOCK or PASS/FAIL evidence for the feature under test
+- **Gate 2:** one release-scoped outbox artifact containing the exact release ID and explicit APPROVE/BLOCK
+- **Continuous audit:** refreshed audit artifacts plus outbox summary of new regressions, ACL concerns, false positives, and recommended follow-up
+
+## Integration points
+- **PM -> QA:** PM owns scope and release selection; QA requires complete acceptance criteria and release context before test generation or Gate 2 decisions
+- **Dev -> QA:** Dev provides implementation notes / outbox context; QA provides reproducible verdicts and evidence, not feature redefinition
+- **QA -> PM / release automation:** Gate 2 output must match the exact file/content expectations consumed by `release-signoff.sh` and `ceo-release-health.sh`
+- **QA -> Dev follow-up:** QA records evidence and verdicts; PM/CEO automation routes new implementation work when needed
 
 ## Default mode (while PM organizes)
 - Your test-case source of truth (SoT) is the product suite manifest:
@@ -27,6 +49,12 @@ Notes:
 - Probe issues (`status=0`) in `permissions-validation.md` are request timeouts or connection errors. They are **not** permission violations. Routes matching the `no-destructive` rule or POST-only save routes (`/save`, `/create/step/.*/save`) are known sources of status=0 noise; no manual review needed if the violation count is 0.
 - Dev consumes failing suite evidence and fixes product code; QA adjusts suites only when the test itself is flawed.
 - Escalate to PM only for scope/intent decisions (e.g., whether an ACL outcome is intended).
+
+## Work item types
+- **testgen / suite-activate:** produce plan + suite metadata updates for future or active release coverage
+- **unit-test / feature verification:** produce a feature-level QA verdict with explicit evidence
+- **gate2-followup:** consolidate release evidence into one release-scoped APPROVE or BLOCK artifact; do not stop at partial feature notes
+- **site-audit / qa-findings:** run the relevant audit suites and publish PASS/FAIL evidence plus follow-up recommendations
 
 ## Known route namespaces (as of 2026-04-12 preflight — 20260412-dungeoncrawler-release-e)
 All custom route namespaces discovered from routing YAML files. Keep `qa-permissions.json` rules and `product-teams.json route_regex` aligned with these:
@@ -239,12 +267,12 @@ Dev-infra fix (DATE arg validation `^[0-9]{8}$` + signoff gate) tracked via `ses
 ## Preflight deduplication (required)
 
 When a preflight inbox item arrives:
-1. Check the last preflight commit: `git log --oneline -10 -- copilot-hq/org-chart/agents/instructions/qa-dungeoncrawler.instructions.md | head -3`
+1. Check the last preflight commit: `git log --oneline -10 -- org-chart/agents/instructions/qa-dungeoncrawler.instructions.md | head -3`
 2. Determine if any QA-scoped changes landed since the last preflight:
    ```
    git log --oneline HEAD~5..HEAD -- \
-     copilot-hq/scripts/ \
-     copilot-hq/org-chart/sites/dungeoncrawler/qa-permissions.json \
+     scripts/ \
+     org-chart/sites/dungeoncrawler/qa-permissions.json \
      sites/dungeoncrawler/web/modules/custom/
    ```
 3. If the last preflight completed within the current session AND no QA-scoped commits have landed since:
@@ -260,7 +288,7 @@ When a preflight inbox item arrives, check if the release is empty before runnin
 ```bash
 # Count in-scope features for the release
 grep -l "$(cat <inbox-item>/command.md | grep 'release_id' | awk '{print $NF}')" \
-  /home/ubuntu/forseti.life/copilot-hq/features/*/feature.md 2>/dev/null | wc -l
+  /home/ubuntu/forseti.life/features/*/feature.md 2>/dev/null | wc -l
 ```
 If PM has already self-certified the release as empty (shipping-gates Gate 0 signed off with `--empty-release` flag, or all features show `Status: released`/`Status: deferred`):
 - Fast-exit with `Status: done`; note `CLOSED-NO-SCOPE`.

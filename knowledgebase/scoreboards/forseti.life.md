@@ -2,6 +2,24 @@
 
 > Update weekly. Track only a few metrics that drive behavior.
 
+## 2026-04-20 — forseti-release-q active / route fix deployed
+
+| Metric | Target | Actual | Notes |
+|--------|--------|--------|-------|
+| Post-merge regressions | 0 | 1 | `/jobhunter/status` returning HTTP 500 for authenticated users (QA audit `20260420-105935`). Fixed same-day: `job_hunter.view_job` → `job_hunter.job_view` in `CompanyController.php` lines 3266+3346 (commit `f89d80274`). QA retest dispatched. |
+| Reopen rate (issues/PRs) | < 10% | N/A | No PR tracker configured; metric uncomputable. |
+| Time-to-verify (median) | < 24h | same-day | Route fix identified and deployed same-day. Retest `20260420-124521-retest-jobhunter-status-fix` queued in qa-forseti inbox. |
+| Escaped defects (prod/user reported) | 0 | 0 | No user-reported defects. Route regression caught by automated QA audit before user impact. |
+| Consecutive unclean releases (post-release QA) | 0 | 0 | Previous release-q audit `20260420-105935`: 1 violation (pre-fix). Fix live on production; retest pending Gate R5. |
+| Instructions-change proposals created | >= 1 when friction repeats | 2 | pm-forseti executor quarantine pattern (3-4 phantoms/cycle — context-window failures, not product logic). ba-dungeoncrawler 200-line batch limit codified to prevent quarantine. |
+| Pipeline health | Quarantine recovery | 3 pm-forseti quarantines closed | Phantom sla-outbox-lag + groom quarantine closed by CEO. Scoreboard updated. qa-forseti has retest + unit-test items in-progress. |
+
+**Open items carried forward:**
+- qa-forseti: retest `/jobhunter/status` → HTTP 200 (`20260420-124521-retest-jobhunter-status-fix` pending)
+- qa-forseti: unit-test `20260420-unit-test-20260420-105935-qa-findings-forseti-life-1` in-progress
+- Tailoring queue AWS STS token expired — user-facing tailoring broken when jobs queued (Board escalation pending Keith action).
+- ba-dungeoncrawler: lines 8284–8483 scan active (Human ancestry feats, ROI 20)
+
 ## 2026-04-10 — forseti-release-c close (CSRF hotfix) / releases advanced to -d
 
 | Metric | Target | Actual | Notes |

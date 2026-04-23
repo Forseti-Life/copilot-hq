@@ -4,7 +4,7 @@ set -euo pipefail
 # Strict ownership audit across git-tracked files for both repos.
 # Goal: ensure every tracked path is covered by an ownership rule.
 
-HQ_ROOT="/home/ubuntu/forseti.life/copilot-hq"
+HQ_ROOT="/home/ubuntu/forseti.life"
 FORS_ROOT="/home/ubuntu/forseti.life"
 
 echo "== Ownership audit (strict, git-tracked) =="
@@ -36,26 +36,26 @@ def git_ls_files(repo: str) -> list[str]:
 def owner_for_hq(path: str) -> str:
   # Prefix rules (first match wins).
   rules = [
-    ("org-chart/", "ceo-copilot"),
-    ("runbooks/", "ceo-copilot"),
+    ("org-chart/", "ceo-copilot-2"),
+    ("runbooks/", "ceo-copilot-2"),
     ("scripts/", "dev-infra"),
-    ("dashboards/", "ceo-copilot"),
-    ("templates/", "ceo-copilot"),
+    ("dashboards/", "ceo-copilot-2"),
+    ("templates/", "ceo-copilot-2"),
     ("features/infrastructure-", "pm-infra"),
     ("features/infra-", "pm-infra"),
     ("features/", "pm-* (by website/module)"),
-    ("knowledgebase/", "ceo-copilot (curator)"),
-    ("inbox/", "ceo-copilot"),
+    ("knowledgebase/", "ceo-copilot-2 (curator)"),
+    ("inbox/", "ceo-copilot-2"),
     ("sessions/", "<seat-id> (per seat)"),
-    ("tmp/", "ceo-copilot"),
-    ("README.md", "ceo-copilot"),
-    (".gitignore", "ceo-copilot"),
+    ("tmp/", "ceo-copilot-2"),
+    ("README.md", "ceo-copilot-2"),
+    (".gitignore", "ceo-copilot-2"),
   ]
   for prefix, owner in rules:
     if path == prefix or path.startswith(prefix):
       return owner
   # Default: CEO owns any other tracked repo root files.
-  return "ceo-copilot"
+  return "ceo-copilot-2"
 
 def owner_for_forseti(path: str) -> str:
   # Specific module ownership first.
@@ -67,14 +67,14 @@ def owner_for_forseti(path: str) -> str:
     return "pm-forseti (default PM) / dev-forseti / qa-forseti / ba-forseti"
   # Dependency and infrastructure areas.
   if path.startswith("sites/forseti/vendor/") or path.startswith("sites/forseti/web/core/"):
-    return "ceo-copilot"
+    return "ceo-copilot-2"
   if path.startswith("sites/forseti/web/modules/contrib/"):
-    return "ceo-copilot"
+    return "ceo-copilot-2"
   # Infrastructure scope: anything outside website directories.
   if not path.startswith("sites/"):
     return "pm-infra / dev-infra / qa-infra / ba-infra"
   # Default: CEO owns any other areas under sites/ not covered above.
-  return "ceo-copilot"
+  return "ceo-copilot-2"
 
 paths = git_ls_files(root)
 if not paths:

@@ -4,7 +4,7 @@
 This file is owned by the `dev-dungeoncrawler` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/dev-dungeoncrawler/**
 - org-chart/agents/instructions/dev-dungeoncrawler.instructions.md
 - features/*/02-implementation-notes.md  ← your artifact in every feature's living doc
@@ -15,6 +15,12 @@ This file is owned by the `dev-dungeoncrawler` seat.
 ## Task types — how to read a QA findings inbox item
 
 Every QA findings item you receive is one of two types. Check the command.md header:
+
+## QA handshake
+- **Dev receives from QA:** `03-test-plan.md` for groomed features, or failing evidence / verdict artifacts for regressions and release blockers
+- **Dev sends to QA:** updated `02-implementation-notes.md`, commit hash, changed paths/behaviors, and a clear "ready for retest" handoff marker in outbox
+- **Dev must include:** route/permission expectations and any pre-QA audit results needed for targeted retest
+- **Do not expect QA to infer changes from code diff alone**; always provide retest guidance explicitly
 
 ### Type A: NEW FEATURE IMPLEMENTATION
 **Signal:** command.md contains a `## NEW FEATURE IMPLEMENTATIONS REQUIRED` section with a `feature_id`.
@@ -63,7 +69,7 @@ If no new routes: include `## New routes introduced\nNone.` to confirm this was 
 #### Required: pre-QA permission self-audit (ADDED 2026-03-22 — GAP-DC-02 fix)
 Before notifying QA on any Type A or Type B fix, you MUST run the permission validation locally and confirm 0 violations:
 ```bash
-cd /home/ubuntu/forseti.life/copilot-hq
+cd /home/ubuntu/forseti.life
 python3 scripts/role-permissions-validate.py --site dungeoncrawler --base-url https://dungeoncrawler.forseti.life
 ```
 If violations are found: fix them before handing off to QA. Never rely on QA's site-audit-run to catch permission regressions you could have caught locally. Record the result (`0 violations` or list of fixes) in your outbox under `## Pre-QA permission audit`.
@@ -141,13 +147,13 @@ cd /home/ubuntu/forseti.life/sites/dungeoncrawler && /home/ubuntu/forseti.life/s
 # If any show "Disabled": run drush pm:enable <module> --yes, then drush config:export --yes, then git add + commit config/sync/
 
 # Confirm HQ git state
-cd /home/ubuntu/forseti.life/copilot-hq && git --no-pager status
+cd /home/ubuntu/forseti.life && git --no-pager status
 
 # Read current-state digest (fastest context load)
 cat sessions/dev-dungeoncrawler/artifacts/current-state.md
 
 # Verify installed systemd unit matches source file (drift = stale QA env)
-diff /home/ubuntu/forseti.life/copilot-hq/scripts/systemd/copilot-sessions-hq-site-audit.service \
+diff /home/ubuntu/forseti.life/scripts/systemd/copilot-sessions-hq-site-audit.service \
      /home/ubuntu/.config/systemd/user/copilot-sessions-hq-site-audit.service && echo "OK: units match" || echo "DRIFT: installed unit differs from source"
 ```
 
@@ -183,7 +189,7 @@ Expected: "No database updates required." If updates are pending, run `drush upd
 
 ### Systemd unit drift — escalation rule (ADDED 2026-02-27)
 If the `diff` above shows drift (installed unit ≠ source file):
-1. Copy source over installed: `cp /home/ubuntu/forseti.life/copilot-hq/scripts/systemd/copilot-sessions-hq-site-audit.service ~/.config/systemd/user/`
+1. Copy source over installed: `cp /home/ubuntu/forseti.life/scripts/systemd/copilot-sessions-hq-site-audit.service ~/.config/systemd/user/`
 2. Escalate to Board to run `systemctl --user daemon-reload` (requires interactive dbus session — headless executor cannot do this)
 3. Mark outbox `Status: blocked` and cite this rule — do not mark blocked without first performing step 1.
 

@@ -3,6 +3,11 @@
 - Work item id: forseti-copilot-agent-tracker
 - Website: forseti.life
 - Module: copilot_agent_tracker
+- Project: PROJ-001
+- Group Order: 1
+- Group: foundation
+- Group Title: Foundation
+- Group Sort: 2
 - Status: shipped
 - Release: 20260408-forseti-release-e
 - Priority: P1

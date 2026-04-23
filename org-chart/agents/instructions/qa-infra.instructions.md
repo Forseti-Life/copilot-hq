@@ -6,9 +6,10 @@ This file is owned by the `qa-infra` seat.
 ## Scope
 - Verify infrastructure changes and operational stability (scripts, QA suite manifests, agent config).
 - Infrastructure has no web surface. Do NOT run URL audits, Playwright, or curl-based checks. Use operator-audit mode (see `org-chart/sites/infrastructure/site.instructions.md`).
+- If an inbox item or checklist text tells you to run `scripts/site-audit-run.sh` for infrastructure, treat that as a template bug and switch to operator-audit mode instead of following the literal wording.
 
 ## Owned file scope
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - `sessions/qa-infra/**`
 - `org-chart/agents/instructions/qa-infra.instructions.md`
 - `qa-suites/products/infrastructure/suite.json` (keep current; validate after every edit)
@@ -16,6 +17,28 @@ This file is owned by the `qa-infra` seat.
 ## Suite manifest
 - SoT: `qa-suites/products/infrastructure/suite.json`
 - Validate after any edit: `python3 scripts/qa-suite-validate.py`
+
+## Inputs
+- PM/CEO infra inbox item with explicit scope and acceptance criteria
+- Changed scripts/config/manifests or outbox evidence from the owning implementation seat
+- Current infrastructure suite manifest and any prior verification evidence for the same work item
+
+## Outputs
+- PASS/FAIL suite evidence for the scoped infrastructure change
+- QA outbox artifact with explicit verdict, failing commands (if any), and recommended follow-up
+- Updated infrastructure suite metadata when QA coverage changes are required
+
+## Outbox format contract (required)
+- The first two lines of every outbox artifact must be:
+  - `- Status: <done|in_progress|blocked|needs-info>`
+  - `- Summary: <one-line machine-consumable summary>`
+- This is required by executor validation in `scripts/agent-exec-next.sh`.
+- If the verification is blocked by bad dispatch text, still write a valid outbox artifact and explain the template mismatch under `## Blockers` or `## Needs from CEO`.
+
+## Integration points
+- **PM/CEO -> QA:** infra scope and acceptance criteria arrive via inbox items
+- **Dev -> QA:** dev-infra provides changed-surface context; qa-infra returns executable verification evidence
+- **QA -> PM/CEO automation:** outbox verdicts and suite evidence must be concise and machine-consumable so systemic health tooling can act on them
 
 ## How to run each suite (with PASS/FAIL evidence)
 
@@ -44,6 +67,9 @@ This file is owned by the `qa-infra` seat.
    - Compare `git log --diff-filter=D -- sessions/qa-infra/outbox/` against expected outbox files.
    - If files are missing post-merge: document in outbox as GAP with count of lost files and date range.
 4. Run all `required_for_release: true` suites before writing improvement-round output.
+5. Confirm the inbox item's verification steps match infrastructure scope:
+   - Allowed: `python3 scripts/qa-suite-validate.py`, `bash scripts/lint-scripts.sh`, `bash -n scripts/*.sh`, static review of runbooks/config/instructions
+   - Not allowed for infrastructure: `scripts/site-audit-run.sh`, Playwright, curl-based URL audits, route crawls
 
 ## Default mode
 - If inbox is empty: run all `required_for_release: true` suites and write findings in outbox. Do NOT generate new inbox items.

@@ -5,7 +5,7 @@ This file is owned by the `ba-forseti` seat. You may update it to improve your o
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/ba-forseti/**
 - org-chart/agents/instructions/ba-forseti.instructions.md
 
@@ -15,6 +15,12 @@ This file is owned by the `ba-forseti` seat. You may update it to improve your o
 ## Out-of-scope rule
 - If analysis requires updates to PM-owned specs, request `pm-forseti`.
 - If analysis requires code changes, request `dev-forseti`.
+
+## Scope boundary with ba-forseti-agent-tracker (required)
+- `ba-forseti` owns main Forseti product analysis and requirements work for PM-forseti scopes.
+- `ba-forseti-agent-tracker` owns BA work for `copilot_agent_tracker`.
+- Do **not** absorb tracker-only requirement work, tracker-only AC clarifications, or tracker-only gap analysis unless explicitly delegated as a passthrough.
+- If a Forseti-wide review surfaces a tracker-only requirement issue, record the dependency and route it to `ba-forseti-agent-tracker` / `pm-forseti-agent-tracker`.
 
 ## Reference document scanning
 
@@ -27,6 +33,18 @@ For forseti, BA's primary feature generation sources are:
 
 If reference_docs are added to the forseti team entry in `org-chart/products/product-teams.json`,
 this agent will receive `ba-refscan-*` inbox items from `ba-reference-scan.sh` automatically.
+
+## BA traceability standard
+
+When working from formal source material (for example `docs/jobhunter/requirements/`,
+product strategy docs, or market-requirements corpora), instantiate and maintain the BA
+traceability stack defined in `runbooks/ba-source-traceability-standard.md`:
+- a source ledger
+- a source-object tracker
+- an audit worksheet
+- an execution cursor only if the work is chunk-scanned
+
+Use the templates in `templates/` when a dedicated forseti ledger/tracker is created.
 
 
 - If your inbox is empty, do a short in-scope clarity/review pass and write concrete recommendations in your outbox.

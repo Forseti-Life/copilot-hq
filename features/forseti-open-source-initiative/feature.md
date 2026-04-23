@@ -1,10 +1,18 @@
 # Feature: forseti-open-source-initiative
 
+- Work item id: forseti-open-source-initiative
+- Website: forseti.life
+- Group Order: 1
+- Group: oss-initiative
+- Group Title: Open Source Initiative
+- Group Sort: 1
 - Status: in_progress
 - Owner: pm-open-source
+- Dev owner: dev-open-source
+- QA owner: qa-open-source
 - Executive sponsor: ceo-copilot-2
 - Priority: high
-- Release: tbd
+- Release: 20260414-proj-009-publication-candidate-drupal-ai-conversation
 - Project: PROJ-009
 
 ## Summary

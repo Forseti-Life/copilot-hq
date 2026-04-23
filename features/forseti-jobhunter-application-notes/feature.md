@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-application-notes
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 2
+- Group: application
+- Group Title: Application Management
+- Group Sort: 3
 - Status: shipped
 - Release: 20260410-forseti-release-f
 - Feature type: enhancement

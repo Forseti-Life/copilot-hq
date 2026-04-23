@@ -3,6 +3,11 @@
 - Feature ID: forseti-jobhunter-resume-tailoring-queue-hardening
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 1
+- Group: profile-resume
+- Group Title: Profile & Resume
+- Group Sort: 7
 - Status: shipped
 - Priority: P3
 - Release: 20260408-forseti-release-j

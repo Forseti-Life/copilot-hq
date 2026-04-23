@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-application-controller-split
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 2
+- Group: application
+- Group Title: Application Management
+- Group Sort: 8
 - Status: shipped
 - Release: 20260409-forseti-release-d
 - Feature type: refactor

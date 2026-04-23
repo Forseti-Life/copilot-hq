@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-e2e-flow
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 3
+- Group: discovery
+- Group Title: Job Discovery & Search
+- Group Sort: 6
 - Status: shipped
 - Release: 20260407-forseti-release-c
 - Priority: P0 (ROI 1000)

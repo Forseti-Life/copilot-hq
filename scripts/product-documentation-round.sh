@@ -56,7 +56,7 @@ for agent in $pm_agents; do
     Product documentation round (PM-owned):
     1) Review your owned product/module area and current state.
     2) Generate (or update) product documentation using this template:
-       - /home/ubuntu/forseti.life/copilot-hq/templates/product-documentation.md
+       - /home/ubuntu/forseti.life/templates/product-documentation.md
     3) Target destination suggestion:
        - ${dest}
 
@@ -68,4 +68,3 @@ MD
 done
 
 echo "Created product documentation inbox items for PM agents: ${DATE_YYYYMMDD}-${TOPIC}"
-

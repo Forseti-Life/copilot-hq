@@ -3,6 +3,11 @@
 - Feature ID: forseti-jobhunter-profile-form-db-extraction
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 1
+- Group: profile-resume
+- Group Title: Profile & Resume
+- Group Sort: 4
 - Status: shipped
 - Priority: P2
 - Release: 20260408-forseti-release-j

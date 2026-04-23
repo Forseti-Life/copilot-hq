@@ -4,7 +4,6 @@ set -euo pipefail
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 
 FORS_REPO="/home/ubuntu/forseti.life"
-HQ_REPO="/home/ubuntu/forseti.life/copilot-hq"
 
 repo_check() {
   local repo="$1"
@@ -19,7 +18,6 @@ repo_check() {
 }
 
 repo_check "$FORS_REPO" "forseti.life"
-repo_check "$HQ_REPO" "copilot-sessions-hq"
 
 agent_ids="$(
   python3 - <<'PY'
@@ -33,7 +31,7 @@ for line in text:
 PY
 )"
 
-echo "Repo access: OK (forseti.life + HQ)"
+echo "Repo access: OK (canonical HQ root = forseti.life monorepo)"
 echo "Agents:"
 
 for a in $agent_ids; do
@@ -47,4 +45,3 @@ for a in $agent_ids; do
 
   echo "  - $a: OK"
 done
-

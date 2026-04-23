@@ -3,6 +3,11 @@
 - Feature ID: forseti-jobhunter-application-controller-db-extraction
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 2
+- Group: application
+- Group Title: Application Management
+- Group Sort: 7
 - Status: shipped
 - Priority: P2
 - Release: 20260409-forseti-release-c

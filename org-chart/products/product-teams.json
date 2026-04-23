@@ -252,6 +252,85 @@
         "route_regex": "",
         "qa_permissions_path": ""
       }
+    },
+    {
+      "id": "open-source",
+      "label": "Open Source Initiative",
+      "site": "open-source",
+      "aliases": [
+        "open-source",
+        "open source",
+        "proj-009"
+      ],
+      "active": true,
+      "release_preflight_enabled": false,
+      "coordinated_release_default": false,
+      "qa_agent": "qa-open-source",
+      "dev_agent": "dev-open-source",
+      "pm_agent": "pm-open-source",
+      "qa_suite_manifest": "qa-suites/products/open-source/suite.json",
+      "site_audit": {
+        "enabled": false,
+        "filter": "",
+        "base_url_env": "",
+        "drupal_web_root": "",
+        "qa_artifacts_dir": "",
+        "route_regex": "",
+        "qa_permissions_path": ""
+      },
+      "ba_agent": "ba-open-source",
+      "reference_docs": [
+        {
+          "label": "Open-source site instructions",
+          "path": "org-chart/sites/open-source/site.instructions.md",
+          "type": "site-instructions"
+        },
+        {
+          "label": "Public repo prep checklist",
+          "path": "PUBLIC_REPO_PREP.md",
+          "type": "runbook"
+        }
+      ]
+    },
+    {
+      "id": "integrations",
+      "label": "Integrations Governance",
+      "site": "integrations",
+      "aliases": [
+        "integrations",
+        "integration governance",
+        "external integrations",
+        "proj-010"
+      ],
+      "active": true,
+      "release_preflight_enabled": false,
+      "coordinated_release_default": false,
+      "qa_agent": "qa-integrations",
+      "dev_agent": "dev-integrations",
+      "pm_agent": "pm-integrations",
+      "qa_suite_manifest": "qa-suites/products/integrations/suite.json",
+      "site_audit": {
+        "enabled": false,
+        "filter": "",
+        "base_url_env": "",
+        "drupal_web_root": "",
+        "qa_artifacts_dir": "",
+        "route_regex": "",
+        "qa_permissions_path": ""
+      },
+      "ba_agent": "ba-integrations",
+      "reference_docs": [
+        {
+          "label": "Integrations hub",
+          "path": "dashboards/integrations/README.md",
+          "type": "operations-hub"
+        },
+        {
+          "label": "Integration registry",
+          "path": "dashboards/integrations/integration-registry.yaml",
+          "type": "registry"
+        }
+      ]
     }
   ]
 }

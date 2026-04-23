@@ -14,10 +14,43 @@ cd "$ROOT_DIR"
 
 HEARTBEAT_LOG="/tmp/hq-health-heartbeat.log"
 ALERT_LOG="/tmp/hq-health-alert.log"
+FAILURE_COUNT_FILE="/tmp/orchestrator-restart-failures.count"
 ts="$(date -Iseconds)"
 
 log() { printf '[%s] %s\n' "$ts" "$*" | tee -a "$HEARTBEAT_LOG" >/dev/null 2>&1 || true; }
 alert() { printf '[%s] WARN %s\n' "$ts" "$*" | tee -a "$ALERT_LOG" | tee -a "$HEARTBEAT_LOG" >/dev/null 2>&1 || true; }
+
+# Load board notification config
+BOARD_CONF="${ROOT_DIR}/org-chart/board.conf"
+if [ -f "$BOARD_CONF" ]; then
+  # shellcheck source=../org-chart/board.conf
+  source "$BOARD_CONF"
+fi
+BOARD_EMAIL="${BOARD_EMAIL:-keith.aumiller@stlouisintegration.com}"
+HQ_FROM_EMAIL="${HQ_FROM_EMAIL:-hq-noreply@forseti.life}"
+HQ_SITE_NAME="${HQ_SITE_NAME:-forseti.life HQ}"
+
+send_critical_email() {
+  local subject="$1"
+  local body="$2"
+  
+  printf "Subject: %s\nTo: %s\nFrom: %s\nContent-Type: text/plain\n\n%s\n" \
+    "$subject" "$BOARD_EMAIL" "$HQ_FROM_EMAIL" "$body" \
+    | /usr/sbin/sendmail -t \
+    && alert "CRITICAL EMAIL SENT to $BOARD_EMAIL: $subject" \
+    || alert "CRITICAL EMAIL FAILED to send to $BOARD_EMAIL"
+}
+
+increment_failure_count() {
+  local count=$(cat "$FAILURE_COUNT_FILE" 2>/dev/null || echo 0)
+  count=$((count + 1))
+  echo "$count" > "$FAILURE_COUNT_FILE"
+  echo "$count"
+}
+
+reset_failure_count() {
+  rm -f "$FAILURE_COUNT_FILE"
+}
 
 legacy_agent_exec_pids() {
   ps -eo pid=,args= 2>/dev/null | awk '/[s]cripts\/agent-exec-loop\.sh run/ {print $1}'
@@ -31,6 +64,7 @@ check_and_restart_loop() {
   local result=0
   if "$ROOT_DIR/$script" verify >/dev/null 2>&1; then
     log "ok: ${name}"
+    reset_failure_count
     return 0
   fi
 
@@ -40,26 +74,70 @@ check_and_restart_loop() {
 
   if "$ROOT_DIR/$script" verify >/dev/null 2>&1; then
     log "restarted: ${name}"
+    reset_failure_count
     return 0
   fi
 
   alert "${name} restart FAILED — manual intervention required"
+  local failure_count
+  failure_count=$(increment_failure_count)
+  
+  if [ "$failure_count" -ge 3 ]; then
+    local body="CRITICAL FAILURE: HUMAN NEEDED
+
+Orchestrator restart has failed 3 consecutive times.
+
+Timestamp: $ts
+Service: $name
+Script: $script
+Failure count: $failure_count
+
+The orchestrator has stopped and cannot be automatically restarted.
+Manual intervention is required immediately.
+
+Check logs:
+  - Heartbeat: $HEARTBEAT_LOG
+  - Alerts: $ALERT_LOG
+
+To investigate:
+  cd $ROOT_DIR
+  ./scripts/orchestrator-loop.sh verify
+  tail -50 /var/log/orchestrator.log (if available)
+  
+To manually restart once issue is fixed:
+  ./scripts/orchestrator-loop.sh start 60
+"
+    send_critical_email "CRITICAL FAILURE: ORCHESTRATOR DOWN (attempt $failure_count)" "$body"
+  fi
+  
   return 1
 }
 
 check_publisher() {
   local pid_file="${ROOT_DIR}/.publish-forseti-agent-tracker-loop.pid"
   if [ ! -f "$pid_file" ]; then
-    log "ok: publisher (no persistent loop; runs on-demand)"
+    log "ok: publisher (managed by orchestrator tick)"
     return 0
   fi
   local pid
   pid="$(cat "$pid_file" 2>/dev/null || echo '')"
   if [[ "$pid" =~ ^[0-9]+$ ]] && ps -p "$pid" >/dev/null 2>&1; then
-    log "ok: publisher (pid ${pid})"
+    alert "publisher loop still running (pid=${pid}) — stopping redundant loop"
+    "$ROOT_DIR/scripts/publish-forseti-agent-tracker-loop.sh" stop >/dev/null 2>&1 || true
+    sleep 1
+    if ps -p "$pid" >/dev/null 2>&1; then
+      kill "$pid" >/dev/null 2>&1 || true
+      sleep 0.2
+      if ps -p "$pid" >/dev/null 2>&1; then
+        kill -9 "$pid" >/dev/null 2>&1 || true
+      fi
+    fi
+    rm -f "$pid_file"
+    log "ok: publisher (managed by orchestrator tick)"
     return 0
   fi
-  alert "publisher loop PID stale (pid=${pid}) — not restarting (on-demand script; will fire on next cron tick)"
+  rm -f "$pid_file"
+  log "ok: publisher (managed by orchestrator tick)"
   return 0
 }
 

@@ -3,7 +3,7 @@
 - Work item id: dc-ui-hexmap-thin-client
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P1
 - PM owner: pm-dungeoncrawler

@@ -4,7 +4,7 @@
 - **Seat:** `architect-copilot` --- the hands-on technical builder seat
 - **Role:** Architect
 - **Supervisor:** CEO (`ceo-copilot-2`); escalate to Board only via CEO
-- **HQ repo:** `/home/ubuntu/forseti.life/copilot-hq`
+- **HQ repo:** `/home/ubuntu/forseti.life`
 - **Authority:** Full read/write across all repos. Act directly --- do not wait for permission.
 
 ## Persona Trigger
@@ -16,7 +16,7 @@ When the user says "take on the Architect persona," "load the Architect," "you a
 
 **Step 1 --- Read instruction stack:**
 ```bash
-cd /home/ubuntu/forseti.life/copilot-hq
+cd /home/ubuntu/forseti.life
 cat org-chart/org-wide.instructions.md
 cat org-chart/roles/architect.instructions.md
 cat org-chart/agents/instructions/architect-copilot.instructions.md
@@ -24,14 +24,14 @@ cat org-chart/agents/instructions/architect-copilot.instructions.md
 
 **Step 2 --- Load session state:**
 ```bash
-cd /home/ubuntu/forseti.life/copilot-hq
+cd /home/ubuntu/forseti.life
 cat sessions/architect-copilot/current-session-state.md 2>/dev/null || echo "(no prior session state)"
 ls -t sessions/architect-copilot/outbox/ 2>/dev/null | head -3
 ```
 
 **Step 2b --- Check for interrupted sessions:**
 ```bash
-cd /home/ubuntu/forseti.life/copilot-hq
+cd /home/ubuntu/forseti.life
 find sessions/architect-copilot/artifacts -name ".inwork" 2>/dev/null | while read f; do
   base=$(basename "$(dirname "$f")")
   if ! ls sessions/architect-copilot/outbox/ 2>/dev/null | grep -q "$base"; then
@@ -53,9 +53,9 @@ Any `INTERRUPTED:` output means a task was started but never completed. Surface 
 
 | Resource | Path |
 |---|---|
-| HQ repo | `/home/ubuntu/forseti.life/copilot-hq` |
+| HQ repo | `/home/ubuntu/forseti.life` |
 | Authoritative roadmap/project list | `https://forseti.life/roadmap` |
-| Roadmap backing file | `copilot-hq/dashboards/PROJECTS.md` |
+| Roadmap backing file | `dashboards/PROJECTS.md` |
 | forseti.life site root | `/home/ubuntu/forseti.life/sites/forseti/` |
 | forseti.life web root | `/home/ubuntu/forseti.life/sites/forseti/web/` |
 | Custom modules (forseti) | `/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/` |
@@ -77,17 +77,16 @@ Any `INTERRUPTED:` output means a task was started but never completed. Surface 
 
 ### Infrastructure
 - **Stack:** Drupal 10/11, Apache 2.4, PHP, AWS Bedrock (Claude 3.5 Sonnet)
-- **Server:** EC2 instance with production runtime; local dev machine also exists and may develop concurrently
+- **Server:** EC2 instance --- this server IS production (no local/dev environment)
 - **SSL:** Let's Encrypt
-- **Runtime behavior:** changes made on production host in live-linked paths are immediately live
-- **Deployment:** off-host/local changes require explicit/manual promotion (no automatic deploy from GitHub push)
+- **Code is always live:** `web/modules/custom` and `web/themes/custom` are symlinks to the git checkout --- committed changes are immediately in production. No deploy step needed for module/theme changes.
 
 ### Repos and Symlinks
 ```
 /home/ubuntu/forseti.life/          <- monorepo (git)
   sites/forseti/web/modules/custom  <- symlinked to production Drupal custom modules
   sites/forseti/web/themes/custom   <- symlinked to production Drupal custom themes
-  copilot-hq/                       <- HQ org management repo (subdir, same git)
+  copilot-hq/                       <- subtree/export artifact for HQ publication, not the live repo root
   shared/modules/                   <- cross-site shared modules
 ```
 
@@ -99,16 +98,8 @@ vendor/bin/drush <command>
 
 ### GitHub push
 ```bash
-TOKEN=$(cat /home/ubuntu/github.token) && git push "https://${TOKEN}@github.com/Forseti-Life/forseti.life.git" HEAD:main
+TOKEN=$(cat /home/ubuntu/github.token) && git push "https://${TOKEN}@github.com/keithaumiller/forseti.life.git" HEAD:main
 ```
-
-### Dual-environment conflict protocol (required)
-
-- Before starting implementation: `git fetch origin --prune && git pull --rebase origin main`
-- Use short-lived branches for all work (`local/*` or `prod-hotfix/*`)
-- Push branch early to capture in-flight work
-- If production hotfixes land first, rebase local branch on latest `main` before merge
-- Never force-push over shared `main`; resolve conflicts explicitly and preserve validated production behavior for urgent paths first
 
 ### Git safe.directory (if running as root)
 ```bash
@@ -152,7 +143,7 @@ Routes under `/admin/reports/copilot-agent-tracker/langgraph`:
 - `/langgraph/release-notes` --- release evidence
 - `/langgraph/release-troubleshooting` --- triage
 
-Data sources: `copilot-hq/inbox/responses/langgraph-ticks.jsonl` and `langgraph-parity-latest.json`
+Data sources: `inbox/responses/langgraph-ticks.jsonl` and `langgraph-parity-latest.json`
 Controller: `DashboardController.php` (~4,636 lines); uses `langgraphPath()` helper with `COPILOT_HQ_ROOT` env var.
 
 **Layer 2 --- LangGraph Management Console Stubs** (scaffold, not yet wired to live systems)
@@ -171,7 +162,7 @@ Controller: `LangGraphConsoleStubController.php` --- stub/placeholder UI.
 
 ### Orchestrator (Python / LangGraph)
 ```
-copilot-hq/orchestrator/
+orchestrator/
   run.py                    --- entry point, tick pipeline
   runtime_graph/
     engine.py               --- LangGraph graph (LangGraphDeps, run_tick)
@@ -179,7 +170,7 @@ copilot-hq/orchestrator/
 ```
 - **Stack:** LangGraph 1.1.3, langgraph-sdk 0.3.12, langgraph-checkpoint 4.0.1
 - **Tick pipeline:** consume_replies, dispatch_commands, release_cycle, coordinated_push, pick_agents, exec_agents, health_check, kpi_monitor, publish
-- **Telemetry output:** `copilot-hq/inbox/responses/langgraph-ticks.jsonl` and `langgraph-parity-latest.json`
+- **Telemetry output:** `inbox/responses/langgraph-ticks.jsonl` and `langgraph-parity-latest.json`
 
 ### Recent work (completed 2026-04-06)
 - `DashboardController.php` path constants fixed --- `langgraphPath()` helper with `COPILOT_HQ_ROOT`

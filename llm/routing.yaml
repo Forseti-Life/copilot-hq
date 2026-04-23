@@ -6,30 +6,32 @@
 #   2. roles.<role>        — role-based default
 #   3. default             — org-wide fallback
 #
-# Supported live backends:
-#   - lm_studio  — local Qwen (or any model) via LM Studio OpenAI-compatible API
-#                  Requires LM Studio "Local Server" to be running.
-#                  Override URL via LM_STUDIO_URL env var (default: http://localhost:1234/v1).
-#                  Override model via LM_STUDIO_MODEL env var (default: whatever is loaded).
-#                  Falls back to copilot/bedrock if the API is unreachable.
-#   - copilot    — GitHub Copilot CLI
-#   - bedrock    — AWS Bedrock
+# Supported live backends here are:
+#   - copilot
+#   - bedrock
+#
+# Local model routing remains available in the codebase, but HQ runtime policy
+# is to route seats between Copilot and Bedrock only.
 
 version: "1"
 
 # Org-wide fallback if no role or agent match.
-default: lm_studio
+default: bedrock
 
 # Role-based defaults.
-# CEO and software-developer stay on Copilot for highest-quality reasoning.
-# All other roles route to LM Studio (local Qwen) by default.
+# Roles that require the strongest reasoning or architectural judgment stay on
+# Copilot. Structured/checklist-heavy seats default to Bedrock.
+#
+#   ceo, software-developer                  → copilot
+#   product-manager, tester                  → bedrock
+#   business-analyst, security-analyst       → bedrock
 roles:
   ceo: copilot
-  product-manager: lm_studio
+  product-manager: bedrock
   software-developer: copilot
-  tester: lm_studio
-  business-analyst: lm_studio
-  security-analyst: lm_studio
+  tester: bedrock
+  business-analyst: bedrock
+  security-analyst: bedrock
 
 # Agent-specific overrides.
 # Only list agents that need a DIFFERENT backend than their role default above.

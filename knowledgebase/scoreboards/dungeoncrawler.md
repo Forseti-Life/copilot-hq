@@ -2,6 +2,29 @@
 
 > Update weekly. Track only a few metrics that drive behavior.
 
+## 2026-04-18 — 20260412-dungeoncrawler-release-n healthy / push-ready
+
+| Metric | Target | Actual | Notes |
+|--------|--------|--------|-------|
+| Post-merge regressions | 0 | 0 | Current release health check `2026-04-18T17:06:38Z` clean for active release `20260412-dungeoncrawler-release-n`; in-scope features `dc-ui-token-readability` and `dc-ui-sidebar-drawers` both have dev outboxes and no release-health regressions. |
+| Reopen rate (issues/PRs) | < 10% | N/A | No PR tracker configured. No reopened issue tracker is maintained in this workspace. |
+| Time-to-verify (median) | < 24h | same-day | Both active release-n features were activated and reached Gate 2 APPROVE on 2026-04-18; PM signoff is recorded and coordinated signoff matrix is complete the same day. |
+| Escaped defects (prod/user reported) | 0 | 0 | Latest production Dungeoncrawler audit `20260417-160402` is clean (0 missing assets, 0 permission violations, 0 other failures). No new user-reported production defects are recorded in the current release notes/state. |
+| Consecutive unclean releases (post-release QA) | 0 | 0 | Latest production audit is clean and current release health is PASS. Counter remains 0. |
+| Instructions-change proposals created | >= 1 when friction repeats | 0 | No new recurring Dungeoncrawler-specific QA/process friction mode was identified in this update window. |
+| Audit freshness | <= 24h | ~1 day | Latest QA audit: `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/20260417-160402/` — still within an operationally fresh window for the 2026-04-18 update. |
+
+**Release-n summary:**
+- Active release: `20260412-dungeoncrawler-release-n`
+- In scope: `dc-ui-token-readability`, `dc-ui-sidebar-drawers`
+- Gate 2 evidence present: `sessions/qa-dungeoncrawler/outbox/20260418-140044-gate2-approve-20260412-dungeoncrawler-release-n.md`
+- PM signoff present: `sessions/pm-dungeoncrawler/artifacts/release-signoffs/20260412-dungeoncrawler-release-n.md`
+- Coordinated push readiness: all required PM signoffs present; official push still pending operator execution
+
+**Active gaps:**
+- **BA source-coverage mismatch**: Bestiary/Core/APG/GMG/G&G/SoM/Gods & Magic sweeps all still show large pending audit counts despite ledger/tracker `complete` signals. Coverage-sweep outboxes on 2026-04-18 now mark these as blocked until audit truth is reconciled.
+- **Promoted backlog not yet groomed enough for activation**: `dc-b2-bestiary2`, `dc-gng-guns-gears`, and `dc-som-secrets-of-magic` remain the healthy ready backlog behind release-n, but BA validation shows source traceability still needs audit-level reconciliation before that backlog can be trusted as complete.
+
 ## 2026-04-10 — 20260410-dungeoncrawler-release-b PM signoff recorded / Gate 2 APPROVE
 
 | Metric | Target | Actual | Notes |

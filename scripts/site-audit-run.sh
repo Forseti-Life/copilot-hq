@@ -697,9 +697,10 @@ run_site() {
     # gets one-time login URLs, follows them to capture session cookies, then
     # writes an env file we source here to populate SITE_COOKIE_ROLE vars.
     #
-    # OTL-based acquisition only works for LOCAL base URLs (same DB as drush).
-    # For production audits, cookies must be pre-set in the environment
-    # (e.g. via drupal-qa-sessions.py --credentials-file against production).
+    # OTL-based acquisition works for local URLs and for production URLs when
+    # drush is collocated with the live Drupal instance (same DB + codebase).
+    # Only non-collocated production audits require pre-set COOKIE env vars
+    # (for example via drupal-qa-sessions.py --credentials-file).
     local drupal_root_from_cfg
     drupal_root_from_cfg=$(python3 -c "
 import json, sys
@@ -713,9 +714,20 @@ print(cfg.get('drupal_root') or '')
         is_local_url=true ;;
     esac
 
-    if [ -n "$drupal_root_from_cfg" ] && [ -d "$drupal_root_from_cfg" ] && [ "$is_local_url" = "true" ]; then
+    # Collocated drush: the machine running the audit IS the Drupal backend.
+    # When vendor/bin/drush is present in drupal_root, drush can generate OTL
+    # tokens valid for any base_url (local or production HTTPS).
+    local is_drush_collocated=false
+    if [ -n "$drupal_root_from_cfg" ] && [ -x "$drupal_root_from_cfg/vendor/bin/drush" ]; then
+      is_drush_collocated=true
+    fi
+
+    if [ -n "$drupal_root_from_cfg" ] && [ -d "$drupal_root_from_cfg" ] && \
+        { [ "$is_local_url" = "true" ] || [ "$is_drush_collocated" = "true" ]; }; then
       local qa_sessions_env="$tmp_dir/${label}-qa-sessions.env"
-      echo "INFO: ${label}: acquiring QA session cookies via drush OTL (local site)..." >&2
+      local otl_mode_label="local site"
+      [ "$is_local_url" = "false" ] && otl_mode_label="collocated drush (server=production)"
+      echo "INFO: ${label}: acquiring QA session cookies via drush OTL (${otl_mode_label})..." >&2
       if python3 scripts/drupal-qa-sessions.py \
           --drupal-root "$drupal_root_from_cfg" \
           --config "$role_cfg_path" \
@@ -729,7 +741,7 @@ print(cfg.get('drupal_root') or '')
         # shellcheck disable=SC1090
         [ -f "$qa_sessions_env" ] && source "$qa_sessions_env" || true
       fi
-    elif [ -n "$drupal_root_from_cfg" ] && [ "$is_local_url" = "false" ]; then
+    elif [ -n "$drupal_root_from_cfg" ] && [ "$is_local_url" = "false" ] && [ "$is_drush_collocated" = "false" ]; then
       echo "INFO: ${label}: production URL — using pre-set COOKIE env vars for per-role audit (set via drupal-qa-sessions.py --credentials-file for automation)" >&2
     fi
 

@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-offer-tracker
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 5
+- Group: interviews-offers
+- Group Title: Interviews, Offers & Career
+- Group Sort: 3
 - Status: shipped
 - Release: 20260412-forseti-release-h
 - Feature type: new-feature

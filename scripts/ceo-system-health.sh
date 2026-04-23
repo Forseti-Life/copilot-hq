@@ -11,7 +11,8 @@
 #   bash scripts/ceo-system-health.sh --dispatch   # report + create agent inbox items for each finding
 #   bash scripts/ceo-system-health.sh --json       # report + JSON summary line
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "$ROOT_DIR"
 
 # shellcheck source=scripts/lib/merge-health.sh
 source "./scripts/lib/merge-health.sh"
@@ -32,6 +33,8 @@ DISPATCH_ITEMS=()
 now_ts=$(date +%s)
 now_iso=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 date_prefix=$(date -u +"%Y%m%d")
+APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
+APACHE_FATAL_QUIET_MINUTES="${APACHE_FATAL_QUIET_MINUTES:-30}"
 
 SEP="────────────────────────────────────────────────────────"
 
@@ -39,6 +42,113 @@ pass()  { echo "✅ PASS $*"; RESULTS+=("PASS|$*"); }
 fail()  { echo "❌ FAIL $*"; RESULTS+=("FAIL|$*"); FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
 warn()  { echo "⚠️  WARN $*"; RESULTS+=("WARN|$*"); WARN_COUNT=$(( WARN_COUNT + 1 )); }
 info()  { echo "   ℹ️  $*"; }
+
+apache_recent_matching_lines() {
+  local log_path="$1"
+  local window_seconds="$2"
+  local include_pattern="$3"
+  local exclude_pattern="${4:-}"
+  python3 - "$log_path" "$window_seconds" "$include_pattern" "$exclude_pattern" <<'PY'
+from datetime import datetime
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+window_seconds = int(sys.argv[2])
+include_pattern = re.compile(sys.argv[3])
+exclude_pattern = re.compile(sys.argv[4]) if sys.argv[4] else None
+now = datetime.now()
+
+def parse_timestamp(line: str):
+    if not line.startswith("["):
+        return None
+    try:
+        raw = line.split("]", 1)[0][1:]
+    except IndexError:
+        return None
+    for fmt in ("%a %b %d %H:%M:%S.%f %Y", "%a %b %d %H:%M:%S %Y"):
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    return None
+
+try:
+    lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+except FileNotFoundError:
+    raise SystemExit(0)
+
+matches = []
+for line in lines:
+    if exclude_pattern and exclude_pattern.search(line):
+        continue
+    if not include_pattern.search(line):
+        continue
+    ts = parse_timestamp(line)
+    if ts is None:
+        continue
+    age_seconds = (now - ts).total_seconds()
+    if 0 <= age_seconds <= window_seconds:
+        matches.append(line)
+
+if matches:
+    print("\n".join(matches))
+PY
+}
+
+apache_last_match_age_seconds() {
+  local log_path="$1"
+  local include_pattern="$2"
+  local exclude_pattern="${3:-}"
+  python3 - "$log_path" "$include_pattern" "$exclude_pattern" <<'PY'
+from datetime import datetime
+import pathlib
+import re
+import sys
+
+path = pathlib.Path(sys.argv[1])
+include_pattern = re.compile(sys.argv[2])
+exclude_pattern = re.compile(sys.argv[3]) if sys.argv[3] else None
+now = datetime.now()
+
+def parse_timestamp(line: str):
+    if not line.startswith("["):
+        return None
+    try:
+        raw = line.split("]", 1)[0][1:]
+    except IndexError:
+        return None
+    for fmt in ("%a %b %d %H:%M:%S.%f %Y", "%a %b %d %H:%M:%S %Y"):
+        try:
+            return datetime.strptime(raw, fmt)
+        except ValueError:
+            continue
+    return None
+
+try:
+    lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+except FileNotFoundError:
+    print("")
+    raise SystemExit(0)
+
+last_age_seconds = None
+for line in lines:
+    if exclude_pattern and exclude_pattern.search(line):
+        continue
+    if not include_pattern.search(line):
+        continue
+    ts = parse_timestamp(line)
+    if ts is None:
+        continue
+    age_seconds = int((now - ts).total_seconds())
+    if age_seconds < 0:
+        continue
+    last_age_seconds = age_seconds
+
+print("" if last_age_seconds is None else last_age_seconds)
+PY
+}
 
 runner_pids() {
   local pattern="$1"
@@ -302,28 +412,48 @@ echo "  Apache Error Logs (real errors, last 24h)"
 echo "$SEP"
 
 for site in forseti dungeoncrawler; do
-  log="/var/log/apache2/${site}_error.log"
+  log="${APACHE_LOG_DIR}/${site}_error.log"
   if [ ! -f "$log" ]; then
     info "[$site] No error log at $log"
     continue
   fi
 
-  # Count PHP fatal/warning errors (exclude AH01630 security scan noise)
-  php_fatal=$(grep -cE "PHP Fatal|PHP Parse error|PHP Exception" "$log" 2>/dev/null || true); php_fatal=${php_fatal:-0}
-  # Count real Apache errors (exclude AH01630 which is security probe noise)
-  real_errors=$(grep -v "AH01630" "$log" 2>/dev/null | grep -cE "\[error\]" || true); real_errors=${real_errors:-0}
+  php_pattern="PHP Fatal|PHP Parse error|PHP Exception|Uncaught PHP Exception"
+  php_fatal_lines="$(apache_recent_matching_lines "$log" 86400 "$php_pattern")"
+  php_fatal=$(printf '%s\n' "$php_fatal_lines" | sed '/^$/d' | wc -l | tr -d ' ')
+  php_fatal=${php_fatal:-0}
+  quiet_window_seconds=$(( APACHE_FATAL_QUIET_MINUTES * 60 ))
+  php_fatal_active_lines="$(apache_recent_matching_lines "$log" "$quiet_window_seconds" "$php_pattern")"
+  php_fatal_active=$(printf '%s\n' "$php_fatal_active_lines" | sed '/^$/d' | wc -l | tr -d ' ')
+  php_fatal_active=${php_fatal_active:-0}
+  php_last_age_seconds="$(apache_last_match_age_seconds "$log" "$php_pattern")"
+  php_last_age_minutes=""
+  if [[ "$php_last_age_seconds" =~ ^[0-9]+$ ]]; then
+    php_last_age_minutes=$(( php_last_age_seconds / 60 ))
+  fi
+  real_error_lines="$(apache_recent_matching_lines "$log" 86400 "\\[error\\]" "AH01630")"
+  real_errors=$(printf '%s\n' "$real_error_lines" | sed '/^$/d' | wc -l | tr -d ' ')
+  real_errors=${real_errors:-0}
 
   if [ "${php_fatal}" -gt 0 ]; then
-    fail "[$site] PHP Fatal/Parse/Exception errors: $php_fatal"
-    info "$(grep -E "PHP Fatal|PHP Parse error|PHP Exception" "$log" | tail -2)"
-    dev_agent="dev-${site}"
-    [[ "$site" == "forseti" ]] && dev_agent="dev-forseti"
-    queue_dispatch "$dev_agent" "php-fatal-${site}" "9" "FAIL" \
-      "PHP Fatal errors in Apache log: $site ($php_fatal occurrences)" \
-      "PHP fatal/parse/exception errors found in /var/log/apache2/${site}_error.log.\n\nRecent:\n\`\`\`\n$(grep -E "PHP Fatal|PHP Parse error|PHP Exception" "$log" | tail -3)\n\`\`\`\n\nInvestigate and fix. Verify site returns HTTP 200 after fix."
+    if [ "${php_fatal_active}" -gt 0 ]; then
+      fail "[$site] PHP Fatal/Parse/Exception errors: $php_fatal in last 24h ($php_fatal_active in last ${APACHE_FATAL_QUIET_MINUTES}m)"
+      info "$(printf '%s\n' "$php_fatal_lines" | tail -2)"
+      dev_agent="dev-${site}"
+      [[ "$site" == "forseti" ]] && dev_agent="dev-forseti"
+      queue_dispatch "$dev_agent" "php-fatal-${site}" "9" "FAIL" \
+        "PHP Fatal errors in Apache log: $site ($php_fatal_active active, $php_fatal in 24h)" \
+        "PHP fatal/parse/exception errors found in ${log}.\n\nActive window: last ${APACHE_FATAL_QUIET_MINUTES} minutes.\nRecent lines:\n\`\`\`\n$(printf '%s\n' "$php_fatal_lines" | tail -3)\n\`\`\`\n\nInvestigate and fix. Verify site returns HTTP 200 after fix."
+    else
+      warn "[$site] PHP Fatal/Parse/Exception errors: $php_fatal in last 24h, but none in last ${APACHE_FATAL_QUIET_MINUTES}m"
+      if [ -n "$php_last_age_minutes" ]; then
+        info "Last fatal/exception was ${php_last_age_minutes}m ago"
+      fi
+      info "$(printf '%s\n' "$php_fatal_lines" | tail -2)"
+    fi
   elif [ "${real_errors}" -gt 50 ]; then
-    warn "[$site] Non-scan Apache errors: $real_errors (last log)"
-    info "$(grep -v "AH01630" "$log" | grep -E "\[error\]" | tail -2)"
+    warn "[$site] Non-scan Apache errors: $real_errors (last 24h)"
+    info "$(printf '%s\n' "$real_error_lines" | tail -2)"
     queue_dispatch "dev-infra" "apache-errors-${site}" "6" "WARN" \
       "High Apache error rate: $site ($real_errors non-scan errors)" \
       "Apache error log /var/log/apache2/${site}_error.log has $real_errors non-security-scan errors.\n\nInvestigate and resolve."

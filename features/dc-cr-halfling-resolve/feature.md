@@ -3,14 +3,14 @@
 - Work item id: dc-cr-halfling-resolve
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: pre-triage
-- Priority: unset (PM will set at triage)
+- Status: in_progress
+- Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: (set by PM at activation)
+- Release: 20260412-dungeoncrawler-release-s
 - Created: 2026-04-14
 
 ## Goal
@@ -32,3 +32,7 @@ Implements the Halfling Resolve ancestry feat (Feat 9): when a halfling rolls a 
 
 - [ ] Aligns with democratized community game experience
 - [ ] Does not add surveillance or restrict community access
+## Security acceptance criteria
+
+- Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
+

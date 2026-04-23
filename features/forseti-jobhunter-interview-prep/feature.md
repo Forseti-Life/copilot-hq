@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-interview-prep
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 5
+- Group: interviews-offers
+- Group Title: Interviews, Offers & Career
+- Group Sort: 1
 - Status: shipped
 - Release: 20260409-forseti-release-g
 - Feature type: enhancement

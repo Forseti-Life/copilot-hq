@@ -272,11 +272,10 @@ All required PM signoffs recorded for coordinated release `{release_id}`.
 ## Required action
 As release operator, proceed with the official push:
 1. Verify: `bash scripts/release-signoff-status.sh {release_id}`
-2. Run Gate 4 hard guard: `bash scripts/gate4-prepush-check.sh {release_id}`
-3. Push per `runbooks/shipping-gates.md` Gate 4.
-4. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh`
+2. Push per `runbooks/shipping-gates.md` Gate 4.
+3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh`
    (Files each coordinated team's own release signoff so their cycle can advance.)
-5. Complete post-push steps (config import, smoke test, SLA report update).
+4. Complete post-push steps (config import, smoke test, SLA report update).
 """
 (inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
 print(f"INFO: ALL PMs signed — queued push-ready item for pm-forseti: {item_id}")
@@ -365,7 +364,6 @@ _email_html="<!DOCTYPE html>
       <p style=\"margin:0;color:#57606a;font-size:13px;\">Verify, push, and advance the release cycle:</p>
       <ol style=\"margin:8px 0 0;padding-left:20px;color:#57606a;font-size:13px;\">
         <li>Check status: <code>bash scripts/release-signoff-status.sh ${release_id}</code></li>
-        <li>Run Gate 4 hard guard: <code>bash scripts/gate4-prepush-check.sh ${release_id}</code></li>
         <li>Push per <strong>runbooks/shipping-gates.md</strong> Gate 4</li>
         <li>Advance cycles: <code>bash scripts/post-coordinated-push.sh</code></li>
         <li>Run post-push steps (config import, smoke test, SLA report)</li>

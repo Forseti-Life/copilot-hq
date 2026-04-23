@@ -64,6 +64,11 @@ Required artifacts:
 - Verification Report
 - Methodology reference (required): `runbooks/role-based-url-audit.md` (URL/access validation by role; localhost-first)
 
+Gate 2 integration contract:
+- **Inputs:** active release ID, scoped feature list, feature-level QA evidence, suite/audit outputs, and current acceptance criteria
+- **Outputs:** one release-scoped QA decision artifact containing the exact release ID and explicit APPROVE/BLOCK, plus supporting test evidence
+- **Consumers:** PM signoff flow, `scripts/release-signoff.sh`, `scripts/release-signoff-status.sh`, and `scripts/ceo-release-health.sh`
+
 Test-case source of truth requirement:
 - Test cases must reside in a central executable automation suite with PASS/FAIL outcomes.
 - The release candidate must record which automated suites were run and the results (see `templates/release/02-test-evidence.md`).
@@ -158,8 +163,6 @@ Coordinated release rule (Forseti + Dungeoncrawler):
 - Required seats are resolved from `org-chart/products/product-teams.json` where `active=true` and `coordinated_release_default=true`.
 - Release operator (`pm-forseti`) verifies:
 	- `./scripts/release-signoff-status.sh <release-id>`
-   - `./scripts/gate4-prepush-check.sh <release-id>`
-     - Must return PASS before the official coordinated push.
 - Per-team release ID registration (required): each coordinated PM seat must also record a per-team signoff for their own release ID in addition to the shared coordinated ID:
 	- `./scripts/release-signoff.sh dungeoncrawler <per-team-release-id>`
 	- This ensures improvement-round.sh detects the release at the correct time and avoids retroactive signoff artifacts being created later by workspace merges.

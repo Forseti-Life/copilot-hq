@@ -3,6 +3,11 @@
 - Work item id: forseti-ai-conversation-job-suggestions
 - Website: forseti.life
 - Module: ai_conversation
+- Project: PROJ-005
+- Group Order: 1
+- Group: core-chat
+- Group Title: Core Chat
+- Group Sort: 2
 - Status: shipped
 - Release: 20260410-forseti-release-f
 - Feature type: enhancement

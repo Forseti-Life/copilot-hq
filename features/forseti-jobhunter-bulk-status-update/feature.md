@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-bulk-status-update
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 2
+- Group: application
+- Group Title: Application Management
+- Group Sort: 6
 - Status: done
 - Release: 20260411-coordinated-release
 - Feature type: enhancement

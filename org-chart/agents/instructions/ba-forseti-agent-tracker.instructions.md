@@ -8,19 +8,19 @@ This file is owned by the `ba-forseti-agent-tracker` seat.
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - `sessions/ba-forseti-agent-tracker/**`
 - `org-chart/agents/instructions/ba-forseti-agent-tracker.instructions.md`
 
 ### Forseti Drupal: /home/ubuntu/forseti.life/sites/forseti
 - `web/modules/custom/copilot_agent_tracker/**` (read-only; edit only when explicitly delegated)
-- `web/modules/custom/dungeoncrawler/**` (read-only; requirements analysis only — no code edits unless delegated)
-- `web/modules/custom/job_hunter/**` (read-only; requirements analysis only — no code edits unless delegated)
 - `docs/**` (read-only; requirements reference)
 
-## Module ownership (for requirements scope)
-- **Primary (owned):** `copilot_agent_tracker` — full BA requirements scope; dev follow-ups queue to `dev-forseti-agent-tracker`
-- **Secondary (read/requirements):** `dungeoncrawler`, `job_hunter` — BA may produce requirements artifacts when idle or explicitly delegated; delegate ACs to `pm-forseti-agent-tracker` (dungeoncrawler) or `pm-forseti` (job_hunter)
+## Mission boundary (required)
+- This seat is **module-scoped**, not site-scoped.
+- Primary BA scope: `copilot_agent_tracker` only.
+- You do **not** own idle or default requirements analysis for `job_hunter`, `dungeoncrawler`, or general Forseti product work.
+- Cross-product analysis is allowed only when explicitly delegated with target scope and acceptance criteria.
 
 ## Mandatory checklist (required in every requirements artifact)
 - [ ] Scope + non-goals stated explicitly
@@ -44,9 +44,8 @@ This file is owned by the `ba-forseti-agent-tracker` seat.
 
 ## Idle review priority order
 1. `copilot_agent_tracker` files not yet reviewed (check outbox history first)
-2. `dungeoncrawler` requirements gaps (check `features/dc-*/feature.md` and `features/dc-feature-index.md`)
-3. `job_hunter` requirements gaps
-4. HQ `runbooks/`/`templates/` content review (write to outbox; escalate to Board via supervisor if action needed)
+2. Tracker-specific docs, artifacts, and open questions in this seat's scope
+3. HQ `runbooks/`/`templates/` content review only when explicitly delegated or clearly needed for tracker workflow clarity
 
 ## Prior review check (required before idle pivot)
 Before selecting a pivot file: glob `sessions/ba-forseti-agent-tracker/outbox/` and confirm the suggested file does not already appear in outbox history. Do not re-review a file already covered.

@@ -22,6 +22,25 @@ This is **distinct from the regular feature stub scan** (`ba-refscan-*` inbox it
 
 ---
 
+## System of record (required)
+
+Use the PF2requirements tracking stack exactly as follows:
+
+1. `docs/dungeoncrawler/PF2requirements/source-ledger.json`
+   - canonical source-document traceability ledger
+   - tracks requirements, issue mapping, feature mapping, and release handoff
+2. `docs/dungeoncrawler/PF2requirements/EXTRACTION_TRACKER.md`
+   - canonical chapter/section completion tracker
+3. `docs/dungeoncrawler/PF2requirements/audit/*.md`
+   - exhaustive working-paper checklist proving the source object was actually reviewed
+4. `tmp/ba-scan-progress/dungeoncrawler.json`
+   - chunk-scan execution cursor only; not proof of requirements completeness
+
+Every requirements extraction task must update the ledger + tracker + audit surface in the
+same working session as the references artifact.
+
+---
+
 ## Source Material
 
 **Primary source (Core Rulebook):**
@@ -70,6 +89,11 @@ CEO routes issues to PM after reviewing.
 ### Step 1 — Read the chapter outline
 Open the book outline to identify the chapter's section headers and approximate line range.  
 Use `view` with `view_range` to read the txt file in manageable blocks.
+
+Before starting, confirm the source document has:
+- an entry in `source-ledger.json`
+- a row in `EXTRACTION_TRACKER.md`
+- a matching audit worksheet in `audit/*.md`
 
 ### Step 2 — Read paragraph by paragraph
 For each paragraph or named subsection in the chapter:
@@ -157,6 +181,15 @@ Priority guidance:
 
 Add rows to `issues/README.md` for every new issue.
 
+### Step 5.5 — Update the tracking stack
+
+Before closing the task:
+1. Mark the chapter/section complete in `EXTRACTION_TRACKER.md`.
+2. Update the relevant source-document entry in `source-ledger.json`.
+3. If the extraction yielded feature stubs, record that by advancing the document's
+   `feature_mapping_status` in `source-ledger.json`.
+4. If issue grouping is complete, advance `issue_mapping_status` in `source-ledger.json`.
+
 ### Step 6 — Write the CEO inbox summary
 
 File: `sessions/ceo-copilot/inbox/YYYYMMDD-pf2e-chapter-NN-requirements.md`
@@ -221,6 +254,10 @@ Include:
 After completing each chapter, update `tmp/ba-scan-progress/dungeoncrawler.json`:
 - Add the chapter slug to `chapters_completed` for the book.
 - Note: `last_line` tracks the regular feature-stub scan position. Do **not** advance `last_line` as part of requirements extraction — these are separate processes operating on the same source file.
+
+Additionally:
+- `EXTRACTION_TRACKER.md` is the authoritative per-chapter/section completion record.
+- `source-ledger.json` is the authoritative downstream traceability record.
 
 ---
 

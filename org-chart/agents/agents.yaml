@@ -26,6 +26,14 @@ agents:
     paused: true
     notes: "DEPRECATED. Canonical CEO seat is ceo-copilot-2. Instructions stub only — do not dispatch work here."
 
+  - id: ceo-dev-laptop
+    name: "Copilot (CEO) — Worker Node"
+    role: ceo
+    supervisor: ceo-copilot-2
+    node: dev-laptop
+    website_scope: ["forseti.life"]
+    notes: "CEO seat on the dev-laptop worker node. Handles JobHunter project only. Receives inter-node commands from ceo-copilot-2 via node mailbox and delegates to dev-jobhunter."
+
   # Product Management (module-level ownership per website)
   - id: pm-infra
     name: "PM (infrastructure)"
@@ -303,6 +311,49 @@ agents:
     supervisor: pm-open-source
     website_scope: ["open-source"]
     notes: "Validates that each repo can be cloned and stood up from docs alone on a clean machine. Runs CI smoke tests."
+
+  - id: sec-analyst-open-source
+    name: "Security Analyst (Open Source Initiative)"
+    role: security-analyst
+    supervisor: pm-open-source
+    website_scope: ["open-source"]
+    notes: "Owns publication-security review for public repo candidates: secret exposure, public-surface risk, history hygiene evidence, and safe disclosure posture."
+
+  # Integrations governance — org-wide external service configuration and ownership
+  - id: pm-integrations
+    name: "PM (Integrations Governance)"
+    role: project-manager
+    supervisor: ceo-copilot-2
+    website_scope: ["integrations"]
+    notes: "Owns PROJ-010 and the operating model for external integration inventory, ownership, storage governance, and remediation routing."
+
+  - id: ba-integrations
+    name: "BA (Integrations Governance)"
+    role: business-analyst
+    supervisor: pm-integrations
+    website_scope: ["integrations"]
+    notes: "Owns requirements and runbook clarity for integration setup, storage policy, and verification steps."
+
+  - id: dev-integrations
+    name: "Dev (Integrations Governance)"
+    role: software-developer
+    supervisor: pm-integrations
+    website_scope: ["integrations"]
+    notes: "Implements integration-governance artifacts, registry tooling, and remediation helpers. Product-specific business logic stays with the owning product dev seat unless explicitly delegated."
+
+  - id: qa-integrations
+    name: "QA (Integrations Governance)"
+    role: tester
+    supervisor: pm-integrations
+    website_scope: ["integrations"]
+    notes: "Verifies registry accuracy, setup/runbook reproducibility, and remediation evidence for external integrations. No web-audit ownership."
+
+  - id: sec-analyst-integrations
+    name: "Security Analyst (Integrations Governance)"
+    role: security-analyst
+    supervisor: pm-integrations
+    website_scope: ["integrations"]
+    notes: "Owns adversarial review of secret handling, config planes, token storage, and integration-risk findings across the org."
 
   # Architect — hands-on technical builder (human-directed, no org operations)
   - id: architect-copilot

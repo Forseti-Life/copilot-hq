@@ -3,6 +3,11 @@
 - Work item id: forseti-qa-suite-fill-controller-extraction
 - Website: forseti.life
 - Module: qa_suites
+- Project: PROJ-002
+- Group Order: 1
+- Group: e2e-coverage
+- Group Title: E2E Test Coverage
+- Group Sort: 3
 - Status: shipped
 - Release: 20260409-forseti-release-h
 - Feature type: qa-infrastructure

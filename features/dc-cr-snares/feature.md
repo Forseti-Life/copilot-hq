@@ -5,10 +5,13 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: in_progress
+- Status: done
+- PM owner: pm-dungeoncrawler
+- Dev owner: dev-dungeoncrawler
+- QA owner: qa-dungeoncrawler
 - Project: PROJ-007
 - Release: 
-20260412-dungeoncrawler-release-e
+20260412-dungeoncrawler-release-r
 
 ## Goal
 
@@ -21,6 +24,11 @@ Implement the snare crafting and placement system — snare types (Alarm/Hamperi
 ## Implementation hint
 
 `SnareEntity` stores: snare_type enum, placed_square (grid coordinate), creator_id, trigger_DC (Perception to detect), and effect payload. `PlaceSnareAction` is an exploration-phase activity consuming 1 `SnareItem` from inventory and placing a `SnareEntity` on the map. During encounter movement resolution, `SnareDetectionService` checks if a moving creature enters a snared square; if not detected, trigger the snare effect (alarm/slow/mark/damage) via the appropriate condition/damage handler. Snare Crafting feat grants access to the place-snare action; Rangers get it for free at level 1.
+
+## Latest updates
+
+- 2026-04-19: Surfaced the existing quick-craft snare handler through `DowntimePhaseHandler::getAvailableActions()` so `craft_snare` now appears in downtime action menus instead of remaining a legal-but-hidden intent.
+- 2026-04-19: Added focused unit coverage for snare placement and trigger behavior in `MagicItemService`, covering feat gating, occupied-square rejection, persisted snare metadata, and alarm-snare trigger resolution.
 
 ## Mission alignment
 
@@ -37,3 +45,13 @@ Implement the snare crafting and placement system — snare types (Alarm/Hamperi
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+- 2026-04-19 (session cont.): Added 9 targeted unit tests in MagicItemServiceSnareTest covering:
+  - Expert-crafter passive-detection guard (requires_active_search)
+  - Active-search allows detection past the guard
+  - Proficiency gate (insufficient_proficiency returned when detector rank < min_prof_detect)
+  - Creator instant-disarm (no check; 1 action)
+  - Non-creator blocked from instant-disarm
+  - disableSnare success (Thievery high roll) and failure paths
+  - Marking snare trigger — effect key present in result
+  - Striking snare trigger — damage key present in effect
+  - All 13 MagicItemServiceSnareTest assertions green (36 assertions); commit c19ac97f2

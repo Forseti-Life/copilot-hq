@@ -10,6 +10,10 @@ This file is owned by the `ba-dungeoncrawler` seat.
 - features/dc-*/feature.md  ← you create pre-triage stubs; PM owns final content
 - features/dc-feature-index.md  ← you own; update in same commit as new feature stubs
 
+### Product repo: /home/ubuntu/forseti.life
+- docs/dungeoncrawler/PF2requirements/**
+- docs/dungeoncrawler/issues/**
+
 ## Primary mission: Reference document scanning
 
 Your most important recurring task is to read the PF2E reference documentation
@@ -17,6 +21,21 @@ and extract implementable game features for the dungeoncrawler product.
 
 This happens **during Stage 3** of each release cycle, in parallel with Dev executing
 the current release and PM grooming the next release backlog.
+
+### Canonical tracking surfaces (required)
+
+You must keep these surfaces aligned:
+
+1. `tmp/ba-scan-progress/dungeoncrawler.json`
+   - execution cursor for chunk-based release-cycle feature scanning
+2. `docs/dungeoncrawler/PF2requirements/EXTRACTION_TRACKER.md`
+   - chapter/section completion tracker for requirements extraction
+3. `docs/dungeoncrawler/PF2requirements/audit/*.md`
+   - detailed completeness worksheet for headings/subheadings within a source object
+4. `docs/dungeoncrawler/PF2requirements/source-ledger.json`
+   - canonical source-document traceability ledger from requirements to issues/features/release handoff
+
+Rule: `tmp/ba-scan-progress/dungeoncrawler.json` is not evidence of requirements completeness by itself.
 
 ### Reference document scanning — how it works
 
@@ -116,7 +135,17 @@ If any check fails, fix it before committing. This must all be in **one commit**
    - Set `status: complete` if you reached end of book
    - Update `last_scan_release`
 2. **Update `features/dc-feature-index.md`**: append a row for each new feature stub (id + **category** + **depends on** + one-line summary). Sort the table by work item id. This must be in the same commit as the feature stubs. Leave `Depends on` cell blank if the stub has no dependencies.
-3. Write outbox: list each feature stub created (id + one-line description), total created, lines covered.
+3. Update `docs/dungeoncrawler/PF2requirements/source-ledger.json` for the source document you just mined:
+   - advance `feature_mapping_status` when controlled `dc-*` stubs were created
+   - add/update any notes about issue/feature/release traceability gaps
+4. Write outbox: list each feature stub created (id + one-line description), total created, lines covered.
+
+### Requirements extraction linkage
+
+When you are assigned a paragraph-by-paragraph extraction task instead of a release-cycle scan:
+- follow `runbooks/pf2e-requirements-extraction.md`
+- update `EXTRACTION_TRACKER.md` and the matching `audit/*.md`
+- update `source-ledger.json` in the same session as the new `references/*.md` artifact
 
 ## Secondary mission: Gap analysis
 
@@ -134,8 +163,8 @@ When not scanning (no scan inbox item), do a gap analysis pass:
 **Exception — improvement-round tasks:** When executing an improvement-round inbox item, you are explicitly authorized to queue follow-through inbox items for other seats (dev-infra, qa-dungeoncrawler, pm-dungeoncrawler) as the task requires. Each follow-through item must include `command.md` and `roi.txt`. After queueing, include the item paths and ROI values in your outbox.
 
 ## HQ repo path
-- This instance runs at: `/home/ubuntu/forseti.life/copilot-hq`
-- Seat file uses old path `home/keithaumiller/copilot-sessions-hq` in Owned file scope — treat `/home/ubuntu/forseti.life/copilot-hq` as equivalent.
+- This instance runs at: `/home/ubuntu/forseti.life`
+- Seat file uses old path `home/keithaumiller/copilot-sessions-hq` in Owned file scope — treat `/home/ubuntu/forseti.life` as equivalent.
 
 ## Escalation
 - Follow org-wide escalation rules in `org-chart/org-wide.instructions.md`.

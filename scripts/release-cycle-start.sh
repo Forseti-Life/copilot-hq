@@ -35,45 +35,27 @@ if [ -z "$site" ] || [ -z "$release_id" ] || [ -z "$next_release_id" ]; then
 fi
 
 if ! lookup_result="$(python3 - "$PRODUCT_TEAMS_JSON" "$site" <<'PY'
-import json
 import sys
+from pathlib import Path
 
-cfg_path = sys.argv[1]
-query = (sys.argv[2] or '').strip().lower()
+cfg_path = Path(sys.argv[1])
+query = sys.argv[2]
 
-with open(cfg_path, 'r', encoding='utf-8') as fh:
-    data = json.load(fh)
+sys.path.insert(0, str(cfg_path.parent.parent.parent / "scripts" / "lib"))
+from release_cycle_helpers import TeamLookupError, lookup_active_team  # noqa: E402
 
-teams = data.get('teams') or []
-for team in teams:
-    aliases = [str(a).strip().lower() for a in (team.get('aliases') or []) if str(a).strip()]
-    team_id = str(team.get('id') or '').strip().lower()
-    site = str(team.get('site') or '').strip().lower()
-    if query not in aliases and query != team_id and query != site:
-        continue
+try:
+    team = lookup_active_team(cfg_path, query)
+except TeamLookupError as exc:
+    print(f"ERROR: {exc}", file=sys.stderr)
+    raise SystemExit(2)
 
-    if not team.get('active', False):
-        print(f"ERROR: team is not active for query '{query}'", file=sys.stderr)
-        raise SystemExit(3)
-
-    if not team.get('release_preflight_enabled', False):
-        print(f"ERROR: release preflight disabled for team '{team.get('id')}'", file=sys.stderr)
-        raise SystemExit(3)
-
-    qa_agent = str(team.get('qa_agent') or '').strip()
-    pm_agent = str(team.get('pm_agent') or '').strip()
-    normalized_site = str(team.get('site') or '').strip()
-    team_id_out = str(team.get('id') or '').strip()
-    if not qa_agent or not normalized_site:
-        print(f"ERROR: team '{team_id_out}' missing qa_agent/site in registry", file=sys.stderr)
-        raise SystemExit(4)
-
-    print(f"{team_id_out}\t{normalized_site}\t{qa_agent}\t{pm_agent}")
-    raise SystemExit(0)
-
-print(f"ERROR: unknown site/team alias: {query}", file=sys.stderr)
-print("Update org-chart/products/product-teams.json to onboard this team.", file=sys.stderr)
-raise SystemExit(2)
+print(
+    f"{str(team.get('id') or '').strip()}\t"
+    f"{str(team.get('site') or '').strip()}\t"
+    f"{str(team.get('qa_agent') or '').strip()}\t"
+    f"{str(team.get('pm_agent') or '').strip()}"
+)
 PY
   2>&1)"; then
   echo "$lookup_result" >&2
@@ -88,10 +70,10 @@ slug="$(echo "$release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | c
 item_id="${today}-release-preflight-test-suite-${slug}"
 inbox_dir="sessions/${qa_agent}/inbox/${item_id}"
 outbox_file="sessions/${qa_agent}/outbox/${item_id}.md"
+preflight_skip_reason=""
 
 if [ -d "$inbox_dir" ] || [ -f "$outbox_file" ]; then
-  echo "OK: already queued/completed: ${qa_agent} ${item_id}"
-  exit 0
+  preflight_skip_reason="OK: already queued/completed: ${qa_agent} ${item_id}"
 fi
 
 # GAP-QA-PREFLIGHT-DEDUP-01: suppress redundant preflight dispatches.
@@ -124,9 +106,8 @@ if [ -n "$_recent_outbox" ]; then
       -- "qa-suites/" "org-chart/sites/*/qa-permissions.json" "features/**/03-test-plan.md" \
       2>/dev/null | head -1 || true)
   fi
-  if [ -z "$_qa_commits" ]; then
-    echo "PREFLIGHT-SUPPRESSED: recent outbox exists (${_recent_outbox}), no QA-scoped commits since ${_outbox_iso}; skipping dispatch."
-    exit 0
+  if [ -z "$_qa_commits" ] && [ -z "$preflight_skip_reason" ]; then
+    preflight_skip_reason="PREFLIGHT-SUPPRESSED: recent outbox exists (${_recent_outbox}), no QA-scoped commits since ${_outbox_iso}; skipping dispatch."
   fi
 fi
 
@@ -143,8 +124,12 @@ printf '%s\n' "$(date -Iseconds)" > "tmp/release-cycle-active/${team_id}.started
 # Count features with Status: in_progress AND Release: <release_id> — if zero, skip dispatch.
 _pf_feat_count=$(grep -rl "^- Status: in_progress" features/ 2>/dev/null \
   | xargs grep -l "^- Release:.*${release_id}" 2>/dev/null | wc -l | tr -d '[:space:]' || echo 0)
-if [ "${_pf_feat_count:-0}" -eq 0 ]; then
-  echo "PREFLIGHT-SUPPRESSED: no features activated for release ${release_id}; skipping preflight dispatch."
+if [ -n "$preflight_skip_reason" ]; then
+  echo "$preflight_skip_reason"
+  qa_status_line="$preflight_skip_reason"
+elif [ "${_pf_feat_count:-0}" -eq 0 ]; then
+  qa_status_line="PREFLIGHT-SUPPRESSED: no features activated for release ${release_id}; skipping preflight dispatch."
+  echo "$qa_status_line"
 else
 
 mkdir -p "$inbox_dir" 2>/dev/null || true
@@ -184,6 +169,10 @@ MD
 
 fi  # end PREFLIGHT-SUPPRESSED gate
 
+if [ -z "${qa_status_line:-}" ]; then
+  qa_status_line="QUEUED: ${qa_agent} ${item_id} (current release: ${release_id})"
+fi
+
 # Create PM grooming task for the next release (parallel to Dev execution this cycle)
 if [ -n "$pm_agent" ]; then
   next_slug="$(echo "$next_release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | cut -c1-60)"
@@ -214,12 +203,35 @@ This task does NOT touch the current release. All work here is for ${next_releas
 
 ## Steps
 
-### 1. Pull community suggestions
+### 1. Audit the existing next-release backlog first
+\`\`\`bash
+python3 - <<'PY'
+import pathlib, re
+site = "${site}"
+for fm in sorted(pathlib.Path("features").glob("*/feature.md")):
+    text = fm.read_text(encoding="utf-8")
+    if f"- Website: {site}" not in text:
+        continue
+    m = re.search(r"^- Status:\s*(.+)$", text, re.MULTILINE)
+    if not m:
+        continue
+    status = m.group(1).strip()
+    if status not in {"planned", "ready", "in_progress"}:
+        continue
+    ac = fm.with_name("01-acceptance-criteria.md").exists()
+    tp = fm.with_name("03-test-plan.md").exists()
+    if not (ac and tp):
+        print(f"{fm.parent.name}: status={status} ac={ac} testplan={tp}")
+PY
+\`\`\`
+If this prints any features, finish those backlog items before treating suggestion intake as done.
+
+### 2. Pull community suggestions
 \`\`\`bash
 ./scripts/suggestion-intake.sh ${team_id}
 \`\`\`
 
-### 2. Triage each suggestion
+### 3. Triage each suggestion
 \`\`\`bash
 ./scripts/suggestion-triage.sh ${team_id} <nid> accept <feature-id>
 ./scripts/suggestion-triage.sh ${team_id} <nid> defer
@@ -232,18 +244,19 @@ or a major architecture replatform/rewrite,
 do NOT accept at PM level. Use \`escalate\` so it is reviewed at human board level first.
 Otherwise continue normal PM triage so the majority of valid product requests can flow.
 
-### 3. Write Acceptance Criteria for each accepted feature
+### 4. Write or complete Acceptance Criteria
   features/<feature-id>/01-acceptance-criteria.md  (from templates/01-acceptance-criteria.md)
-  Must be complete before handing to QA.
+  Any accepted or already-tracked next-release feature missing AC must be completed before handing to QA.
 
-### 4. Hand off to QA for test plan design
+### 5. Hand off to QA for test plan design
 \`\`\`bash
 ./scripts/pm-qa-handoff.sh ${team_id} <feature-id>
 \`\`\`
+Any next-release feature that has AC but is missing \`03-test-plan.md\` must be handed off.
 QA writes features/<id>/03-test-plan.md (spec only — NOT added to suite.json until Stage 0).
 QA signals back via qa-pm-testgen-complete.sh when done.
 
-### 5. When next Stage 0 starts: activate scoped features
+### 6. When next Stage 0 starts: activate scoped features
 For each feature selected into ${next_release_id}:
 \`\`\`bash
 ./scripts/pm-scope-activate.sh ${team_id} <feature-id>
@@ -255,6 +268,8 @@ A feature is ready when ALL THREE exist:
 - features/<id>/feature.md          (status: ready)
 - features/<id>/01-acceptance-criteria.md
 - features/<id>/03-test-plan.md
+
+If suggestion intake returns nothing, the grooming task is still not done until the backlog audit above is clean.
 
 Security override: any feature requiring board-security review is ineligible until explicit board approval is documented.
 
@@ -301,14 +316,5 @@ MD
   echo "QUEUED: agent-code-review ${cr_item_id} (current release: ${release_id})"
 fi
 
-# Trigger a fresh site audit immediately so the Gate 2 clean-audit backstop can
-# evaluate the new release cycle as soon as it starts (rather than waiting up to
-# 2 hours for the next CEO ops cycle or up to 1 hour for the audit cron).
-# GAP-GATE2-AUDIT-TIMING: audit must be ≤1 cycle old relative to release activation.
-if [ -n "${team_id:-}" ]; then
-  echo "Triggering site audit for ${team_id} at release cycle start..."
-  bash scripts/site-audit-run.sh "${team_id}" </dev/null 2>&1 | tail -5 || true
-fi
-
-echo "QUEUED: ${qa_agent} ${item_id} (current release: ${release_id})"
+echo "$qa_status_line"
 echo "RELEASE_CYCLE_ACTIVE: ${team_id} current=${release_id} next=${next_release_id}"

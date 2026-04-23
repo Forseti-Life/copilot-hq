@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-job-match-score
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 3
+- Group: discovery
+- Group Title: Job Discovery & Search
+- Group Sort: 3
 - Status: shipped
 - Release: 20260410-forseti-release-f
 - Feature type: enhancement

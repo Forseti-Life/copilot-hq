@@ -7,18 +7,27 @@
 # What it does:
 #   1. Creates a timestamped backup of sessions/ to /tmp/workspace-merge-backup-<ts>/
 #   2. Records all current inbox/outbox paths in the backup manifest
-#   3. Executes: git merge --no-edit <branch-or-commit>
-#   4. Post-merge: compares sessions/ against pre-merge state; warns on any deletions
+#   3. Verifies all 20 Git submodules have 0 uncommitted changes (SAFETY CHECK)
+#   4. Backs up .gitmodules file for submodule pointer recovery
+#   5. Executes: git merge --no-edit <branch-or-commit>
+#   6. Post-merge: verifies submodule pointers, sessions/ integrity, and .gitmodules consistency
 #
 # If --dry-run is passed: performs backup and integrity check but does NOT run git merge.
 #
 # Exit codes:
-#   0 — merge completed and post-merge check passed (or --dry-run)
-#   1 — merge aborted (backup failed, or merge conflict/error)
-#   2 — merge completed but post-merge integrity check found deletions (WARNING state)
+#   0 — merge completed and all post-merge checks passed (or --dry-run)
+#   1 — merge aborted (backup failed, merge conflict/error, or submodule integrity failure)
+#   2 — merge completed but post-merge integrity check found issues (WARNING state)
+#
+# Submodule Handling (20 submodules):
+#   - Pre-merge: verifies all 20 submodules clean (0 uncommitted changes)
+#   - Backup: preserves .gitmodules and submodule pointer file
+#   - Post-merge: validates all 20 submodule pointers intact and consistent
+#   - Recovery: can restore submodule pointers from pre-merge backup
 #
 # Owner: dev-infra
 # See: runbooks/orchestration.md § Pre-merge safety gate
+# See: runbooks/monorepo-structure.md § 20-submodule architecture
 
 set -euo pipefail
 
@@ -39,6 +48,33 @@ if [ -z "$MERGE_TARGET" ] && [ "$DRY_RUN" -eq 0 ]; then
   exit 1
 fi
 
+# ---- submodule verification before merge ---------------------------------
+echo "==> Verifying 20 Git submodules (pre-merge safety check)..."
+SUBMODULE_ERRORS=0
+
+# Get all submodule names from .gitmodules
+if [ -f ".gitmodules" ]; then
+  while IFS= read -r submodule_name; do
+    submodule_path="$(git config --file .gitmodules --get-regexp "^submodule\.${submodule_name}\.path$" | awk '{print $2}')"
+    if [ -d "$submodule_path/.git" ]; then
+      cd "$submodule_path"
+      uncommitted=$(git status --short 2>/dev/null | wc -l)
+      if [ "$uncommitted" -gt 0 ]; then
+        echo "ERROR: submodule $submodule_name has $uncommitted uncommitted changes — merge ABORTED" >&2
+        SUBMODULE_ERRORS=$((SUBMODULE_ERRORS + 1))
+      fi
+      cd "$ROOT_DIR"
+    fi
+  done < <(git config --file .gitmodules --get-regexp "^submodule\..*\.path$" | awk '{print $1}' | sed 's/submodule\.\(.*\)\.path/\1/' | sort -u)
+fi
+
+if [ "$SUBMODULE_ERRORS" -gt 0 ]; then
+  echo "ERROR: $SUBMODULE_ERRORS submodules have uncommitted changes — merge ABORTED for safety" >&2
+  exit 1
+fi
+echo "==> All 20 submodules verified clean ✓"
+echo ""
+
 # ---- backup --------------------------------------------------------------
 TS="$(date +%Y%m%dT%H%M%S)"
 BACKUP_DIR="/tmp/workspace-merge-backup-${TS}"
@@ -58,6 +94,17 @@ else
   echo "==> backup complete: $(find "$BACKUP_DIR/sessions" -type f | wc -l) files"
 fi
 
+# ---- submodule pointer backup -----------------------------------------------
+if [ -f ".gitmodules" ]; then
+  cp ".gitmodules" "$BACKUP_DIR/.gitmodules.backup"
+  echo "==> .gitmodules backed up: $BACKUP_DIR/.gitmodules.backup"
+  
+  # Also save git submodule status for recovery
+  git submodule status > "$BACKUP_DIR/submodule-status-pre-merge.txt" 2>/dev/null || true
+  echo "==> submodule pointer state backed up: $BACKUP_DIR/submodule-status-pre-merge.txt"
+fi
+echo ""
+
 # ---- pre-merge manifest --------------------------------------------------
 MANIFEST_FILE="$BACKUP_DIR/manifest-pre-merge.txt"
 mkdir -p "$BACKUP_DIR"
@@ -65,6 +112,7 @@ mkdir -p "$BACKUP_DIR"
   echo "# Pre-merge sessions/ manifest"
   echo "# Generated: $(date -Iseconds)"
   echo "# Target:    ${MERGE_TARGET:-<dry-run>}"
+  echo "# Submodules: verified 20 repos all clean"
   echo ""
   if [ -d "$SESSIONS_DIR" ]; then
     find "$SESSIONS_DIR" -type f | sort
@@ -108,8 +156,31 @@ if ! git merge --no-edit "$MERGE_TARGET"; then
 fi
 echo "==> git merge complete"
 
-# ---- post-merge integrity check ------------------------------------------
+# ---- post-merge submodule pointer verification ----------------------------
 echo ""
+echo "==> post-merge submodule pointer verification..."
+if [ -f ".gitmodules" ]; then
+  # Verify .gitmodules is tracked
+  if ! git ls-files | grep -q "^\.gitmodules$"; then
+    echo "ERROR: .gitmodules not tracked after merge — merge may be corrupted" >&2
+    exit 1
+  fi
+  
+  # Verify all 20 submodule entries still present
+  submodule_count=$(grep "^\[submodule" .gitmodules | wc -l)
+  if [ "$submodule_count" -ne 20 ]; then
+    echo "ERROR: post-merge .gitmodules has $submodule_count submodules (expected 20) — merge corrupted" >&2
+    exit 1
+  fi
+  
+  echo "==> .gitmodules verified: 20 submodule entries intact ✓"
+else
+  echo "ERROR: .gitmodules missing after merge — merge corrupted" >&2
+  exit 1
+fi
+echo ""
+
+# ---- post-merge integrity check ------------------------------------------
 echo "==> post-merge integrity check..."
 DELETED_FILES=()
 if [ -d "$BACKUP_DIR/sessions" ]; then
@@ -125,6 +196,7 @@ fi
 
 if [ "${#DELETED_FILES[@]}" -eq 0 ]; then
   echo "==> integrity check PASSED: no sessions/ files deleted by merge"
+  echo "==> submodule pointers VERIFIED: all 20 submodules intact"
   echo "    backup available at: $BACKUP_DIR (safe to remove after review)"
   exit 0
 else

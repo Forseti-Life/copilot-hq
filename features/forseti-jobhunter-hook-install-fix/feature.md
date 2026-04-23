@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-hook-install-fix
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 6
+- Group: infrastructure
+- Group Title: Technical Infrastructure
+- Group Sort: 4
 - Status: shipped
 - Release: 20260409-forseti-release-j
 - Priority: P1

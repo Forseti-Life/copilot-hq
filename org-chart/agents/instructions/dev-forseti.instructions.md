@@ -5,7 +5,7 @@ This file is owned by the `dev-forseti` seat. You may update it to improve your 
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - sessions/dev-forseti/**
 - org-chart/agents/instructions/dev-forseti.instructions.md
 - features/*/02-implementation-notes.md  ← your artifact in every feature's living doc
@@ -13,17 +13,29 @@ This file is owned by the `dev-forseti` seat. You may update it to improve your 
 ### Forseti Drupal: /home/ubuntu/forseti.life/sites/forseti
 - web/modules/custom/forseti_content/** (routing/ACL fixes only; escalate functional/feature changes to pm-forseti)
 - web/modules/custom/forseti_safety_content/** (routing/ACL fixes only; escalate functional/feature changes to pm-forseti)
+- web/modules/custom/copilot_agent_tracker/** (Release 20260412-forseti-release-q: primary dev for observe + admin console features)
 
 **Scope expansion rule (forseti_content / forseti_safety_content):** Edits in these modules are permitted only when fixing ACL/routing regressions where the fix is a `_permission` or `_user_is_logged_in` change with no functional/UX impact. Any other change requires pm-forseti approval first.
+
+**Release 20260412-forseti-release-q allocation:** Dev-forseti assigned as primary implementer for:
+- `forseti-langgraph-console-observe` (Phase 5, P1, Group 4): node traces, runtime metrics, drift detection, alerts
+- `forseti-langgraph-console-admin` (Phase 7, P2, Group 5): admin settings, audit log, health dashboard, navigation controls
+Execution order: observe (foundational) → admin (configuration layer) to reduce rework and risk.
 
 **Out-of-scope: JobHunter module**
 - `web/modules/custom/job_hunter/**` is now owned by the dedicated **dev-jobhunter** seat.
 - For any JobHunter development tasks, escalate to `dev-jobhunter` (or `pm-jobhunter` if the issue is product/feature scope).
-- See: `copilot-hq/org-chart/agents/instructions/dev-jobhunter.instructions.md`
+- See: `org-chart/agents/instructions/dev-jobhunter.instructions.md`
 
 ## Task types — how to read a QA findings inbox item
 
 Every QA findings item you receive is one of two types. Check the command.md header:
+
+## QA handshake
+- **Dev receives from QA:** `03-test-plan.md` for groomed features, or failing evidence / verdict artifacts for regressions and release blockers
+- **Dev sends to QA:** updated `02-implementation-notes.md`, commit hash, changed paths/behaviors, and a clear "ready for retest" handoff marker in outbox
+- **Dev must include:** any route/permission matrix or pre-QA audit results that affect how QA should retest
+- **Do not expect QA to infer changes from code diff alone**; always provide retest guidance explicitly
 
 ### Type A: NEW FEATURE IMPLEMENTATION
 **Signal:** command.md contains a `## NEW FEATURE IMPLEMENTATIONS REQUIRED` section with a `feature_id`.
@@ -86,7 +98,7 @@ The `features/<feature_id>/` directory is a **shared workspace** for PM, QA, and
 
 For any JobHunter development, QA findings, or feature work:
 - **Route to:** `dev-jobhunter` (development), `pm-jobhunter` (product/feature scope), `qa-jobhunter` (testing)
-- **See:** `copilot-hq/org-chart/agents/instructions/{dev,pm,qa}-jobhunter.instructions.md`
+- **See:** `org-chart/agents/instructions/{dev,pm,qa}-jobhunter.instructions.md`
 
 JobHunter has its own dedicated team structure and sits outside Forseti product scope.
 
@@ -107,6 +119,28 @@ What to look for:
 - If QA probe shows `final_url: /user/register` for an authenticated role: the QA session is not authenticated (QA tooling issue), not a Drupal permission issue. Flag to qa-forseti for probe auth investigation.
 
 This eliminates 1–2 executor round-trips per regression cycle and enables faster diagnosis within dev-forseti scope.
+
+## QA session cookie provisioning (PROJ-002 Phase 3)
+
+As of commit `762caf306`, authenticated session cookies for role-based QA passes are provisioned **automatically** via collocated drush OTL — no manual injection needed.
+
+How it works:
+- `scripts/site-audit-run.sh` checks for `vendor/bin/drush` in the `drupal_root` from `qa-permissions.json`.
+- If present (collocated drush), it runs `drupal-qa-sessions.py` in OTL mode even against `https://forseti.life`.
+- `drupal-qa-sessions.py` calls `jhtr:qa-users-ensure` to create/verify `qa_tester_<role>` users, then gets OTL URLs and captures `SSESS*` cookies via urllib.
+- Env vars exported: `FORSETI_COOKIE_AUTHENTICATED`, `FORSETI_COOKIE_CONTENT_EDITOR`, `FORSETI_COOKIE_ADMINISTRATOR`.
+
+Run:
+```bash
+ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh forseti
+```
+
+Session validity guard: `scripts/site-full-audit.py` now excludes `/logout` paths from crawls so authenticated sessions are never invalidated mid-run.
+
+Known QA users (production):
+- `qa_tester_authenticated` uid=1600
+- `qa_tester_content_editor` uid=1601
+- `qa_tester_administrator` uid=1602
 
 ## Known QA queue noise patterns (do not block on these)
 

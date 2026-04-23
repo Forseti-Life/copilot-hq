@@ -35,13 +35,14 @@ if [ ! -f "$PRODUCT_TEAMS_JSON" ]; then
 fi
 
 python3 - "$PRODUCT_TEAMS_JSON" "$ACTIVE_DIR" "$PUSHED_DIR" "$ROOT_DIR" <<'PY'
-import json
 import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 teams_json, active_dir, pushed_dir, root = map(Path, sys.argv[1:5])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from release_cycle_helpers import coordinated_teams, has_groom_item  # noqa: E402
 
 
 def read_text(path: Path) -> str:
@@ -86,22 +87,6 @@ def has_scope_activate_item(pm_inbox: Path, release_id: str) -> bool:
             return True
     return False
 
-
-def has_groom_item(root: Path, pm_agent: str, next_release_id: str) -> bool:
-    slug = re.sub(r"[^A-Za-z0-9._-]", "-", next_release_id).strip("-")[:60]
-    inbox = root / "sessions" / pm_agent / "inbox"
-    outbox = root / "sessions" / pm_agent / "outbox"
-    if inbox.exists():
-        for item in inbox.iterdir():
-            if item.is_dir() and item.name != "_archived" and item.name.endswith(f"-groom-{slug}"):
-                return True
-    if outbox.exists():
-        for item in outbox.glob(f"*-groom-{slug}.md"):
-            if item.is_file():
-                return True
-    return False
-
-
 def write_scope_activate_item(root: Path, pm_agent: str, team_id: str, release_id: str, ready_feats: list[str]) -> Path:
     inbox = root / "sessions" / pm_agent / "inbox"
     inbox.mkdir(parents=True, exist_ok=True)
@@ -131,11 +116,7 @@ def write_scope_activate_item(root: Path, pm_agent: str, team_id: str, release_i
     return item_dir
 
 
-with open(teams_json, encoding="utf-8") as fh:
-    teams = [
-        team for team in json.load(fh).get("teams", [])
-        if team.get("active") and team.get("coordinated_release_default")
-    ]
+teams = coordinated_teams(teams_json)
 
 features_root = root / "features"
 failures = 0

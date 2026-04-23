@@ -8,7 +8,7 @@ The CEO has **full authority** to modify any file in any repository in this org.
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life/copilot-hq
+### HQ repo: /home/ubuntu/forseti.life
 - `org-chart/**` — instruction stack, agent config, priorities, ownership
 - `runbooks/**` — operational runbooks
 - `scripts/**` — HQ automation scripts
@@ -20,6 +20,7 @@ The CEO has **full authority** to modify any file in any repository in this org.
 - `sessions/**` — queue structure + maintenance (avoid editing another seat's inbox items unless delegated)
 - `tmp/**` — operational state
 - `org-chart/agents/instructions/ceo-copilot-2.instructions.md` — this file
+- Canonical live HQ root is `/home/ubuntu/forseti.life`. The nested `copilot-hq/` directory is a subtree/export artifact only and must not be used as a second inbox root.
 
 ### Forseti.life: /home/ubuntu/forseti.life
 - `sites/forseti/**` (full authority — fix, configure, deploy, commit)
@@ -253,15 +254,6 @@ Before completing any improvement-round inbox item, scan session outboxes and KB
 > **Master node only.** The CEO on a worker/slave node does NOT assign projects or dispatch work.
 > Project assignment and task dispatch are exclusively performed by the CEO running on the master node.
 > If `node-identity.conf` has `NODE_ROLE=worker`, `ceo-dispatch-project-task.sh` will refuse to run.
-
-### Shared-codebase guardrail (required)
-Master and worker nodes share one codebase. CEO must enforce that worker-targeted changes are master-compatible and non-disruptive to other projects.
-
-Before approving/merging node-affecting changes:
-1. Confirm node-specific behavior is role-gated (`NODE_ROLE`/`NODE_ACTIVE_AGENTS`) rather than globally hardcoded.
-2. Confirm safe fallback behavior when node identity is absent or stale.
-3. Confirm non-target projects keep their normal routing/execution behavior.
-4. Reject changes that encode machine-local assumptions in tracked files; require gitignored local config instead.
 
 For development-node dispatch, CEO must route by project id/alias (not ad-hoc seat selection):
 

@@ -53,14 +53,9 @@ latest_mtime_epoch() {
     echo 0
     return
   fi
-  # Latest mtime among files/dirs under path.
-  local latest
-  latest=$(find "$path" -mindepth 1 2>/dev/null | while IFS= read -r f; do stat -c '%Y' "$f" 2>/dev/null || echo 0; done | sort -n | tail -n 1 || true)
-  if [ -z "$latest" ]; then
-    echo 0
-  else
-    printf '%.0f\n' "$latest"
-  fi
+  # Use stat on the directory itself for quick mtime (when files are added/removed).
+  # This is fast and sufficient for detecting recent activity.
+  stat -c '%Y' "$path" 2>/dev/null || echo 0
 }
 
 fmt_age() {
@@ -137,7 +132,7 @@ pid_status "Orchestrator" ".orchestrator-loop.pid"
 pid_status "Agent exec" ".agent-exec-loop.pid"
 pid_status "CEO ops" ".ceo-ops-loop.pid"
 pid_status "CEO health" ".ceo-health-loop.pid"
-pid_status "Publisher" ".publish-forseti-agent-tracker-loop.pid"
+pid_status "Publisher loop" ".publish-forseti-agent-tracker-loop.pid"
 pid_status "Checkpoint" ".auto-checkpoint-loop.pid"
 pid_status "Improve round" ".improvement-round-loop.pid"
 
@@ -267,7 +262,22 @@ for a in agents:
 PY
 )
 
-if [ "$_starvation_exit" -ne 0 ] || [ "$_merge_exit" -ne 0 ]; then
+# ── Release efficiency analysis ──────────────────────────────────────────────
+# Post-release retrospective: redundant dev passes, executor quarantine rate,
+# CEO proxy load, shipping lag, code-review gate, and Gate R5 delay.
+# Runs only when SKIP_RELEASE_EFFICIENCY is not set (default: runs always).
+
+_efficiency_exit=0
+if [ "${SKIP_RELEASE_EFFICIENCY:-0}" != "1" ]; then
+  echo
+  efficiency_out="$(python3 ./scripts/release-efficiency-analysis.py 2>/dev/null || true)"
+  echo "$efficiency_out"
+  if echo "$efficiency_out" | grep -q "^❌ FAIL"; then
+    _efficiency_exit=1
+  fi
+fi
+
+if [ "$_starvation_exit" -ne 0 ] || [ "$_merge_exit" -ne 0 ] || [ "$_efficiency_exit" -ne 0 ]; then
   exit 1
 fi
 

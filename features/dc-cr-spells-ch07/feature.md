@@ -3,10 +3,10 @@
 - Work item id: dc-cr-spells-ch07
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Priority: P1
 - Release: 
-20260412-dungeoncrawler-release-e
+20260412-dungeoncrawler-release-r
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -27,6 +27,13 @@ Implement the spell catalog — covering all CRB spells (levels 1–10) with ful
 ## Implementation hint
 
 Define a `Spell` entity with fields: id, name, rank (1-10 for spells, 0 for cantrips), traditions[], cast_time, components[] (verbal/somatic/material/focus), range, area, targets, duration, save_type, effect_text, heightened_entries[]. `HeightenedEntry` is a sub-entity with rank_delta and modified_fields (JSON diff). `CantripHeighteningService` auto-computes the effective rank as `ceil(caster_level / 2)`. Implement a bulk import for ~400 CRB spells from structured JSON; ensure traditions is an array to support multi-tradition spells.
+
+## Latest updates
+
+- 2026-04-19: Unit test coverage added for all SpellCatalogService AC items (32 tests/77 assertions): cantrip auto-heightening, focus spell effective rank, focus pool cap, heightened entries (specific and cumulative), spontaneous caster heightening gate, innate spell daily usage, cast time phase validation, spell data model validation. Also fixed a bug in resetInnateSpells() where `?? []` in a foreach-by-reference expression caused writes to never propagate back to entity_state. Commit: 32a01152c.
+
+- 2026-04-19: Fixed an encounter-phase spellcasting bug where Chapter 7 cast blockers could still consume actions through the generic `cast_spell` path. Blocked casts now return failure immediately instead of spending actions or emitting cast events.
+- 2026-04-19: Added focused unit coverage for the encounter cast-time phase guard and polymorph battle-form cast blocker so those rejected casts remain non-consuming failures.
 
 ## Mission alignment
 

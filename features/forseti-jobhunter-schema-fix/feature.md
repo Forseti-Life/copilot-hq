@@ -3,6 +3,11 @@
 - Work item id: forseti-jobhunter-schema-fix
 - Website: forseti.life
 - Module: job_hunter
+- Project: PROJ-004
+- Group Order: 6
+- Group: infrastructure
+- Group Title: Technical Infrastructure
+- Group Sort: 5
 - Status: shipped
 - Release: 20260408-forseti-release-c
 - Priority: P2

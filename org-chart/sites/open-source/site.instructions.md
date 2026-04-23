@@ -24,6 +24,13 @@ This is not just a collection of Drupal modules. It is a complete, self-operatin
 ## Applies to
 All seats with `website_scope: ["open-source"]`.
 
+## Team lanes
+- PM: `pm-open-source`
+- BA: `ba-open-source`
+- Dev: `dev-open-source`
+- QA: `qa-open-source`
+- Security: `sec-analyst-open-source`
+
 ## Scope — What Gets Open Sourced
 
 ### Platform Overview Repo (new — highest priority, tells the whole story)
@@ -118,3 +125,4 @@ GH_TOKEN=$(cat /home/ubuntu/github.token) gh repo create Forseti-Life/<repo-name
 - Each public repo must pass its own CI before going public.
 - `drupal-ai-conversation` module: test on clean Drupal 10 and 11 install.
 - `copilot-agent-framework`: test orchestrator on clean Python 3.12 venv.
+- Publication-security review is a distinct gate: `sec-analyst-open-source` validates secret/history hygiene and public-surface safety before PM freezes a candidate.
