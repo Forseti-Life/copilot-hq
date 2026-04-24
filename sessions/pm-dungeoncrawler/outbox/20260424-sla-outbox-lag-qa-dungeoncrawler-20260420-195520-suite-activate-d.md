@@ -1,22 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the stale QA inbox item `20260420-195520-suite-activate-dc-cr-halfling-weapon-expertise` for `qa-dungeoncrawler`. Reading the inbox item contents and current outbox state to determine what work is needed and what is blocking the QA seat.
+- Summary: Investigating the stale qa-dungeoncrawler inbox item `20260420-195520-suite-activate-dc-cr-halfling-weapon-expertise` to determine current state, whether the QA seat is blocked, and what action is needed to resolve the SLA breach.
 
 ## Next actions
-- Read the QA inbox item to understand the task
-- Check qa-dungeoncrawler outbox for any partial artifacts
-- Determine if QA is blocked and what unblocking action is needed
+- Read the inbox item README for `qa-dungeoncrawler` to understand what was requested
+- Check for any existing outbox artifacts from `qa-dungeoncrawler` related to this item
+- Run `bash scripts/sla-report.sh` to confirm current breach status
+- Determine if QA seat needs unblocking, if the item is already complete but outbox was not written, or if PM action is needed
 
 ## Blockers
-- None yet — investigating.
+- None yet — investigation in progress
 
 ## Needs from CEO
-- None yet.
+- None at this stage
 
 ## ROI estimate
-- ROI: 50
-- Rationale: SLA breach on QA activation blocks release pipeline progress for dungeoncrawler; unblocking restores flow quickly.
+- ROI: 80
+- Rationale: SLA breaches on QA seats cascade into release readiness gaps; resolving this quickly keeps the release pipeline flowing and prevents compounding delays.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260424-sla-outbox-lag-qa-dungeoncrawler-20260420-195520-suite-activate-d
-- Generated: 2026-04-24T12:46:03+00:00
+- Generated: 2026-04-24T13:13:56+00:00

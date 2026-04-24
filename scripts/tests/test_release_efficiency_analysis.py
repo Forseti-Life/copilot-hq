@@ -33,14 +33,97 @@ def test_find_r5_audit_time_uses_filename_timestamp(tmp_path):
     qa_outbox = root / "sessions" / "qa-dungeoncrawler" / "outbox"
     qa_outbox.mkdir(parents=True)
     artifact = qa_outbox / "20260420-140050-gate2-approve-20260412-dungeoncrawler-release-s.md"
-    artifact.write_text("approve\n", encoding="utf-8")
+    artifact.write_text("- Status: done\napprove\n", encoding="utf-8")
     artifact.touch()
 
     push_time = datetime(2026, 4, 20, 13, 28, 58, tzinfo=timezone.utc)
 
-    dt = mod.find_r5_audit_time("dungeoncrawler", push_time)
+    dt = mod.find_r5_audit_time("dungeoncrawler", push_time, "20260412-dungeoncrawler-release-s")
 
     assert dt == datetime(2026, 4, 20, 14, 0, 50, tzinfo=timezone.utc)
+
+
+def test_find_r5_audit_time_ignores_unrelated_recovery_pass(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    ceo_outbox = root / "sessions" / "ceo-copilot-2" / "outbox"
+    qa_outbox = root / "sessions" / "qa-forseti" / "outbox"
+    ceo_outbox.mkdir(parents=True)
+    qa_outbox.mkdir(parents=True)
+
+    (ceo_outbox / "20260420-111315-dungeoncrawler-recovery-pass.md").write_text(
+        "- Summary: Gate R5 production audit for dungeoncrawler release 20260412-dungeoncrawler-release-s\n",
+        encoding="utf-8",
+    )
+    (qa_outbox / "20260420-191623-gate2-explicit-approval.md").write_text(
+        "- Status: done\npost-push approval for 20260412-forseti-release-q\n",
+        encoding="utf-8",
+    )
+
+    push_time = datetime(2026, 4, 20, 5, 3, 4, tzinfo=timezone.utc)
+
+    dt = mod.find_r5_audit_time("forseti", push_time, "20260412-forseti-release-q")
+
+    assert dt == datetime(2026, 4, 20, 19, 16, 23, tzinfo=timezone.utc)
+
+
+def test_find_r5_audit_time_ignores_generic_gate2_followup_without_release_id(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    qa_outbox = root / "sessions" / "qa-forseti" / "outbox"
+    qa_outbox.mkdir(parents=True)
+    (qa_outbox / "20260420-191623-gate2-explicit-approval.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+
+    push_time = datetime(2026, 4, 20, 5, 3, 4, tzinfo=timezone.utc)
+
+    dt = mod.find_r5_audit_time("forseti", push_time, "20260412-forseti-release-q")
+
+    assert dt is None
+
+
+def test_find_r5_audit_time_ignores_incomplete_followup_audits(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    qa_outbox = root / "sessions" / "qa-forseti" / "outbox"
+    qa_outbox.mkdir(parents=True)
+    (qa_outbox / "20260420-rerun-full-audit-forseti.life-20260420-105935.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+
+    push_time = datetime(2026, 4, 20, 5, 3, 4, tzinfo=timezone.utc)
+
+    dt = mod.find_r5_audit_time("forseti", push_time, "20260412-forseti-release-q")
+
+    assert dt is None
+
+
+def test_find_r5_audit_time_ignores_completed_audits_for_other_releases(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    qa_outbox = root / "sessions" / "qa-forseti" / "outbox"
+    qa_outbox.mkdir(parents=True)
+    (qa_outbox / "20260405-post-release-audit-20260322-forseti-release-next.md").write_text(
+        "- Status: done\n",
+        encoding="utf-8",
+    )
+
+    push_time = datetime(2026, 4, 20, 5, 3, 4, tzinfo=timezone.utc)
+
+    dt = mod.find_r5_audit_time("forseti", push_time, "20260412-forseti-release-q")
+
+    assert dt is None
 
 
 def test_ceo_proxy_sessions_skip_needs_dispatches(tmp_path):

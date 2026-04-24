@@ -380,6 +380,10 @@ def manual_code_review_gate_verdict(release_id: str) -> Optional[str]:
     return "approve" if saw_approve else None
 
 
+def is_completed_outbox(path: pathlib.Path) -> bool:
+    return outbox_status(path) in ("done", "approved", "approve")
+
+
 def qa_gate2_evidence_recorded(agent: str, release_id: str) -> bool:
     """Return True when QA has already filed release-scoped Gate 2 approval."""
     outbox = ROOT / "sessions" / agent / "outbox"
@@ -398,7 +402,7 @@ def count_quarantine(files: list[pathlib.Path]) -> int:
     return sum(1 for f in files if outbox_status(f) in ("needs-info", "blocked"))
 
 
-def find_r5_audit_time(site: str, push_time: datetime) -> Optional[datetime]:
+def find_r5_audit_time(site: str, push_time: datetime, release_id: str = "") -> Optional[datetime]:
     """Find the Gate R5 production audit time after push_time."""
     # CEO outbox entries named like *site-audit* or *qa-findings* or *r5*
     ceo_outbox = ROOT / "sessions" / "ceo-copilot-2" / "outbox"
@@ -411,16 +415,46 @@ def find_r5_audit_time(site: str, push_time: datetime) -> Optional[datetime]:
             f"*gate*r5*",
             f"*r5*audit*",
             f"*qa-findings*{site}*",
-            f"*recovery-pass*",
         ):
             candidates += list(ceo_outbox.glob(pattern))
+        for f in ceo_outbox.glob("*recovery-pass*"):
+            try:
+                content = f.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            haystack = f"{f.name}\n{content}"
+            if release_id and release_id not in haystack:
+                continue
+            if site and site not in haystack and site.replace("-", ".") not in haystack:
+                continue
+            candidates.append(f)
     for qa_outbox in ROOT.glob(f"sessions/qa-{site}/outbox/*.md"):
-        if "gate2" in qa_outbox.name or "audit" in qa_outbox.name:
+        name = qa_outbox.name
+        if "audit" in name:
+            if release_id and release_id not in name:
+                try:
+                    content = qa_outbox.read_text(encoding="utf-8", errors="ignore")
+                except OSError:
+                    continue
+                if release_id not in content:
+                    continue
+            candidates.append(qa_outbox)
+            continue
+        if "gate2" in name:
+            if release_id and release_id not in name:
+                try:
+                    content = qa_outbox.read_text(encoding="utf-8", errors="ignore")
+                except OSError:
+                    continue
+                if release_id not in content:
+                    continue
             candidates.append(qa_outbox)
     # Return earliest artifact time after push_time. Prefer the filename timestamp
     # because repo sync/push operations can flatten mtimes and distort the timeline.
     result = None
     for f in candidates:
+        if not is_completed_outbox(f):
+            continue
         dt = artifact_dt(f)
         if dt and dt > push_time:
             if result is None or dt < result:
@@ -690,7 +724,7 @@ def main() -> int:
     print(f"  {'Release activation → push (active cycle)':<42} {fmt_hours(active_cycle):<12}")
 
     if push_time:
-        r5_time = find_r5_audit_time(site, push_time)
+        r5_time = find_r5_audit_time(site, push_time, release_id)
         r5_delay = hours_between(push_time, r5_time)
         print(f"  {'Gate R5 post-push delay':<42} {fmt_hours(r5_delay):<12}")
     else:
