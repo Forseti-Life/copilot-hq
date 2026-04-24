@@ -6,7 +6,8 @@ Normal path:
   so a clean audit produces Gate 2 APPROVE evidence without waiting on a human.
 
 Backstop path:
-- ceo-ops-once.sh calls this every 2 hours with --queue-followup so the CEO cycle
+- the adaptive CEO scheduler calls this through ceo-ops-once.sh; when the org is
+  degraded it can run every 10 minutes, otherwise it relaxes to the normal cadence.
   heals any missed clean-audit approvals and creates a root-cause review item when
   the backstop had to intervene.
 """
