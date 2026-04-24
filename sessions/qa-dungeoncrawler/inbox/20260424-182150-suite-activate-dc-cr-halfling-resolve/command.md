@@ -168,3 +168,4 @@ The feature is in scope; Dev will implement it this release. Tests must be live 
 
 ## Security acceptance criteria
 - Security AC exemption: saving throw mechanic logic only; no new route surface beyond existing character/combat flows.
+- Status: pending
