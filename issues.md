@@ -210,3 +210,41 @@ This validation is **Phase 8** of the release cycle validation:
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-forseti-release-q — 2026-04-24
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 3 FAIL finding(s) detected. See below for details.
+
+### ISSUE-005 — Gate R5 delay: 6.2h post-push (threshold: 4h)
+
+**Severity:** High
+**Release:** 20260412-forseti-release-q
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gate R5 delay: 6.2h post-push (threshold: 4h)
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-006 — Gating agent(s) majority-quarantined: agent-code-review (1/1 = 100%),
+
+**Severity:** High
+**Release:** 20260412-forseti-release-q
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gating agent(s) majority-quarantined: agent-code-review (1/1 = 100%), pm-dungeoncrawler (2/2 = 100%) — release gates bypassed by executor failure
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-007 — Code review gate: 1 session(s) dispatched but none completed (all quar
+
+**Severity:** High
+**Release:** 20260412-forseti-release-q
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) — code shipped without review
+
+**Status:** 🔴 Open — review and assign fix
+

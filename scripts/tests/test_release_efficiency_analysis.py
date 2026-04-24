@@ -87,3 +87,26 @@ def test_dev_outbox_files_ignore_transcript_noise(tmp_path):
     files = mod.dev_outbox_files_for_feature("dc-cr-dwarf-ancestry", "dev-dungeoncrawler")
 
     assert [f.name for f in files] == ["20260410-021500-implement-dc-cr-dwarf-ancestry.md"]
+
+
+def test_gating_outbox_files_for_release_skips_feature_scoped_pm_handoffs(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "pm-forseti" / "outbox"
+    outbox.mkdir(parents=True)
+    (outbox / "20260419-groom-20260412-forseti-release-q.md").write_text(
+        "- Status: done\n", encoding="utf-8"
+    )
+    (outbox / "20260420-needs-dev-forseti-20260420-164124-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: needs-info\n", encoding="utf-8"
+    )
+
+    files = mod.gating_outbox_files_for_release(
+        "pm-forseti",
+        "20260412-forseti-release-q",
+        ["forseti-langgraph-console-admin"],
+    )
+
+    assert [f.name for f in files] == ["20260419-groom-20260412-forseti-release-q.md"]

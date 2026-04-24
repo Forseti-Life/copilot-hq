@@ -184,6 +184,32 @@ def reap_stale_copilot_processes() -> Dict[str, Any]:
 _QUARANTINE_ESCALATE_COOLDOWN = 3600  # seconds between gating-agent quarantine escalations
 
 
+def _gating_outbox_files_for_release(
+    repo_root: Path,
+    agent_id: str,
+    release_id: str,
+    feature_ids: List[str],
+) -> List[pathlib.Path]:
+    """Return outbox files that represent gating work for an active release.
+
+    PM gating is release-scoped (groom, signoff, push-ready, release-close, etc.).
+    Feature-scoped PM handoffs like `needs-dev-*<feature-id>*` are ordinary work and
+    must not count as release-gating quarantines. Code review remains feature-scoped.
+    """
+    outbox = repo_root / "sessions" / agent_id / "outbox"
+    if not outbox.exists():
+        return []
+
+    hits: List[pathlib.Path] = []
+    for f in sorted(outbox.glob("*.md")):
+        if agent_id == "agent-code-review":
+            if (release_id and release_id in f.name) or any(fid in f.name for fid in feature_ids):
+                hits.append(f)
+        elif release_id and release_id in f.name:
+            hits.append(f)
+    return hits
+
+
 def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) -> None:
     """Detect when gating agents (PM, agent-code-review) are majority-quarantined
     for an active release and escalate to CEO inbox. (ISSUE-012 fix)
@@ -235,14 +261,7 @@ def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) 
     quarantine_statuses = {"needs-info", "blocked"}
 
     for agent_id, release_id in gating_agents:
-        outbox = repo_root / "sessions" / agent_id / "outbox"
-        if not outbox.exists():
-            continue
-        # Find outbox files relevant to any active release
-        relevant: List[pathlib.Path] = []
-        for f in outbox.glob("*.md"):
-            if (release_id and release_id in f.name) or any(fid in f.name for fid in feature_ids):
-                relevant.append(f)
+        relevant = _gating_outbox_files_for_release(repo_root, agent_id, release_id, feature_ids)
         if not relevant:
             continue
         quarantined = 0

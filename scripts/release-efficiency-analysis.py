@@ -306,6 +306,28 @@ def agent_outbox_files_for_release(agent: str, release_id: str,
     return hits
 
 
+def gating_outbox_files_for_release(agent: str, release_id: str,
+                                    feature_ids: list[str]) -> list[pathlib.Path]:
+    """Return gating work outboxes for an agent on a release.
+
+    PM gating is release-scoped; feature-scoped PM coordination items are ordinary
+    workflow and should not count as release-gating quarantines. Code review remains
+    feature-scoped because review sessions are dispatched per feature.
+    """
+    outbox = ROOT / "sessions" / agent / "outbox"
+    if not outbox.exists():
+        return []
+    hits = []
+    for f in sorted(outbox.glob("*.md")):
+        if agent == "agent-code-review":
+            if release_id in f.name or any(fid in f.name for fid in feature_ids):
+                hits.append(f)
+            continue
+        if release_id and release_id in f.name:
+            hits.append(f)
+    return hits
+
+
 def count_quarantine(files: list[pathlib.Path]) -> int:
     return sum(1 for f in files if outbox_status(f) in ("needs-info", "blocked"))
 
@@ -652,7 +674,11 @@ def main() -> int:
     gating_quarantine_fails: list[str] = []
 
     for agent in check_agents:
-        files = agent_outbox_files_for_release(agent, release_id, feature_ids)
+        files = (
+            gating_outbox_files_for_release(agent, release_id, feature_ids)
+            if agent in gating_agents
+            else agent_outbox_files_for_release(agent, release_id, feature_ids)
+        )
         n = len(files)
         q = count_quarantine(files)
         rate = q / n if n > 0 else 0.0
@@ -697,7 +723,7 @@ def main() -> int:
         emit(PASS, f"Executor quarantine rate: {global_rate:.0%} — within threshold")
 
     # Code review gate
-    cr_files = agent_outbox_files_for_release("agent-code-review", release_id, feature_ids)
+    cr_files = gating_outbox_files_for_release("agent-code-review", release_id, feature_ids)
     cr_done = sum(1 for f in cr_files if outbox_status(f) in ("done", "approved", "approve"))
     cr_total = len(cr_files)
     if cr_total == 0:
