@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# HQ setup: installs cron-based auto-checkpoint and ensures required dirs.
+# HQ setup: installs HQ automation/watchdog crons and ensures required dirs.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 cd "$ROOT_DIR"
@@ -22,8 +22,6 @@ echo "pre-commit hook installed."
 else
   echo "pre-commit hook skipped (.git/hooks not present)."
 fi
-
-./scripts/install-cron-auto-checkpoint.sh
 
 # Install Copilot CLI user-level instructions for CEO persona auto-load.
 # This enables: "take on the CEO persona" → automatic session context load.
@@ -61,3 +59,7 @@ echo "HQ setup complete."
 
 # HQ automation converge watchdog (ensures enable/disable flips actually start/stop loops).
 ./scripts/install-cron-hq-automation.sh
+
+# Remove any legacy direct auto-checkpoint cron entry; checkpointing is now
+# owned by the HQ automation loop.
+./scripts/install-cron-auto-checkpoint.sh

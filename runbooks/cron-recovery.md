@@ -76,15 +76,16 @@ These are the 8 entries managed by `scripts/install-crons.sh`:
 | `agent-exec-watchdog` | `*/5 * * * *` | Restart agent exec loop if down |
 | `hq-automation` | `* * * * *` | Converge HQ automation state |
 | `ceo-ops` | `0 */2 * * *` | CEO scheduled quality check |
-| `auto-checkpoint` | `*/10 * * * *` | Auto-checkpoint every 10 minutes |
 | `hq-health-heartbeat` | `*/2 * * * *` | Self-healing heartbeat + alert log |
+
+`auto-checkpoint` has **no direct cron entry**. It is managed by `hq-automation-watchdog`, which keeps `auto-checkpoint-loop.sh` running while org automation is enabled.
 
 ## Post-migration checklist
 
 After any environment migration (new server, home dir rename, etc.):
 
 - [ ] Run `bash scripts/install-crons.sh`
-- [ ] Confirm `crontab -l | grep copilot-sessions-hq` shows 8 entries
+- [ ] Confirm `crontab -l | grep copilot-sessions-hq` shows the managed HQ entries (currently 5)
 - [ ] Run `bash scripts/hq-health-heartbeat.sh` → exit 0
 - [ ] Check `tail -5 /tmp/hq-health-heartbeat.log` for "all loops healthy"
 - [ ] Update `site.instructions.md` for infrastructure if repo root path changed
