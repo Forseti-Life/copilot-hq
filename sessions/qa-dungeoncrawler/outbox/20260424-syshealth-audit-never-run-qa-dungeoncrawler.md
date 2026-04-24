@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the inbox item. Need to read the audit script, check current state of audit artifacts, and attempt to run the initial audit for the dungeoncrawler site before writing a final outbox.
+- Summary: Beginning the syshealth audit task for qa-dungeoncrawler. Will read seat instructions, review the audit script, then execute the initial site audit for dungeoncrawler. Next concrete step: read current seat instructions and the audit script to understand preconditions before running.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand what it does and confirm safe execution against production.
-- Check for existing artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`.
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`.
-- Verify with `bash scripts/ceo-system-health.sh`.
-- Refresh seat instructions file.
+- Read `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`
+- Read `scripts/site-audit-run.sh` to understand env vars and preconditions
+- Execute `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
+- Verify output and update seat instructions if needed
+- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
 
 ## Blockers
-- None yet — proceeding to investigate.
+- None yet — investigating.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: A missing baseline audit leaves production QA coverage blind. Running this establishes the evidence baseline needed for Gate 2 decisions and release health checks.
+- Rationale: Establishing a baseline audit record for dungeoncrawler unblocks ongoing QA verification cycles and satisfies the system health check, which is a low-effort, high-signal hygiene task.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260424-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-24T11:15:08+00:00
+- Generated: 2026-04-24T11:45:22+00:00
