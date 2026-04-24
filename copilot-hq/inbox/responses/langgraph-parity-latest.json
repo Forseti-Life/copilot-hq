@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-04-24T01:46:13.152248+00:00",
-  "parity_ok": false,
+  "generated_at": "2026-04-24T03:16:23.540077+00:00",
+  "parity_ok": true,
   "selected_agents": {
     "match": true,
     "actual": [
       "ceo-copilot-2",
+      "pm-dungeoncrawler",
       "pm-forseti",
       "qa-dungeoncrawler",
-      "pm-dungeoncrawler",
+      "pm-infra",
       "dev-forseti",
-      "qa-forseti",
-      "qa-infra"
+      "qa-forseti"
     ]
   },
   "steps": {
@@ -38,7 +38,5 @@
       "publish"
     ]
   },
-  "errors": [
-    "step kpi_monitor: rc=-1"
-  ]
+  "errors": []
 }
