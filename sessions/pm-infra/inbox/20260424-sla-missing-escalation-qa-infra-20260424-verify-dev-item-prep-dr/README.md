@@ -2,7 +2,7 @@
 
 - Agent: pm-infra
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-24T14:50:06Z
+- Dispatched-at: 2026-04-24T15:00:07Z
 - Escalated agent: qa-infra
 - Escalated item: 20260424-verify-dev-item-prep-drupal-ai-extraction
 - Escalated status: needs-info
