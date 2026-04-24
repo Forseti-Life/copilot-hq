@@ -211,3 +211,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260423-1776962948-impl-forseti-content-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-content-automation-validation.md)
 - [ ] 20260423-1776962948-impl-forseti-devops-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-devops-automation-validation.md)
 - [ ] 20260423-1776962948-impl-forseti-docs-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-docs-automation-validation.md)
+- [ ] 20260423-1776962948-impl-forseti-institutional-management-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-institutional-management-automation-validation.md)
