@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the audit setup for qa-dungeoncrawler. Will read the audit script, check current directory state, and attempt to run the initial site audit per the inbox acceptance criteria.
+- Summary: Investigating the inbox item. Need to read the audit script, check current state of audit artifacts, and attempt to run the initial audit for the dungeoncrawler site before writing a final outbox.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand prerequisites and flags
-- Check current state of `sessions/qa-dungeoncrawler/artifacts/`
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
-- Verify output and update seat instructions
+- Read `scripts/site-audit-run.sh` to understand what it does and confirm safe execution against production.
+- Check for existing artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`.
+- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`.
+- Verify with `bash scripts/ceo-system-health.sh`.
+- Refresh seat instructions file.
 
 ## Blockers
-- None yet — investigating
+- None yet — proceeding to investigate.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Establishing a baseline audit for dungeoncrawler is foundational for QA gate coverage. Without it, release verification and regression detection are blind. Low complexity, high reliability value.
+- Rationale: A missing baseline audit leaves production QA coverage blind. Running this establishes the evidence baseline needed for Gate 2 decisions and release health checks.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260424-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-24T10:45:36+00:00
+- Generated: 2026-04-24T11:15:08+00:00
