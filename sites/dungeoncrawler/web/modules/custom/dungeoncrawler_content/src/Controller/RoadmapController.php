@@ -46,6 +46,7 @@ class RoadmapController extends ControllerBase {
     // Requirements linked to a feature_id inherit status from the release
     // pipeline automatically. Unlinked requirements still use stored DB status.
     $is_admin = FALSE;
+    $release_snapshot = $this->pipelineStatusResolver->getReleaseCycleSnapshot('dungeoncrawler');
     $backlog_groups = $this->pipelineStatusResolver->getFeatureBacklogGroups('dungeoncrawler');
 
     // Fetch all requirements ordered for grouping.
@@ -134,6 +135,7 @@ class RoadmapController extends ControllerBase {
       '#impl_pct'   => $implemented_pct,
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
+      '#release_snapshot' => $release_snapshot,
       '#backlog_groups' => $backlog_groups,
       '#status_labels' => self::STATUS_LABELS,
       '#attached'   => ['library' => ['dungeoncrawler_content/dungeoncrawler_roadmap']],
