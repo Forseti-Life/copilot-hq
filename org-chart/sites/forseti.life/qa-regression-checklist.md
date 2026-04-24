@@ -204,3 +204,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260423-1776962948-impl-forseti-copilot-agent-tracker-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-copilot-agent-tracker-automation-validation.md)
 - [ ] 20260420-105935-qa-findings-forseti.life-1 — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260420-105935-qa-findings-forseti.life-1.md)
 - [ ] 20260423-1776962948-impl-forseti-jobhunter-tester-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-jobhunter-tester-automation-validation.md)
+- [ ] 20260423-1776962948-impl-copilot-hq-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-copilot-hq-automation-validation.md)
