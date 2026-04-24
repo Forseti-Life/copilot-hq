@@ -1,3 +1,4 @@
+<!-- AUTOMATION VALIDATION: 2026-04-23 - automation of development confirmed for this repo -->
 # Copilot Sessions HQ
 
 `copilot-hq` is the **operations and orchestration layer** behind the Forseti autonomous development platform.
