@@ -224,6 +224,35 @@ def test_hq_status_ignores_operational_session_churn(tmp_path):
     assert "ERROR [merge-health]" not in result.stdout
 
 
+def test_hq_status_ignores_untracked_operational_session_churn(tmp_path):
+    root = _make_hq_root(tmp_path)
+    _init_repo(root)
+    (root / "README.md").write_text("ok\n", encoding="utf-8")
+    _commit_all(root, "init")
+
+    (root / "sessions" / "pm-forseti" / "outbox").mkdir(parents=True)
+    (root / "sessions" / "pm-forseti" / "outbox" / "20260424-cleanup.md").write_text(
+        "- Status: done\n", encoding="utf-8"
+    )
+    (root / "sessions" / "pm-forseti" / "inbox" / "_archived" / "item").mkdir(parents=True)
+    (root / "tmp").mkdir(exist_ok=True)
+    (root / "tmp" / "ceo-ops-scheduler-state.json").write_text("{}", encoding="utf-8")
+
+    result = subprocess.run(
+        ["bash", str(root / "scripts" / "hq-status.sh")],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        env={"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "WARN  [merge-health] Ignored operational tracked changes:" in result.stdout
+    assert "WARN  [merge-health] Operational change: sessions/" in result.stdout
+    assert "WARN  [merge-health] Operational change: tmp/" in result.stdout
+    assert "ERROR [merge-health]" not in result.stdout
+
+
 def _create_repo_with_dirty_submodule(root: Path) -> None:
     upstream = root.parent / "sub-upstream"
     upstream.mkdir(parents=True)

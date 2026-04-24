@@ -99,7 +99,11 @@ merge_health_scan() {
     local path="${line:3}"
     case "$status" in
       "??")
-        MERGE_HEALTH_UNTRACKED_FILES+=("$path")
+        if merge_health_is_operational_path "$path"; then
+          MERGE_HEALTH_OPERATIONAL_CHANGE_FILES+=("$path")
+        else
+          MERGE_HEALTH_UNTRACKED_FILES+=("$path")
+        fi
         ;;
       *U|U*|AA|DD)
         continue

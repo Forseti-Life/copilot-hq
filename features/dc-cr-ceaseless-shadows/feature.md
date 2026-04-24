@@ -3,14 +3,14 @@
 - Work item id: dc-cr-ceaseless-shadows
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: ready
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: 20260412-dungeoncrawler-release-s
+- Release: 
 - Created: 2026-04-14
 
 ## Goal
@@ -36,4 +36,3 @@ Implements Ceaseless Shadows (Halfling Feat 13, prereq: Distracting Shadows): th
 ## Security acceptance criteria
 
 - Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
-
