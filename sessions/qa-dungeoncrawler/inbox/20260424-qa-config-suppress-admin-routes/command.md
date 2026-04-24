@@ -29,3 +29,5 @@ Run: `bash scripts/qa-audit.sh dungeoncrawler` and confirm no 404s on `/admin/re
 ## ROI
 - ROI: 8
 - Rationale: QA configuration fix (non-dev). Clears false blocker and allows release to proceed. High confidence (dev evidence provided).
+- Agent: qa-dungeoncrawler
+- Status: pending
