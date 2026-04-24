@@ -1,25 +1,24 @@
 - Status: in_progress
-- Summary: Reading the inbox item and locating the audit script before executing. Will run `bash scripts/site-audit-run.sh dungeoncrawler` (with `ALLOW_PROD_QA=1` per site instructions) and capture output as evidence, then update seat instructions and file a done outbox.
+- Summary: Reading the inbox item and investigating the current state of the audit scripts and seat instructions before executing the audit run.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to confirm required env vars and invocation
-- Run the audit against production with `ALLOW_PROD_QA=1`
-- Capture output and confirm `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
-- Re-run `bash scripts/ceo-system-health.sh` to verify the health check passes
-- Refresh seat instructions file with correct audit invocation, env vars, and evidence paths
-- Commit all file changes
+- Read seat instructions file and audit script to confirm correct invocation
+- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
+- Capture output as evidence
+- Update seat instructions if stale
+- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
 
 ## Blockers
-- None anticipated
+- None identified yet — investigating now.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Unrun QA audit means zero visibility into production health for dungeoncrawler; resolving this unblocks continuous QA signal and satisfies a system health gate.
+- Rationale: Establishing a baseline audit for dungeoncrawler unblocks future QA verification cycles and satisfies the system health check, preventing repeated health-check noise.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260424-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-24T06:47:12+00:00
+- Generated: 2026-04-24T07:15:53+00:00
