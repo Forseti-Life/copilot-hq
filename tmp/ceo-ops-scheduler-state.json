@@ -1,16 +1,16 @@
 {
   "blockers": {
-    "Merge health: 117 tracked local change(s), 7 untracked file(s)": {
+    "Merge health: 1 tracked local change(s), 1 untracked file(s)": {
       "count": 1,
-      "first_seen": "2026-04-24T14:00:01.253292+00:00",
-      "last_seen": "2026-04-24T14:00:01.253292+00:00"
+      "first_seen": "2026-04-24T14:10:01.114479+00:00",
+      "last_seen": "2026-04-24T14:10:01.114479+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
-    "Merge health: 117 tracked local change(s), 7 untracked file(s)"
+    "Merge health: 1 tracked local change(s), 1 untracked file(s)"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-24T14:00:01.253292+00:00"
+  "last_run_at": "2026-04-24T14:10:01.114479+00:00"
 }
