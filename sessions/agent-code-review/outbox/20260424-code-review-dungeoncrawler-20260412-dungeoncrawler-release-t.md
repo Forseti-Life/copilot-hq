@@ -1,7 +1,14 @@
-I'll investigate the inbox item, read my seat instructions, then review the relevant code changes for the dungeoncrawler release.
+- Status: done
+- Summary: Closed the pre-ship code review item for `20260412-dungeoncrawler-release-t` as a no-op. The live release is currently empty (`0` activated features), so there is no release-scoped code delta to review. This item should be regenerated only after PM activates real scope into the current release.
 
-- Status: in_progress
-- Summary: Reading seat instructions and identifying release scope before beginning code review.
+## Next actions
+- Re-dispatch code review after release-t has activated features or shipped code changes.
+
+## Blockers
+- None
+
+## Verification
+- `bash scripts/ceo-release-health.sh` reports no features scoped to `20260412-dungeoncrawler-release-t`.
 
 ---
 - Agent: agent-code-review

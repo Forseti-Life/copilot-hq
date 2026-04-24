@@ -3,15 +3,14 @@
 - Work item id: dc-cr-halfling-resolve
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: ready
+- Status: in_progress
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: 
-- Created: 2026-04-14
+- Release: 20260412-dungeoncrawler-release-t
 
 ## Goal
 

@@ -1,16 +1,8 @@
 {
-  "blockers": {
-    "Gating agent(s) majority-quarantined: pm-forseti (2/4 = 50%) \u2014 release gates bypassed by executor failure": {
-      "count": 1,
-      "first_seen": "2026-04-24T18:10:01.686262+00:00",
-      "last_seen": "2026-04-24T18:10:01.686262+00:00"
-    }
-  },
-  "fast_mode": true,
-  "last_blockers": [
-    "Gating agent(s) majority-quarantined: pm-forseti (2/4 = 50%) \u2014 release gates bypassed by executor failure"
-  ],
-  "last_rc": 1,
+  "blockers": {},
+  "fast_mode": false,
+  "last_blockers": [],
+  "last_rc": 0,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-24T18:10:01.686262+00:00"
+  "last_run_at": "2026-04-24T18:20:01.506390+00:00"
 }

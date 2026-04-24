@@ -269,17 +269,17 @@ text = text.replace('- Status: ready', '- Status: in_progress')
 # GAP-RB-03: update or insert Release: field to current release ID
 import re as _re
 if release_id:
-    if _re.search(r'^-\s+Release:\s*', text, flags=_re.MULTILINE | _re.IGNORECASE):
+    if _re.search(r'^-\s+Release:[ \t]*', text, flags=_re.MULTILINE | _re.IGNORECASE):
         # Update existing (possibly stale) Release: field
         text = _re.sub(
-            r'^(-\s+Release:\s*).*$',
+            r'^(-\s+Release:[ \t]*).*$',
             r'\g<1>' + release_id,
             text, count=1, flags=_re.MULTILINE | _re.IGNORECASE
         )
     else:
         # Insert Release: after Status: in_progress line
         text = _re.sub(
-            r'(^-\s+Status:\s*in_progress\s*$)',
+            r'(^-\s+Status:[ \t]*in_progress[ \t]*$)',
             r'\1\n- Release: ' + release_id,
             text, count=1, flags=_re.MULTILINE | _re.IGNORECASE
         )

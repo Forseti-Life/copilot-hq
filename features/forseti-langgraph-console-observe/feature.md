@@ -8,9 +8,8 @@
 - Group: console-ui
 - Group Title: Console Routes & UI
 - Group Sort: 4
-- Status: ready
-- Release: 
-- Feature type: enhancement
+- Status: in_progress
+- Release: 20260412-forseti-release-r
 - PM owner: pm-forseti
 - Dev owner: dev-forseti
 - QA owner: qa-forseti
