@@ -31,3 +31,5 @@ All 4 Phase 1 blockers have been cleared by dev-open-source. Your job:
 - Dev remediation (completed): sessions/dev-open-source/outbox/20260420-remediate-ai-conversation-candidate-phase1-blockers.md
 
 CEO note: This task was previously quarantined due to scope ambiguity. Rewritten with tighter acceptance criteria. Proceed.
+- Agent: qa-open-source
+- Status: pending
