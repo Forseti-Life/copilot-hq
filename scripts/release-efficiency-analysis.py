@@ -290,6 +290,24 @@ def dev_outbox_files_for_feature(feat_id: str, dev_agent: str) -> list[pathlib.P
     return sorted([f for f in outbox.glob(f"*{feat_id}*.md") if is_canonical_outbox(f)])
 
 
+def latest_dev_outbox_files_for_release(feature_ids: list[str], dev_agent: str) -> list[pathlib.Path]:
+    """Return the latest dev outbox per feature for release health checks.
+
+    Use explicit status-bearing files even if the outbox format is imperfect; health
+    should reflect the final supervisor-visible state of each feature retry chain.
+    """
+    outbox = ROOT / "sessions" / dev_agent / "outbox"
+    if not outbox.exists():
+        return []
+    latest: list[pathlib.Path] = []
+    for feat_id in feature_ids:
+        files = sorted(outbox.glob(f"*{feat_id}*.md"))
+        if not files:
+            continue
+        latest.append(max(files, key=lambda f: artifact_dt(f) or datetime.min.replace(tzinfo=timezone.utc)))
+    return sorted(latest)
+
+
 def agent_outbox_files_for_release(agent: str, release_id: str,
                                    feature_ids: list[str]) -> list[pathlib.Path]:
     """Return outbox files for an agent that reference release_id or any feature_id."""
@@ -360,6 +378,20 @@ def manual_code_review_gate_verdict(release_id: str) -> Optional[str]:
         if "VERDICT: APPROVE" in upper or re.search(r"\bAPPROVE\b", upper):
             saw_approve = True
     return "approve" if saw_approve else None
+
+
+def qa_gate2_evidence_recorded(agent: str, release_id: str) -> bool:
+    """Return True when QA has already filed release-scoped Gate 2 approval."""
+    outbox = ROOT / "sessions" / agent / "outbox"
+    if not outbox.exists():
+        return False
+    for f in sorted(outbox.glob(f"*{release_id}*.md")):
+        name = f.name
+        if "gate2-approve" not in name and "self-cert" not in name:
+            continue
+        if outbox_status(f) in ("done", "approved", "approve"):
+            return True
+    return False
 
 
 def count_quarantine(files: list[pathlib.Path]) -> int:
@@ -709,11 +741,14 @@ def main() -> int:
     manual_cr_verdict = manual_code_review_gate_verdict(release_id)
 
     for agent in check_agents:
-        files = (
-            gating_outbox_files_for_release(agent, release_id, feature_ids)
-            if agent in gating_agents
-            else agent_outbox_files_for_release(agent, release_id, feature_ids)
-        )
+        if agent in gating_agents:
+            files = gating_outbox_files_for_release(agent, release_id, feature_ids)
+        elif agent == dev_agent:
+            files = latest_dev_outbox_files_for_release(feature_ids, dev_agent)
+        else:
+            files = agent_outbox_files_for_release(agent, release_id, feature_ids)
+            if agent == qa_agent and qa_gate2_evidence_recorded(agent, release_id):
+                files = [f for f in files if release_id in f.name]
         n = len(files)
         q = 0 if (agent == "agent-code-review" and manual_cr_verdict == "approve") else count_quarantine(files)
         rate = q / n if n > 0 else 0.0

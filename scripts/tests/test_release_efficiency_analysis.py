@@ -150,3 +150,57 @@ def test_manual_code_review_gate_verdict_uses_ceo_gate_approval(tmp_path):
     verdict = mod.manual_code_review_gate_verdict("20260412-forseti-release-q")
 
     assert verdict == "approve"
+
+
+def test_qa_gate2_evidence_recorded_true_for_release_approve(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "qa-forseti" / "outbox"
+    outbox.mkdir(parents=True)
+    (outbox / "20260420-020547-gate2-approve-20260412-forseti-release-q.md").write_text(
+        "- Status: done\n",
+        encoding="utf-8",
+    )
+    (outbox / "20260420-164124-suite-activate-forseti-langgraph-console-admin.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+
+    assert mod.qa_gate2_evidence_recorded("qa-forseti", "20260412-forseti-release-q") is True
+
+
+def test_latest_dev_outbox_files_for_release_keeps_latest_per_feature(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "dev-forseti" / "outbox"
+    outbox.mkdir(parents=True)
+    (outbox / "20260420-164119-impl-forseti-langgraph-console-observe.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (outbox / "20260420-172644-impl-forseti-langgraph-console-observe.md").write_text(
+        "- Status: done\n",
+        encoding="utf-8",
+    )
+    (outbox / "20260420-164124-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (outbox / "20260420-172645-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: done\n",
+        encoding="utf-8",
+    )
+
+    files = mod.latest_dev_outbox_files_for_release(
+        ["forseti-langgraph-console-admin", "forseti-langgraph-console-observe"],
+        "dev-forseti",
+    )
+
+    assert [f.name for f in files] == [
+        "20260420-172644-impl-forseti-langgraph-console-observe.md",
+        "20260420-172645-impl-forseti-langgraph-console-admin.md",
+    ]
