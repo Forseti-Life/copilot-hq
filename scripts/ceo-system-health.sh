@@ -486,20 +486,31 @@ if [ ! -f "$drupal_root/vendor/bin/drush" ]; then
   drupal_root="/home/ubuntu/forseti.life/sites/forseti"
 fi
 if [ -f "$drupal_root/vendor/bin/drush" ]; then
-  watchdog_out=$(cd "$drupal_root" && vendor/bin/drush watchdog:show --severity=3 --count=5 --format=string 2>/dev/null || echo "DRUSH_UNAVAILABLE")
-  if echo "$watchdog_out" | grep -q "DRUSH_UNAVAILABLE\|Error\|Cannot"; then
+  watchdog_out=$(cd "$drupal_root" && vendor/bin/drush sql:query "
+    SELECT CONCAT(
+      '[', FROM_UNIXTIME(timestamp), '] ',
+      type, ': ',
+      REPLACE(REPLACE(SUBSTRING(message, 1, 180), '\n', ' '), '\r', ' ')
+    )
+    FROM watchdog
+    WHERE severity <= 3
+      AND timestamp >= UNIX_TIMESTAMP() - 1800
+    ORDER BY wid DESC
+    LIMIT 5;
+  " 2>/dev/null || echo "DRUSH_UNAVAILABLE")
+  if echo "$watchdog_out" | grep -q "DRUSH_UNAVAILABLE\|Cannot"; then
     warn "Drupal watchdog: drush unavailable or errored"
   elif [ -z "$(echo "$watchdog_out" | tr -d '[:space:]')" ]; then
     pass "Drupal watchdog: no recent errors"
   else
-    error_count=$(echo "$watchdog_out" | grep -c "^" || echo 0)
+    error_count=$(echo "$watchdog_out" | sed '/^[[:space:]]*$/d' | grep -c "^" || echo 0)
     if [ "$error_count" -gt 0 ]; then
       fail "Drupal watchdog: $error_count recent error(s)"
       echo "$watchdog_out" | head -5 | sed 's/^/   /'
-      info "Full log: cd $drupal_root && vendor/bin/drush watchdog:show --severity=error"
+      info "Full log: cd $drupal_root && vendor/bin/drush sql:query \"SELECT wid, type, message FROM watchdog WHERE severity <= 3 ORDER BY wid DESC LIMIT 20;\""
       queue_dispatch "dev-forseti" "drupal-watchdog-errors" "8" "FAIL" \
         "Drupal watchdog has $error_count recent error(s)" \
-        "Drush watchdog:show reports $error_count errors.\n\nCheck:\n\`\`\`bash\ncd $drupal_root && vendor/bin/drush watchdog:show --severity=error\n\`\`\`\n\nInvestigate and resolve each error. Verify clean watchdog after fix."
+        "Drupal watchdog has $error_count recent severity<=3 rows in the last 30 minutes.\n\nCheck:\n\`\`\`bash\ncd $drupal_root && vendor/bin/drush sql:query \"SELECT wid, type, message FROM watchdog WHERE severity <= 3 ORDER BY wid DESC LIMIT 20;\"\n\`\`\`\n\nInvestigate and resolve each error. Verify clean watchdog after fix."
     fi
   fi
 else
