@@ -2,19 +2,38 @@
 
 - Agent: dev-infra
 - Dispatched-by: ceo-copilot-2 (ceo-system-health.sh)
-- Dispatched-at: 2026-04-24T15:20:09Z
+- Dispatched-at: 2026-04-24T15:30:09Z
 - Source: system health check
 
 ## Issue
 
 The HQ repo has merge/integration blockers.
 
-Summary: 1 tracked local change(s), 1 untracked file(s)
+Summary: 123 tracked local change(s), 10 untracked file(s)
 
 Details:
 ```
+Tracked change: copilot-hq/inbox/responses/langgraph-parity-latest.json
+Tracked change: copilot-hq/inbox/responses/langgraph-ticks.jsonl
 Tracked change: dungeoncrawler-pf2e
-Untracked file: sessions/pm-infra/inbox/20260424-sla-missing-escalation-qa-infra-20260424-verify-dev-item-prep-dr/
+Tracked change: inbox/commands/20260424-151427-release-kpi-stagnation-followup.md
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-job-hunter-tailoring/.last-progress-at
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-job-hunter-tailoring/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-logrotate/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-notify-pending/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-orchestrator-reboot/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-orchestrator-watchdog/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-php-session-cleanup/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-sysstat/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-system-utilities/roi.txt
+Tracked change: sessions/architect-copilot/outbox/20260420-analyze-job-hunter-tailoring.md
+Tracked change: sessions/ceo-copilot-2/artifacts/active-inbox-item.json
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-escalated-qa-forseti-20260420-unit-test-20260420-151023-test-signoff-reminder-reg/.inwork
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-escalated-qa-forseti-20260420-unit-test-20260420-151023-test-signoff-reminder-reg/README.md
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-escalated-qa-forseti-20260420-unit-test-20260420-151023-test-signoff-reminder-reg/roi.txt
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-pm-forseti-20260420-needs-qa-forseti-20260420-unit-test-20260420-151023/roi.txt
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-pm-forseti-20260421-groom-20260412-forseti-release-r/roi.txt
+Additional tracked changes: 103
 ```
 
 Inspect:
