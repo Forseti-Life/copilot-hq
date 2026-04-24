@@ -1,8 +1,22 @@
 {
-  "blockers": {},
-  "fast_mode": false,
-  "last_blockers": [],
-  "last_rc": 0,
+  "blockers": {
+    "Gating agent(s) majority-quarantined: pm-dungeoncrawler (1/1 = 100%) \u2014 release gates bypassed by executor failure": {
+      "count": 1,
+      "first_seen": "2026-04-24T18:00:01.990704+00:00",
+      "last_seen": "2026-04-24T18:00:01.990704+00:00"
+    },
+    "Merge health: 1 tracked local change(s)": {
+      "count": 1,
+      "first_seen": "2026-04-24T18:00:01.990704+00:00",
+      "last_seen": "2026-04-24T18:00:01.990704+00:00"
+    }
+  },
+  "fast_mode": true,
+  "last_blockers": [
+    "Gating agent(s) majority-quarantined: pm-dungeoncrawler (1/1 = 100%) \u2014 release gates bypassed by executor failure",
+    "Merge health: 1 tracked local change(s)"
+  ],
+  "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-24T17:20:01.543254+00:00"
+  "last_run_at": "2026-04-24T18:00:01.990704+00:00"
 }
