@@ -419,11 +419,28 @@ hr
 
 SORTED_IDS="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | tr '\n' '_' | sed 's/_$//')"
 PUSH_MARKER_KEY="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | paste -sd '__')"
-PUSH_MARKER="tmp/release-cycle-active/${PUSH_MARKER_KEY}.pushed"
+PUSH_MARKER="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.pushed"
+
+ADVANCE_MISSING=0
+for ENTRY in "${RELEASE_MAP[@]:-}"; do
+  [ -n "$ENTRY" ] || continue
+  TEAM="${ENTRY%%:*}"
+  PAIR_ADVANCED="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.${TEAM}.advanced"
+  if [ ! -f "$PAIR_ADVANCED" ]; then
+    ADVANCE_MISSING=1
+    info "Missing advance marker: ${PUSH_MARKER_KEY}.${TEAM}.advanced"
+  fi
+done
 
 if [ -f "$PUSH_MARKER" ]; then
-  warn "Push marker exists: $PUSH_MARKER_KEY.pushed — coordinated push was already dispatched"
-  info "If deploy didn't run, check deploy.yml above. Delete marker to re-trigger: rm \"$PUSH_MARKER\""
+  if [ "$ADVANCE_MISSING" = "1" ]; then
+    fail "Push marker exists but release boundary was not advanced for all coordinated teams"
+    info "Root risk: deploy was triggered, but scripts/post-coordinated-push.sh did not complete."
+    info "Run: bash scripts/post-coordinated-push.sh"
+  else
+    warn "Push marker exists: $PUSH_MARKER_KEY.pushed — coordinated push was already dispatched"
+    info "Advance markers exist for all coordinated teams."
+  fi
 else
   # Check if all signoffs are present
   ALL_SIGNED=1
