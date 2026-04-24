@@ -203,9 +203,13 @@ def test_hq_status_ignores_operational_session_churn(tmp_path):
     _init_repo(root)
     (root / "sessions" / "ceo-copilot-2" / "inbox" / "item").mkdir(parents=True)
     tracked = root / "sessions" / "ceo-copilot-2" / "inbox" / "item" / "README.md"
+    (root / "inbox" / "commands").mkdir(parents=True)
+    command_file = root / "inbox" / "commands" / "command.md"
     tracked.write_text("before\n", encoding="utf-8")
+    command_file.write_text("before\n", encoding="utf-8")
     _commit_all(root, "init")
     tracked.write_text("after\n", encoding="utf-8")
+    command_file.write_text("after\n", encoding="utf-8")
 
     result = subprocess.run(
         ["bash", str(root / "scripts" / "hq-status.sh")],
@@ -216,7 +220,7 @@ def test_hq_status_ignores_operational_session_churn(tmp_path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert "WARN  [merge-health] Ignored operational tracked changes: 1" in result.stdout
+    assert "WARN  [merge-health] Ignored operational tracked changes: 2" in result.stdout
     assert "ERROR [merge-health]" not in result.stdout
 
 

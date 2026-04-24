@@ -27,7 +27,7 @@ merge_health_reset() {
 merge_health_is_operational_path() {
   local path="$1"
   case "$path" in
-    sessions/*|tmp/*|copilot-hq/inbox/responses/*)
+    sessions/*|tmp/*|inbox/commands/*|inbox/processed/*|inbox/responses/*|copilot-hq/inbox/responses/*)
       return 0
       ;;
     *)
