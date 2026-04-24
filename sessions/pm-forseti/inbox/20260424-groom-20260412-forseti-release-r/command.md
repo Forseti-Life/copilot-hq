@@ -54,3 +54,5 @@ Activation happens only when the next release becomes current.
 - The next release `20260412-forseti-release-r` has an actively groomed ready backlog.
 - Every existing next-release feature already in `planned`, `ready`, or `in_progress` either has both grooming artifacts (`01-acceptance-criteria.md` + `03-test-plan.md`) or is explicitly deferred/blocked.
 - Any newly accepted feature has acceptance criteria and a QA handoff queued.
+- Agent: pm-forseti
+- Status: pending

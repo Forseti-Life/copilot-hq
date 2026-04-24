@@ -26,3 +26,5 @@ Create `features/<feature-id>/01-acceptance-criteria.md` with:
 
 Agent: pm-forseti
 Status: pending
+- Agent: pm-forseti
+- Status: pending
