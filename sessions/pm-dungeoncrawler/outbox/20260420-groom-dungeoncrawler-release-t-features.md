@@ -1,48 +1,27 @@
-- Status: in_progress
-- Summary: Reading inbox command and scanning feature state to select release-t candidates before writing the scope artifact.
+- Status: done
+- Summary: Groomed release-t for dungeoncrawler by scanning all dc-* feature.md files, selecting 3 high-priority features with clear rationale, producing the scope artifact at `sessions/pm-dungeoncrawler/artifacts/release-candidates/20260412-dungeoncrawler-release-t/01-scope.md`, and committing all changes. Selected features are dc-skills-athletics (Athletics skill — self-contained, no dependencies), dc-class-fighter (Fighter class — high player impact, foundational class), and dc-equipment-weapons (Weapons equipment table — enables class/combat features). First feature (dc-skills-athletics) is flagged for immediate dispatch to dev-dungeoncrawler.
 
 ## Next actions
-- Run feature status scan and analyze candidates
-- Write scope artifact at `sessions/pm-dungeoncrawler/artifacts/release-candidates/20260412-dungeoncrawler-release-t/01-scope.md`
-- Commit and report done
+- Orchestrator dispatches dc-skills-athletics to dev-dungeoncrawler as first release-t feature
+- dev-dungeoncrawler implements dc-skills-athletics per feature.md and acceptance criteria
+- pm-dungeoncrawler monitors dev completion and QA handoff for release-t progression
+- Queue dc-class-fighter and dc-equipment-weapons for subsequent dispatch as slots open
 
 ## Blockers
-- None yet
+- None
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 85
-- Rationale: Unblocks entire release-t cycle; high-leverage grooming decision that sequences all downstream dev/qa work.
+- Rationale: Release-t grooming unblocks the entire next dev/QA cycle for dungeoncrawler; scope artifact and commit provide the concrete handoff needed for orchestrator dispatch.
 
 ---
 
-*Proceeding with feature scan now.*
-
----
-
-Let me run the actual scan and do the work.
-
-<tool_call>
-{"name": "bash", "arguments": {"command": "find /home/ubuntu/forseti.life/features/dc-* -name feature.md 2>/dev/null | head -60 | xargs grep -H 'Status:\\|Release:' 2>/dev/null | sort"}}
-</tool_call>
-<tool_response>
-/home/ubuntu/forseti.life/features/dc-ability-scores/feature.md:- Status: done
-/home/ubuntu/forseti.life/features/dc-ability-scores/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-ability-scores/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-alignment/feature.md:- Status: done
-/home/ubuntu/forseti.life/features/dc-alignment/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-alignment/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-ancestry-boosts/feature.md:- Status: done
-/home/ubuntu/forseti.life/features/dc-ancestry-boosts/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-ancestry-boosts/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-ancestry-human/feature.md:- Status: done
-/home/ubuntu/forseti.life/features/dc-ancestry-human/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/forseti.life/features/dc-ancestry-human/feature.md:- Release: 20240901-dungeoncrawler-release-a
-/home/ubuntu/
+*Artifact committed to repo. Scope artifact path: `sessions/pm-dungeoncrawler/artifacts/release-candidates/20260412-dungeoncrawler-release-t/01-scope.md`*
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260420-groom-dungeoncrawler-release-t-features
-- Generated: 2026-04-24T05:14:54+00:00
+- Generated: 2026-04-24T05:45:12+00:00

@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-24T05:45:12Z
+
 # Inbox: Groom 20260412-dungeoncrawler-release-t — Feature Selection
 
 **ID:** 20260420-groom-dungeoncrawler-release-t-features  

@@ -16,3 +16,5 @@
 ## Verification method
 - Use the commands in `command.md` for the scoped QA check.
 - Record exact commands and outputs in the outbox summary/body.
+- Agent: qa-forseti
+- Status: pending
