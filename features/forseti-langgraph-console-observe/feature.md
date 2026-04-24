@@ -2,7 +2,7 @@
 
 - Work item id: forseti-langgraph-console-observe
 - Website: forseti.life
-- Module: copilot_agent_tracker
+- Module: drupal_langgraph
 - Project: PROJ-001
 - Group Order: 4
 - Group: console-ui
@@ -18,7 +18,7 @@
 
 ## Summary
 
-The LangGraph Console Observe section (`/langgraph-console/observe`) currently serves static stubs. This feature wires the Observe section to live orchestrator telemetry data: Node Traces panel shows execution timeline with step duration and status; Runtime Metrics dashboard displays tick-level performance data with trend analysis; Drift Detection alerts on anomalous node performance; Alerts & Incidents panel correlates executor failures and blocked agents; Feature Progress integrates the live feature-flow dashboard. All data is read-only. Access is admin-only (`administrator` Drupal role).
+The Drupal LangGraph Observe section (`/admin/reports/drupal-langgraph/langgraph-console/observe`) currently serves a lightweight read-only diagnostic summary. This feature expands that Observe surface to live orchestrator telemetry data: Node Traces panel shows execution timeline with step duration and status; Runtime Metrics dashboard displays tick-level performance data with trend analysis; Drift Detection alerts on anomalous node performance; Alerts & Incidents panel correlates executor failures and blocked agents; Feature Progress integrates the live feature-flow dashboard. All data is read-only. Access is admin-only via the consolidated Drupal LangGraph permission model (`administer drupal langgraph`, with legacy tracker permission accepted during compatibility-shim coexistence).
 
 ## Goal
 
@@ -28,8 +28,8 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 ## Acceptance criteria
 
 ### AC-1: Node Traces — Timeline View
-- `/langgraph-console/observe/traces` displays a timeline of node executions from the last run
-- Data source: `$COPILOT_HQ_ROOT/tmp/langgraph-ticks.jsonl` (last tick entry's `step_results[]`)
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/traces` displays a timeline of node executions from the last run
+- Data source: `copilot-hq/inbox/responses/langgraph-ticks.jsonl` (last tick entry's `step_results[]`)
 - Each row shows: node/agent ID, execution timestamp (ISO 8601 formatted as HH:MM:SS), step duration (ms), status (success ✓ / error ✗), result summary (truncated to 120 chars)
 - Expandable detail view for each step shows: full I/O summaries, any error message
 - No PII in output (truncate/sanitize step results)
@@ -41,7 +41,7 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 - Clear button resets all filters
 
 ### AC-3: Runtime Metrics — Dashboard
-- `/langgraph-console/observe/metrics` displays tick-level metrics:
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/metrics` displays tick-level metrics:
   - Current tick: duration (T-end − T-start), agents dispatched, agents in backlog, concurrency level (selected_agents count)
   - Data source: latest tick from `langgraph-ticks.jsonl` + derived fields
   - If tick data missing: display "Metrics unavailable — no tick data yet."
@@ -57,7 +57,7 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 - Rolling mean calculation: use existing tick data only (no pre-aggregation table)
 
 ### AC-6: Drift Detection — Baseline Comparison
-- `/langgraph-console/observe/drift` compares performance of nodes in last 5 ticks against baseline
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/drift` compares performance of nodes in last 5 ticks against baseline
 - Baseline: compute mean(step_duration) for each node from ALL historical ticks in `langgraph-ticks.jsonl`
 - Current: step_duration for each node in last 5 ticks
 - Alert if any node > ±50% from baseline: show node name, baseline ms, current ms, % variance
@@ -68,7 +68,7 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 - Downloadable CSV of metrics for last 100 ticks (node, tick#, duration)
 
 ### AC-8: Alerts & Incidents — Incident List
-- `/langgraph-console/observe/alerts` lists incidents from last 24h:
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/alerts` lists incidents from last 24h:
   - Incident categories: executor-failure (from `tmp/executor-failures/`), agent-blocked (from inbox `Status: blocked`), tick-timeout (from orchestrator logs)
   - Each row: timestamp (ISO 8601), severity (error/warn/info), category, summary, correlated seat IDs
 
@@ -83,18 +83,19 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 - Results: last 50 incidents (configurable in Phase 7 admin settings)
 
 ### AC-11: Feature Progress Integration
-- `/langgraph-console/observe/feature-progress` embeds or links the live feature-progress dashboard
-- Data source: `$COPILOT_HQ_ROOT/dashboards/FEATURE_PROGRESS.md` (auto-refreshed by orchestrator tick)
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/feature-progress` embeds or links the live feature-progress dashboard
+- Data source: `dashboards/FEATURE_PROGRESS.md` (auto-refreshed by orchestrator tick)
 - Show: total features, in_progress count, done count, blocked count, grouped by phase
 - Quick link to each feature detail view (existing route)
 
 ### AC-12: Auth & Permissions
-- All Observe routes (`/langgraph-console/observe*`) require `administrator` Drupal role
+- All Observe routes under `/admin/reports/drupal-langgraph/langgraph-console/observe*` require Drupal LangGraph admin access
+- Access check accepts either `administer drupal langgraph` or legacy `administer copilot agent tracker` during the compatibility-shim period
 - Authenticated non-admin → 403 Forbidden
-- Anonymous → 303 redirect to login
+- Anonymous → 403 Forbidden
 
 ### AC-13: COPILOT_HQ_ROOT Env Availability
-- Before rendering any live data, verify `COPILOT_HQ_ROOT` env var is set via `DashboardController::langgraphPath()`
+- Before rendering any live data, verify `COPILOT_HQ_ROOT` env var is set via the `drupal_langgraph` path manager
 - If unset: display yellow warning banner "⚠️ Live data unavailable: COPILOT_HQ_ROOT is not configured. Contact admin."
 - Gracefully handle missing data files (no PHP fatal errors)
 
@@ -113,57 +114,57 @@ The LangGraph Console Observe section (`/langgraph-console/observe`) currently s
 ## Technical notes
 
 - **Data sources:**
-  - `$COPILOT_HQ_ROOT/tmp/langgraph-ticks.jsonl` — line-delimited JSON, latest entry has `step_results[]`
+  - `copilot-hq/inbox/responses/langgraph-ticks.jsonl` — line-delimited JSON, latest entry has `step_results[]`
   - `$COPILOT_HQ_ROOT/tmp/executor-failures/*.json` — one file per executor failure event
   - `sessions/*/inbox/*/command.md` — status line parsing (lightweight glob)
-  - `$COPILOT_HQ_ROOT/dashboards/FEATURE_PROGRESS.md` — markdown, parse for section headers
+  - `dashboards/FEATURE_PROGRESS.md` — markdown, parse for section headers
 
 - **Controllers:**
-  - Extend `LangGraphConsoleStubController` with new methods: `observeTraces()`, `observeMetrics()`, `observeDrift()`, `observeAlerts()`, `observeFeatureProgress()`
-  - OR create new `LangGraphConsoleObserveController` if class gets too large
+  - Extend `Drupal\\drupal_langgraph\\Controller\\LangGraphConsoleController` with new observe-focused methods
+  - OR create a dedicated observe controller under the `drupal_langgraph` module if the class gets too large
 
 - **Helper Services:**
   - New `MetricsAggregator` service: parse ticks, compute baseline, detect drift, format metrics
   - New `IncidentCollector` service: scan executor-failures + agent blocks + orchestrator logs
-  - Use `DashboardController::langgraphPath()` for all path resolution
+  - Use `HqPathManager` for all path resolution
 
 - **Rendering:**
-  - Twig templates in `templates/langgraph-console/observe/` (traces.html.twig, metrics.html.twig, drift.html.twig, alerts.html.twig, feature-progress.html.twig)
-  - Shared CSS/JS library: `copilot_agent_tracker.libraries.yml`
+  - Twig templates in `drupal_langgraph/templates/` or an observe-specific subdirectory inside the module
+  - Shared CSS/JS library under `drupal_langgraph`
 
 ## Verification
 
 ```bash
 # Smoke test: load all Observe routes as admin
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe | grep -i "Node Traces\|Runtime Metrics"
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/traces | grep -i "timeline\|step_results"
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/metrics | grep -i "tick duration\|concurrency"
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/drift | grep -i "baseline\|variance"
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/alerts | grep -i "incident\|executor-failure"
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/feature-progress | grep -i "feature\|in_progress"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe | grep -i "Node Traces\|Runtime Metrics"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/traces | grep -i "timeline\|step_results"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/metrics | grep -i "tick duration\|concurrency"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/drift | grep -i "baseline\|variance"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/alerts | grep -i "incident\|executor-failure"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/feature-progress | grep -i "feature\|in_progress"
 
 # Verify no hardcoded paths
-grep -r "langgraph-ticks\|executor-failures\|FEATURE_PROGRESS" sites/forseti/web/modules/custom/copilot_agent_tracker/src/ | grep -v "langgraphPath()"
+grep -r "langgraph-ticks\|executor-failures\|FEATURE_PROGRESS" sites/forseti/web/modules/custom/drupal_langgraph/src/
 
 # Verify auth: non-admin should get 403
-curl -s -b user_cookies.txt https://forseti.life/langgraph-console/observe/traces | grep -i "403\|forbidden"
+curl -s -b user_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/traces | grep -i "403\|forbidden"
 
 # Verify data freshness
-curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/metrics | grep "Last updated"
+curl -s -b admin_cookies.txt https://forseti.life/admin/reports/drupal-langgraph/langgraph-console/observe/metrics | grep "Last updated"
 ```
 
 ## Security acceptance criteria
 
-- **Authentication/permission surface:** All Observe routes require `administrator` Drupal role (enforced via `_permission` in routing.yml). No unauthenticated access to tick data, executor-failures, or agent inbox.
+- **Authentication/permission surface:** All Observe routes require the consolidated Drupal LangGraph admin access check. No unauthenticated access to tick data, executor-failures, or agent inbox.
 - **CSRF expectations:** All routes are GET-only (read-only). No state mutations. CSRF tokens not required.
-- **Input validation:** No direct user input to server. File path resolution uses `DashboardController::langgraphPath()` (env-var resolved, no user-controlled path segments). Tick JSON parsed from trusted local file; truncate/sanitize output before rendering in Twig (strip any tags, limit text length).
+- **Input validation:** No direct user input to server. File path resolution uses `HqPathManager` (env-var resolved, no user-controlled path segments). Tick JSON parsed from trusted local file; truncate/sanitize output before rendering in Twig (strip any tags, limit text length).
 - **PII/logging constraints:** Tick data may contain agent seat IDs and step results (could be logs/errors with PII). Do NOT log full tick data to Drupal watchdog. Render step result summaries truncated (max 120 chars) in admin-only context.
 
 ## Dependencies
 
-- `forseti-copilot-agent-tracker` — shipped ✓ (DB tables, telemetry API, DashboardController helpers)
-- `LangGraphConsoleStubController` — shipped ✓ (route structure, 7 console sections)
-- `langgraphPath()` helper — shipped ✓ (COPILOT_HQ_ROOT-aware path resolution)
+- `drupal_langgraph` — shipped ✓ (consolidated roadmap + console boundary)
+- `LangGraphConsoleController` — shipped ✓ (route structure, section scaffolds, live file-backed summaries)
+- `HqPathManager` — shipped ✓ (FORSETI_ROOT/COPILOT_HQ_ROOT-aware path resolution)
 
 ## Related features
 

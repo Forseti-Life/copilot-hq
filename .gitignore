@@ -37,6 +37,10 @@ llm/.venv/
 .orchestrator-loop.pid
 .dev-sync-loop.pid
 inbox/responses/.ceo-health-last-queue
+inbox/responses/langgraph-*.json
+inbox/responses/langgraph-*.jsonl
+copilot-hq/inbox/responses/langgraph-*.json
+copilot-hq/inbox/responses/langgraph-*.jsonl
 
 # Python cache
 llm/__pycache__/
