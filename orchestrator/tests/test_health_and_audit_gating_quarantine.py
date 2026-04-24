@@ -48,3 +48,69 @@ def test_gating_quarantine_ignores_feature_scoped_pm_handoff(tmp_path):
     mod.escalate_quarantined_gating_agents(root, state)
 
     assert not any((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())
+
+
+def test_gating_quarantine_ignores_pm_signoff_reminders_after_signoff(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+
+    (root / "org-chart" / "products").mkdir(parents=True)
+    (root / "tmp" / "release-cycle-active").mkdir(parents=True)
+    (root / "sessions" / "pm-dungeoncrawler" / "outbox").mkdir(parents=True)
+    (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True)
+    (root / "sessions" / "ceo-copilot-2" / "inbox").mkdir(parents=True)
+
+    (root / "org-chart" / "products" / "product-teams.json").write_text(
+        '{"teams":[{"id":"dungeoncrawler","pm_agent":"pm-dungeoncrawler","active":true}]}',
+        encoding="utf-8",
+    )
+    (root / "tmp" / "release-cycle-active" / "dungeoncrawler.release_id").write_text(
+        "20260412-forseti-release-q\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "pm-dungeoncrawler" / "outbox" / "20260420-signoff-reminder-20260412-forseti-release-q.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-forseti-release-q.md").write_text(
+        "signed\n",
+        encoding="utf-8",
+    )
+
+    state = root / "tmp" / "orchestrator-quarantine-escalate-last"
+    mod.escalate_quarantined_gating_agents(root, state)
+
+    assert not any((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())
+
+
+def test_gating_quarantine_ignores_manual_code_review_gate_approval(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+
+    (root / "org-chart" / "products").mkdir(parents=True)
+    (root / "tmp" / "release-cycle-active").mkdir(parents=True)
+    (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True)
+    (root / "sessions" / "ceo-copilot-2" / "outbox").mkdir(parents=True)
+    (root / "sessions" / "ceo-copilot-2" / "inbox").mkdir(parents=True)
+
+    (root / "org-chart" / "products" / "product-teams.json").write_text(
+        '{"teams":[{"id":"forseti","pm_agent":"pm-forseti","active":true}]}',
+        encoding="utf-8",
+    )
+    (root / "tmp" / "release-cycle-active" / "forseti.release_id").write_text(
+        "20260412-forseti-release-q\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "agent-code-review" / "outbox" / "20260420-code-review-forseti.life-20260412-forseti-release-q.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "ceo-copilot-2" / "outbox" / "20260420-132856-code-review-gate-20260412-forseti-release-q.md").write_text(
+        "- Status: done\n- Summary: Verdict: APPROVE\n",
+        encoding="utf-8",
+    )
+
+    state = root / "tmp" / "orchestrator-quarantine-escalate-last"
+    mod.escalate_quarantined_gating_agents(root, state)
+
+    assert not any((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())

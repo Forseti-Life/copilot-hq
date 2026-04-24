@@ -317,6 +317,12 @@ def gating_outbox_files_for_release(agent: str, release_id: str,
     outbox = ROOT / "sessions" / agent / "outbox"
     if not outbox.exists():
         return []
+    signoff_artifact = (
+        ROOT / "sessions" / agent / "artifacts" / "release-signoffs" / f"{release_id}.md"
+        if release_id and agent.startswith("pm-")
+        else None
+    )
+    has_signoff_artifact = signoff_artifact.exists() if signoff_artifact else False
     hits = []
     for f in sorted(outbox.glob("*.md")):
         if agent == "agent-code-review":
@@ -324,8 +330,36 @@ def gating_outbox_files_for_release(agent: str, release_id: str,
                 hits.append(f)
             continue
         if release_id and release_id in f.name:
+            if has_signoff_artifact and "signoff-reminder" in f.name:
+                continue
             hits.append(f)
     return hits
+
+
+def manual_code_review_gate_verdict(release_id: str) -> Optional[str]:
+    """Return approve/reject when a manual code-review gate verdict exists."""
+    candidates: list[pathlib.Path] = []
+    cr_outbox = ROOT / "sessions" / "agent-code-review" / "outbox"
+    if cr_outbox.exists():
+        candidates.extend(sorted(cr_outbox.glob(f"*manual-cr*{release_id}*.md")))
+    ceo_outbox = ROOT / "sessions" / "ceo-copilot-2" / "outbox"
+    if ceo_outbox.exists():
+        candidates.extend(sorted(ceo_outbox.glob(f"*code-review-gate*{release_id}*.md")))
+
+    saw_approve = False
+    for f in candidates:
+        try:
+            content = f.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if outbox_status(f) not in ("done", "approved", "approve"):
+            continue
+        upper = content.upper()
+        if "VERDICT: REJECT" in upper or re.search(r"\bREJECT\b", upper):
+            return "reject"
+        if "VERDICT: APPROVE" in upper or re.search(r"\bAPPROVE\b", upper):
+            saw_approve = True
+    return "approve" if saw_approve else None
 
 
 def count_quarantine(files: list[pathlib.Path]) -> int:
@@ -672,6 +706,7 @@ def main() -> int:
     total_sessions = 0
     total_quarantined = 0
     gating_quarantine_fails: list[str] = []
+    manual_cr_verdict = manual_code_review_gate_verdict(release_id)
 
     for agent in check_agents:
         files = (
@@ -680,13 +715,16 @@ def main() -> int:
             else agent_outbox_files_for_release(agent, release_id, feature_ids)
         )
         n = len(files)
-        q = count_quarantine(files)
+        q = 0 if (agent == "agent-code-review" and manual_cr_verdict == "approve") else count_quarantine(files)
         rate = q / n if n > 0 else 0.0
         total_sessions += n
         total_quarantined += q
 
         if n == 0:
             status = "no activity"
+            flag = "   "
+        elif agent == "agent-code-review" and manual_cr_verdict == "approve":
+            status = "✅ manual gate approve"
             flag = "   "
         elif rate >= 0.5:
             status = "❌ majority quarantined"
@@ -726,7 +764,11 @@ def main() -> int:
     cr_files = gating_outbox_files_for_release("agent-code-review", release_id, feature_ids)
     cr_done = sum(1 for f in cr_files if outbox_status(f) in ("done", "approved", "approve"))
     cr_total = len(cr_files)
-    if cr_total == 0:
+    if manual_cr_verdict == "approve":
+        emit(PASS, "Code review gate: manual CEO approval recorded")
+    elif manual_cr_verdict == "reject":
+        emit(FAIL, "Code review gate: manual CEO review rejected")
+    elif cr_total == 0:
         emit(WARN, "Code review gate: no agent-code-review sessions found for this release")
     elif cr_done == 0:
         emit(FAIL, f"Code review gate: {cr_total} session(s) dispatched but none completed "

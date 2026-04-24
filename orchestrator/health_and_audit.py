@@ -184,11 +184,39 @@ def reap_stale_copilot_processes() -> Dict[str, Any]:
 _QUARANTINE_ESCALATE_COOLDOWN = 3600  # seconds between gating-agent quarantine escalations
 
 
+def _manual_code_review_gate_verdict(repo_root: Path, release_id: str) -> str | None:
+    """Return approve/reject when a manual code-review gate verdict exists."""
+    candidates = []
+    cr_outbox = repo_root / "sessions" / "agent-code-review" / "outbox"
+    if cr_outbox.exists():
+        candidates.extend(sorted(cr_outbox.glob(f"*manual-cr*{release_id}*.md")))
+    ceo_outbox = repo_root / "sessions" / "ceo-copilot-2" / "outbox"
+    if ceo_outbox.exists():
+        candidates.extend(sorted(ceo_outbox.glob(f"*code-review-gate*{release_id}*.md")))
+
+    saw_approve = False
+    for f in candidates:
+        try:
+            content = f.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        m = re.search(r"^-\s*Status:\s*(\S+)", content, re.MULTILINE | re.IGNORECASE)
+        if not m or m.group(1).lower() not in {"done", "approved", "approve"}:
+            continue
+        upper = content.upper()
+        if "VERDICT: REJECT" in upper or re.search(r"\bREJECT\b", upper):
+            return "reject"
+        if "VERDICT: APPROVE" in upper or re.search(r"\bAPPROVE\b", upper):
+            saw_approve = True
+    return "approve" if saw_approve else None
+
+
 def _gating_outbox_files_for_release(
     repo_root: Path,
     agent_id: str,
     release_id: str,
     feature_ids: List[str],
+    active_release_ids: List[str],
 ) -> List[pathlib.Path]:
     """Return outbox files that represent gating work for an active release.
 
@@ -199,13 +227,27 @@ def _gating_outbox_files_for_release(
     outbox = repo_root / "sessions" / agent_id / "outbox"
     if not outbox.exists():
         return []
+    signoff_artifact = (
+        repo_root / "sessions" / agent_id / "artifacts" / "release-signoffs" / f"{release_id}.md"
+        if release_id and agent_id.startswith("pm-")
+        else None
+    )
+    has_signoff_artifact = signoff_artifact.exists() if signoff_artifact else False
 
     hits: List[pathlib.Path] = []
     for f in sorted(outbox.glob("*.md")):
         if agent_id == "agent-code-review":
+            file_release_ids = [rid for rid in active_release_ids if rid and rid in f.name]
+            if file_release_ids and all(
+                _manual_code_review_gate_verdict(repo_root, rid) == "approve"
+                for rid in file_release_ids
+            ):
+                continue
             if (release_id and release_id in f.name) or any(fid in f.name for fid in feature_ids):
                 hits.append(f)
         elif release_id and release_id in f.name:
+            if has_signoff_artifact and "signoff-reminder" in f.name:
+                continue
             hits.append(f)
     return hits
 
@@ -261,7 +303,13 @@ def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) 
     quarantine_statuses = {"needs-info", "blocked"}
 
     for agent_id, release_id in gating_agents:
-        relevant = _gating_outbox_files_for_release(repo_root, agent_id, release_id, feature_ids)
+        relevant = _gating_outbox_files_for_release(
+            repo_root,
+            agent_id,
+            release_id,
+            feature_ids,
+            sorted(all_release_ids),
+        )
         if not relevant:
             continue
         quarantined = 0

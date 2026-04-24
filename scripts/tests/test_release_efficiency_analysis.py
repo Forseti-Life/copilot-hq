@@ -110,3 +110,43 @@ def test_gating_outbox_files_for_release_skips_feature_scoped_pm_handoffs(tmp_pa
     )
 
     assert [f.name for f in files] == ["20260419-groom-20260412-forseti-release-q.md"]
+
+
+def test_gating_outbox_files_for_release_skips_pm_signoff_reminders_after_signoff(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "pm-dungeoncrawler" / "outbox"
+    signoffs = root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs"
+    outbox.mkdir(parents=True)
+    signoffs.mkdir(parents=True)
+    (outbox / "20260420-signoff-reminder-20260412-forseti-release-q.md").write_text(
+        "- Status: needs-info\n", encoding="utf-8"
+    )
+    (signoffs / "20260412-forseti-release-q.md").write_text("signed\n", encoding="utf-8")
+
+    files = mod.gating_outbox_files_for_release(
+        "pm-dungeoncrawler",
+        "20260412-forseti-release-q",
+        ["forseti-langgraph-console-admin"],
+    )
+
+    assert files == []
+
+
+def test_manual_code_review_gate_verdict_uses_ceo_gate_approval(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "ceo-copilot-2" / "outbox"
+    outbox.mkdir(parents=True)
+    (outbox / "20260420-132856-code-review-gate-20260412-forseti-release-q.md").write_text(
+        "- Status: done\n- Summary: Verdict: APPROVE\n",
+        encoding="utf-8",
+    )
+
+    verdict = mod.manual_code_review_gate_verdict("20260412-forseti-release-q")
+
+    assert verdict == "approve"
