@@ -1,21 +1,20 @@
 - Status: in_progress
-- Summary: Reading the inbox item and relevant scripts to understand what the audit requires before executing.
+- Summary: Reading the inbox item and site instructions to understand what audit needs to run, then checking current state of the artifacts directory and the audit script before executing.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand what it does and confirm it is safe to run against production
-- Check current state of `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/` to confirm it is absent
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions
-- Verify output and record evidence
-- Update seat instructions if needed
+- Check if `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` exists
+- Read `scripts/site-audit-run.sh` to understand flags and requirements
+- Execute the audit with `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler`
+- Verify output and update seat instructions
 
 ## Blockers
 - None yet — investigating first
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Establishing a baseline audit for dungeoncrawler unblocks release verification and satisfies the system health check, preventing repeated CEO health-check noise.
+- Rationale: A missing QA audit means no regression baseline exists for dungeoncrawler; fixing this unblocks release verification and system health checks.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260423-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-24T00:58:25+00:00
+- Generated: 2026-04-24T01:46:09+00:00
