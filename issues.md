@@ -28,6 +28,10 @@ Expected Change:
 - Content: Single line comment with date and confirmation text
 - Change Type: Development/Testing/Validation
 
+Execution Rules:
+- Resolve repository names against `org-chart/ownership/repository-ownership.yaml` before cloning or opening a worktree. For `push-clone` aliases (for example `ai-conversation-push`, `forseti-cluster-push`), use the entry's `local_path` as the working tree and the entry's `github` value as the canonical remote; do not infer a GitHub repo name from the alias itself.
+- If `README.md` does not exist, create a minimal `README.md` containing a level-1 heading with the repository name, then add the validation comment above that heading so the repository still participates in the 26-repo validation pass.
+
 This will be tracked across the release pipeline to ensure all coordinated changes flow through the system correctly.
 
 Priority: HIGHEST
@@ -92,11 +96,12 @@ Each team responsible for their assigned repositories should:
 
 1. **Create Issue:** Use the template above to create an issue in the GitHub repository
 2. **Set Priority:** Mark as HIGHEST priority
-3. **Make Change:** Add the validation comment to README.md at the top
-4. **Create Branch:** Create a feature branch for this change
-5. **Submit PR:** Create a pull request with the change
-6. **Add to Release:** Include this change in the next coordinated release cycle
-7. **Track:** Update the status in this issues.md file
+3. **Resolve Repo Path:** Use `org-chart/ownership/repository-ownership.yaml` to find the correct local path and canonical remote for the repo before making changes
+4. **Make Change:** Add the validation comment to README.md at the top; if README.md is missing, create a minimal README first
+5. **Create Branch:** Create a feature branch for this change
+6. **Submit PR:** Create a pull request with the change
+7. **Add to Release:** Include this change in the next coordinated release cycle
+8. **Track:** Update the status in this issues.md file
 
 ### Release Integration
 
@@ -247,4 +252,3 @@ This validation is **Phase 8** of the release cycle validation:
 **Finding:** Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) — code shipped without review
 
 **Status:** 🔴 Open — review and assign fix
-
