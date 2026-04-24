@@ -104,7 +104,7 @@ def test_hq_status_reports_clean_merge_health(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert "Merge health:" in result.stdout
-    assert "no active merge conflicts, unfinished integration state, or dirty tracked changes" in result.stdout
+    assert "no active merge conflicts, unfinished integration state, or blocking tracked changes" in result.stdout
 
 
 def test_hq_status_fails_when_merge_conflicts_exist(tmp_path):
@@ -196,6 +196,65 @@ def test_ceo_system_health_downgrades_quiet_php_fatals_to_warning(tmp_path):
     assert result.returncode == 0, result.stderr
     assert "⚠️  WARN [forseti] PHP Fatal/Parse/Exception errors: 1 in last 24h, but none in last 30m" in result.stdout
     assert "❌ FAIL [forseti] PHP Fatal/Parse/Exception errors" not in result.stdout
+
+
+def test_hq_status_ignores_operational_session_churn(tmp_path):
+    root = _make_hq_root(tmp_path)
+    _init_repo(root)
+    (root / "sessions" / "ceo-copilot-2" / "inbox" / "item").mkdir(parents=True)
+    tracked = root / "sessions" / "ceo-copilot-2" / "inbox" / "item" / "README.md"
+    tracked.write_text("before\n", encoding="utf-8")
+    _commit_all(root, "init")
+    tracked.write_text("after\n", encoding="utf-8")
+
+    result = subprocess.run(
+        ["bash", str(root / "scripts" / "hq-status.sh")],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        env={"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "WARN  [merge-health] Ignored operational tracked changes: 1" in result.stdout
+    assert "ERROR [merge-health]" not in result.stdout
+
+
+def _create_repo_with_dirty_submodule(root: Path) -> None:
+    upstream = root.parent / "sub-upstream"
+    upstream.mkdir(parents=True)
+    _init_repo(upstream)
+    (upstream / "README.md").write_text("submodule\n", encoding="utf-8")
+    _commit_all(upstream, "init")
+
+    _init_repo(root)
+    subprocess.run(
+        ["git", "-c", "protocol.file.allow=always", "submodule", "add", str(upstream), "child"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    _commit_all(root, "add submodule")
+    (root / "child" / "README.md").write_text("dirty\n", encoding="utf-8")
+
+
+def test_hq_status_warns_but_does_not_fail_for_dirty_submodule_worktree(tmp_path):
+    root = _make_hq_root(tmp_path)
+    _create_repo_with_dirty_submodule(root)
+
+    result = subprocess.run(
+        ["bash", str(root / "scripts" / "hq-status.sh")],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        env={"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "WARN  [merge-health] Dirty submodule worktrees tracked outside HQ merge health: 1" in result.stdout
+    assert "WARN  [merge-health] Dirty submodule worktree: child" in result.stdout
+    assert "ERROR [merge-health]" not in result.stdout
 
 
 def test_ceo_system_health_fails_active_php_fatals_and_dispatches_followup(tmp_path):

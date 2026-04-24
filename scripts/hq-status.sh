@@ -188,6 +188,11 @@ if [ "$MERGE_HEALTH_HAS_ISSUES" -eq 1 ]; then
   done < <(merge_health_issue_lines 10)
   echo "ERROR [merge-health] Remediate: finish or abort any in-progress merge/rebase/cherry-pick/revert, then checkpoint or clean local tracked changes before the next merge/pull"
   _merge_exit=1
+else
+  while IFS= read -r detail; do
+    [ -n "$detail" ] || continue
+    printf 'WARN  [merge-health] %s\n' "$detail"
+  done < <(merge_health_note_lines 10)
 fi
 
 _check_starvation() {

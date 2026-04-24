@@ -402,7 +402,11 @@ elif [ "$MERGE_HEALTH_HAS_ISSUES" -eq 1 ]; then
     "HQ repo has merge/integration blockers" \
     "The HQ repo has merge/integration blockers.\n\nSummary: ${MERGE_HEALTH_SUMMARY}\n\nDetails:\n\`\`\`\n${merge_details}\n\`\`\`\n\nInspect:\n\`\`\`bash\ngit status --short --branch\n\`\`\`\nIf a merge is in progress and should be abandoned:\n\`\`\`bash\ngit merge --abort\n\`\`\`\nIf a rebase/cherry-pick/revert is in progress, finish or abort it. If local tracked changes are pending, checkpoint/stash/clean them before the next merge or pull."
 else
-  pass "Merge health: no active merge conflicts, unfinished integration state, or dirty tracked changes"
+  pass "Merge health: no active merge conflicts, unfinished integration state, or blocking tracked changes"
+  while IFS= read -r detail; do
+    [ -n "$detail" ] || continue
+    info "$detail"
+  done < <(merge_health_note_lines 10)
 fi
 
 # ─── 4. APACHE ERROR LOG ANALYSIS ──────────────────────────────────────────
