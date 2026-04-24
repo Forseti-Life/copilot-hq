@@ -2,19 +2,38 @@
 
 - Agent: dev-infra
 - Dispatched-by: ceo-copilot-2 (ceo-system-health.sh)
-- Dispatched-at: 2026-04-24T15:50:09Z
+- Dispatched-at: 2026-04-24T16:00:09Z
 - Source: system health check
 
 ## Issue
 
 The HQ repo has merge/integration blockers.
 
-Summary: 1 tracked local change(s), 1 untracked file(s)
+Summary: 117 tracked local change(s), 11 untracked file(s)
 
 Details:
 ```
+Tracked change: copilot-hq/inbox/responses/langgraph-parity-latest.json
+Tracked change: copilot-hq/inbox/responses/langgraph-ticks.jsonl
 Tracked change: dungeoncrawler-pf2e
-Untracked file: sessions/pm-infra/inbox/20260424-sla-missing-escalation-qa-infra-20260424-verify-dev-item-prep-dr/
+Tracked change: inbox/commands/20260424-154444-release-handoff-full-investigation.md
+Tracked change: inbox/commands/20260424-154444-release-handoff-gap.md
+Tracked change: inbox/commands/20260424-154444-release-kpi-stagnation.md
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-job-hunter-tailoring/.last-progress-at
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-job-hunter-tailoring/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-logrotate/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-notify-pending/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-orchestrator-reboot/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-orchestrator-watchdog/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-php-session-cleanup/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-sysstat/roi.txt
+Tracked change: sessions/architect-copilot/inbox/20260420-analyze-system-utilities/roi.txt
+Tracked change: sessions/architect-copilot/inbox/investigate-job-hunter-queues.md
+Tracked change: sessions/architect-copilot/outbox/20260420-analyze-job-hunter-tailoring.md
+Tracked change: sessions/ceo-copilot-2/artifacts/active-inbox-item.json
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-needs-pm-forseti-20260420-needs-qa-forseti-20260420-unit-test-20260420-151023/roi.txt
+Tracked change: sessions/ceo-copilot-2/inbox/20260423-syshealth-dead-letter-architect-copilot-investigate-job-hunter-queues.md/.inwork
+Additional tracked changes: 97
 ```
 
 Inspect:
