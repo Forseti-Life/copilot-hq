@@ -1,14 +1,13 @@
 {
-  "generated_at": "2026-04-24T19:45:45.565899+00:00",
+  "generated_at": "2026-04-24T19:57:28.239141+00:00",
   "parity_ok": true,
   "selected_agents": {
     "match": true,
     "actual": [
-      "pm-forseti",
       "pm-dungeoncrawler",
+      "pm-forseti",
       "qa-dungeoncrawler",
       "qa-forseti",
-      "dev-dungeoncrawler",
       "architect-copilot"
     ]
   },
