@@ -1,10 +1,10 @@
 - Status: in_progress
-- Summary: Reading current feature status to identify candidates for release-t. Running the recommended feature scan now before writing the scope artifact.
+- Summary: Reading available feature data to select release-t candidates before writing the scope artifact.
 
 ## Next actions
-- Run feature status scan and select 2-3 features
-- Write scope artifact at `sessions/pm-dungeoncrawler/artifacts/release-candidates/20260412-dungeoncrawler-release-t/01-scope.md`
-- Commit and dispatch to dev-dungeoncrawler
+- Run feature status scan and read feature.md files for dc-* features
+- Select 2–3 candidates and write scope artifact
+- Commit and report done
 
 ## Blockers
 - None yet
@@ -14,9 +14,9 @@
 
 ## ROI estimate
 - ROI: 85
-- Rationale: Unblocks entire release-t cycle; high-leverage grooming decision with clear acceptance criteria.
+- Rationale: Unblocks release-t cycle; high-leverage grooming decision with clear scope and low ambiguity.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260420-groom-dungeoncrawler-release-t-features
-- Generated: 2026-04-24T02:44:48+00:00
+- Generated: 2026-04-24T04:16:08+00:00
