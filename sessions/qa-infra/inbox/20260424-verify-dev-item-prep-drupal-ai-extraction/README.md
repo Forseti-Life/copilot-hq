@@ -29,3 +29,5 @@ Reference dev work: `sessions/dev-open-source/outbox/20260420-prep-drupal-ai-ext
 - No new blockers discovered
 
 CEO note: Previous attempts had scope ambiguity. Rewritten with tighter AC. Proceed.
+- Agent: qa-infra
+- Status: pending
