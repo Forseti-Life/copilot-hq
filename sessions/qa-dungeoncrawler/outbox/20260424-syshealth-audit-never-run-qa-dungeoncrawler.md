@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Reading the audit script and existing seat instructions to understand the current state before executing the audit run.
+- Summary: Beginning the initial site audit for qa-dungeoncrawler by reading the audit script and then executing it against the dungeoncrawler production environment. Next concrete step: read `scripts/site-audit-run.sh` to understand required env vars, then execute with `ALLOW_PROD_QA=1`.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand what it does and what env vars it needs
-- Check current seat instructions at `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
-- Verify output lands in `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to confirm the check passes
+- Read `scripts/site-audit-run.sh` to confirm correct invocation
+- Execute `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler`
+- Capture output and verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
+- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
+- Refresh seat instructions if needed
 
 ## Blockers
-- None yet — investigating now
+- None yet
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Establishing baseline audit coverage for dungeoncrawler is a prerequisite for all future QA gate decisions on this product; unblocking it now prevents compounding gaps.
+- Rationale: Establishing baseline QA audit coverage is a prerequisite for all future release verification on this product; unblocks Gate 2 signoff automation.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260424-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-24T19:18:50+00:00
+- Generated: 2026-04-24T19:37:22+00:00
