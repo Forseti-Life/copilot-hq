@@ -1,10 +1,9 @@
 {
-  "generated_at": "2026-04-24T19:37:00.914810+00:00",
+  "generated_at": "2026-04-24T19:45:45.565899+00:00",
   "parity_ok": true,
   "selected_agents": {
     "match": true,
     "actual": [
-      "ceo-copilot-2",
       "pm-forseti",
       "pm-dungeoncrawler",
       "qa-dungeoncrawler",

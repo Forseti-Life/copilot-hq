@@ -394,3 +394,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260424-001221-qa-findings-dungeoncrawler-7 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7.md)
 - [ ] 20260424-001221-qa-findings-dungeoncrawler-7-retry-1776995175 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7-retry-1776995175.md)
 - [ ] 20260424-182150-impl-dc-cr-halfling-resolve — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-182150-impl-dc-cr-halfling-resolve.md)
+- [ ] 20260424-001221-qa-findings-dungeoncrawler-7-retry-1777058348 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7-retry-1777058348.md)
