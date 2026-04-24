@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: pm-dungeoncrawler inbox=20260420-needs-ba-dungeoncrawler-20260420-193747-dungeoncrawler-roadmap-prioritization`
+- Status: pending

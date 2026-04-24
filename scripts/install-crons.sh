@@ -24,7 +24,7 @@ ENTRIES=(
   "orchestrator-watchdog|*/5 * * * *|ORCHESTRATOR_AGENT_CAP=6 ${HQ_ROOT}/scripts/orchestrator-watchdog.sh >> ${LOG_DIR}/orchestrator-cron.log 2>&1"
   "hq-automation|* * * * *|${HQ_ROOT}/scripts/hq-automation-watchdog.sh >> ${LOG_DIR}/hq-automation-cron.log 2>&1"
   "ceo-ops|0 */2 * * *|${HQ_ROOT}/scripts/ceo-ops-once.sh >> ${LOG_DIR}/ceo-ops-cron.log 2>&1"
-  "auto-checkpoint|0 */2 * * *|${HQ_ROOT}/scripts/auto-checkpoint.sh >> ${LOG_DIR}/auto-checkpoint-cron.log 2>&1"
+  "auto-checkpoint|*/10 * * * *|${HQ_ROOT}/scripts/auto-checkpoint.sh >> ${LOG_DIR}/auto-checkpoint-cron.log 2>&1"
   "hq-health-heartbeat|*/2 * * * *|${HQ_ROOT}/scripts/hq-health-heartbeat.sh >> /tmp/hq-health-heartbeat.log 2>&1"
 )
 

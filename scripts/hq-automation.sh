@@ -33,6 +33,7 @@ org_enabled() {
 }
 
 start_loops() {
+  local auto_checkpoint_interval="${HQ_AUTO_CHECKPOINT_INTERVAL_SECONDS:-600}"
   if [ "$require_enabled" -eq 1 ] && [ "$force" -ne 1 ] && ! org_enabled; then
     echo "Org automation disabled; refusing to start loops (use --force to override)." >&2
     exit 1
@@ -48,7 +49,7 @@ start_loops() {
   else
     ./scripts/site-audit-loop.sh stop >/dev/null 2>&1 || true
   fi
-  ./scripts/auto-checkpoint-loop.sh start 7200 >/dev/null 2>&1 || true
+  ./scripts/auto-checkpoint-loop.sh start "$auto_checkpoint_interval" >/dev/null 2>&1 || true
 }
 
 stop_loops() {

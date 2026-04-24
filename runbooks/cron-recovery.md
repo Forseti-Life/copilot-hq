@@ -76,7 +76,7 @@ These are the 8 entries managed by `scripts/install-crons.sh`:
 | `agent-exec-watchdog` | `*/5 * * * *` | Restart agent exec loop if down |
 | `hq-automation` | `* * * * *` | Converge HQ automation state |
 | `ceo-ops` | `0 */2 * * *` | CEO scheduled quality check |
-| `auto-checkpoint` | `0 */2 * * *` | Auto-checkpoint every 2 hours |
+| `auto-checkpoint` | `*/10 * * * *` | Auto-checkpoint every 10 minutes |
 | `hq-health-heartbeat` | `*/2 * * * *` | Self-healing heartbeat + alert log |
 
 ## Post-migration checklist

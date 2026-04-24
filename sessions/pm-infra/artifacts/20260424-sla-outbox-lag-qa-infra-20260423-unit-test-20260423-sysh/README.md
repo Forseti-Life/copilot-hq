@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: qa-infra inbox=20260423-unit-test-20260423-syshealth-executor-failures-prune`
+- Status: pending

@@ -10,7 +10,7 @@ LATEST="$LOGDIR/auto-checkpoint-latest.log"
 mkdir -p "$LOGDIR"
 
 cmd="${1:-start}"
-interval="${2:-7200}"   # 2 hours
+interval="${2:-${HQ_AUTO_CHECKPOINT_INTERVAL_SECONDS:-600}}"   # 10 minutes
 
 read_pid() {
   [ -f "$PIDFILE" ] || { echo ""; return; }

@@ -391,3 +391,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260420-195520-impl-dc-cr-halfling-weapon-expertise — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260420-195520-impl-dc-cr-halfling-weapon-expertise.md)
 - [ ] 20260423-1776962948-impl-dungeoncrawler-content-automation-validation — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260423-1776962948-impl-dungeoncrawler-content-automation-validation.md)
 - [ ] 20260423-1776962948-impl-dungeoncrawler-pf2e-automation-validation — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260423-1776962948-impl-dungeoncrawler-pf2e-automation-validation.md)
+- [ ] 20260424-001221-qa-findings-dungeoncrawler-7 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7.md)

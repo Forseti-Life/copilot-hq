@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: qa-forseti inbox=20260420-191605-gate1a-testgen-console-admin`
+- Status: pending

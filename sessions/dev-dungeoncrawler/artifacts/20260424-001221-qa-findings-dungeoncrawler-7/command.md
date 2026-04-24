@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-24T01:14:29Z
+
 # QA Findings — Action Required
 
 - Product team: dungeoncrawler
@@ -27,3 +30,5 @@
 Deliverable:
 - Outbox update with Status + Summary and QA handoff notes.
 - For new features: create/update features/<feature_id>/02-implementation-notes.md.
+- Agent: dev-dungeoncrawler
+- Status: pending

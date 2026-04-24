@@ -9,12 +9,15 @@
 
 set -uo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT_DIR"
 
-HEARTBEAT_LOG="/tmp/hq-health-heartbeat.log"
-ALERT_LOG="/tmp/hq-health-alert.log"
-FAILURE_COUNT_FILE="/tmp/orchestrator-restart-failures.count"
+HEARTBEAT_LOG="${HEARTBEAT_LOG:-/tmp/hq-health-heartbeat.log}"
+ALERT_LOG="${ALERT_LOG:-/tmp/hq-health-alert.log}"
+FAILURE_COUNT_FILE="${FAILURE_COUNT_FILE:-/tmp/orchestrator-restart-failures.count}"
+CRITICAL_EMAIL_STATE_FILE="${CRITICAL_EMAIL_STATE_FILE:-/tmp/hq-health-critical-email.last}"
+CRITICAL_EMAIL_COOLDOWN_SECONDS="${CRITICAL_EMAIL_COOLDOWN_SECONDS:-3600}"
+SENDMAIL_BIN="${SENDMAIL_BIN:-/usr/sbin/sendmail}"
 ts="$(date -Iseconds)"
 
 log() { printf '[%s] %s\n' "$ts" "$*" | tee -a "$HEARTBEAT_LOG" >/dev/null 2>&1 || true; }
@@ -33,11 +36,26 @@ HQ_SITE_NAME="${HQ_SITE_NAME:-forseti.life HQ}"
 send_critical_email() {
   local subject="$1"
   local body="$2"
-  
+  local now_epoch last_sent_epoch next_allowed_epoch wait_seconds
+
+  now_epoch="$(date +%s)"
+  last_sent_epoch="$(cat "$CRITICAL_EMAIL_STATE_FILE" 2>/dev/null || echo 0)"
+  if [[ "$last_sent_epoch" =~ ^[0-9]+$ ]] && [ "$last_sent_epoch" -gt 0 ]; then
+    next_allowed_epoch=$((last_sent_epoch + CRITICAL_EMAIL_COOLDOWN_SECONDS))
+    if [ "$now_epoch" -lt "$next_allowed_epoch" ]; then
+      wait_seconds=$((next_allowed_epoch - now_epoch))
+      alert "CRITICAL EMAIL SUPPRESSED (cooldown ${wait_seconds}s remaining): $subject"
+      return 0
+    fi
+  fi
+
   printf "Subject: %s\nTo: %s\nFrom: %s\nContent-Type: text/plain\n\n%s\n" \
     "$subject" "$BOARD_EMAIL" "$HQ_FROM_EMAIL" "$body" \
-    | /usr/sbin/sendmail -t \
-    && alert "CRITICAL EMAIL SENT to $BOARD_EMAIL: $subject" \
+    | "$SENDMAIL_BIN" -t \
+    && {
+      echo "$now_epoch" > "$CRITICAL_EMAIL_STATE_FILE"
+      alert "CRITICAL EMAIL SENT to $BOARD_EMAIL: $subject"
+    } \
     || alert "CRITICAL EMAIL FAILED to send to $BOARD_EMAIL"
 }
 

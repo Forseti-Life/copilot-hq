@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Installs/updates a user crontab entry to run auto-checkpoint every 2 hours.
+# Installs/updates a user crontab entry to run auto-checkpoint every 10 minutes.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 cd "$ROOT_DIR"
@@ -13,8 +13,8 @@ MARKER="# copilot-sessions-hq:auto-checkpoint"
 CMD="$ROOT_DIR/scripts/auto-checkpoint.sh"
 LOG="$LOG_DIR/auto-checkpoint-cron.log"
 
-# Every 2 hours at minute 0.
-LINE="0 */2 * * * $CMD >> $LOG 2>&1 $MARKER"
+# Every 10 minutes.
+LINE="*/10 * * * * $CMD >> $LOG 2>&1 $MARKER"
 
 current=""
 if crontab -l >/dev/null 2>&1; then

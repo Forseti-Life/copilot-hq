@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: qa-dungeoncrawler inbox=20260420-195520-suite-activate-dc-cr-halfling-weapon-expertise`
+- Status: pending

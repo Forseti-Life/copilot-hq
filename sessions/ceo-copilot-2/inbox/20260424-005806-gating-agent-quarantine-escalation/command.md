@@ -1,6 +1,6 @@
 # Gating Agent Quarantine Escalation
 
-**Detected:** 2026-04-23T23:14:10.624395+00:00
+**Detected:** 2026-04-24T00:58:06.176354+00:00
 **Priority:** CRITICAL — release gates are bypassed when gating agents are quarantined
 
 ## Quarantined Gating Agents
