@@ -8,7 +8,7 @@
 - Group: console-ui
 - Group Title: Console Routes & UI
 - Group Sort: 4
-- Status: in_progress
+- Status: shipped
 - Release: 20260412-forseti-release-r
 - PM owner: pm-forseti
 - Dev owner: dev-forseti

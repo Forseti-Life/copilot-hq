@@ -1,22 +1,22 @@
 {
   "blockers": {
-    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-t": {
-      "count": 105,
-      "first_seen": "2026-04-24T20:00:01.930289+00:00",
-      "last_seen": "2026-04-25T13:20:01.230688+00:00"
+    "CEO proxy load: 7 sessions doing dev/QA/PM work (dev=1, QA=4, PM=2) \u2014 executor broken or roles understaffed": {
+      "count": 1,
+      "first_seen": "2026-04-25T13:30:01.200745+00:00",
+      "last_seen": "2026-04-25T13:30:01.200745+00:00"
     },
-    "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-r": {
-      "count": 35,
-      "first_seen": "2026-04-25T07:40:01.088530+00:00",
-      "last_seen": "2026-04-25T13:20:01.230688+00:00"
+    "Merge health: 2 tracked local change(s)": {
+      "count": 1,
+      "first_seen": "2026-04-25T13:30:01.200745+00:00",
+      "last_seen": "2026-04-25T13:30:01.200745+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
-    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-t",
-    "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-r"
+    "CEO proxy load: 7 sessions doing dev/QA/PM work (dev=1, QA=4, PM=2) \u2014 executor broken or roles understaffed",
+    "Merge health: 2 tracked local change(s)"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-25T13:20:01.230688+00:00"
+  "last_run_at": "2026-04-25T13:30:01.200745+00:00"
 }

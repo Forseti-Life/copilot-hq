@@ -188,6 +188,22 @@ if team_release_ids:
         )
         if archived:
             print(f"ARCHIVE {pm_agent}: {', '.join(archived)}")
+    for release_id in sorted(set(old_release_ids)):
+        promote_result = subprocess.run(
+            [sys.executable, str(root / 'scripts' / 'promote-release-features.py'), '--release', release_id],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+        )
+        if promote_result.returncode != 0:
+            print(f"WARN promote-release-features failed for {release_id}: {promote_result.returncode}")
+            stderr = (promote_result.stderr or "").strip()
+            if stderr:
+                print(stderr)
+        else:
+            stdout = (promote_result.stdout or "").strip()
+            if stdout:
+                print(f"FEATURES {release_id}: {stdout}")
 else:
     print("WARNING: no active team releases found — nothing to push")
 PY
