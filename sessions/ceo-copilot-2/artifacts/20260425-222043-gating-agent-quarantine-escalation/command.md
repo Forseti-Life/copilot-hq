@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-25T23:15:25Z
+
 # Gating Agent Quarantine Escalation
 
 **Detected:** 2026-04-25T22:20:43.103465+00:00
