@@ -27,4 +27,4 @@ If you surface objections, include:
 ## Reference
 - CEO signoff file: `/home/ubuntu/forseti.life/sessions/pm-forseti/artifacts/release-signoffs/20260412-forseti-release-r-ceo-approved.md`
 - Coordinated signoff status: Run `bash scripts/release-signoff-status.sh 20260412-forseti-release-r`
-
+- Status: pending
