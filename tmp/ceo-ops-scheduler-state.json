@@ -1,28 +1,28 @@
 {
   "blockers": {
     "Duplicate orchestrator roots detected: pid(s) 2636128 3423139": {
-      "count": 5,
+      "count": 6,
       "first_seen": "2026-04-25T19:00:01.891547+00:00",
-      "last_seen": "2026-04-25T19:40:01.651557+00:00"
+      "last_seen": "2026-04-25T19:50:01.924696+00:00"
     },
-    "Tailoring queue log has 2 error/exception lines (last 500 lines)": {
+    "Tailoring queue log has 4 error/exception lines (last 500 lines)": {
       "count": 1,
-      "first_seen": "2026-04-25T19:40:01.651557+00:00",
-      "last_seen": "2026-04-25T19:40:01.651557+00:00"
+      "first_seen": "2026-04-25T19:50:01.924696+00:00",
+      "last_seen": "2026-04-25T19:50:01.924696+00:00"
     },
-    "[forseti] PHP Fatal/Parse/Exception errors: 57 in last 24h (54 in last 30m)": {
+    "[forseti] PHP Fatal/Parse/Exception errors: 110 in last 24h (107 in last 30m)": {
       "count": 1,
-      "first_seen": "2026-04-25T19:40:01.651557+00:00",
-      "last_seen": "2026-04-25T19:40:01.651557+00:00"
+      "first_seen": "2026-04-25T19:50:01.924696+00:00",
+      "last_seen": "2026-04-25T19:50:01.924696+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "Duplicate orchestrator roots detected: pid(s) 2636128 3423139",
-    "[forseti] PHP Fatal/Parse/Exception errors: 57 in last 24h (54 in last 30m)",
-    "Tailoring queue log has 2 error/exception lines (last 500 lines)"
+    "[forseti] PHP Fatal/Parse/Exception errors: 110 in last 24h (107 in last 30m)",
+    "Tailoring queue log has 4 error/exception lines (last 500 lines)"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-25T19:40:01.651557+00:00"
+  "last_run_at": "2026-04-25T19:50:01.924696+00:00"
 }
