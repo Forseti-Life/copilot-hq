@@ -2,7 +2,7 @@
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-25T02:10:07Z
+- Dispatched-at: 2026-04-25T02:20:07Z
 - Escalated agent: pm-open-source
 - Escalated item: 20260424-sla-missing-escalation-qa-open-source-20260424-validate-phase1-tree-on
 - Escalated status: needs-info
