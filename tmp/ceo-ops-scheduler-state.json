@@ -1,22 +1,22 @@
 {
   "blockers": {
     "Duplicate orchestrator roots detected: pid(s) 1449643 3505782": {
-      "count": 1,
+      "count": 3,
       "first_seen": "2026-04-25T22:10:01.045390+00:00",
-      "last_seen": "2026-04-25T22:10:01.045390+00:00"
+      "last_seen": "2026-04-25T22:30:01.322126+00:00"
     },
-    "[dungeoncrawler] PHP Fatal/Parse/Exception errors: 8 in last 24h (8 in last 30m)": {
+    "Merge health: 1 tracked local change(s)": {
       "count": 2,
-      "first_seen": "2026-04-25T22:00:01.747781+00:00",
-      "last_seen": "2026-04-25T22:10:01.045390+00:00"
+      "first_seen": "2026-04-25T22:20:01.450914+00:00",
+      "last_seen": "2026-04-25T22:30:01.322126+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "Duplicate orchestrator roots detected: pid(s) 1449643 3505782",
-    "[dungeoncrawler] PHP Fatal/Parse/Exception errors: 8 in last 24h (8 in last 30m)"
+    "Merge health: 1 tracked local change(s)"
   ],
   "last_rc": 1,
-  "last_rca_created": 1,
-  "last_run_at": "2026-04-25T22:10:01.045390+00:00"
+  "last_rca_created": 0,
+  "last_run_at": "2026-04-25T22:30:01.322126+00:00"
 }

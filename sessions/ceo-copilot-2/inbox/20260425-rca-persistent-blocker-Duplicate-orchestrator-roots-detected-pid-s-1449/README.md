@@ -1,11 +1,11 @@
-# Persistent blocker RCA: [dungeoncrawler] PHP Fatal/Parse/Exception errors: 8 in last 24h (8 in last 30m)
+# Persistent blocker RCA: Duplicate orchestrator roots detected: pid(s) 1449643 3505782
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-ops-scheduler.py
-- Blocker: [dungeoncrawler] PHP Fatal/Parse/Exception errors: 8 in last 24h (8 in last 30m)
+- Blocker: Duplicate orchestrator roots detected: pid(s) 1449643 3505782
 - Consecutive CEO cycles observed: 2
-- First seen: 2026-04-25T22:00:01.747781+00:00
-- Last seen: 2026-04-25T22:10:01.045390+00:00
+- First seen: 2026-04-25T22:10:01.045390+00:00
+- Last seen: 2026-04-25T22:20:01.450914+00:00
 
 ## Issue
 
