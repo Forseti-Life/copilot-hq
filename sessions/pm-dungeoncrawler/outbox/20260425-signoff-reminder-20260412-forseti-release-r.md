@@ -1,23 +1,22 @@
 - Status: in_progress
-- Summary: Investigating the signoff reminder for release `20260412-forseti-release-r`. Need to check current release signoff status, review gates, and determine whether pm-dungeoncrawler is authorized to sign off for the `forseti` site or if this is a cross-team routing issue.
+- Summary: Investigating the signoff reminder for release `20260412-forseti-release-r`. Need to check release state, prerequisites (Gate 1b code-review findings, QA APPROVE evidence), and whether pm-dungeoncrawler is actually a required co-signer for this Forseti release before executing the signoff script.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-forseti-release-r` to check current state
-- Review gate artifacts and QA verdict for this release
-- Determine if pm-dungeoncrawler is the correct signing authority for `forseti` site (vs pm-forseti)
-- Run signoff script if authorized and gates are satisfied, or escalate if not
+- Read release state and signoff status
+- Check QA APPROVE evidence and code-review finding routing
+- Execute signoff if prerequisites are met, or escalate if blocked
 
 ## Blockers
-- None confirmed yet — investigating first
+- None yet — investigating
 
 ## Needs from CEO
-- N/A (investigating)
+- N/A
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Release is blocked on a signoff; unblocking it directly enables the coordinated push. High leverage, low effort if gates are already satisfied.
+- ROI: 80
+- Rationale: Release is actively blocked pending this signoff; unblocking it directly enables the coordinated push and keeps the release cycle on schedule.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260425-signoff-reminder-20260412-forseti-release-r
-- Generated: 2026-04-25T11:02:46+00:00
+- Generated: 2026-04-25T11:12:19+00:00
