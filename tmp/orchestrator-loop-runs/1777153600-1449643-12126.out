@@ -37,8 +37,7 @@ BLOCKED: 2 agent(s) blocked
       - Likely cause: Service container cache corruption or module loader failure
       - Recommended action: drush cache:rebuild (already tried), drush module:uninstall user + module:install user, or PHP-FPM restart
     
-- qa-forseti: 20260425-proj002-phase2c-empty-suite-audit.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
-(4 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
+(3 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
 EXECUTOR-HEALTH: 90 failures in 24h
   - High failure rate (90 in 24h). Possible systemic issue.
   - Majority of failures are systematic (not transient). Requires investigation.

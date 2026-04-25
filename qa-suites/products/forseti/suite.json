@@ -644,7 +644,16 @@
         "TP-AUTH-02: curl /admin/reports/copilot-agent-tracker/langgraph-console/test anon => 403.",
         "Admin auth-positive tests (200) require admin session cookie; covered by manual build/test entries."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static route check: export route stays GET-only, keeps integer constraint, and does not add CSRF to the GET route",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/ai_conversation.routing.yml; echo \"[AC-1] Route GET-only:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"methods.*GET\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-1] integer constraint:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"conversation_id.*\\\\\\\\d\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-1] no CSRF on GET:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"_csrf_token\" && (echo FAIL_CSRF_ON_GET && exit 1) || echo PASS'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-langgraph-ui-regression",
@@ -661,7 +670,16 @@
         "TP-REG-03: XSS check on rendered field names is manual (inspect HTML source for unescaped values).",
         "Note: AC-4 lists /langgraph-console/config but actual route is /langgraph-console/admin (routing.yml: copilot_agent_tracker.langgraph_console_admin). Command uses correct /admin path."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Anonymous export route stays blocked with HTTP 403",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/forseti/conversation/1/export); echo \"anon GET /forseti/conversation/1/export: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-langgraph-ui-build",
@@ -680,7 +698,16 @@
         "TP-SEC-02: engine.py missing/unreadable shows empty-state message, not PHP fatal or 500 (Dev to verify).",
         "STAGE 0 PENDING: requires feature implementation by dev-forseti."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Non-integer conversation export IDs return HTTP 404",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/forseti/conversation/notanid/export); echo \"GET /forseti/conversation/notanid/export: $STATUS\"; [ \"$STATUS\" = \"404\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-langgraph-ui-test",
@@ -695,7 +722,16 @@
         "TP-TEST-01: 200 + Eval Scorecards subsection + placeholder table with 4 columns + empty-state message.",
         "STAGE 0 PENDING: requires feature implementation by dev-forseti."
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static route checks confirm CSRF and POST-only methods on saved-search save/delete routes",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml; echo \"[AC-7] CSRF saved_search_save:\"; grep -A12 \"job_hunter.saved_search_save\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] CSRF saved_search_delete:\"; grep -A12 \"job_hunter.saved_search_delete\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] POST-only saved_search_save:\"; grep -A12 \"job_hunter.saved_search_save\" \"$ROUTING\" | grep -q \"methods.*POST\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] POST-only saved_search_delete:\"; grep -A12 \"job_hunter.saved_search_delete\" \"$ROUTING\" | grep -q \"methods.*POST\" && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-controller-extraction-phase1-static",
@@ -2321,7 +2357,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-export/forseti-ai-conversation-export-static.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static route check: export route stays GET-only, keeps integer constraint, and does not add CSRF to the GET route",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/ai_conversation.routing.yml; echo \"[AC-1] Route GET-only:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"methods.*GET\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-1] integer constraint:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"conversation_id.*\\\\\\\\d\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-1] no CSRF on GET:\"; grep -A10 \"forseti.conversation_export\" \"$ROUTING\" | grep -q \"_csrf_token\" && (echo FAIL_CSRF_ON_GET && exit 1) || echo PASS'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-export-acl",
@@ -2332,7 +2377,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-export/forseti-ai-conversation-export-acl.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Anonymous export route stays blocked with HTTP 403",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/forseti/conversation/1/export); echo \"anon GET /forseti/conversation/1/export: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-export-non-int",
@@ -2343,7 +2397,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-export/forseti-ai-conversation-export-non-int.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Non-integer conversation export IDs return HTTP 404",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/forseti/conversation/notanid/export); echo \"GET /forseti/conversation/notanid/export: $STATUS\"; [ \"$STATUS\" = \"404\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-export-e2e",
@@ -2355,7 +2418,16 @@
         "sessions/qa-forseti/artifacts/ai-conversation-export/forseti-ai-conversation-export-e2e.log"
       ],
       "required_for_release": false,
-      "command": "npx playwright test tests/forseti-ai-conversation-export.spec.ts --reporter=json --output=sessions/qa-forseti/artifacts/ai-conversation-export/"
+      "command": "npx playwright test tests/forseti-ai-conversation-export.spec.ts --reporter=json --output=sessions/qa-forseti/artifacts/ai-conversation-export/",
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Deferred Playwright coverage for authenticated export flow, file format, chat/history links, empty conversation handling, and cross-user protection",
+          "type": "e2e",
+          "command": "npx playwright test tests/forseti-ai-conversation-export.spec.ts --reporter=json --output=sessions/qa-forseti/artifacts/ai-conversation-export/",
+          "status": "skipped"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-history-browser-static",
@@ -2366,7 +2438,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-history-browser/forseti-ai-conversation-history-browser-static.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static route checks confirm GET-only history list, POST-only delete with CSRF, and integer delete constraint",
+          "type": "static",
+          "command": "bash -c 'ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/ai_conversation.routing.yml; echo \"[AC-1] forseti.conversations GET-only:\"; grep -A10 \"^forseti\\.conversations:\" \"$ROUTING\" | grep -q \"methods.*GET\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-1] no CSRF on list:\"; grep -A10 \"^forseti\\.conversations:\" \"$ROUTING\" | grep -q \"_csrf_token\" && (echo FAIL_CSRF_ON_GET && exit 1) || echo PASS; echo \"[AC-5] forseti.conversation_delete POST-only:\"; grep -A12 \"^forseti\\.conversation_delete:\" \"$ROUTING\" | grep -q \"methods.*POST\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-5] _csrf_token on delete:\"; grep -A12 \"^forseti\\.conversation_delete:\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-5] integer constraint on delete:\"; grep -A12 \"^forseti\\.conversation_delete:\" \"$ROUTING\" | grep -q \"conversation_id.*\\\\\\\\d\" && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-history-browser-acl",
@@ -2377,7 +2458,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-history-browser/forseti-ai-conversation-history-browser-acl.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Anonymous users cannot open the conversation history browser",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/forseti/conversations); echo \"anon GET /forseti/conversations: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-history-browser-csrf-delete",
@@ -2388,7 +2478,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-history-browser/forseti-ai-conversation-history-browser-csrf-delete.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Delete without a CSRF token is rejected with HTTP 403",
+          "type": "csrf",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" -X POST https://forseti.life/forseti/conversations/1/delete); echo \"POST delete no-CSRF: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-history-browser-non-int",
@@ -2399,7 +2498,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/ai-conversation-history-browser/forseti-ai-conversation-history-browser-non-int.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Non-integer delete IDs are rejected with HTTP 404",
+          "type": "acl",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" -X POST https://forseti.life/forseti/conversations/notanid/delete); echo \"POST delete non-int: $STATUS\"; [ \"$STATUS\" = \"404\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-ai-conversation-history-browser-e2e",
@@ -2411,7 +2519,16 @@
         "sessions/qa-forseti/artifacts/ai-conversation-history-browser/forseti-ai-conversation-history-browser-e2e.log"
       ],
       "skip_reason": "Playwright not available on this host; deferred until Playwright environment is provisioned",
-      "required_for_release": false
+      "required_for_release": false,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Deferred Playwright coverage for authenticated list rendering, pagination, resume link, delete flow, and empty-state handling",
+          "type": "e2e",
+          "command": "npx playwright test tests/forseti-ai-conversation-history-browser.spec.ts --reporter=json --output=sessions/qa-forseti/artifacts/ai-conversation-history-browser/",
+          "status": "skipped"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-cover-letter-display-static",
@@ -2514,7 +2631,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/saved-search/forseti-jobhunter-saved-search-static.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static route checks confirm CSRF and POST-only methods on saved-search save/delete routes",
+          "type": "static",
+          "command": "bash -c 'set -e; ROUTING=/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml; echo \"[AC-7] CSRF saved_search_save:\"; grep -A12 \"job_hunter.saved_search_save\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] CSRF saved_search_delete:\"; grep -A12 \"job_hunter.saved_search_delete\" \"$ROUTING\" | grep -q \"_csrf_token.*TRUE\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] POST-only saved_search_save:\"; grep -A12 \"job_hunter.saved_search_save\" \"$ROUTING\" | grep -q \"methods.*POST\" && echo PASS || (echo FAIL && exit 1); echo \"[AC-7] POST-only saved_search_delete:\"; grep -A12 \"job_hunter.saved_search_delete\" \"$ROUTING\" | grep -q \"methods.*POST\" && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-saved-search-acl",
@@ -2525,7 +2651,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/saved-search/forseti-jobhunter-saved-search-acl.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Anonymous access to the Google Jobs search page remains blocked",
+          "type": "functional",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" https://forseti.life/jobhunter/googlejobssearch); echo \"anon GET /jobhunter/googlejobssearch: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-saved-search-csrf-save",
@@ -2536,7 +2671,16 @@
       "artifacts": [
         "sessions/qa-forseti/artifacts/saved-search/forseti-jobhunter-saved-search-csrf-save.log"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Saved-search save POST without CSRF is rejected with HTTP 403",
+          "type": "functional",
+          "command": "bash -c 'STATUS=$(curl -o /dev/null -s -w \"%{http_code}\" -X POST https://forseti.life/jobhunter/saved-search/save -H \"Content-Type: application/x-www-form-urlencoded\" -d \"keywords=test\"); echo \"POST saved-search/save no-CSRF: $STATUS\"; [ \"$STATUS\" = \"403\" ] && echo PASS || (echo FAIL && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-saved-search-e2e",
@@ -2549,7 +2693,16 @@
       ],
       "required_for_release": true,
       "skip_reason": "Playwright/Node unavailable in current QA environment. Covers TC-2 through TC-12 (save flow, panel render, re-run, delete CSRF, 10-limit, keyword>256, XSS escape, cross-user delete block, DB table). Accepted gap until E2E environment provisioned.",
-      "status": "skipped"
+      "status": "skipped",
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Deferred Playwright coverage for saved-search create, panel render, re-run, delete, limit, sanitization, and cross-user protection",
+          "type": "e2e",
+          "command": "npx playwright test tests/forseti-jobhunter-saved-search.spec.ts --reporter=json --output=sessions/qa-forseti/artifacts/saved-search/",
+          "status": "skipped"
+        }
+      ]
     },
     {
       "id": "forseti-qa-e2e-auth-pipeline",
@@ -2572,7 +2725,16 @@
       "artifacts": [
         "stdout"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Static grep confirms the 64 KB guard, 413 status, and Payload too large message are present in ApiController",
+          "type": "static",
+          "command": "bash -c 'FILE=sites/forseti/web/modules/custom/copilot_agent_tracker/src/Controller/ApiController.php; LINES=$(grep -n \"65536\\|Payload too large\\|413\" \"$FILE\"); echo \"$LINES\"; echo \"$LINES\" | grep -q \"65536\" && echo \"TC-01a PASS: 65536 found\" || (echo \"TC-01a FAIL: 65536 missing\" && exit 1); echo \"$LINES\" | grep -q \"Payload too large\" && echo \"TC-01b PASS: Payload too large found\" || (echo \"TC-01b FAIL: Payload too large missing\" && exit 1); echo \"$LINES\" | grep -q \"413\" && echo \"TC-01c PASS: 413 found\" || (echo \"TC-01c FAIL: 413 missing\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-agent-tracker-payload-size-limit-static-ordering",
@@ -2583,7 +2745,16 @@
       "artifacts": [
         "stdout"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "Size guard is defined before json_decode in ApiController",
+          "type": "static",
+          "command": "bash -c 'FILE=sites/forseti/web/modules/custom/copilot_agent_tracker/src/Controller/ApiController.php; GUARD=$(grep -n \"65536\" \"$FILE\" | head -1 | cut -d: -f1); DECODE=$(grep -n \"json_decode\" \"$FILE\" | head -1 | cut -d: -f1); echo \"guard line=$GUARD decode line=$DECODE\"; [ -n \"$GUARD\" ] && [ -n \"$DECODE\" ] && [ \"$GUARD\" -lt \"$DECODE\" ] && echo \"TC-04 PASS: size guard before json_decode\" || (echo \"TC-04 FAIL: guard missing or placed after json_decode\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-agent-tracker-payload-size-limit-functional",
@@ -2606,7 +2777,16 @@
       "artifacts": [
         "stdout"
       ],
-      "required_for_release": true
+      "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "hook_install calls both interview-notes and saved-search table helpers",
+          "type": "static",
+          "command": "bash -c 'FILE=sites/forseti/web/modules/custom/job_hunter/job_hunter.install; OUT=$(grep -A60 \"function job_hunter_install\" \"$FILE\" | grep \"_job_hunter_create_interview_notes_table\\|_job_hunter_create_saved_searches_table\"); echo \"$OUT\"; echo \"$OUT\" | grep -q \"_job_hunter_create_interview_notes_table\" && echo \"TC-01a PASS: interview_notes_table called\" || (echo \"TC-01a FAIL: _job_hunter_create_interview_notes_table missing from hook_install\" && exit 1); echo \"$OUT\" | grep -q \"_job_hunter_create_saved_searches_table\" && echo \"TC-01b PASS: saved_searches_table called\" || (echo \"TC-01b FAIL: _job_hunter_create_saved_searches_table missing from hook_install\" && exit 1)'",
+          "status": "active"
+        }
+      ]
     },
     {
       "id": "forseti-jobhunter-hook-install-fix-static-no-dup",
@@ -2618,6 +2798,15 @@
         "stdout"
       ],
       "required_for_release": true,
+      "test_cases": [
+        {
+          "id": "TC-01",
+          "description": "hook_install helper call count stays at the expected non-duplicate total",
+          "type": "static",
+          "command": "bash -c 'FILE=sites/forseti/web/modules/custom/job_hunter/job_hunter.install; COUNT=$(grep -c \"_job_hunter_create_interview_notes_table\\|_job_hunter_create_saved_searches_table\" \"$FILE\"); echo \"occurrence count: $COUNT\"; [ \"$COUNT\" -eq 4 ] && echo \"TC-02 PASS: count=4 (1 call + 1 def per helper)\" || (echo \"TC-02 WARN: expected 4, got $COUNT (verify manually for duplicates)\" && exit 1)'",
+          "status": "active"
+        }
+      ],
       "notes": "Expected count is 4: one call site + one function definition per helper. If count differs, manual inspection required."
     },
     {
