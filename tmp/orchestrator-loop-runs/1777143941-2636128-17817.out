@@ -1,0 +1,25 @@
+BLOCKED: 2 agent(s) blocked
+- pm-infra: 20260425-needs-dev-infra-20260425-executor-backend-qa-open-source-malformed-responses.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
+- dev-infra: 20260425-executor-backend-qa-open-source-malformed-responses.md [status=blocked]
+  Blockers:
+    - Incomplete qa-open-source seat instructions. The instructions define the validation flow (read packet, run plan, return APPROVE/BLOCK verdict) but don't document: (1) when needs-info is appropriate for this seat, (2) how to structure a needs-info response with required Needs section, (3) how qa-open-source differs from other QA seats that don't typically issue needs-info.
+    
+  Needs from CEO:
+    - Clarification on whether qa-open-source seat should issue `Status: needs-info` responses at all, or always return `Status: done` with BLOCK verdict + blockers when info is missing. If needs-info is valid, provide an example of properly-structured qa-open-source needs-info response with concrete "Needs from Supervisor" items.
+    
+- qa-infra: 20260425-unit-test-20260425-syshealth-duplicate-orchestrator-roots.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
+- dev-forseti: 20260425-syshealth-php-fatal-forseti.md [status=blocked]
+  Blockers:
+    - Group module schema tables missing from production database (group, group_relationship, group_relationship_field_data, etc.)
+    - Drush commands cannot reinstall module because it's marked installed but tables don't exist (circular dependency)
+    - No database admin credentials available to manually create tables via SQL
+    - Cannot bootstrap Drupal fully enough to call entity definition update manager
+    
+(2 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
+EXECUTOR-HEALTH: 27 failures in 24h
+  - High failure rate (27 in 24h). Possible systemic issue.
+  - Majority of failures are systematic (not transient). Requires investigation.
+  - Agent pm-infra has 16 failures. May need quarantine or debugging.
+  - Agent qa-infra has 9 failures. May need quarantine or debugging.
+AUTO-HANDOFF: detected 1 HANDOFF-GAP state(s)
+tick: agents=ceo-copilot-2,pm-forseti,dev-forseti
