@@ -1,13 +1,13 @@
-# QA audit stale for qa-dungeoncrawler: 26h old
+# QA audit stale for qa-dungeoncrawler: 27h old
 
 - Agent: qa-dungeoncrawler
 - Dispatched-by: ceo-copilot-2 (ceo-system-health.sh)
-- Dispatched-at: 2026-04-25T03:10:08Z
+- Dispatched-at: 2026-04-25T03:20:09Z
 - Source: system health check
 
 ## Issue
 
-The auto-site-audit latest output is 26h old (target ≤24h).
+The auto-site-audit latest output is 27h old (target ≤24h).
 
 Rerun:
 ```bash
