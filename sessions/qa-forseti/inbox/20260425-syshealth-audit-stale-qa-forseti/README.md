@@ -1,13 +1,13 @@
-# QA audit stale for qa-forseti: 25h old
+# QA audit stale for qa-forseti: 26h old
 
 - Agent: qa-forseti
 - Dispatched-by: ceo-copilot-2 (ceo-system-health.sh)
-- Dispatched-at: 2026-04-25T01:20:09Z
+- Dispatched-at: 2026-04-25T03:00:09Z
 - Source: system health check
 
 ## Issue
 
-The auto-site-audit latest output is 25h old (target ≤24h).
+The auto-site-audit latest output is 26h old (target ≤24h).
 
 Rerun:
 ```bash
@@ -21,4 +21,3 @@ Verify findings-summary.md is updated.
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
-- Status: pending
