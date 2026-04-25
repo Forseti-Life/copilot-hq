@@ -20,7 +20,7 @@ BLOCKED: 3 agent(s) blocked
     - Clarification on whether qa-open-source seat should issue `Status: needs-info` responses at all, or always return `Status: done` with BLOCK verdict + blockers when info is missing. If needs-info is valid, provide an example of properly-structured qa-open-source needs-info response with concrete "Needs from Supervisor" items.
     
 - qa-infra: 20260425-unit-test-20260425-syshealth-duplicate-orchestrator-roots.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
-- pm-forseti: 20260425-post-push-20260412-dungeoncrawler-release-u.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
+- pm-forseti: 20260425-push-triggered-20260412-dungeoncrawler-release-u.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
 - dev-forseti: 20260425-syshealth-tailoring-queue-errors.md [status=blocked]
   Blockers:
     - Critical: Drupal module discovery broken (0 enabled modules reported, all queue workers undiscoverable)
@@ -50,10 +50,10 @@ BLOCKED: 3 agent(s) blocked
       - Recommended action: drush cache:rebuild (already tried), drush module:uninstall user + module:install user, or PHP-FPM restart
     
 (3 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
-EXECUTOR-HEALTH: 55 failures in 24h
-  - High failure rate (55 in 24h). Possible systemic issue.
+EXECUTOR-HEALTH: 57 failures in 24h
+  - High failure rate (57 in 24h). Possible systemic issue.
   - Majority of failures are systematic (not transient). Requires investigation.
-  - Agent pm-forseti has 25 failures. May need quarantine or debugging.
+  - Agent pm-forseti has 27 failures. May need quarantine or debugging.
   - Agent pm-infra has 19 failures. May need quarantine or debugging.
   - Agent qa-infra has 9 failures. May need quarantine or debugging.
 AUTO-HANDOFF: detected 1 HANDOFF-GAP state(s)

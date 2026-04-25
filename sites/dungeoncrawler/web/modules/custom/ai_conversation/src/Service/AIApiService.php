@@ -669,11 +669,12 @@ class AIApiService {
       
       // Track failure - exception
       $max_tokens_for_error = $options['max_tokens'] ?? 8000;
-      $context_data_with_config = $context_data + ['max_tokens' => $max_tokens_for_error, 'model_id' => $options['model_id'] ?? 'us.anthropic.claude-sonnet-4-5-20250929-v1:0'];
+      $fallback_model = $this->getModelFallbacks()[0] ?? 'us.anthropic.claude-sonnet-4-6';
+      $context_data_with_config = $context_data + ['max_tokens' => $max_tokens_for_error, 'model_id' => $options['model_id'] ?? $fallback_model];
       $this->trackApiUsage([
         'module' => $module,
         'operation' => $operation,
-        'model_id' => $options['model_id'] ?? 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
+        'model_id' => $options['model_id'] ?? $fallback_model,
         'input_tokens' => 0,
         'output_tokens' => 0,
         'stop_reason' => 'error',
