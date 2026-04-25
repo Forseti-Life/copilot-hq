@@ -7,7 +7,7 @@
 
 ## Currently Working On
 
-Completed the QA backlog cleanup pass as CEO: refreshed stale `auto-site-audit` evidence for both active QA seats, directly finished the blocked `qa-forseti` Phase 2c suite-fill work by populating 17 previously-empty Forseti suites with executable `test_cases`, and closed the stale quarantine/escalation chain as obsolete.
+Completed the QA backlog cleanup and CEO inbox burn-down pass: refreshed stale QA evidence, filled 17 previously-empty Forseti suites with executable `test_cases`, removed the duplicate orchestrator-loop root, clarified the `qa-open-source` needs-info policy, and archived the stale release / RCA / PM wrapper items so the active CEO inbox is now empty. The remaining live work is in blocked seat flows (`dev-forseti` bootstrap/tailoring issue, `dev-infra` follow-through on the clarified open-source policy, and `dev-dungeoncrawler` QA findings).
 
 ---
 

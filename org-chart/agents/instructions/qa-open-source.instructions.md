@@ -45,3 +45,36 @@ This file is owned by the `qa-open-source` seat. Keep it current when publicatio
 ## Escalation
 - Escalate to `pm-open-source`.
 - If a freeze packet is missing repo path, commit SHA, CI run reference, packaging model, or sanitized config inputs, set `Status: needs-info` and ask for those exact items.
+
+## Needs-info policy (required)
+- `Status: needs-info` is valid for this seat **only** when the freeze packet is missing mandatory release inputs that must come from PM/Dev before QA can even start the Gate 2 run.
+- Missing mandatory inputs means one or more of:
+  - candidate repo path
+  - frozen commit SHA
+  - CI run/reference for the frozen candidate
+  - packaging model / build entrypoint
+  - sanitized config or env inputs needed to reproduce the candidate
+- If QA can start but the candidate **fails validation** (test failure, docs mismatch, unsafe public artifact, broken install), return `Status: done` with a clear **BLOCK** verdict and the exact failing command/output. Do **not** use `needs-info` for ordinary QA failures.
+
+## Needs-info response contract (required)
+When this seat uses `Status: needs-info`, the outbox must include:
+- `## Needs from Supervisor`
+- one bullet per missing input
+- the exact file/link/value needed
+- why QA cannot start without it
+
+Preferred template:
+
+```md
+- Status: needs-info
+- Summary: Cannot start public-candidate Gate 2 because the freeze packet is missing required inputs.
+
+## Needs from Supervisor
+- Provide the frozen candidate repo path.
+- Provide the exact commit SHA to validate.
+- Provide the CI run URL or run ID for that SHA.
+- Provide the packaging/install entrypoint if it differs from the default docs flow.
+
+## Blockers
+- Without these inputs, QA cannot reproduce the candidate on a clean machine.
+```
