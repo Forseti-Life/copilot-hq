@@ -1,13 +1,13 @@
 # CEO Session State — ceo-copilot-2
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-24 17:57 UTC
+> Last updated: 2026-04-25 20:34 UTC
 
 ---
 
 ## Currently Working On
 
-Recovered the stuck coordinated release boundary: advanced the already-pushed `forseti-release-q` / `dungeoncrawler-release-s` pair to `forseti-release-r` / `dungeoncrawler-release-t`, patched the recovery path so operational churn no longer blocks `post-coordinated-push.sh`, and taught release health to flag `pushed but not advanced` explicitly.
+Completed the current `drupal-langgraph` parity slice in the standalone repo: canonical HQ/runtime resolution now defaults to `/home/ubuntu/forseti.life`, the console regained release evidence / release troubleshooting reporting, and the admin surface now exposes runtime root resolution plus richer artifact health. Next pickup point: verify these repo-side console changes in the live Drupal install and continue any remaining console parity gaps from the legacy tracker surface.
 
 ---
 
