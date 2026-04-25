@@ -1,22 +1,28 @@
 {
   "blockers": {
-    "CEO proxy load: 7 sessions doing dev/QA/PM work (dev=1, QA=4, PM=2) \u2014 executor broken or roles understaffed": {
+    "Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) \u2014 code shipped without review": {
       "count": 1,
-      "first_seen": "2026-04-25T13:30:01.200745+00:00",
-      "last_seen": "2026-04-25T13:30:01.200745+00:00"
+      "first_seen": "2026-04-25T13:40:01.380938+00:00",
+      "last_seen": "2026-04-25T13:40:01.380938+00:00"
     },
-    "Merge health: 2 tracked local change(s)": {
+    "Merge health: 1 tracked local change(s)": {
       "count": 1,
-      "first_seen": "2026-04-25T13:30:01.200745+00:00",
-      "last_seen": "2026-04-25T13:30:01.200745+00:00"
+      "first_seen": "2026-04-25T13:40:01.380938+00:00",
+      "last_seen": "2026-04-25T13:40:01.380938+00:00"
+    },
+    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-u": {
+      "count": 1,
+      "first_seen": "2026-04-25T13:40:01.380938+00:00",
+      "last_seen": "2026-04-25T13:40:01.380938+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
-    "CEO proxy load: 7 sessions doing dev/QA/PM work (dev=1, QA=4, PM=2) \u2014 executor broken or roles understaffed",
-    "Merge health: 2 tracked local change(s)"
+    "Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) \u2014 code shipped without review",
+    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-u",
+    "Merge health: 1 tracked local change(s)"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-25T13:30:01.200745+00:00"
+  "last_run_at": "2026-04-25T13:40:01.380938+00:00"
 }
