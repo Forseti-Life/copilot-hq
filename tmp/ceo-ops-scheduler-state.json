@@ -1,28 +1,22 @@
 {
   "blockers": {
-    "Merge health: 1 tracked local change(s)": {
-      "count": 1,
-      "first_seen": "2026-04-25T13:00:01.144624+00:00",
-      "last_seen": "2026-04-25T13:00:01.144624+00:00"
-    },
     "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-t": {
-      "count": 103,
+      "count": 104,
       "first_seen": "2026-04-24T20:00:01.930289+00:00",
-      "last_seen": "2026-04-25T13:00:01.144624+00:00"
+      "last_seen": "2026-04-25T13:10:01.752392+00:00"
     },
     "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-r": {
-      "count": 33,
+      "count": 34,
       "first_seen": "2026-04-25T07:40:01.088530+00:00",
-      "last_seen": "2026-04-25T13:00:01.144624+00:00"
+      "last_seen": "2026-04-25T13:10:01.752392+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-t",
-    "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-r",
-    "Merge health: 1 tracked local change(s)"
+    "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-r"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-25T13:00:01.144624+00:00"
+  "last_run_at": "2026-04-25T13:10:01.752392+00:00"
 }
