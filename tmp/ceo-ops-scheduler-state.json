@@ -1,9 +1,9 @@
 {
   "blockers": {
     "Duplicate orchestrator roots detected: pid(s) 2636128 3423139": {
-      "count": 1,
+      "count": 2,
       "first_seen": "2026-04-25T19:00:01.891547+00:00",
-      "last_seen": "2026-04-25T19:00:01.891547+00:00"
+      "last_seen": "2026-04-25T19:10:01.227340+00:00"
     }
   },
   "fast_mode": true,
@@ -11,6 +11,6 @@
     "Duplicate orchestrator roots detected: pid(s) 2636128 3423139"
   ],
   "last_rc": 1,
-  "last_rca_created": 0,
-  "last_run_at": "2026-04-25T19:00:01.891547+00:00"
+  "last_rca_created": 1,
+  "last_run_at": "2026-04-25T19:10:01.227340+00:00"
 }
