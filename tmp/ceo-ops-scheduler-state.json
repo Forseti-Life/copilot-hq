@@ -1,40 +1,28 @@
 {
   "blockers": {
-    "Drupal watchdog: 2 recent error(s)": {
-      "count": 3,
-      "first_seen": "2026-04-25T20:30:01.454150+00:00",
-      "last_seen": "2026-04-25T20:50:01.746002+00:00"
-    },
     "Duplicate orchestrator roots detected: pid(s) 1449643 1476883": {
-      "count": 2,
+      "count": 3,
       "first_seen": "2026-04-25T20:40:01.445533+00:00",
-      "last_seen": "2026-04-25T20:50:01.746002+00:00"
+      "last_seen": "2026-04-25T21:00:01.292607+00:00"
     },
     "Gating agent(s) majority-quarantined: pm-forseti (3/3 = 100%) \u2014 release gates bypassed by executor failure": {
-      "count": 5,
+      "count": 6,
       "first_seen": "2026-04-25T20:10:01.351262+00:00",
-      "last_seen": "2026-04-25T20:50:01.746002+00:00"
+      "last_seen": "2026-04-25T21:00:01.292607+00:00"
     },
-    "Tailoring queue log has 15 error/exception lines (last 500 lines)": {
+    "Tailoring queue log has 17 error/exception lines (last 500 lines)": {
       "count": 1,
-      "first_seen": "2026-04-25T20:50:01.746002+00:00",
-      "last_seen": "2026-04-25T20:50:01.746002+00:00"
-    },
-    "[forseti] PHP Fatal/Parse/Exception errors: 362 in last 24h (1 in last 30m)": {
-      "count": 1,
-      "first_seen": "2026-04-25T20:50:01.746002+00:00",
-      "last_seen": "2026-04-25T20:50:01.746002+00:00"
+      "first_seen": "2026-04-25T21:00:01.292607+00:00",
+      "last_seen": "2026-04-25T21:00:01.292607+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "Gating agent(s) majority-quarantined: pm-forseti (3/3 = 100%) \u2014 release gates bypassed by executor failure",
     "Duplicate orchestrator roots detected: pid(s) 1449643 1476883",
-    "[forseti] PHP Fatal/Parse/Exception errors: 362 in last 24h (1 in last 30m)",
-    "Drupal watchdog: 2 recent error(s)",
-    "Tailoring queue log has 15 error/exception lines (last 500 lines)"
+    "Tailoring queue log has 17 error/exception lines (last 500 lines)"
   ],
   "last_rc": 1,
-  "last_rca_created": 1,
-  "last_run_at": "2026-04-25T20:50:01.746002+00:00"
+  "last_rca_created": 0,
+  "last_run_at": "2026-04-25T21:00:01.292607+00:00"
 }
