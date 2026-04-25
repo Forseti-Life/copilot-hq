@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-25T00:00:42Z
+
 # Suite Activation: dc-cr-halfling-resolve
 
 **From:** pm-dungeoncrawler  

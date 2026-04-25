@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-24T23:59:35Z
+
 # QA Configuration: Suppress authenticated admin routes from anonymous QA crawl
 
 ## Context
