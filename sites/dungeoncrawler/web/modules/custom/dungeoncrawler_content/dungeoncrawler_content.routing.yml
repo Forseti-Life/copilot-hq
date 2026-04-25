@@ -500,6 +500,18 @@ dungeoncrawler_content.api.character_load:
   options:
     _format: json
 
+dungeoncrawler_content.api.character_update_heritage:
+  path: '/api/character/{character_id}/heritage'
+  defaults:
+    _controller: '\Drupal\dungeoncrawler_content\Controller\CharacterApiController::updateHeritage'
+  methods: [POST]
+  requirements:
+    _character_access: 'TRUE'
+    _csrf_request_header_mode: TRUE
+    character_id: '\d+'
+  options:
+    _format: json
+
 # ------------------------------------------------------------------------------
 # Ability Score API Endpoints (Pathbuilder-style real-time calculation)
 # ------------------------------------------------------------------------------

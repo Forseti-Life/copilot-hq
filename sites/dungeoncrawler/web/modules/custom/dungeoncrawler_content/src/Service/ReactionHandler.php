@@ -194,6 +194,45 @@ class ReactionHandler {
     ];
   }
 
+  /**
+   * Check for Call on Ancient Blood before a magical saving throw.
+   *
+   * @param int $encounter_id
+   * @param int $participant_id
+   * @param array $trigger_action
+   *
+   * @return array|null
+   *   Reaction opportunity metadata, or NULL if not available.
+   */
+  public function checkForSavingThrowReaction($encounter_id, $participant_id, array $trigger_action) {
+    $participant = $this->database->select('combat_participants', 'p')
+      ->fields('p')
+      ->condition('id', (int) $participant_id)
+      ->condition('encounter_id', (int) $encounter_id)
+      ->execute()
+      ->fetchAssoc();
+
+    if (!$participant || empty($participant['reaction_available'])) {
+      return NULL;
+    }
+
+    if (!$this->hasReactionAbility($participant, 'call-on-ancient-blood')) {
+      return NULL;
+    }
+
+    if (!$this->isMagicalSavingThrowTrigger($trigger_action)) {
+      return NULL;
+    }
+
+    return [
+      'participant_id' => (int) $participant['id'],
+      'participant_name' => $participant['name'] ?? 'Unknown',
+      'reaction_type' => 'call-on-ancient-blood',
+      'trigger_match' => ['saving_throw_before_roll_magical'],
+      'effect' => CharacterManager::HERITAGE_REACTIONS['call-on-ancient-blood']['effect'],
+    ];
+  }
+
   // -----------------------------------------------------------------------
   // Reaction execution.
   // -----------------------------------------------------------------------
@@ -204,7 +243,7 @@ class ReactionHandler {
    * @param int $participant_id
    *   Participant using their reaction.
    * @param string $reaction_type
-   *   'attack_of_opportunity' or 'shield_block'.
+   *   'attack_of_opportunity', 'shield_block', or 'call-on-ancient-blood'.
    * @param array $trigger_action
    *   The action/event that triggered this reaction.
    * @param int $encounter_id
@@ -244,6 +283,13 @@ class ReactionHandler {
           (int) $participant_id,
           (int) ($trigger_action['damage'] ?? 0),
           $trigger_action['damage_type'] ?? 'physical',
+          (int) $encounter_id
+        );
+
+      case 'call-on-ancient-blood':
+        return $this->processCallOnAncientBlood(
+          (int) $participant_id,
+          $trigger_action,
           (int) $encounter_id
         );
 
@@ -496,6 +542,64 @@ class ReactionHandler {
   }
 
   /**
+   * Check whether a participant has a specific reaction ability.
+   */
+  protected function hasReactionAbility(array $participant, string $reaction_id): bool {
+    $entity_ref = $this->decodeEntityRef($participant);
+    $needle = $this->normalizeReactionId($reaction_id);
+
+    foreach ((array) ($entity_ref['reactions'] ?? []) as $reaction) {
+      $candidate = is_array($reaction)
+        ? (string) ($reaction['id'] ?? $reaction['name'] ?? '')
+        : (string) $reaction;
+      if ($this->normalizeReactionId($candidate) === $needle) {
+        return TRUE;
+      }
+    }
+
+    foreach ((array) ($entity_ref['granted_abilities'] ?? []) as $ability_id) {
+      if ($this->normalizeReactionId((string) $ability_id) === $needle) {
+        return TRUE;
+      }
+    }
+
+    $heritage = (string) (
+      $entity_ref['heritage']
+      ?? $entity_ref['character']['ancestry']['heritage']
+      ?? ''
+    );
+    return $needle === 'call-on-ancient-blood'
+      && $this->normalizeReactionId($heritage) === 'ancient-blooded-dwarf';
+  }
+
+  /**
+   * Normalize reaction and heritage identifiers for runtime matching.
+   */
+  protected function normalizeReactionId(string $value): string {
+    return strtolower(str_replace(' ', '-', trim($value)));
+  }
+
+  /**
+   * Validate a magical saving-throw trigger payload.
+   */
+  protected function isMagicalSavingThrowTrigger(array $trigger_action): bool {
+    $trigger = $this->normalizeReactionId((string) ($trigger_action['trigger'] ?? ''));
+    if ($trigger === 'saving_throw_before_roll_magical') {
+      return TRUE;
+    }
+
+    $type = $this->normalizeReactionId((string) ($trigger_action['type'] ?? ''));
+    $traits = array_map([$this, 'normalizeReactionId'], (array) ($trigger_action['traits'] ?? []));
+
+    return $type === 'saving_throw'
+      && (
+        !empty($trigger_action['is_magical'])
+        || in_array('magical', $traits, TRUE)
+        || in_array('spell', $traits, TRUE)
+      );
+  }
+
+  /**
    * Resolve shield stats from participant entity_ref.
    *
    * @param array $participant
@@ -595,6 +699,62 @@ class ReactionHandler {
     }
 
     return (int) ($entity_ref['damage'] ?? $entity_ref['base_damage'] ?? 4);
+  }
+
+  /**
+   * Apply Call on Ancient Blood and persist its temporary save bonus.
+   */
+  protected function processCallOnAncientBlood(int $participant_id, array $trigger_action, int $encounter_id): array {
+    $participant = $this->database->select('combat_participants', 'p')
+      ->fields('p')
+      ->condition('id', $participant_id)
+      ->condition('encounter_id', $encounter_id)
+      ->execute()
+      ->fetchAssoc();
+
+    if (!$participant) {
+      return ['type' => 'call-on-ancient-blood', 'error' => 'Participant not found'];
+    }
+
+    if (!$this->hasReactionAbility($participant, 'call-on-ancient-blood')) {
+      return ['type' => 'call-on-ancient-blood', 'error' => 'Participant lacks Call on Ancient Blood'];
+    }
+
+    if (!$this->isMagicalSavingThrowTrigger($trigger_action)) {
+      return ['type' => 'call-on-ancient-blood', 'error' => 'Call on Ancient Blood requires a magical saving throw trigger'];
+    }
+
+    $effect = CharacterManager::HERITAGE_REACTIONS['call-on-ancient-blood']['effect'];
+    $entity_ref = $this->decodeEntityRef($participant);
+    $entity_ref['active_reaction_bonuses']['call-on-ancient-blood'] = [
+      'stat' => $effect['stat'],
+      'value' => (int) $effect['value'],
+      'duration' => $effect['duration'],
+      'includes_trigger' => !empty($effect['includes_trigger']),
+      'trigger' => 'saving_throw_before_roll_magical',
+      'applies_to' => 'magical',
+      'granted_at' => time(),
+      'encounter_id' => $encounter_id,
+    ];
+    $entity_ref['saving_throw_circumstance_bonus'] = max(
+      (int) ($entity_ref['saving_throw_circumstance_bonus'] ?? 0),
+      (int) $effect['value']
+    );
+
+    $this->store->updateParticipant($participant_id, [
+      'entity_ref' => json_encode($entity_ref),
+    ]);
+
+    return [
+      'type' => 'call-on-ancient-blood',
+      'participant_id' => $participant_id,
+      'participant_name' => $participant['name'] ?? 'Unknown',
+      'bonus' => (int) $effect['value'],
+      'stat' => $effect['stat'],
+      'duration' => $effect['duration'],
+      'includes_trigger' => !empty($effect['includes_trigger']),
+      'status' => 'applied',
+    ];
   }
 
   /**

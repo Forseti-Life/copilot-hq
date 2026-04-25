@@ -10378,6 +10378,39 @@ the triggering spell. You then attempt to counteract the triggering spell.'],
   }
 
   /**
+   * Get decoded character data from a stored record without service state.
+   */
+  public static function getStoredCharacterData(?object $record): array {
+    if (!$record || empty($record->character_data) || !is_string($record->character_data)) {
+      return [];
+    }
+
+    $data = json_decode($record->character_data, TRUE);
+    return is_array($data) ? $data : [];
+  }
+
+  /**
+   * Determine whether a stored character has completed wizard creation.
+   */
+  public static function isWizardCompleteRecord(?object $record): bool {
+    if (!$record) {
+      return FALSE;
+    }
+
+    $data = self::getStoredCharacterData($record);
+    return !empty($record->status) || !empty($data['wizard_complete']);
+  }
+
+  /**
+   * Return the currently stored heritage ID for a character record.
+   */
+  public static function getStoredHeritage(?object $record): string {
+    $data = self::getStoredCharacterData($record);
+    $heritage = $data['heritage'] ?? '';
+    return is_string($heritage) ? $heritage : '';
+  }
+
+  /**
    * Get the skill list for a character with proficiency rank and bonus.
    *
    * Returns all 17 core skills plus any Lore specializations stored on the character.
