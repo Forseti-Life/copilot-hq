@@ -1,16 +1,22 @@
 {
   "blockers": {
     "Duplicate orchestrator roots detected: pid(s) 2636128 3423139": {
-      "count": 3,
+      "count": 4,
       "first_seen": "2026-04-25T19:00:01.891547+00:00",
-      "last_seen": "2026-04-25T19:20:01.733683+00:00"
+      "last_seen": "2026-04-25T19:30:01.468407+00:00"
+    },
+    "Merge health: 1 tracked local change(s)": {
+      "count": 1,
+      "first_seen": "2026-04-25T19:30:01.468407+00:00",
+      "last_seen": "2026-04-25T19:30:01.468407+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
-    "Duplicate orchestrator roots detected: pid(s) 2636128 3423139"
+    "Duplicate orchestrator roots detected: pid(s) 2636128 3423139",
+    "Merge health: 1 tracked local change(s)"
   ],
   "last_rc": 1,
   "last_rca_created": 0,
-  "last_run_at": "2026-04-25T19:20:01.733683+00:00"
+  "last_run_at": "2026-04-25T19:30:01.468407+00:00"
 }

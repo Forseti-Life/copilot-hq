@@ -33,3 +33,4 @@ This blocker has failed to clear across multiple CEO monitoring cycles. CEO owne
 - Containment and permanent fix are documented
 - Verification evidence is recorded
 - The blocker no longer appears in CEO release/system health output
+- Status: pending

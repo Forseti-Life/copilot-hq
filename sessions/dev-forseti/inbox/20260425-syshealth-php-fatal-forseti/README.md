@@ -29,3 +29,4 @@ WHERE ("group_relationship_field_data"."entity_id" = :db_condition_placeholder_0
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
+- Status: pending
