@@ -1,6 +1,6 @@
 # Feature Progress
 
-Generated: 2026-04-25T21:59:03Z
+Generated: 2026-04-25T16:26:54Z
 
 | Work item | Website | Module | Status | Priority | PM | Dev | QA |
 |-----------|---------|--------|--------|----------|----|-----|----|
@@ -173,7 +173,7 @@ Generated: 2026-04-25T21:59:03Z
 | forseti-csrf-fix | forseti.life | job_hunter | shipped | P0 |  |  |  |
 | forseti-csrf-post-routes-fix | forseti.life | job_hunter | shipped | P1 (security) |  |  |  |
 | forseti-dev-master-worker-sync | infrastructure | copilot-hq | in-progress | P1 |  |  |  |
-| forseti-financial-health-home | forseti.life | institutional_management (MVP host) | ready |  |  |  |  |
+| forseti-financial-health-home | forseti.life | institutional_management (MVP host) | in_progress |  |  |  |  |
 | forseti-installation-cluster-communication | forseti.life | forseti_cluster (new) | in_progress |  |  |  |  |
 | forseti-jobhunter-application-analytics | forseti.life | job_hunter | shipped | medium |  |  |  |
 | forseti-jobhunter-application-controller-db-extraction | forseti.life | job_hunter | shipped | P2 |  |  |  |
@@ -185,7 +185,7 @@ Generated: 2026-04-25T21:59:03Z
 | forseti-jobhunter-browser-automation | forseti.life | job_hunter | shipped | P1 |  |  |  |
 | forseti-jobhunter-bulk-status-update | forseti.life | job_hunter | done | medium |  |  |  |
 | forseti-jobhunter-company-interest-tracker | forseti.life | job_hunter | shipped | high |  |  |  |
-| forseti-jobhunter-company-research-tracker | forseti.life | job_hunter | done | medium |  |  |  |
+| forseti-jobhunter-company-research-tracker | forseti.life | job_hunter | in_progress | medium |  |  |  |
 | forseti-jobhunter-contact-referral-tracker | forseti.life | job_hunter | in_progress | medium |  |  |  |
 | forseti-jobhunter-contact-tracker | forseti.life | job_hunter | shipped | high |  |  |  |
 | forseti-jobhunter-controller-extraction-phase1 | forseti.life | job_hunter | shipped | P2 |  |  |  |
@@ -224,7 +224,7 @@ Generated: 2026-04-25T21:59:03Z
 | forseti-langgraph-console-test-sections | forseti.life | copilot_agent_tracker | done | high |  |  |  |
 | forseti-langgraph-ui | forseti.life | copilot_agent_tracker | shipped | P1 |  |  |  |
 | forseti-mobile-google-maps-key-hardening | forseti.life | forseti-mobile | in_progress | P0 |  |  |  |
-| forseti-open-source-initiative |  |  | ready | high |  |  |  |
+| forseti-open-source-initiative |  |  | in_progress | high |  |  |  |
 | forseti-qa-e2e-auth-pipeline | forseti.life | qa_suites | shipped | low |  |  |  |
 | forseti-qa-suite-fill-agent-tracker | forseti.life | qa_suites | shipped | medium |  |  |  |
 | forseti-qa-suite-fill-controller-extraction | forseti.life | qa_suites | shipped | medium |  |  |  |
