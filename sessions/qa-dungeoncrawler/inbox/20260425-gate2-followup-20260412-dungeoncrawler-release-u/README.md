@@ -11,6 +11,7 @@ Active release `20260412-dungeoncrawler-release-u` has scoped features but no Ga
 
 Scoped features:
 - `dc-cr-ceaseless-shadows`
+- `dc-cr-halfling-weapon-expertise`
 
 Review the current QA evidence and either:
 1. write a `gate2-approve` outbox artifact, or

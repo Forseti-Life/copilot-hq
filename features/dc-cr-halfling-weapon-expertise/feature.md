@@ -3,14 +3,14 @@
 - Work item id: dc-cr-halfling-weapon-expertise
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: ready
+- Status: done
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: 
+- Release: 20260412-dungeoncrawler-release-u
 - Created: 2026-04-14
 
 ## Goal
