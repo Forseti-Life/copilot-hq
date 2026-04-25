@@ -1,22 +1,28 @@
 {
   "blockers": {
     "Drupal watchdog: 2 recent error(s)": {
-      "count": 2,
+      "count": 3,
       "first_seen": "2026-04-25T18:30:01.182119+00:00",
-      "last_seen": "2026-04-25T18:40:01.479121+00:00"
+      "last_seen": "2026-04-25T18:50:01.116400+00:00"
+    },
+    "Duplicate orchestrator roots detected: pid(s) 2636128 3361808": {
+      "count": 1,
+      "first_seen": "2026-04-25T18:50:01.116400+00:00",
+      "last_seen": "2026-04-25T18:50:01.116400+00:00"
     },
     "[forseti] PHP Fatal/Parse/Exception errors: 3 in last 24h (2 in last 30m)": {
-      "count": 2,
+      "count": 3,
       "first_seen": "2026-04-25T18:30:01.182119+00:00",
-      "last_seen": "2026-04-25T18:40:01.479121+00:00"
+      "last_seen": "2026-04-25T18:50:01.116400+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
+    "Duplicate orchestrator roots detected: pid(s) 2636128 3361808",
     "[forseti] PHP Fatal/Parse/Exception errors: 3 in last 24h (2 in last 30m)",
     "Drupal watchdog: 2 recent error(s)"
   ],
   "last_rc": 1,
-  "last_rca_created": 2,
-  "last_run_at": "2026-04-25T18:40:01.479121+00:00"
+  "last_rca_created": 0,
+  "last_run_at": "2026-04-25T18:50:01.116400+00:00"
 }
