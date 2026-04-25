@@ -1,7 +1,0 @@
-EXECUTOR-HEALTH: 17 failures in 24h
-  - High failure rate (17 in 24h). Possible systemic issue.
-  - Majority of failures are systematic (not transient). Requires investigation.
-  - Agent pm-infra has 9 failures. May need quarantine or debugging.
-  - Agent qa-infra has 6 failures. May need quarantine or debugging.
-AUTO-HANDOFF: detected 1 HANDOFF-GAP state(s)
-tick: agents=ceo-copilot-2,pm-forseti,dev-infra
