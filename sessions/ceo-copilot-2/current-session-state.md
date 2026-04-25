@@ -7,7 +7,7 @@
 
 ## Currently Working On
 
-Completed the current `drupal-langgraph` parity slice in the standalone repo: canonical HQ/runtime resolution now defaults to `/home/ubuntu/forseti.life`, the console regained release evidence / release troubleshooting reporting, and the admin surface now exposes runtime root resolution plus richer artifact health. Next pickup point: verify these repo-side console changes in the live Drupal install and continue any remaining console parity gaps from the legacy tracker surface.
+Clearing the QA backlog as CEO by handling the real blockers directly: refresh stale `auto-site-audit` evidence for the active QA seats, then close the stale qa-forseti quarantine/escalation chain that no longer represents unresolved verification work.
 
 ---
 

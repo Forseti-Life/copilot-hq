@@ -1,0 +1,39 @@
+{
+  "base_url": "https://forseti.life",
+  "config_drift_warnings": [],
+  "counts": {
+    "failures": 0,
+    "missing_assets_404s": 0,
+    "permission_violations": 0,
+    "pm_acl_questions": 1,
+    "pm_acl_questions_suppressed": 0
+  },
+  "evidence": {
+    "crawl_json": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/forseti-life-crawl.json",
+    "crawl_md": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/forseti-life-crawl.md",
+    "permissions_json": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/permissions-validation.json",
+    "permissions_md": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/permissions-validation.md",
+    "routes_json": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/forseti-life-custom-routes.json",
+    "routes_md": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/route-audit-summary.md"
+  },
+  "failures": [],
+  "is_prod": true,
+  "label": "forseti-life",
+  "missing_assets_404s": [],
+  "permission_violations": [],
+  "pm_acl_questions": [
+    {
+      "evidence_json": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/forseti-life-crawl.json",
+      "evidence_md": "sessions/qa-forseti/artifacts/auto-site-audit/20260425-213415/forseti-life-crawl.md",
+      "link_href": "/node/add",
+      "link_text": "Create Content:",
+      "link_title": "",
+      "linked_from_url": "https://forseti.life/",
+      "path": "/node/add",
+      "source": "crawl",
+      "status": 403,
+      "url": "https://forseti.life/node/add"
+    }
+  ],
+  "run_ts": "20260425-213415"
+}
