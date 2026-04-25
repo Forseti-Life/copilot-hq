@@ -94,8 +94,8 @@ ${breach_ids:+
 Active breaches:
 ${breach_ids}}
 Check:
-- /home/ubuntu/forseti.life/sessions/${ceo_agent}/inbox
-- /home/ubuntu/forseti.life/inbox/responses/forseti-triage-latest.log
+- /home/ubuntu/forseti.life/copilot-hq/sessions/${ceo_agent}/inbox
+- /home/ubuntu/forseti.life/copilot-hq/inbox/responses/forseti-triage-latest.log
 EOF
 )"
 

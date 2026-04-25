@@ -23,7 +23,7 @@ Set `Status: needs-info` and put questions under `## Needs from Supervisor` (you
 Include: exact steps, expected vs actual, and what you tried.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/agent-explore-dungeoncrawler/**
 - org-chart/agents/instructions/agent-explore-dungeoncrawler.instructions.md
 

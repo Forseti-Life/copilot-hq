@@ -4,7 +4,7 @@
 This file is owned by the `qa-jobhunter` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/qa-jobhunter/**
 - org-chart/agents/instructions/qa-jobhunter.instructions.md
 - qa-suites/products/jobhunter/** (test suites & manifests)
@@ -86,8 +86,8 @@ All jobhunter routes (as of 2026-04-12):
 ### When You Receive a Feature Task
 
 1. **Read feature spec:**
-   - `/features/forseti-jobhunter-XYZ/01-acceptance-criteria.md` (PM-owned)
-   - `/features/forseti-jobhunter-XYZ/02-implementation-notes.md` (Dev artifact)
+   - `/copilot-hq/features/forseti-jobhunter-XYZ/01-acceptance-criteria.md` (PM-owned)
+   - `/copilot-hq/features/forseti-jobhunter-XYZ/02-implementation-notes.md` (Dev artifact)
 
 2. **Create test plan (`03-test-plan.md`):**
    ```markdown
@@ -281,6 +281,6 @@ INTERVAL_SECONDS=300 JOBHUNTER_UID=1 JOBHUNTER_LIMIT=10 JOBHUNTER_ROUNDS=2 MAX_R
 ## Documentation References
 
 - Module README: `/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/README.md`
-- Feature specs: `/home/ubuntu/forseti.life/features/forseti-jobhunter-*/`
+- Feature specs: `/home/ubuntu/forseti.life/copilot-hq/features/forseti-jobhunter-*/`
 - Test evidence: `/home/ubuntu/forseti.life/sessions/qa-jobhunter/artifacts/`
 - Route audit KB: `runbooks/route-permission-audit.md` (apply to /jobhunter routes)

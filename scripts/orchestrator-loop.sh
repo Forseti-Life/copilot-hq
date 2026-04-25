@@ -129,19 +129,12 @@ case "$cmd" in
   run)
     echo $$ > "$PIDFILE"
     while true; do
-      tick_start="$(date +%s)"
       ts="$(date -Iseconds)"
       daylog="$LOGDIR/orchestrator-$(date +%Y%m%d).log"
       out="$(run_orchestrator_once 2>&1 || true)"
       out_line="$(printf '%s' "$out" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/[[:space:]]+$//')"
       echo "[$ts] $out_line" | tee -a "$daylog" > "$LATEST"
-      # Sleep only the remaining portion of the interval so that
-      # interval is the period between tick *starts*, not tick end + sleep.
-      tick_end="$(date +%s)"
-      elapsed=$(( tick_end - tick_start ))
-      remaining=$(( interval - elapsed ))
-      [ "$remaining" -lt 1 ] && remaining=1
-      sleep "$remaining"
+      sleep "$interval"
     done
     ;;
 

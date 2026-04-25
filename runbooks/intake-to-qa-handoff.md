@@ -26,7 +26,7 @@
 │  2. PM triages each suggestion (accept/defer/decline)                       │
 │  3. PM writes Acceptance Criteria:  features/<id>/01-acceptance-criteria.md │
 │  4. PM hands off to QA:  ./scripts/pm-qa-handoff.sh forseti <feature-id>    │
-│  5. QA generates test cases → feature overlay + features/<id>/03-test-plan.md │
+│  5. QA generates test cases → suite.json + features/<id>/03-test-plan.md   │
 │                                                                             │
 │  ✓ Feature is GROOMED when all three exist:                                 │
 │    feature.md  +  01-acceptance-criteria.md  +  03-test-plan.md            │
@@ -70,38 +70,11 @@
 Grooming is PM's job during Dev execution of the current release — it runs entirely in parallel
 and does not interact with the current release at all.
 
-### Step 1 — Audit the existing next-release backlog
-
-Before pulling new suggestions, scan the already-tracked backlog for features that are partially groomed.
-If a feature for the next release is already `planned`, `ready`, or `in_progress` but is missing either
-`01-acceptance-criteria.md` or `03-test-plan.md`, finish that backlog item first.
-
-```bash
-python3 - <<'PY'
-import pathlib, re
-site = "forseti"  # swap for the product you are grooming
-for fm in sorted(pathlib.Path("features").glob("*/feature.md")):
-    text = fm.read_text(encoding="utf-8")
-    if f"- Website: {site}" not in text:
-        continue
-    m = re.search(r"^- Status:\s*(.+)$", text, re.MULTILINE)
-    if not m:
-        continue
-    status = m.group(1).strip()
-    if status not in {"planned", "ready", "in_progress"}:
-        continue
-    ac = fm.with_name("01-acceptance-criteria.md").exists()
-    tp = fm.with_name("03-test-plan.md").exists()
-    if not (ac and tp):
-        print(f"{fm.parent.name}: status={status} ac={ac} testplan={tp}")
-PY
-```
-
-### Step 2 — Pull community suggestions (once at Stage 3 start)
+### Step 1 — Pull community suggestions (once at Stage 3 start)
 
 Open `README.md` in the batch folder. Review the summary table — gives you category + title at a glance.
 
-### Step 3 — Triage each suggestion
+### Step 2 — Triage each suggestion
 
 For each `triage/NID-<n>-triage.md`:
 
@@ -126,7 +99,7 @@ or crash/data-loss risk?
 
 Record your decision and rationale in the triage file.
 
-### Step 4 — Run the decision
+### Step 3 — Run the decision
 
 ```bash
 # Accept — creates features/<feature-id>/feature.md
@@ -142,7 +115,7 @@ Record your decision and rationale in the triage file.
 ./scripts/suggestion-triage.sh forseti <nid> escalate
 ```
 
-### Step 5 — Gap analysis (required before writing AC)
+### Step 4 — Gap analysis (required before writing AC)
 
 **This step is mandatory.** Do not write `01-acceptance-criteria.md` until it is complete.
 
@@ -176,7 +149,7 @@ A gap analysis is **blocked** if:
 - The codebase is inaccessible (file access error) — escalate to CEO.
 - The feature has no identifiable source requirements — return to intake and request clarification.
 
-### Step 6 — Complete the feature brief
+### Step 5 — Complete the feature brief
 
 For each accepted feature, open `features/<feature-id>/feature.md` and fill in:
 - `Module:` — which Drupal module owns this
@@ -187,7 +160,7 @@ For each accepted feature, open `features/<feature-id>/feature.md` and fill in:
 
 **The Acceptance Criteria doc is the handoff contract to QA.** It must exist before calling `pm-qa-handoff.sh`. QA will read it to generate test cases — it must be complete, not a stub. **AC criteria without gap analysis tags will be rejected by QA and returned for clarification.**
 
-### Step 7 — Select release scope
+### Step 6 — Select release scope
 
 Review all `features/forseti-*/feature.md` entries with `Status: planned`.  
 Add accepted + prioritized items to the release change list:
@@ -241,18 +214,9 @@ Dev starts immediately. Tests already exist (written during grooming). Dev build
 This writes a QA inbox item containing:
 - The feature brief (`feature.md`)
 - The acceptance criteria (`01-acceptance-criteria.md`)
-- An explicit instruction to generate the QA test plan and feature overlay metadata for the feature
-
-**QA output contract for this handoff:**
-- Input: `feature.md` + `01-acceptance-criteria.md`
-- Outputs:
-  - `features/<feature-id>/03-test-plan.md`
-  - `qa-suites/products/forseti/features/<feature-id>.json`
-  - QA outbox completion note
-- QA must validate the overlay manifest before signaling completion
+- An explicit instruction: *generate test cases for this feature and add them to `qa-suites/products/forseti/suite.json`*
 
 **PM must not send the handoff until `01-acceptance-criteria.md` is complete.** Incomplete AC → QA has nothing to write tests against.
-Likewise, a quiet suggestion-intake run does **not** mean grooming is done if the backlog audit still shows partially groomed features.
 
 ---
 
@@ -343,7 +307,7 @@ Stage 3  Dev executes                    PM: suggestion-intake.sh
          QA monitors                     PM: triage (accept/defer/decline)
          (current release)               PM: write 01-acceptance-criteria.md
                                          PM→QA: pm-qa-handoff.sh
-                                         QA: generate test cases → feature overlay
+                                         QA: generate test cases → suite.json
                                          QA: write 03-test-plan.md
                                          ✓ feature is now GROOMED (ready pool)
      │

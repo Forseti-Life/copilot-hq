@@ -1,10 +1,6 @@
 # Feature: forseti-financial-health-home
 
-- Group Order: 1
-- Group: finance-home
-- Group Title: Finance Home
-- Group Sort: 1
-- Status: done
+- Status: ready
 - Website: forseti.life
 - Module: institutional_management (MVP host)
 - Release: 20260412-forseti-release-l

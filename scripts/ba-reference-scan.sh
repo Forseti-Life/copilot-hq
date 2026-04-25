@@ -54,8 +54,6 @@ if [ -z "$BA_AGENT" ]; then
   exit 1
 fi
 
-BA_INBOX_DIR="sessions/${BA_AGENT}/inbox"
-
 # Check if there are reference docs configured
 REF_DOCS_COUNT="$(python3 - "$PRODUCT_TEAMS_JSON" "$SITE" <<'PY'
 import json, sys
@@ -184,7 +182,7 @@ PROGRESS_PCTS="$((CHUNK_END * 100 / TOTAL_LINES))%"
 TODAY="$(date +%Y%m%d)"
 SLUG="ba-refscan-$(echo "$SITE" | tr '[:upper:]' '[:lower:]')-$(echo "$BOOK_LABEL" | tr '[:upper:] ' '[:lower:]-' | tr -cs 'a-z0-9-' '-' | sed 's/^-//;s/-$//' | cut -c1-30)"
 ITEM_ID="${TODAY}-${SLUG}"
-INBOX_DIR="${BA_INBOX_DIR}/${ITEM_ID}"
+INBOX_DIR="sessions/${BA_AGENT}/inbox/${ITEM_ID}"
 OUTBOX_FILE="sessions/${BA_AGENT}/outbox/${ITEM_ID}.md"
 
 if [ -d "$INBOX_DIR" ] || [ -f "$OUTBOX_FILE" ]; then
@@ -192,46 +190,11 @@ if [ -d "$INBOX_DIR" ] || [ -f "$OUTBOX_FILE" ]; then
   exit 0
 fi
 
-# Only allow one active refscan inbox item at a time for the seat. Leaving older
-# in-progress scans queued causes the executor to keep revisiting stale chunks.
-ACTIVE_SCAN_ITEM="$(
-  find "$BA_INBOX_DIR" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" \
-    -name "*-ba-refscan-${SITE}-*" -printf '%f\n' 2>/dev/null | sort | head -n 1
-)" || ACTIVE_SCAN_ITEM=""
-if [ -n "$ACTIVE_SCAN_ITEM" ]; then
-  echo "[ba-reference-scan] Active BA refscan item already queued: ${ACTIVE_SCAN_ITEM}"
-  exit 0
-fi
-
-# Use the explicit progress JSON instead of file mtimes. Mtime counting drifts as
-# soon as unrelated feature files change and incorrectly tells BA that the cap is hit.
-CYCLE_COUNT_THIS_RELEASE="$(python3 - "$PROGRESS_FILE" "$NEXT_RELEASE_ID" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as fh:
-    progress = json.load(fh)
-
-count = progress.get("total_features_generated", 0)
-try:
-    count = int(count)
-except (TypeError, ValueError):
-    count = 0
-
-if progress.get("last_scan_release") != sys.argv[2]:
-    count = 0
-
-print(max(count, 0))
-PY
-)" || CYCLE_COUNT_THIS_RELEASE=0
-
-if [ "$CYCLE_COUNT_THIS_RELEASE" -ge "$CAP_PER_CYCLE" ]; then
-  echo "[ba-reference-scan] Feature cap already reached for ${NEXT_RELEASE_ID}: ${CYCLE_COUNT_THIS_RELEASE}/${CAP_PER_CYCLE}"
-  exit 0
-fi
-
 mkdir -p "$INBOX_DIR"
 echo "18" > "$INBOX_DIR/roi.txt"
+
+# Compute how many features have been generated this cycle
+CYCLE_COUNT_THIS_RELEASE="$(find features/ -name "feature.md" -newer "$PROGRESS_FILE" 2>/dev/null | wc -l | tr -d ' ')" || CYCLE_COUNT_THIS_RELEASE=0
 
 cat > "$INBOX_DIR/command.md" <<EOF
 # Reference Document Scan — ${BOOK_LABEL}

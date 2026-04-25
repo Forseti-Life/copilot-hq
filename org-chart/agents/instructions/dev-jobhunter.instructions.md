@@ -4,7 +4,7 @@
 This file is owned by the `dev-jobhunter` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/dev-jobhunter/**
 - org-chart/agents/instructions/dev-jobhunter.instructions.md
 - features/*/02-implementation-notes.md (JobHunter-related)

@@ -22,8 +22,7 @@ The system is a set of cooperating layers:
 
 4) **Publishing/visibility (dashboards)**
 - Publisher: `scripts/publish-forseti-agent-tracker.sh`
-- Runtime owner: orchestrator publish step
-- Legacy loop wrapper (disabled in normal operation): `scripts/publish-forseti-agent-tracker-loop.sh`
+- Loop wrapper: `scripts/publish-forseti-agent-tracker-loop.sh`
 - Destination: Drupal custom module (tracker dashboards)
 
 5) **Quality automation (QA audits and routing findings)**
@@ -162,11 +161,8 @@ Org control:
 Publisher:
 - `scripts/publish-forseti-agent-tracker.sh`
 
-Runtime owner:
-- orchestrator publish step
-
-Legacy loop wrapper:
-- `scripts/publish-forseti-agent-tracker-loop.sh` (disabled in normal operation)
+Loop wrapper:
+- `scripts/publish-forseti-agent-tracker-loop.sh`
 
 Purpose:
 - Publishes HQ agent state, inbox summary counts, and key artifacts/evidence pointers to Drupal for monitoring.

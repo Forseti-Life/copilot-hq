@@ -67,7 +67,8 @@ The `release_cycle` step manages the full cycle lifecycle automatically:
   - creates QA preflight inbox item in `sessions/qa-<team>/inbox/`
   - creates PM grooming inbox item in `sessions/pm-<team>/inbox/` (next release, parallel)
   - records IDs in `tmp/release-cycle-active/<team>.release_id` and `.next_release_id`
-- **Cycle signed off** → detects `sessions/pm-<team>/artifacts/release-signoffs/<id>.md`, advances next→current
+- **Cycle signed off** → marks `signed_off_waiting_push`; runtime does not advance until coordinated push handoff
+- **Post-push handoff** → `scripts/post-coordinated-push.sh` advances `next_release_id` → `release_id`
 - **Cycle active** → no-op (idempotent; `release-cycle-start.sh` also guards against double-start)
 
 ## Runtime agent provider
@@ -78,7 +79,6 @@ Preserved behaviors:
 - per-agent session handling + inbox locking
 - local LLM routing (`llm/routing.yaml` + `llm/runner.py`)
 - Copilot CLI fallback (`gh copilot --resume`)
-- stale detached Copilot worker reaping during `health_check`
 - ROI bump behavior on completion
 
 A placeholder `cline` provider exists as a future hook.
@@ -86,4 +86,4 @@ A placeholder `cline` provider exists as a future hook.
 ## Notes
 
 - The orchestrator does **not** create arbitrary new work items — work creation flows through CEO/PM GenAI calls or the release cycle step.
-- Dashboard publishing is handled by the orchestrator tick; do not run a separate publisher loop in normal operation.
+- `publish-forseti-agent-tracker-loop.sh` also runs independently (separate daemon, also every 60s). This provides redundant publishing so the dashboard stays current even if a tick is slow.

@@ -35,14 +35,13 @@ if [ ! -f "$PRODUCT_TEAMS_JSON" ]; then
 fi
 
 python3 - "$PRODUCT_TEAMS_JSON" "$ACTIVE_DIR" "$PUSHED_DIR" "$ROOT_DIR" <<'PY'
+import json
 import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 teams_json, active_dir, pushed_dir, root = map(Path, sys.argv[1:5])
-sys.path.insert(0, str(root / "scripts" / "lib"))
-from release_cycle_helpers import coordinated_teams, has_groom_item  # noqa: E402
 
 
 def read_text(path: Path) -> str:
@@ -61,8 +60,10 @@ def release_feature_count(features_root: Path, release_id: str) -> int:
     return count
 
 
-def ready_features(features_root: Path, team_id: str) -> list[str]:
+def ready_features(features_root: Path, team_id: str, site: str, aliases: list[str]) -> list[str]:
     matches: list[str] = []
+    lowered_aliases = [a.lower() for a in aliases if a]
+    site_key = site.lower()
     for fm in sorted(features_root.glob("*/feature.md")):
         text = fm.read_text(encoding="utf-8", errors="ignore")
         website = ""
@@ -72,7 +73,9 @@ def ready_features(features_root: Path, team_id: str) -> list[str]:
                 website = line.split(":", 1)[1].strip().lower()
             elif line.startswith("- Status:"):
                 status = line.split(":", 1)[1].strip()
-        if status == "ready" and team_id in website:
+        feature_id = fm.parent.name.lower()
+        alias_match = any(alias in feature_id for alias in lowered_aliases)
+        if status == "ready" and (team_id in website or site_key in website or alias_match):
             matches.append(fm.parent.name)
     return matches
 
@@ -86,6 +89,22 @@ def has_scope_activate_item(pm_inbox: Path, release_id: str) -> bool:
         if "scope-activate" in item.name and release_id in item.name:
             return True
     return False
+
+
+def has_groom_item(root: Path, pm_agent: str, next_release_id: str) -> bool:
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", next_release_id).strip("-")[:60]
+    inbox = root / "sessions" / pm_agent / "inbox"
+    outbox = root / "sessions" / pm_agent / "outbox"
+    if inbox.exists():
+        for item in inbox.iterdir():
+            if item.is_dir() and item.name != "_archived" and item.name.endswith(f"-groom-{slug}"):
+                return True
+    if outbox.exists():
+        for item in outbox.glob(f"*-groom-{slug}.md"):
+            if item.is_file():
+                return True
+    return False
+
 
 def write_scope_activate_item(root: Path, pm_agent: str, team_id: str, release_id: str, ready_feats: list[str]) -> Path:
     inbox = root / "sessions" / pm_agent / "inbox"
@@ -116,7 +135,11 @@ def write_scope_activate_item(root: Path, pm_agent: str, team_id: str, release_i
     return item_dir
 
 
-teams = coordinated_teams(teams_json)
+with open(teams_json, encoding="utf-8") as fh:
+    teams = [
+        team for team in json.load(fh).get("teams", [])
+        if team.get("active") and team.get("coordinated_release_default")
+    ]
 
 features_root = root / "features"
 failures = 0
@@ -124,6 +147,8 @@ failures = 0
 for team in sorted(teams, key=lambda entry: entry.get("id", "")):
     team_id = (team.get("id") or "").strip()
     pm_agent = (team.get("pm_agent") or f"pm-{team_id}").strip()
+    team_site = str(team.get("site") or "").strip()
+    team_aliases = [str(a).strip() for a in (team.get("aliases") or [])]
     release_file = active_dir / f"{team_id}.release_id"
     next_file = active_dir / f"{team_id}.next_release_id"
     sentinel_file = pushed_dir / f"{team_id}.advanced"
@@ -173,7 +198,7 @@ for team in sorted(teams, key=lambda entry: entry.get("id", "")):
         print(f"✅ PASS [{team_id}] scope-activate item already queued for {release_id}")
         continue
 
-    ready = ready_features(features_root, team_id)
+    ready = ready_features(features_root, team_id, team_site, team_aliases)
     if ready:
         item_dir = write_scope_activate_item(root, pm_agent, team_id, release_id, ready)
         print(f"✅ PASS [{team_id}] queued immediate scope-activate item: {item_dir.name}")

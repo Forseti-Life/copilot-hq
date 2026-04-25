@@ -119,6 +119,7 @@ Use the template files under `templates/release/`.
 Before the push (required):
 - `pm-forseti` runs `./scripts/release-signoff-status.sh <release-id>` and proceeds only if it reports ready.
 - `pm-forseti` runs `./scripts/release-notes-lint.sh sessions/<lead-pm>/artifacts/release-candidates/<YYYYMMDD-release-id>/` and proceeds only if it passes.
+- `pm-forseti` runs `./scripts/gate4-prepush-check.sh <release-id>` and proceeds only if it returns PASS.
 7) QA performs post-release audit against production.
 8) If post-release clean, PM starts the next release cycle (Gate R0) using the newest QA signal.
 

@@ -3,14 +3,14 @@
 - Work item id: dc-cr-halfling-weapon-expertise
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
-- Priority: P3
+- Status: pre-triage
+- Priority: unset (PM will set at triage)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: 20260412-dungeoncrawler-release-s
+- Release: (set by PM at activation)
 - Created: 2026-04-14
 
 ## Goal
@@ -32,7 +32,3 @@ Implements Halfling Weapon Expertise (Halfling Feat 13, prereq: Halfling Weapon 
 
 - [ ] Aligns with democratized community game experience
 - [ ] Does not add surveillance or restrict community access
-## Security acceptance criteria
-
-- Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
-

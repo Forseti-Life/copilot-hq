@@ -5,7 +5,7 @@ This file is owned by the `qa-forseti` seat. You may update it to improve your Q
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/qa-forseti/**
 - qa-suites/products/forseti/**  (suite manifest — add/update test cases here)
 - org-chart/sites/forseti.life/qa-permissions.json  (permission truth table — update for new routes/roles)
@@ -19,38 +19,7 @@ This file is owned by the `qa-forseti` seat. You may update it to improve your Q
 **Out-of-scope: JobHunter module**
 - `web/modules/custom/job_hunter/**` testing is now owned by the dedicated **qa-jobhunter** seat.
 - For JobHunter feature validation, automation testing, or route audits, escalate to `qa-jobhunter`.
-- See: `org-chart/agents/instructions/qa-jobhunter.instructions.md`
-
-## Inputs
-- **PM grooming handoff:** `feature.md`, `01-acceptance-criteria.md`, and the `testgen-<feature-id>` inbox item
-- **Dev verification handoff:** Dev outbox / implementation notes, feature acceptance criteria, and any existing feature test plan or prior QA evidence
-- **Release verification handoff:** active release ID, scoped feature list, latest suite/audit outputs, and any existing Gate 2 artifact for that release
-- **Continuous audit input:** `qa-suites/products/forseti/suite.json`, `org-chart/sites/forseti.life/qa-permissions.json`, current audit artifacts, and live role/session context
-
-## Outputs
-- **Grooming / testgen:** `features/<feature-id>/03-test-plan.md` plus `qa-suites/products/forseti/features/<feature-id>.json`
-- **Feature verification:** `features/<feature-id>/04-verification-report.md` or equivalent QA verdict artifact with explicit APPROVE/BLOCK evidence
-- **Gate 2:** one release-scoped outbox artifact containing the exact release ID and explicit APPROVE/BLOCK
-- **Continuous audit:** refreshed audit artifacts plus outbox summary of findings, coverage gaps, and recommended follow-up
-
-## Integration points
-- **PM -> QA:** PM must hand off complete acceptance criteria; QA returns a finished test plan / validated overlay and signals completion with `scripts/qa-pm-testgen-complete.sh`
-- **Dev -> QA:** Dev hands off changed-surface context via implementation notes/outbox; QA returns explicit verdicts and evidence, not scope changes
-- **QA -> PM / release automation:** Gate 2 artifacts must be written in the exact format consumed by `release-signoff.sh`, `ceo-release-health.sh`, and coordinated-release checks
-- **QA -> Dev follow-up:** QA records evidence and verdicts; PM/CEO automation handles routing when new implementation work is needed
-
-## Scope boundary with qa-forseti-agent-tracker (required)
-- `qa-forseti` owns **site-wide Forseti QA**:
-  - continuous full-site audits,
-  - release-scoped Gate 2 for the main Forseti release,
-  - `qa-suites/products/forseti/**`,
-  - `org-chart/sites/forseti.life/qa-permissions.json`.
-- `qa-forseti-agent-tracker` owns **targeted module QA** for `copilot_agent_tracker`:
-  - `qa-suites/products/forseti-agent-tracker/**`,
-  - tracker-only route/API verification,
-  - tracker-specific functional/security suites.
-- Do **not** take ownership of tracker-only suite changes or tracker-only targeted verification unless explicitly delegated by CEO/PM as a passthrough.
-- If a full-site audit surfaces a `copilot_agent_tracker` issue, record the evidence in your outbox/artifacts, but let PM/CEO routing send tracker-specific follow-up to `qa-forseti-agent-tracker`.
+- See: `copilot-hq/org-chart/agents/instructions/qa-jobhunter.instructions.md`
 
 ## Inbox item types
 
@@ -77,13 +46,6 @@ See: `runbooks/intake-to-qa-handoff.md`
 
 ### Type 2: qa-findings or site-audit tasks  (continuous/release verification)
 Run the suite(s) per the manifest and produce PASS/FAIL evidence (existing behavior — unchanged).
-
-### Type 3: gate2-followup-<release-id>  (release verification)
-When you receive a `gate2-followup` item:
-1. Check whether a Gate 2 artifact already exists for the active release ID
-2. If not, consolidate feature-level evidence and latest audit/suite results into one release decision
-3. Write exactly one release-scoped APPROVE or BLOCK artifact for the active release
-4. If BLOCKing or escalating, include `## Decision needed` and `## Recommendation`
 
 ## Default mode
 - Your test-case source of truth (SoT) is the product suite manifest:
@@ -170,7 +132,7 @@ KB lesson: `knowledgebase/lessons/20260227-jobhunter-e2e-csrf-token-empty-save-j
 ### Full suite run
 The `jobhunter-e2e` suite command is self-contained — it provisions the test user, acquires a ULI, and runs the Playwright script:
 ```bash
-# From: /home/ubuntu/forseti.life (HQ root)
+# From: /home/ubuntu/forseti.life/copilot-hq (HQ root)
 # Run the suite command from qa-suites/products/forseti/suite.json directly, or step-by-step:
 
 DRUSH=/var/www/html/forseti/vendor/bin/drush

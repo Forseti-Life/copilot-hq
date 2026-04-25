@@ -3,12 +3,7 @@
 - Work item id: forseti-jobhunter-job-board-preferences
 - Website: forseti.life
 - Module: job_hunter
-- Project: PROJ-004
-- Group Order: 3
-- Group: discovery
-- Group Title: Job Discovery & Search
-- Group Sort: 4
-- Status: done
+- Status: in_progress
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti

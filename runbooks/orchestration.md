@@ -53,6 +53,7 @@ orchestrator-loop.sh  (background daemon, every 60s)
        └─ 8. publish                scripts/publish-forseti-agent-tracker.sh
               → Drupal copilot_agent_tracker tables + "Todo for Keith" dashboard
 
+publish-forseti-agent-tracker-loop  (independent daemon, every 60s — redundant publish)
 auto-checkpoint-loop                (independent daemon, every 2h)
 improvement-round-loop              (independent daemon, PM+CEO process review dispatch)
 ```

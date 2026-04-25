@@ -3,8 +3,8 @@
 - Work item id: dc-ui-token-readability
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-n
+- Status: ready
+- Release: unscoped
 - Priority: P1
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

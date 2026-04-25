@@ -47,21 +47,6 @@ Delegation rule (current org policy):
 - Dev consumes failing suite evidence directly and fixes the product (or requests QA suite adjustments).
 - PM is pulled in only when a failure is actually a **scope/intent** question (ACL/publicness decisions, release scope freeze changes, risk acceptance).
 
-## PM ↔ QA contract
-
-### PM sends QA
-- For grooming / testgen: `feature.md`, complete `01-acceptance-criteria.md`, feature id, and the correct QA handoff item
-- For release verification: active release ID, scoped feature list, release intent, and any known risk-acceptance context
-- For follow-up decisions: explicit answers to scope/intent questions when QA evidence exposes ambiguity
-
-### PM expects back from QA
-- During grooming: `03-test-plan.md` plus validated feature overlay metadata
-- During feature/release verification: explicit QA verdict artifacts with PASS/FAIL or APPROVE/BLOCK evidence
-- At Gate 2: one release-scoped QA decision artifact containing the exact release ID and explicit APPROVE/BLOCK
-
-### PM integration rule
-- PM must not expect QA to route Dev work. QA supplies evidence and decisions; PM/CEO automation routes implementation follow-up.
-
 Escalation rules:
 - QA escalates to PM after **5 failed attempts** to fix a single failing test (or tightly-coupled failure cluster). PM must decide:
 	- accept risk,
@@ -72,12 +57,10 @@ Escalation rules:
 ## Inputs (You require)
 - Current state observations (from Dev/Tester)
 - Constraints (security, performance, timeline)
-- QA evidence for release readiness, risk acceptance, and scope decisions
 
 ## Outputs (You must produce)
 - Coordinated release plan + change list when shipping across multiple products (see `runbooks/coordinated-release.md`).
 - Release coordination artifacts (release window, dependencies, sequencing, comms path).
-- Complete PM->QA handoffs with all required inputs for test generation and release verification
 
 ## Anti-blocking rule
 - If you think "file writes are blocked", **do not stop**: still produce complete artifacts content in your outbox and mark blockers as the missing business/technical inputs (scope, constraints, repo path).
@@ -157,18 +140,6 @@ When starting work:
 - Create/confirm the next inbox items for BA/Dev/QA (one each), referencing the same work item.
 - Each delegation must include: definition of done + verification.
 - Each delegation must include: ROI (1–infinity, be reasonable) + rationale.
-
-3a) Retire stale release-bound inbox items (required)
-- When a release advances, do **not** continue working old PM inbox items tied to the prior release state.
-- Items in these classes become stale once the referenced release is no longer current/relevant:
-  - `release-close-now`
-  - `signoff-reminder`
-  - `coordinated-signoff`
-  - `push-ready`
-  - `post-push`
-  - grooming items for a release that has just become current
-- Required action: write/keep an exact-name PM outbox artifact that marks the item **`done` / superseded**, then archive the stale inbox folder under `sessions/<pm-seat>/inbox/_archived/`, and continue with the newly seeded current/next-release items.
-- If an old item still represents real unfinished work, convert it into the correct current-cycle item instead of continuing the stale release-tagged folder.
 
 4) Unblock
 - If Dev/QA report blockers, decide quickly:

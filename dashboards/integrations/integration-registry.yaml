@@ -1,12 +1,6 @@
 version: 1
 project: PROJ-010
-last_updated: 2026-04-17
-governance_team:
-  pm: pm-integrations
-  ba: ba-integrations
-  dev: dev-integrations
-  qa: qa-integrations
-  security: sec-analyst-integrations
+last_updated: 2026-04-13
 entries:
   - id: aws-bedrock
     name: AWS Bedrock

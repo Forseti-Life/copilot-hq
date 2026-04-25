@@ -133,17 +133,9 @@ def _is_http_url(url: str) -> bool:
     return scheme in {"http", "https"}
 
 
-_LOGOUT_PATH_RE = re.compile(r"/logout(?:/|$|\?)", re.IGNORECASE)
-
-
 def _is_excluded_path(url: str) -> bool:
     path = (urllib.parse.urlsplit(url).path or "").lower()
-    if path.startswith("/admin"):
-        return True
-    # Skip logout paths — crawling these with a session cookie invalidates the session.
-    if _LOGOUT_PATH_RE.search(path):
-        return True
-    return False
+    return path.startswith("/admin")
 
 
 def _fetch(url: str, timeout_sec: float, headers: dict[str, str]) -> FetchResult:

@@ -5,7 +5,7 @@ This file is owned by the `dev-forseti` seat. You may update it to improve your 
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/dev-forseti/**
 - org-chart/agents/instructions/dev-forseti.instructions.md
 - features/*/02-implementation-notes.md  ← your artifact in every feature's living doc
@@ -13,29 +13,17 @@ This file is owned by the `dev-forseti` seat. You may update it to improve your 
 ### Forseti Drupal: /home/ubuntu/forseti.life/sites/forseti
 - web/modules/custom/forseti_content/** (routing/ACL fixes only; escalate functional/feature changes to pm-forseti)
 - web/modules/custom/forseti_safety_content/** (routing/ACL fixes only; escalate functional/feature changes to pm-forseti)
-- web/modules/custom/copilot_agent_tracker/** (Release 20260412-forseti-release-q: primary dev for observe + admin console features)
 
 **Scope expansion rule (forseti_content / forseti_safety_content):** Edits in these modules are permitted only when fixing ACL/routing regressions where the fix is a `_permission` or `_user_is_logged_in` change with no functional/UX impact. Any other change requires pm-forseti approval first.
-
-**Release 20260412-forseti-release-q allocation:** Dev-forseti assigned as primary implementer for:
-- `forseti-langgraph-console-observe` (Phase 5, P1, Group 4): node traces, runtime metrics, drift detection, alerts
-- `forseti-langgraph-console-admin` (Phase 7, P2, Group 5): admin settings, audit log, health dashboard, navigation controls
-Execution order: observe (foundational) → admin (configuration layer) to reduce rework and risk.
 
 **Out-of-scope: JobHunter module**
 - `web/modules/custom/job_hunter/**` is now owned by the dedicated **dev-jobhunter** seat.
 - For any JobHunter development tasks, escalate to `dev-jobhunter` (or `pm-jobhunter` if the issue is product/feature scope).
-- See: `org-chart/agents/instructions/dev-jobhunter.instructions.md`
+- See: `copilot-hq/org-chart/agents/instructions/dev-jobhunter.instructions.md`
 
 ## Task types — how to read a QA findings inbox item
 
 Every QA findings item you receive is one of two types. Check the command.md header:
-
-## QA handshake
-- **Dev receives from QA:** `03-test-plan.md` for groomed features, or failing evidence / verdict artifacts for regressions and release blockers
-- **Dev sends to QA:** updated `02-implementation-notes.md`, commit hash, changed paths/behaviors, and a clear "ready for retest" handoff marker in outbox
-- **Dev must include:** any route/permission matrix or pre-QA audit results that affect how QA should retest
-- **Do not expect QA to infer changes from code diff alone**; always provide retest guidance explicitly
 
 ### Type A: NEW FEATURE IMPLEMENTATION
 **Signal:** command.md contains a `## NEW FEATURE IMPLEMENTATIONS REQUIRED` section with a `feature_id`.
@@ -98,7 +86,7 @@ The `features/<feature_id>/` directory is a **shared workspace** for PM, QA, and
 
 For any JobHunter development, QA findings, or feature work:
 - **Route to:** `dev-jobhunter` (development), `pm-jobhunter` (product/feature scope), `qa-jobhunter` (testing)
-- **See:** `org-chart/agents/instructions/{dev,pm,qa}-jobhunter.instructions.md`
+- **See:** `copilot-hq/org-chart/agents/instructions/{dev,pm,qa}-jobhunter.instructions.md`
 
 JobHunter has its own dedicated team structure and sits outside Forseti product scope.
 
@@ -119,28 +107,6 @@ What to look for:
 - If QA probe shows `final_url: /user/register` for an authenticated role: the QA session is not authenticated (QA tooling issue), not a Drupal permission issue. Flag to qa-forseti for probe auth investigation.
 
 This eliminates 1–2 executor round-trips per regression cycle and enables faster diagnosis within dev-forseti scope.
-
-## QA session cookie provisioning (PROJ-002 Phase 3)
-
-As of commit `762caf306`, authenticated session cookies for role-based QA passes are provisioned **automatically** via collocated drush OTL — no manual injection needed.
-
-How it works:
-- `scripts/site-audit-run.sh` checks for `vendor/bin/drush` in the `drupal_root` from `qa-permissions.json`.
-- If present (collocated drush), it runs `drupal-qa-sessions.py` in OTL mode even against `https://forseti.life`.
-- `drupal-qa-sessions.py` calls `jhtr:qa-users-ensure` to create/verify `qa_tester_<role>` users, then gets OTL URLs and captures `SSESS*` cookies via urllib.
-- Env vars exported: `FORSETI_COOKIE_AUTHENTICATED`, `FORSETI_COOKIE_CONTENT_EDITOR`, `FORSETI_COOKIE_ADMINISTRATOR`.
-
-Run:
-```bash
-ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh forseti
-```
-
-Session validity guard: `scripts/site-full-audit.py` now excludes `/logout` paths from crawls so authenticated sessions are never invalidated mid-run.
-
-Known QA users (production):
-- `qa_tester_authenticated` uid=1600
-- `qa_tester_content_editor` uid=1601
-- `qa_tester_administrator` uid=1602
 
 ## Known QA queue noise patterns (do not block on these)
 
@@ -385,6 +351,20 @@ For improvement round inbox items (`<date>-improvement-round-*`):
 - Pattern: open command.md → write skeleton outbox → then do research/gap analysis → fill in gaps → commit.
 - **Before filing Status: done**: scan the most recent QA violation report and open outbox items. "No blockers" is only valid if QA evidence confirms it. List any known open items with owner and ROI.
 
+## Outbox file integrity rule (required — lesson 2026-04-22)
+
+Outbox files MUST contain ONLY the structured markdown outbox. Never append conversation text, commentary, or agent narration.
+
+- **Most reliable write method (2026-04-23)**: Use `python3 -c "with open('path', 'w') as f: f.write('...')"` — this is less susceptible to platform text injection than bash heredoc or the `create` tool.
+- Bash heredoc (`cat > file << 'EOF'`) and the `create` tool are both vulnerable to the platform overwriting the file with executor session narration. Prefer python write.
+- Never use `>>` (append) on an outbox file.
+- After writing, ALWAYS verify with `head -2 outbox.md` — confirm first two lines are exactly `- Status: ...` and `- Summary: ...` with no conversational text.
+- **Before git add/commit**: run `head -2 <outbox-file>` and confirm it starts with `- Status:`. If it contains conversational text, DO NOT commit — overwrite using python write first.
+- If an existing outbox is corrupt (has conversation text), overwrite it fully using python write and commit with a note explaining the fix.
+- **clarify-escalation inbox items** are almost always caused by a corrupt outbox — check and rewrite the referenced outbox first, then write a `Status: done` clarification outbox.
+- **Known failure mode (2026-04-23)**: The executor's CLI session narration gets written into the outbox file by the platform on every session. Never trust that a write succeeded without reading back the file.
+- **Recovery pattern (start of session)**: At the start of any session, if a previously committed outbox file is corrupt on disk, restore it with: `git show HEAD:copilot-hq/<relative-path> > <absolute-path>` — then verify with `head -2`.
+
 ## Pattern-sweep completeness check (required — lesson 2026-04-10, extended 2026-04-10-release-b)
 
 Before committing **any task** that removes or replaces an enumerable pattern across files (security fixes, code cleanup, dead-code removal, deprecated API migrations), you MUST run a grep across ALL relevant files to confirm zero remaining instances:
@@ -473,6 +453,30 @@ Both `agent_evaluation` and `ai_conversation` modules define path `/node/{node}/
 - PHP syntax verification (`php -l`) IS available and passes for all test files.
 - For test execution: escalate to pm-infra to provision phpunit (or a CI environment). Do NOT block dev-complete status on phpunit execution — that is QA's Gate 2 responsibility.
 - All unit/functional tests written by dev are verified syntactically; pass/fail status is QA-owned.
+
+## Roadmap detail page 404 pattern (lesson 2026-04-22, 10+ cycle block)
+
+The roadmap page controller (`ForsetiPagesController::roadmapProject()`) reads `PROJECTS.md` from the HQ path resolved by `resolveHqPath()`. On production, HQ files are owned by the `ubuntu` user with default umask 644 — `www-data` cannot read them unless the files are world-readable.
+
+**Symptom**: `/index.php/roadmap/PROJ-XXX` returns 404 UNCACHEABLE; clean URL `/roadmap/PROJ-XXX` returns 200 (hit from page cache). The split behavior is: page cache entry exists for clean URL from a prior render when the file WAS readable; index.php variant has no cache entry and re-renders PHP live → file unreadable → 404.
+
+**Root causes (two)**:
+1. Production `PROJECTS.md` not world-readable (permissions fix — infrastructure task).
+2. Listing page accessed via `/index.php/roadmap` generates context-relative links (`/index.php/roadmap/PROJ-XXX`) because `Url::fromRoute()->toString()` includes the script name. Always use `->setAbsolute(TRUE)` for project URL generation so links are canonical.
+
+**Code fix**:
+- Detail page: check `is_readable()` before throwing `NotFoundHttpException` — return graceful 200 if unreadable.
+- Listing page URLs: `Url::fromRoute('forseti_content.roadmap_project', ['project_id' => $id])->setAbsolute(TRUE)->toString()` (commit `789090d85`).
+
+**Infrastructure escalation** (escalate to pm-forseti/dev-infra):
+```bash
+# Option A (minimal): make files world-readable
+chmod -R o+r /home/ubuntu/forseti.life/copilot-hq/dashboards/
+# Also set umask 022 in the orchestrator git env to prevent recurrence
+
+# Option B: add www-data to ubuntu group
+sudo usermod -aG ubuntu www-data && sudo systemctl restart apache2
+```
 
 ## Supervisor
 - Supervisor: `pm-forseti`

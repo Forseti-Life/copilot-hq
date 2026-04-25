@@ -183,31 +183,7 @@ def _write_item(
     return True
 
 
-def _inbox_has_pending_signoff_reminder(agent: str, release_id: str) -> bool:
-    """Return True if any inbox item for this agent already references this release_id as a signoff-reminder."""
-    inbox = ROOT / "sessions" / agent / "inbox"
-    if not inbox.exists():
-        return False
-    release_slug = _slug(release_id)
-    for item_dir in inbox.iterdir():
-        if not item_dir.is_dir():
-            continue
-        name = item_dir.name
-        if "signoff-reminder" in name and release_slug in name:
-            return True
-    return False
-
-
 def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cross_signoff: bool) -> bool:
-    # Guard 1: artifact already written — signoff is done, no dispatch needed.
-    if _has_signoff(agent, release_id):
-        return False
-    # Guard 2: an existing signoff-reminder inbox item is already pending for this
-    # release (possibly from a prior day's DATE_PREFIX — _write_item only dedups by
-    # exact folder name, so cross-day re-runs would create a second item without this
-    # check).
-    if _inbox_has_pending_signoff_reminder(agent, release_id):
-        return False
     slug = _slug(release_id)
     title = f"Release signoff reminder: {release_id}"
     command = f"bash scripts/release-signoff.sh {target_team} {release_id}"

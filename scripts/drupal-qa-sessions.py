@@ -4,13 +4,12 @@ Acquire QA session cookies for each role defined in qa-permissions.json.
 
 Two acquisition modes:
 
-OTL mode (default — for local/dev sites or collocated production hosts):
+OTL mode (default — for local/dev sites):
   1. drush dctr:qa-users-ensure        → create qa_tester_<role> users
   2. drush user:login --uid=<N>        → one-time login URL (no password needed)
   3. HTTP GET the OTL URL              → capture Set-Cookie SESS* value
   ⚠️  Requires base-url to be the SAME Drupal instance drush connects to (same DB).
-     Use for: http://localhost, http://127.0.0.1, or a production URL when drush
-     is running on the same server against that live site.
+     Use for: http://localhost, http://127.0.0.1, etc.
 
 Credentials mode (for production sites):
   Provide --credentials-file: a JSON file mapping role IDs to {username, password}.
@@ -29,7 +28,7 @@ Usage:
     --base-url http://localhost \\
     --out /tmp/dungeoncrawler-qa-sessions.env
 
-  # Production when drush is NOT collocated (credentials mode):
+  # Production (credentials mode):
   python3 scripts/drupal-qa-sessions.py \\
     --config org-chart/sites/dungeoncrawler/qa-permissions.json \\
     --base-url https://dungeoncrawler.forseti.life \\
@@ -268,7 +267,7 @@ def main() -> int:
     ap.add_argument("--drupal-root",
                     help="Drupal installation root (parent of web/) — required for OTL mode")
     ap.add_argument("--credentials-file",
-                    help="JSON file mapping role IDs to {username, password} — enables credentials mode when drush is not collocated with the target site")
+                    help="JSON file mapping role IDs to {username, password} — enables credentials mode for production")
     ap.add_argument("--config", required=True,
                     help="Path to qa-permissions.json")
     ap.add_argument("--base-url", required=True,

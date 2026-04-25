@@ -430,10 +430,7 @@ CTX_ROLE="$(printf '%s' "$ctx" | awk -F'\t' '{print $1}')"
 CTX_WEBSITE="$(printf '%s' "$ctx" | awk -F'\t' '{print $2}')"
 CTX_MODULE="$(printf '%s' "$ctx" | awk -F'\t' '{print $3}')"
 
-# Record exec start time for tool-written outbox fallback detection.
-_EXEC_START_TS="$(date +%s)"
-
-PROMPT="You are the agent '${AGENT_ID}'.\n\nYou have access to the canonical HQ/Forseti monorepo worktree:\n- /home/ubuntu/forseti.life\n\nYou have one inbox item folder: ${inbox_item}.\n\nYou have full read/write tool access (--allow-all) to all files in that worktree. You MAY and SHOULD use tools (bash, edit, create) to directly write files within your owned scope — especially your own seat instructions file: org-chart/agents/instructions/${AGENT_ID}.instructions.md. The executor writes the outbox text response; you are responsible for any other file changes (instruction refreshes, artifacts, code) via direct tool calls. Do NOT claim filesystem permission problems (\"Permission denied\", \"can't write files\") unless you verified it with a command and can show the exact error output.\n\nOUTBOX OUTPUT RULE (CRITICAL — executor will fail if violated):\nYour outbox update MUST be your FINAL TEXT RESPONSE (the last text you print). Do NOT create or write any outbox file using tools. The executor captures your text response from stdout and writes it to the outbox for you. Writing the outbox as a file via tools will cause the executor to see an empty response and quarantine this inbox item.\n\nTask: Write a concise outbox update in markdown using this required structure:\n\n- Status: done | in_progress | blocked | needs-info\n- Summary: <one paragraph>\n\nThe first two lines MUST be exactly:\n- Status: ...\n- Summary: ...\n(no bold, no extra punctuation)\n\n## Next actions\n- ...\n\n## Blockers\n- If blocked/needs-info, be explicit.\n\n## Needs from CEO\n- If blocked/needs-info, list exactly what you need (missing context, resources, clarification, URLs, acceptance criteria, credentials, etc.)\n\nIf Status is blocked or needs-info, you MUST also include:\n\n## Decision needed\n- <the decision you need from supervisor/CEO>\n\n## Recommendation\n- <what you recommend and why>\n\nIf the request is unclear, set Status: needs-info and list the clarifying questions under \"Needs from CEO\".\n\nDO NOT claim you executed code changes unless you actually did."
+PROMPT="You are the agent '${AGENT_ID}'.\n\nYou have access to these repos:\n- HQ: /home/ubuntu/forseti.life/copilot-hq\n- Forseti Drupal: /home/ubuntu/forseti.life\n\nYou have one inbox item folder: ${inbox_item}.\n\nYou have full read/write tool access (--allow-all) to all files in both repos. You MAY and SHOULD use tools (bash, edit, create) to directly write files within your owned scope — especially your own seat instructions file: org-chart/agents/instructions/${AGENT_ID}.instructions.md. The executor writes the outbox text response; you are responsible for any other file changes (instruction refreshes, artifacts, code) via direct tool calls. Do NOT claim filesystem permission problems (\"Permission denied\", \"can't write files\") unless you verified it with a command and can show the exact error output.\n\nTask: Write a concise outbox update in markdown using this required structure:\n\n- Status: done | in_progress | blocked | needs-info\n- Summary: <one paragraph>\n\nThe first two lines MUST be exactly:\n- Status: ...\n- Summary: ...\n(no bold, no extra punctuation)\n\n## Next actions\n- ...\n\n## Blockers\n- If blocked/needs-info, be explicit.\n\n## Needs from CEO\n- If blocked/needs-info, list exactly what you need (missing context, resources, clarification, URLs, acceptance criteria, credentials, etc.)\n\nIf Status is blocked or needs-info, you MUST also include:\n\n## Decision needed\n- <the decision you need from supervisor/CEO>\n\n## Recommendation\n- <what you recommend and why>\n\nIf the request is unclear, set Status: needs-info and list the clarifying questions under \"Needs from CEO\".\n\nDO NOT claim you executed code changes unless you actually did."
 
 PROMPT+="\n\nGit rule (required when you change code):\n- If you modify any tracked repo files, you MUST run: git status, git diff (or summary), then git add + git commit.\n- Include the commit hash(es) in your outbox update.\n- Do NOT push unless explicitly assigned as the release operator."
 
@@ -526,10 +523,10 @@ repo_root  = routing_p.parent.parent
 # Import shared routing lib; fall back to inline resolution if not yet available.
 sys.path.insert(0, str(repo_root))
 try:
-    from llm.lib.routing import load_yaml, resolve_model_file
+    from llm.lib.routing import load_merged_routing, resolve_model_file
     try:
-        routing  = load_yaml(routing_p)
-        manifest = load_yaml(manifest_p)
+        routing  = load_merged_routing(routing_p)
+        manifest = load_merged_routing(manifest_p)
     except ImportError:
         sys.exit(0)  # pyyaml not installed yet
     agents_yaml = repo_root / "org-chart" / "agents" / "agents.yaml"
@@ -566,9 +563,9 @@ repo_root = routing_p.parent.parent
 
 sys.path.insert(0, str(repo_root))
 try:
-    from llm.lib.routing import load_yaml, resolve_model_id
+    from llm.lib.routing import load_merged_routing, resolve_model_id
     try:
-        routing = load_yaml(routing_p)
+        routing = load_merged_routing(routing_p)
     except ImportError:
         sys.exit(0)
     agents_yaml = repo_root / "org-chart" / "agents" / "agents.yaml"
@@ -601,6 +598,10 @@ resolve_backend() {
       fi
       echo "ERROR: routing requested bedrock for ${AGENT_ID} but bedrock-assist is not executable: $BEDROCK_ASSIST_SCRIPT" >&2
       return 1
+      ;;
+    remote-openai)
+      echo "remote-openai"
+      return 0
       ;;
   esac
 
@@ -654,7 +655,9 @@ GENAI_BACKEND="$(resolve_backend)" || exit 1
 if [ -n "${AGENT_EXEC_MAX_CONCURRENT:-}" ]; then
   MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT}"
 elif [ "$GENAI_BACKEND" = "bedrock" ]; then
-  MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT_BEDROCK:-4}"
+  MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT_BEDROCK:-2}"
+elif [ "$GENAI_BACKEND" = "remote-openai" ]; then
+  MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT_REMOTE_OPENAI:-4}"
 else
   MAX_CONCURRENT_EXECUTIONS=6
 fi
@@ -757,42 +760,93 @@ set_copilot_rate_limit_cooldown() {
   echo "THROTTLE: recorded Copilot rate-limit cooldown for ${seconds}s (until=${until})" >&2
 }
 
+run_remote_openai() {
+  local prompt="$1"
+  local routing_path="$ROOT_DIR/llm/routing.yaml"
+  local py
+  py="$(command -v python3 2>/dev/null || true)"
+  [ -x "$ROOT_DIR/llm/.venv/bin/python3" ] && py="$ROOT_DIR/llm/.venv/bin/python3"
+  [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "${LLM_PYTHON_BIN}" ] && py="$LLM_PYTHON_BIN"
+  [ -n "$py" ] || { echo ""; return; }
+  local _pf
+  _pf="$(mktemp /tmp/agent-prompt-XXXXXX.txt)"
+  printf '%s' "$prompt" > "$_pf"
+  "$py" - "$_pf" "$ROOT_DIR" "$SESSION_ID" "$routing_path" <<'REMOTE_OPENAI_PY'
+import sys, json, pathlib, urllib.request, urllib.error
+prompt_file  = pathlib.Path(sys.argv[1])
+prompt_text  = prompt_file.read_text(encoding="utf-8", errors="replace")
+try: prompt_file.unlink()
+except Exception: pass
+repo_root    = pathlib.Path(sys.argv[2])
+session_id   = sys.argv[3]
+routing_p    = pathlib.Path(sys.argv[4])
+sys.path.insert(0, str(repo_root))
+try:
+    from llm.lib.routing import load_merged_routing, resolve_remote_openai_config
+    routing          = load_merged_routing(routing_p)
+    base_url, model  = resolve_remote_openai_config(routing)
+except Exception:
+    base_url, model  = "http://192.168.0.194:1234/v1", "qwen/qwen3.6-35b-a3b"
+cache_dir    = repo_root / "llm" / "cache" / "sessions"
+cache_dir.mkdir(parents=True, exist_ok=True)
+session_file = cache_dir / f"{session_id}.json"
+try:
+    history = json.loads(session_file.read_text(encoding="utf-8")) if session_file.exists() else []
+except Exception:
+    history = []
+# Truncate prompt to fit the model's context window (configurable via routing.local.yaml)
+_max_chars = int(routing.get("endpoints", {}).get("remote-openai", {}).get("max_prompt_chars", 12000))
+if len(prompt_text) > _max_chars:
+    _h = _max_chars // 4; _t = _max_chars - _h
+    prompt_text = (prompt_text[:_h] +
+                   f"\n\n[... {len(prompt_text) - _max_chars} chars of instruction context truncated for local LLM context window ...]\n\n" +
+                   prompt_text[-_t:])
+# Do not accumulate session history in remote-openai mode — each agent call is stateless here
+# (History would re-introduce the large prompt and overflow the context window)
+# No system role — LM Studio n_keep bug; embed instruction in user message
+messages = [{"role": "user", "content": "You are an AI agent. Respond ONLY with the required output format. Do NOT include any thinking process or preamble. Start your response DIRECTLY with '- Status:'." + chr(10) + chr(10) + prompt_text}]
+payload  = json.dumps({"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 512}).encode()
+req = urllib.request.Request(
+    f"{base_url}/chat/completions",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST",
+)
+try:
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        data    = json.loads(resp.read())
+    content = data["choices"][0]["message"]["content"]
+    # Strip Qwen3 chain-of-thought blocks: <think>...</think> tags OR prose preamble
+    if "</think>" in content:
+        content = content[content.index("</think>") + len("</think>"):].strip()
+    for _m in ["- Status:", "**- Status:**", "**Status:**"]:
+        _i = content.find(_m)
+        if _i > 0:
+            content = content[_i:].strip()
+            break
+    session_file.write_text(json.dumps((messages + [{"role": "assistant", "content": content}])[-40:]), encoding="utf-8")
+    print(content)
+except urllib.error.HTTPError as e:
+    print(f"REMOTE_OPENAI_ERROR: HTTP {e.code}: {e.read().decode(errors='replace')[:300]}", file=sys.stderr)
+    sys.exit(2)
+except Exception as _exc:
+    print(f"REMOTE_OPENAI_ERROR: {_exc}", file=sys.stderr)
+    sys.exit(2)
+REMOTE_OPENAI_PY
+}
+
 run_copilot() {
   local prompt="$1"
-  echo "DEBUG run_copilot: AGENT_ID=${AGENT_ID} SESSION_ID=${SESSION_ID}" >&2
   # Enforce inter-call rate-limit delay before hitting the Copilot API.
   _throttle_copilot_api
-  local _copilot_response
   # Prevent orchestration hangs if the Copilot CLI stalls.
   # Default: 15 minutes; override via COPILOT_TIMEOUT_SEC.
   if command -v timeout >/dev/null 2>&1; then
-    _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
-      "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
+    timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
+      "$COPILOT_BIN" --resume "$SESSION_ID" --silent --allow-all -p "$prompt" 2>&1 || true
   else
-    _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
+    "$COPILOT_BIN" --resume "$SESSION_ID" --silent --allow-all -p "$prompt" 2>&1 || true
   fi
-  # If response is empty OR lacks the required "- Status:" header, the model finished
-  # its tool work without emitting a properly structured text response.
-  # Follow up in the same session (which retains tool context) to extract the outbox.
-  local _needs_followup=0
-  if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ]; then
-    _needs_followup=1
-    echo "WARN: empty first-pass response from ${AGENT_ID}; requesting text outbox via follow-up prompt" >&2
-  elif ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
-    _needs_followup=1
-    echo "WARN: first-pass response from ${AGENT_ID} missing '- Status:' header; requesting structured outbox via follow-up prompt" >&2
-  fi
-  if [ "$_needs_followup" -eq 1 ]; then
-    _throttle_copilot_api
-    local _followup="Your previous response did not start with '- Status:'. The executor requires your outbox to begin with that line. Output ONLY the outbox markdown now — no prose, no tool calls. First line MUST be exactly: - Status: done (or blocked/in_progress/needs-info)."
-    if command -v timeout >/dev/null 2>&1; then
-      _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "120" \
-        "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_followup" 2>&1 || true)"
-    else
-      _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_followup" 2>&1 || true)"
-    fi
-  fi
-  printf '%s\n' "$_copilot_response"
 }
 
 bedrock_site_for_context() {
@@ -823,16 +877,18 @@ run_bedrock() {
 run_primary_backend() {
   local prompt="$1"
   case "$GENAI_BACKEND" in
-    local) echo "" ;;
-    copilot) run_copilot "$prompt" ;;
-    bedrock) run_bedrock "$prompt" ;;
+    local)         echo "" ;;
+    copilot)       run_copilot "$prompt" ;;
+    bedrock)       run_bedrock "$prompt" ;;
+    remote-openai) run_remote_openai "$prompt" ;;
     *) echo "" ;;
   esac
 }
 
 backend_retry_delay_seconds() {
   case "$GENAI_BACKEND" in
-    bedrock) echo "${BEDROCK_RETRY_DELAY_SECONDS:-15}" ;;
+    bedrock)       echo "${BEDROCK_RETRY_DELAY_SECONDS:-15}" ;;
+    remote-openai) echo "${REMOTE_OPENAI_RETRY_DELAY_SECONDS:-3}" ;;
     *) echo 0 ;;
   esac
 }
@@ -861,8 +917,9 @@ if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
     fi
   fi
 else
-  # Model: always pass --model auto so sessions use Copilot's multi-model routing
-  # and avoid hitting single-model weekly rate limits.
+  # Model selection: do NOT pass --model here.
+  # Copilot CLI's "auto" model routing is the default behavior and cannot be
+  # selected via --model ("auto" is not a valid choice).
   # Generate response first so we can validate structure.
   response="$(run_primary_backend "$PROMPT")"
   # Retry once if the backend returns an empty response.
@@ -872,20 +929,6 @@ else
       sleep "$_retry_delay"
     fi
     response="$(run_primary_backend "$PROMPT")"
-  fi
-fi
-# Fallback: if response is still empty, check if the agent wrote an outbox file directly via tools
-# (a known failure mode where the model uses create/edit tools for the outbox instead of returning text).
-# Only accept outbox files created AFTER this exec run started (not old files from prior runs).
-if [ -z "$(printf '%s' "$response" | tr -d ' \t\r\n')" ]; then
-  _latest_outbox="$(ls -t "$OUTBOX_DIR"/*.md 2>/dev/null | head -1 || true)"
-  if [ -n "$_latest_outbox" ] && [ -f "$_latest_outbox" ]; then
-    _outbox_mtime=$(stat -c %Y "$_latest_outbox" 2>/dev/null || echo 0)
-    # Only use if created/modified AFTER this exec started (fresh file from this run)
-    if [ "$_outbox_mtime" -ge "${_EXEC_START_TS:-0}" ] && grep -qiE '^\- Status:' "$_latest_outbox" 2>/dev/null; then
-      echo "WARN: empty text response from ${AGENT_ID}; recovering from tool-written outbox file: $_latest_outbox" >&2
-      response="$(cat "$_latest_outbox")"
-    fi
   fi
 fi
 # Normalize common formatting mistakes (e.g. "- **Status:** done", "Status: done").
@@ -951,49 +994,8 @@ FAILMD
           rm -f "tmp/executor-failures/$_old"
         done
       fi
-      _repeat_threshold="${EXECUTOR_STATUS_HEADER_REPEAT_THRESHOLD:-3}"
-      _repeat_failures="$(
-        find "tmp/executor-failures" -maxdepth 1 -type f -name "*-${AGENT_ID}.md" 2>/dev/null \
-          | while IFS= read -r _f; do
-              if grep -qF -- "- Inbox item: ${next}" "$_f" 2>/dev/null; then
-                echo "$_f"
-              fi
-            done \
-          | wc -l | tr -d ' '
-      )"
-      [[ "$_repeat_failures" =~ ^[0-9]+$ ]] || _repeat_failures=0
-      if [ "$_repeat_failures" -lt "$_repeat_threshold" ]; then
-        # Do NOT write a stub outbox yet — preserve inbox item for a limited number of retries.
-        exit 0
-      fi
-
-      echo "WARN: quarantining ${AGENT_ID} item ${next} after ${_repeat_failures} repeated no-status failures" >&2
-      response="$(cat <<EOF
-- Status: needs-info
-- Summary: Executor quarantined inbox item ${next} after ${_repeat_failures} repeated cycles without a valid status-header response from ${AGENT_ID}; automatic retries have stopped to prevent infinite backlog churn.
-
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch ${next}.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
-
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after ${_retry_count} retries in the latest cycle.
-
-## Needs from Supervisor
-- Decide whether ${next} should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
-
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
-EOF
-)"
+      # Do NOT write a stub outbox — exit early to preserve inbox item for next cycle.
+      exit 0
     fi
   fi
 fi
@@ -1093,45 +1095,6 @@ regression_checklist_path_for_context() {
   echo "org-chart/sites/${website}/qa-regression-checklist.md"
 }
 
-regression_checklist_baseline_for_context() {
-  local website="${CTX_WEBSITE:-}"
-  case "$website" in
-    infrastructure)
-      echo "operator-audit mode only — \`python3 scripts/qa-suite-validate.py\`, \`bash scripts/lint-scripts.sh\` (when present), \`bash -n scripts/*.sh\`, and static scope/instruction checks."
-      ;;
-    "")
-      echo "targeted verification only; no site baseline available for this context."
-      ;;
-    "*")
-      echo "targeted verification only; no site baseline available for wildcard context."
-      ;;
-    *)
-      echo "URL validation + role-based permission checks (see \`runbooks/role-based-url-audit.md\`)."
-      ;;
-  esac
-}
-
-qa_unit_test_step3_for_context() {
-  local website="${CTX_WEBSITE:-}"
-  case "$website" in
-    infrastructure)
-      cat <<'EOF'
-    3) Run infrastructure operator-audit checks for this scope:
-       - python3 scripts/qa-suite-validate.py
-       - bash scripts/lint-scripts.sh  (when present)
-       - bash -n scripts/*.sh  (as applicable to the changed surface)
-       - Do NOT run scripts/site-audit-run.sh or URL/Playwright audits for infrastructure
-EOF
-      ;;
-    *)
-      cat <<'EOF'
-    3) Run the automated URL validation + role-based permission checks for this site (requires ALLOW_PROD_QA=1):
-       - scripts/site-audit-run.sh (see runbooks/role-based-url-audit.md)
-EOF
-      ;;
-  esac
-}
-
 append_regression_checklist_item() {
   local checklist_path="$1" item_id="$2" outbox_path="$3"
   [ -n "$checklist_path" ] || return 0
@@ -1143,24 +1106,12 @@ append_regression_checklist_item() {
 
 This file is a running list of targeted regression checks derived from completed Dev items.
 
-- Automated baseline (always): BASELINE_PLACEHOLDER
+- Automated baseline (always): URL validation + role-based permission checks (see `runbooks/role-based-url-audit.md`).
 - Manual/targeted checks: one checklist entry per completed Dev item.
 
 ## Checklist
 
 MD
-    local baseline_text
-    baseline_text="$(regression_checklist_baseline_for_context)"
-    python3 - "$checklist_path" "$baseline_text" <<'PY'
-from pathlib import Path
-import sys
-
-path = Path(sys.argv[1])
-baseline = sys.argv[2]
-text = path.read_text(encoding="utf-8")
-text = text.replace("BASELINE_PLACEHOLDER", baseline, 1)
-path.write_text(text, encoding="utf-8")
-PY
   fi
 
   # Avoid duplicates.
@@ -1193,9 +1144,6 @@ notify_qa_unit_test_on_done() {
   checklist_path="$(regression_checklist_path_for_context)"
   append_regression_checklist_item "$checklist_path" "$item_id" "$outbox_path"
 
-  local step3_text
-  step3_text="$(qa_unit_test_step3_for_context)"
-
   cat >"$qa_inbox_dir/command.md" <<MD
 - command: |
     Targeted QA unit test for completed Dev item.
@@ -1208,31 +1156,11 @@ notify_qa_unit_test_on_done() {
     1) Run a targeted verification for *this item* (derive steps from Dev outbox + acceptance criteria).
     2) Ensure this check exists in the regression checklist and keep it evergreen:
        - ${checklist_path:-'(no site checklist path available)'}
-${step3_text}
+    3) Run the automated URL validation + role-based permission checks for this site (requires ALLOW_PROD_QA=1):
+       - scripts/site-audit-run.sh (see runbooks/role-based-url-audit.md)
 
     Deliverable:
     - Write a Verification Report with explicit APPROVE/BLOCK and evidence.
-MD
-
-  cat >"$qa_inbox_dir/README.md" <<MD
-# QA unit test dispatch
-
-## Scope
-- QA seat: ${qa_agent}
-- Completed dev item: ${item_id}
-- Dev outbox evidence: ${outbox_path}
-- Verification mode: targeted regression/unit verification for the changed surface only
-
-## Acceptance criteria
-1. QA reviews the completed dev item and derives a targeted verification plan from the dev outbox and any referenced acceptance criteria.
-2. The regression checklist contains an evergreen entry for this completed item:
-   - ${checklist_path:-'(no site checklist path available)'}
-3. Infrastructure-scoped items use operator-audit checks only; they must not use site-audit, URL, or Playwright flows.
-4. The QA outbox states an explicit APPROVE/BLOCK verdict and includes concrete evidence.
-
-## Verification method
-- Use the commands in \`command.md\` for the scoped QA check.
-- Record exact commands and outputs in the outbox summary/body.
 MD
 }
 

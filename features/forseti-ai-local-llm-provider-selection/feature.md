@@ -1,9 +1,5 @@
 # Feature: forseti-ai-local-llm-provider-selection
 
-- Group Order: 3
-- Group: ai-services
-- Group Title: AI Services & Integration
-- Group Sort: 4
 - Status: shipped
 - Website: forseti.life
 - Module: ai_conversation

@@ -38,27 +38,6 @@ Note: PM does not need to finalize acceptance criteria by default; acceptance cr
 ## Owned Artifacts
 - Requirements summary + flow drafts in your seat outbox/artifacts (primary owner)
 
-## Canonical traceability stack (required when formal source material exists)
-
-If your product has formal source material, requirements documents, policy documents,
-reference corpora, or other structured analysis inputs, you must maintain a BA
-traceability stack:
-
-1. **Source ledger** — canonical per-source-document traceability record
-2. **Source-object tracker** — per chapter/section/object completion tracker
-3. **Audit worksheet** — working-paper proof that the internal sections/paragraph groups were reviewed
-4. **Execution cursor** — optional, only for chunked scanning workflows
-
-Rules:
-- The **source ledger** is the single answer to “what is the state of this source document?”
-- The **source-object tracker** is the single answer to “which source objects are complete?”
-- The **audit worksheet** is the single answer to “did we actually inspect the internal content thoroughly?”
-- An execution cursor is never proof of completeness by itself.
-- When source material yields downstream issues, features, or release submissions, the ledger must track that handoff status.
-
-Use `runbooks/ba-source-traceability-standard.md` and the BA templates under `templates/`
-when instantiating this stack for a product.
-
 ## Scope boundaries (required)
 - Your owned file scope is defined by your seat instructions file: `org-chart/agents/instructions/<your-seat>.instructions.md`.
 - You may recommend improvements to any file, but do not directly edit out-of-scope files; request the owning agent (usually PM for product artifacts, Dev for code).
@@ -99,10 +78,9 @@ when instantiating this stack for a product.
 
 4) Support execution
 - Break work into a small set of Dev tasks with definition-of-done and verification notes.
-- If formal source material is involved, update the source ledger/tracker/audit surfaces in
-  the same session as the new requirements artifacts.
 
 5) Idle behavior
 - If no assigned work: do NOT generate your own work items.
 - Do a short in-scope clarity/review pass and write concrete recommendations in your outbox.
 - You may write lightweight requirements/clarity recommendations in your outbox, but do not create new inbox items.
+

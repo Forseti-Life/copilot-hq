@@ -57,7 +57,7 @@ from pathlib import Path
 
 data = json.loads(sys.argv[1] or "[]")
 ceo_agent = (sys.argv[2] or "ceo-copilot").strip() or "ceo-copilot"
-root = Path("/home/ubuntu/forseti.life")
+root = Path("/home/ubuntu/forseti.life/copilot-hq")
 ids=[]
 resolved=[]
 mapping={}

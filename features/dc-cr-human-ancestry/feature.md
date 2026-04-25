@@ -9,7 +9,7 @@
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Depends on: dc-cr-ancestry-system, dc-cr-heritage-system, dc-cr-languages, dc-cr-ancestry-feat-schedule
-- Source: PF2E Core Rulebook (Fourth Printing), Chapter 2 — Ancestries & Backgrounds
+- Source: PF2E Core Rulebook (Fourth Printing), core/ch01
 - Category: game-mechanic
 - Schema changes: no
 - Cross-site modules: none
@@ -18,9 +18,9 @@
 
 ## DB Gap Note
 
-`dc_requirements` has **zero rows** for `book_id='core'` and `chapter_key='ch02'`. The human ancestry and related human heritage requirements from Core Chapter 2 were never loaded. Before this feature can be fully audited, a dev/PM task must load the Core Chapter 2 requirement rows into the DB.
+`dc_requirements` has **zero rows** for `book_id='core'` and `chapter_key IN ('ch01','ch02')`. The human ancestry (and all other core ancestry/heritage requirements) were never loaded. Before this feature can be fully audited, a dev/PM task must load the core ch01–ch02 requirement rows into the DB.
 
-**Action required:** Dispatch a DB-load task to populate `dc_requirements` with `core/ch02` ancestry, heritage, and background sections.
+**Action required:** Dispatch a DB-load task to populate `dc_requirements` with core/ch01 (Ancestries) and core/ch02 (Heritages) sections.
 
 ## Goal
 

@@ -44,14 +44,6 @@ info() { echo "$INFO $*"; }
 
 hr() { echo "────────────────────────────────────────────────────────"; }
 
-find_gate2_evidence() {
-  local qa_outbox="$1"
-  local release_id="$2"
-  [ -d "$qa_outbox" ] || return 0
-  find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null \
-    | xargs grep -l "$release_id" 2>/dev/null | head -1 || true
-}
-
 echo
 echo "═══════════════════════════════════════════════════════"
 echo "  CEO Release Cycle Health Check"
@@ -73,6 +65,7 @@ for t in data.get('teams', []):
             t.get('id',''),
             t.get('pm_agent', 'pm-' + t.get('id','')),
             t.get('qa_agent', 'qa-' + t.get('id','')),
+            t.get('dev_agent', 'dev-' + t.get('id','')),
         ]))
 PY
 )"
@@ -117,9 +110,8 @@ if [ -n "$GH_BIN" ] && [ -f /home/ubuntu/github.token ]; then
     LAST_TITLE="$(echo "$LAST_RUN" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('displayTitle','?')[:60])")"
     AGE_SECS="$(python3 -c "from datetime import datetime,timezone; a='$LAST_DATE'; dt=datetime.fromisoformat(a.replace('Z','+00:00')); print(int((datetime.now(timezone.utc)-dt).total_seconds()))" 2>/dev/null || echo '?')"
     if [ "$AGE_SECS" != "?" ] && [ "$AGE_SECS" -gt 86400 ]; then
-      warn "Last deploy run was $((AGE_SECS/3600))h ago ($LAST_DATE) — status=$LAST_STATUS"
+      fail "Last deploy run was $((AGE_SECS/3600))h ago ($LAST_DATE) — status=$LAST_STATUS"
       info "Title: $LAST_TITLE"
-      info "On this host, stale deploy.yml age alone is not a code-deploy blocker because module/theme code is live from the monorepo checkout; verify config/composer drift separately when relevant."
     elif [ "$LAST_STATUS" = "failure" ]; then
       fail "Last deploy run FAILED ($LAST_DATE) — investigate GitHub Actions"
     else
@@ -136,7 +128,7 @@ fi
 # ── Per-team release cycle checks ───────────────────────────────────────────
 ALL_RELEASE_IDS=""
 
-while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT; do
+while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT TEAM_DEV_AGENT; do
   [ -n "$TEAM" ] || continue
 
   echo
@@ -248,7 +240,8 @@ PY
         pass "  feature: $FEAT_NAME (status=$STATUS)"
       elif [ "$STATUS" = "in_progress" ]; then
         # Check for dev outbox (implementation)
-        DEV_AGENT="dev-$TEAM"
+        FEATURE_DEV_AGENT="$(printf '%s\n' "$TEXT" | grep -im1 '^- Dev owner:' | sed 's/^-\s*Dev owner:\s*//' | tr -d '\r' || true)"
+        DEV_AGENT="${FEATURE_DEV_AGENT:-$TEAM_DEV_AGENT}"
         HAS_IMPL="$(ls "sessions/${DEV_AGENT}/outbox/" 2>/dev/null | grep "$FEAT_NAME" | head -1 || true)"
         if [ -n "$HAS_IMPL" ]; then
           pass "  feature: $FEAT_NAME (status=$STATUS, dev outbox: $HAS_IMPL)"
@@ -278,10 +271,11 @@ PY
   # 4. Gate 2 APPROVE
   echo
   QA_OUTBOX="sessions/${QA_AGENT}/outbox"
-  GATE2_FILE="$(find_gate2_evidence "$QA_OUTBOX" "$RELEASE_ID")"
+  GATE2_FILE="$(find "$QA_OUTBOX" -maxdepth 1 -name "*gate2-approve*" -type f 2>/dev/null \
+    | xargs grep -l "$RELEASE_ID" 2>/dev/null | head -1 || true)"
 
   if [ -n "$GATE2_FILE" ]; then
-    pass "[$TEAM] Gate 2 evidence: $(basename "$GATE2_FILE")"
+    pass "[$TEAM] Gate 2 APPROVE: $(basename "$GATE2_FILE")"
   else
     if [ "$FEAT_COUNT" -eq 0 ]; then
       warn "[$TEAM] Gate 2 APPROVE not found (empty release — may need --empty-release flag)"
@@ -334,7 +328,9 @@ PY
   if [ -n "$ORPHAN_RESULTS" ]; then
     while IFS=$'\t' read -r FEAT_NAME F_RELEASE; do
       [ -n "$FEAT_NAME" ] || continue
-      DEV_AGENT="dev-$TEAM"
+      FM="features/$FEAT_NAME/feature.md"
+      FEATURE_DEV_AGENT="$(grep -im1 '^- Dev owner:' "$FM" 2>/dev/null | sed 's/^-\s*Dev owner:\s*//' | tr -d '\r' || true)"
+      DEV_AGENT="${FEATURE_DEV_AGENT:-$TEAM_DEV_AGENT}"
       HAS_IMPL="$(ls "sessions/${DEV_AGENT}/outbox/" 2>/dev/null | grep "$FEAT_NAME" | head -1 || true)"
       if [ -n "$HAS_IMPL" ]; then
         warn "[$TEAM] ORPHAN: $FEAT_NAME (in_progress on OLD $F_RELEASE — dev outbox exists, reconcile status instead of deleting)"
@@ -397,11 +393,12 @@ for SIGNING_ENTRY in "${RELEASE_MAP[@]:-}"; do
 
     CROSS_FILE="sessions/${SIGNING_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
     TARGET_OWNER_SIGNOFF="sessions/${TARGET_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
-    TARGET_GATE2="$(find_gate2_evidence "sessions/${TARGET_QA}/outbox" "$TARGET_RID")"
+    TARGET_GATE2="$(find "sessions/${TARGET_QA}/outbox" -maxdepth 1 -name "*gate2-approve*" -type f 2>/dev/null \
+      | xargs grep -l "$TARGET_RID" 2>/dev/null | head -1 || true)"
     if [ ! -f "$TARGET_OWNER_SIGNOFF" ]; then
       warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (owner PM signoff missing)"
     elif [ -z "$TARGET_GATE2" ]; then
-      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (Gate 2 evidence missing)"
+      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (Gate 2 APPROVE missing)"
     elif [ -f "$CROSS_FILE" ]; then
       pass "$SIGNING_PM co-signed $TARGET_RID"
     else

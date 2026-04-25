@@ -59,15 +59,6 @@ When starting a new site/product, the CEO must ensure these exist before delegat
 	- *If yes:* decide and unblock (with constraints + acceptance criteria if needed).
 	- *If no:* escalate one level up with options (Decision needed + Recommendation + tradeoffs).
 
-## Repository ownership authority (required)
-- Repository -> product/team mapping is authoritative in `org-chart/ownership/repository-ownership.yaml`.
-- Use `org-chart/agents/agents.yaml` for seat definitions and broad `website_scope`, and `org-chart/ownership/module-ownership.yaml` for module-level splits inside a product/site.
-- Each repository or release target must have exactly **one** owning product team in `repository-ownership.yaml`.
-- Seat-level file scopes and module ownership may refine who works inside a repo, but they do **not** create additional repo owners.
-- If a repo appears to have overlapping owners, resolve the overlap in `repository-ownership.yaml` and related instructions immediately; do not operate with dual ownership.
-- Do **not** infer repository ownership from session memory, ad hoc notes, or old task artifacts when `repository-ownership.yaml` exists.
-- If `repository-ownership.yaml`, `agents.yaml`, and `module-ownership.yaml` disagree, reconcile the files or escalate to the owning PM/CEO instead of choosing implicitly.
-
 ## Board of Directors (human owner)
 - The human user acts as the **Board of Directors**.
 - Board-level escalations must be routed **via the CEO** (not directly by non-CEO roles).
@@ -172,12 +163,39 @@ When diagnosing a bug or unexpected behavior, follow this order:
 - Do not theorize about how a bug was introduced. Trace current behavior → find the broken step → fix it.
 - Do not over-explain the root cause. Document what was broken and what was changed.
 
+## Dual-environment git policy (required)
+
+Forseti development may occur on both the local dev machine and production server.
+
+- `main` on GitHub is the shared source-of-truth branch.
+- Production deployment is explicit/manual; pushing to GitHub does not deploy by itself.
+- Before starting work in any environment: `git fetch origin --prune` then `git pull --rebase origin main`.
+- Work on short-lived branches and push early so in-flight work is visible.
+- If production hotfix commits landed while local work was in progress, local branches must rebase on latest `main` before merge.
+- Never force-push over shared `main`; resolve conflicts explicitly and preserve production-tested behavior for urgent paths first.
+
+## Shared codebase node compatibility policy (required)
+
+Master and worker nodes operate on the same repository and branch history. Any change made for worker-node execution must remain safe and workable on master without interrupting unrelated projects.
+
+Required rules:
+- Do not hardcode worker-only behavior as global defaults in tracked files.
+- Gate node-specific behavior by explicit runtime identity (`NODE_ROLE`, `NODE_ID`, `NODE_ACTIVE_AGENTS`) and safe defaults.
+- Master-safe default is required: if node identity is missing/invalid, behavior must not break other projects.
+- Keep machine-local settings in gitignored files (for example `node-identity.conf`), never in committed environment-specific overrides.
+- Avoid cross-project coupling: a JobHunter optimization must not alter execution paths for unrelated product streams unless explicitly intended and documented.
+
+Before merging node-affecting changes, verify:
+- Worker path works with `NODE_ROLE=worker`.
+- Master path works with `NODE_ROLE=master` (or identity absent) and continues normal orchestration.
+- No project routing regressions for non-target projects.
+
 ## Blocker research protocol (required)
 If you are blocked (or about to mark `Status: blocked` / `Status: needs-info`), you MUST do this first:
 
 1) **Read the docs in the expected place**
 - If you expected a runbook: check `runbooks/`
-- If you expected product/feature scope: check `features/<feature>/feature.md`, `org-chart/sites/<site>/README.md`, `org-chart/sites/<site>/site.instructions.md`, `org-chart/ownership/repository-ownership.yaml`, and `org-chart/ownership/module-ownership.yaml`
+- If you expected product/feature scope: check `features/<feature>/feature.md`, `org-chart/sites/<site>/README.md`, `org-chart/sites/<site>/site.instructions.md`, and `org-chart/ownership/module-ownership.yaml`
 - If you expected agent scope/process: check `org-chart/org-wide.instructions.md`, your role file in `org-chart/roles/`, and your seat file in `org-chart/agents/instructions/`
 - If you expected prior decisions: check `sessions/<seat>/artifacts/` and `sessions/<seat>/outbox/`
 

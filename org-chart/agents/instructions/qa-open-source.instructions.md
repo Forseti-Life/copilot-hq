@@ -8,7 +8,7 @@ This file is owned by the `qa-open-source` seat. Keep it current when publicatio
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/qa-open-source/**
 - qa-suites/products/open-source/**
 - org-chart/agents/instructions/qa-open-source.instructions.md

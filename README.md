@@ -105,6 +105,7 @@ The org automation control path is deterministic at the control layer and agenti
 
 ### 4) Runtime loops and cadence
 - `scripts/orchestrator-loop.sh` — every 60s (primary LangGraph execution loop)
+- `scripts/publish-forseti-agent-tracker-loop.sh` — every 60s (dashboard telemetry publish)
 - `scripts/auto-checkpoint-loop.sh` — every 7200s
 - `scripts/site-audit-loop.sh` — every 300s (optional, only when enabled)
 - `scripts/hq-automation-watchdog.sh` — every minute via cron (convergence + suggestion intake)

@@ -16542,19 +16542,6 @@
       ],
       "activated_release": "20260412-dungeoncrawler-release-l",
       "activated_date": "2026-04-14"
-    },
-    {
-      "id": "dc-b3-bestiary3-e2e",
-      "label": "Bestiary 3 import, source-filter, planar-trait, and GM-access coverage",
-      "type": "e2e",
-      "feature_id": "dc-b3-bestiary3",
-      "command": "npx playwright test --grep \"dc-b3-bestiary3\"",
-      "artifacts": [
-        "playwright-report/dc-b3-bestiary3.html"
-      ],
-      "required_for_release": true,
-      "activated_release": "20260412-dungeoncrawler-release-q",
-      "activated_date": "2026-04-19"
     }
   ],
   "dc-cr-first-world-adept": [

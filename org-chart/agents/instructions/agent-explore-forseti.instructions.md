@@ -27,7 +27,7 @@ Set `Status: needs-info` and put questions under `## Needs from Supervisor` (you
 Include: steps, expected vs actual, screenshots/log hints if available.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/agent-explore-forseti/**
 - org-chart/agents/instructions/agent-explore-forseti.instructions.md
 
@@ -37,7 +37,7 @@ Include: steps, expected vs actual, screenshots/log hints if available.
 ## Repo and tool fallback procedure
 
 ### Environment facts (verified 2026-04-05, updated 2026-04-06)
-- **HQ repo**: `/home/ubuntu/forseti.life`
+- **HQ repo**: `/home/ubuntu/forseti.life/copilot-hq`
 - **forseti.life** URL: `https://forseti.life` — production (Drupal 11, Apache 80/443)
 - **dungeoncrawler** URL: `https://dungeoncrawler.forseti.life` — production (Drupal, Apache vhost on 80/443)
   - Code root: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
@@ -49,7 +49,7 @@ Include: steps, expected vs actual, screenshots/log hints if available.
 
 ### Reusable route-check script
 - Location: `sessions/agent-explore-forseti/artifacts/route-check/route-check.sh`
-- Full path: `/home/ubuntu/forseti.life/sessions/agent-explore-forseti/artifacts/route-check/route-check.sh`
+- Full path: `/home/ubuntu/forseti.life/copilot-hq/sessions/agent-explore-forseti/artifacts/route-check/route-check.sh`
 - Usage: `bash route-check.sh [FORSETI_URL] [DC_URL]`
 - Covers: all forseti.life `forseti_games` routes + all public/auth-boundary dungeoncrawler routes
 - Run at the start of every cycle as the Tier 1 exploration baseline

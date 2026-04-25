@@ -27,7 +27,7 @@ When an agent is dispatched with `website_scope: infrastructure`:
 3. Report findings as operator audit results, not web audit results.
 
 ## Repo root
-`/home/ubuntu/forseti.life`
+`/home/ubuntu/copilot-sessions-hq`
 
 ## QA posture
 - No live HTTP verification possible.

@@ -6,7 +6,7 @@
 - Status: done
 - Defer reason: Depends on dc-cr-dwarf-ancestry (deferred); re-evaluate when dwarf ancestry is activated
 - Merged into: dc-cr-dwarf-ancestry (all heritages and ancestry feats covered in bulk AC)
-- Priority: P2
+- Priority: unset (PM will set at triage)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

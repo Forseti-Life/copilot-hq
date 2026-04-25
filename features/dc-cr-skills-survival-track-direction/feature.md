@@ -3,10 +3,10 @@
 - Work item id: dc-cr-skills-survival-track-direction
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Priority: P2
 - Release: 
-20260412-dungeoncrawler-release-r
+20260412-dungeoncrawler-release-e
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -27,10 +27,6 @@ Implement Survival (Wis) skill action handlers — Cover Tracks, Sense Direction
 ## Implementation hint
 
 `TrackAction` is an exploration-mode activity; the DC is computed from a terrain + time-since-passage matrix (stored as a lookup table). On success, reveal the next waypoint of the tracked creature's path. `CoverTracksAction` sets a `tracks_covered` flag on the character's movement record for the current exploration turn; opposed by the pursuer's Track check. `SenseDirectionAction` resolves as a flat Survival check against DC 15 + modifiers for overcast/underground; returns cardinal direction and distance estimate. `SubsistAction` is a downtime activity; resolve vs DC 15 (urban) or DC 12 (rural) and set a `subsistence_status` flag clearing food/water need for that day.
-
-## Latest updates
-
-- 2026-04-19: Surfaced the already-implemented Survival actions through the phase APIs — `ExplorationPhaseHandler::getAvailableActions()` now exposes `sense_direction`, `cover_tracks`, and `track`, and `DowntimePhaseHandler::getAvailableActions()` now includes `subsist`. Added focused unit coverage for both exploration and downtime availability.
 
 ## Mission alignment
 

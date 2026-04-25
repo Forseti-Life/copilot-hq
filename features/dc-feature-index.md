@@ -4,7 +4,7 @@
 
 **Maintained by:** `ba-dungeoncrawler` — update this file at the end of every scan chunk (same commit as new feature stubs). Include `Category` and `Depends on` for every new row (`Depends on` may be blank if no dependencies).
 
-**Last updated:** 2026-04-18 | Active release: `20260412-dungeoncrawler-release-n` | Runtime next release pointer: `20260412-dungeoncrawler-release-o` | Total: 86
+**Last updated:** 2026-04-13 | Active release: `20260412-dungeoncrawler-release-i` | Runtime next release pointer: `20260412-dungeoncrawler-release-b` | Total: 84
 
 **Release sync note:** Treat this index as backlog/duplicate-detection inventory. Live per-feature status and release progress come from each feature's `feature.md`, `dashboards/FEATURE_PROGRESS.md`, and the runtime pointers under `tmp/release-cycle-active/`.
 
@@ -67,7 +67,6 @@
 | dc-cr-goblin-very-sneaky | game-mechanic | dc-cr-goblin-ancestry, dc-cr-ancestry-feat-schedule | Goblin Feat 1: Sneak +5 ft movement; don't become Observed if cover/concealment held at end of turn |
 | dc-cr-goblin-weapon-familiarity | game-mechanic | dc-cr-goblin-ancestry, dc-cr-ancestry-feat-schedule | Goblin Feat 1: trained with dogslicer and horsechopper; uncommon goblin weapons unlocked; goblin weapon proficiencies remapped down by one step |
 | dc-cr-goblin-weapon-frenzy | game-mechanic | dc-cr-goblin-ancestry, dc-cr-goblin-weapon-familiarity, dc-cr-ancestry-feat-schedule | Goblin Feat 5: critical specialization effects with goblin weapons (prereq: Goblin Weapon Familiarity) |
-| dc-cr-half-elf-heritage | game-mechanic | dc-cr-human-ancestry, dc-cr-heritage-system, dc-cr-low-light-vision, dc-cr-ancestry-feat-schedule | Human heritage overlay granting elf/half-elf traits, low-light vision, and expanded ancestry feat eligibility |
 | dc-cr-halfling-ancestry | game-mechanic | dc-cr-ancestry-system | Halfling ancestry: 6 HP, Small, Speed 25, Dex+Wis boosts, Keen Eyes trait, Lucky Halfling |
 | dc-cr-halfling-heritage-gutsy | game-mechanic | dc-cr-halfling-ancestry, dc-cr-heritage-system | Halfling Heritage: success on emotion saving throw upgraded to critical success |
 | dc-cr-halfling-heritage-hillock | game-mechanic | dc-cr-halfling-ancestry, dc-cr-heritage-system | Halfling Heritage: add level to overnight HP recovery; add level to Treat Wounds HP |
@@ -76,7 +75,6 @@
 | dc-cr-gm-tools | rule-system |  | GM encounter budgeting, NPC stat blocks, loot-by-level tables for AI GM use |
 | dc-cr-heritage-system | game-mechanic | dc-cr-ancestry-system | Heritage selection: one heritage per ancestry at level 1, locked after creation |
 | dc-cr-hazards | game-mechanic |  | Trap/haunt/environmental hazard stat blocks with Stealth/Disable DCs and effects |
-| dc-cr-human-ancestry | game-mechanic | dc-cr-ancestry-system, dc-cr-heritage-system, dc-cr-languages, dc-cr-ancestry-feat-schedule | Human ancestry: 8 HP, Medium, 25-ft speed, two free boosts, bonus language, extra trained skill, extra skill feat |
 | dc-cr-languages | game-mechanic |  | Language tracking with ancestry defaults and Intelligence-based free language slots |
 | dc-cr-low-light-vision | rule-system |  | Low-Light Vision sense: see in dim light as bright light; ignore concealed condition due to dim light; elf default vision |
 | dc-cr-magic-items | item |  | Magic item catalog (weapons/armor/wondrous) with investment, activation, rune system |

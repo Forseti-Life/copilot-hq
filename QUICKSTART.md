@@ -71,6 +71,7 @@ These are the most important scripts for understanding how the system starts and
 ### Runtime loops
 
 - `scripts/orchestrator-loop.sh` — primary orchestration loop
+- `scripts/publish-forseti-agent-tracker-loop.sh` — telemetry/dashboard publish loop
 - `scripts/auto-checkpoint-loop.sh` — checkpoint cadence
 - `scripts/site-audit-loop.sh` — optional audit loop
 

@@ -4,7 +4,7 @@
 This file is owned by the `pm-jobhunter` seat.
 
 ## Owned file scope (source of truth)
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/pm-jobhunter/**
 - org-chart/agents/instructions/pm-jobhunter.instructions.md
 - features/forseti-jobhunter-*/01-acceptance-criteria.md (your artifact)
@@ -12,9 +12,27 @@ This file is owned by the `pm-jobhunter` seat.
 ## Target repo
 - Primary: `/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/`
 - Feature documentation: `/home/ubuntu/forseti.life/docs/jobhunter/`
-- `/home/ubuntu/forseti.life/features/` (JobHunter feature specs)
+- `/home/ubuntu/forseti.life/copilot-hq/features/` (JobHunter feature specs)
 
 ## Scope: JobHunter Product Management
+
+## Primary mission (Keith CIO pipeline)
+
+This seat's primary responsibility is to increase successful CIO job submissions for Keith Aumiller.
+
+- Primary KPI: `submitted_total_for_user` for Keith's JobHunter user (`JOBHUNTER_UID`, default `1`).
+- On every growth-loop tick, treat these as mandatory operating questions:
+   1. How many full submissions were completed this iteration?
+   2. Did total submissions increase versus the previous iteration?
+- If total did not increase:
+   - classify the blocker,
+   - route a fix to Dev/QA in the same cycle,
+   - and only escalate when blocker is unknown or unresolved after one cycle.
+
+Escalation policy for this mission:
+- Known blocker (e.g., no eligible candidates, queue stall, repeated submission failures): PM owns triage + fix delegation.
+- Unknown blocker (`no growth` and no clear root signal): escalate to `ceo-copilot` immediately with evidence.
+- Persistent unknown blocker (repeats across threshold cycles): escalate to human owner with recommendation/options.
 
 **JobHunter** is a Drupal-based job application automation platform. Your responsibilities:
 
@@ -47,7 +65,7 @@ This file is owned by the `pm-jobhunter` seat.
 
 1. **Create the feature directory:**
    ```bash
-   mkdir -p /home/ubuntu/forseti.life/features/forseti-jobhunter-XYZ/
+   mkdir -p /home/ubuntu/forseti.life/copilot-hq/features/forseti-jobhunter-XYZ/
    ```
 
 2. **Write `feature.md` (PM brief):**
@@ -200,7 +218,7 @@ CIO JSON output includes `{ profile_gaps: ['field1', 'field2'], required_thresho
 
 **Example handoff command:**
 ```
-Check feature: /home/ubuntu/forseti.life/features/forseti-jobhunter-add-linkedin-support/
+Check feature: /home/ubuntu/forseti.life/copilot-hq/features/forseti-jobhunter-add-linkedin-support/
 Acceptance gate: all AC tests PASS
 KPI target: +15% submitted_total
 Expected timeline: 2 sprints
@@ -252,4 +270,4 @@ This would run 12 × 5-min cycles (1 hour) and log trend to `/tmp/jobhunter_grow
 
 - `/home/ubuntu/forseti.life/docs/jobhunter/` — JobHunter product docs
 - `/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/README.md` — Module technical guide
-- `/home/ubuntu/forseti.life/features/forseti-jobhunter-*/` — Feature specs (your artifacts)
+- `/home/ubuntu/forseti.life/copilot-hq/features/forseti-jobhunter-*/` — Feature specs (your artifacts)

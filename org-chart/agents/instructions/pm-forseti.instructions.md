@@ -5,7 +5,7 @@ This file is owned by the `pm-forseti` seat. You may update it as you learn bett
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/pm-forseti/**
 - features/forseti-*/** (forseti.life PM-owned feature specs for owned modules)
 - knowledgebase/proposals/** (PM proposals within forseti scope)
@@ -17,14 +17,7 @@ This file is owned by the `pm-forseti` seat. You may update it as you learn bett
 **Out-of-scope: JobHunter module**
 - `web/modules/custom/job_hunter/**` is now owned by the dedicated **pm-jobhunter** seat.
 - For JobHunter product decisions, feature specs, or roadmap work, escalate to `pm-jobhunter`.
-- See: `org-chart/agents/instructions/pm-jobhunter.instructions.md`
-
-## QA handshake
-- **PM -> QA (grooming):** send `feature.md`, complete `01-acceptance-criteria.md`, feature id, and the correct `testgen-<feature-id>` handoff
-- **Expected QA return (grooming):** `03-test-plan.md`, validated feature overlay metadata, and the QA completion signal back to PM
-- **PM -> QA (release verification):** send active release ID, scoped feature context, and any scope/risk decisions that affect expected behavior
-- **Expected QA return (release verification):** explicit feature-level verdicts plus one release-scoped Gate 2 APPROVE/BLOCK artifact containing the exact release ID
-- **Routing rule:** do not expect qa-forseti to create Dev inbox items; QA supplies evidence, PM/CEO route follow-up
+- See: `copilot-hq/org-chart/agents/instructions/pm-jobhunter.instructions.md`
 
 ## Default ownership guess (if unclear)
 - For JobHunter feature work (specs, roadmap, acceptance criteria):→ escalate to `pm-jobhunter`
@@ -32,16 +25,6 @@ This file is owned by the `pm-forseti` seat. You may update it as you learn bett
 
 ## Out-of-scope rule
 - If a needed change touches another module (e.g., `copilot_agent_tracker`), open a passthrough request to its owning PM.
-
-## Scope boundary with pm-forseti-agent-tracker (required)
-- `pm-forseti` owns the main Forseti product roadmap and release flow:
-  - `job_hunter`,
-  - site-wide Forseti release scope,
-  - main Forseti Gate 2 / coordinated release decisions,
-  - `features/forseti-*/**` for PM-forseti-owned modules.
-- `pm-forseti-agent-tracker` owns the `copilot_agent_tracker` subproduct roadmap and module-specific prioritization.
-- Do **not** absorb tracker-only product decisions into the main Forseti queue unless CEO explicitly delegates a temporary passthrough.
-- If a site-wide Forseti issue is isolated to `copilot_agent_tracker`, record the dependency and route the product decision to `pm-forseti-agent-tracker`.
 
 ## Gate 1c — Hotfix code review (required)
 When any CEO/PM-applied hotfix ships (production outage, emergency fix), dispatch a Gate 1c inbox item to `agent-code-review` within the same release cycle:
@@ -53,7 +36,11 @@ When any CEO/PM-applied hotfix ships (production outage, emergency fix), dispatc
 Do NOT record release signoff until Gate 1c outbox exists (or risk-accept with documented rationale).
 
 ## Git file tracking note (required)
-From `/home/ubuntu/forseti.life` (repo root), use normal `git add` for HQ content under tracked paths such as `sessions/`, `org-chart/`, `features/`, and `dashboards/`. Only use `git add -f` for files that are actually ignored by the root `.gitignore` (for example some `tmp/` runtime paths).
+`copilot-hq/` is in `.gitignore` at repo root but files are already tracked. For any NEW files under `copilot-hq/`, use:
+```bash
+git add -f copilot-hq/<path>
+```
+from `/home/ubuntu/forseti.life` (repo root). Existing tracked files use normal `git add`.
 
 
 - If your inbox is empty, do NOT generate your own work items.
@@ -175,44 +162,21 @@ When the current release enters Stage 3 (Dev execution), PM begins grooming the 
 This work runs entirely in parallel and must not interact with or delay the current release.
 
 ```bash
-# 1. Audit existing next-release backlog first
-python3 - <<'PY'
-import pathlib, re
-site = "forseti"
-for fm in sorted(pathlib.Path("features").glob("*/feature.md")):
-    text = fm.read_text(encoding="utf-8")
-    if f"- Website: {site}" not in text:
-        continue
-    m = re.search(r"^- Status:\s*(.+)$", text, re.MULTILINE)
-    if not m:
-        continue
-    status = m.group(1).strip()
-    if status not in {"planned", "ready", "in_progress"}:
-        continue
-    ac = fm.with_name("01-acceptance-criteria.md").exists()
-    tp = fm.with_name("03-test-plan.md").exists()
-    if not (ac and tp):
-        print(f"{fm.parent.name}: status={status} ac={ac} testplan={tp}")
-PY
-
-# 2. Pull new community suggestions
+# 1. Pull new community suggestions
 ./scripts/suggestion-intake.sh forseti
 
-# 3. Triage each one (accept/defer/decline)
+# 2. Triage each one (accept/defer/decline)
 ./scripts/suggestion-triage.sh forseti <nid> <decision> [feature-id]
 
-# 4. Write or complete Acceptance Criteria
+# 3. Write Acceptance Criteria for each accepted feature
 #    → features/<id>/01-acceptance-criteria.md  (from templates/01-acceptance-criteria.md)
-#    Finish backlog items from step 1 before treating grooming as complete.
 
-# 5. Hand off to QA for test generation
+# 4. Hand off to QA for test generation
 ./scripts/pm-qa-handoff.sh forseti <feature-id>
 ```
 
 A feature is **groomed and ready** when all three exist:  
 `feature.md` + `01-acceptance-criteria.md` + `03-test-plan.md`
-
-If suggestion intake returns nothing, the grooming task still remains open until the backlog audit is clean.
 
 Only groomed features are eligible for the next Stage 0 scope selection.
 Anything not fully groomed when Stage 0 starts is automatically deferred — no exceptions.
@@ -246,6 +210,7 @@ Even without a `release-close-now` trigger, you MUST sign off as soon as ALL in-
 	- `./scripts/release-signoff.sh dungeoncrawler <release-id>`
 - Verify readiness immediately before pushing:
 	- `./scripts/release-signoff-status.sh <release-id>`
+  - `./scripts/gate4-prepush-check.sh <release-id>`
 	- Proceed only when it exits `0`.
 
 Start-of-cycle (recommended for coordinated releases):
@@ -452,18 +417,32 @@ Long-term fix: delegate to dev-forseti to delete stale `webform.*` configs from 
 
 Reference: `knowledgebase/lessons/20260406-config-import-webform-orphan-blocker.md`
 
-## Production deploy reality (CRITICAL — do not re-escalate false alarms)
+## Production deploy reality (CRITICAL)
 
-On this server, `/var/www/html/forseti/web/modules/custom` and `/var/www/html/forseti/web/themes/custom` are **symlinks** to the git checkout at `/home/ubuntu/forseti.life/sites/forseti/web/`. Code changes committed to main are **immediately live in production — no rsync/deploy step needed** for module or theme changes.
+Production deployment is hybrid:
 
-GitHub Actions `deploy.yml` handles: config/sync rsync, composer installs, and `drush cr`. If `deploy.yml` shows no recent runs, do NOT escalate as a code-deploy blocker. Instead verify:
+- On production host, code changes in live-linked paths are immediately live.
+- Off-host/local changes are not live until explicitly promoted.
+
+A push to `main` does **not** deploy off-host/local work by itself.
+
+GitHub Actions `deploy.yml` is run explicitly (`workflow_dispatch`) when promotion of off-host/local changes is approved. If `deploy.yml` shows no recent runs, treat this as expected unless a deployment was intentionally requested.
+
+For production-host edits, validate live linkage and runtime state:
 
 ```bash
-cd /var/www/html/forseti && ./vendor/bin/drush config:status   # should say "No differences"
-stat /var/www/html/forseti/web/modules/custom                   # should show symlink → repo
+stat /var/www/html/forseti/web/modules/custom
+stat /var/www/html/forseti/web/themes/custom
 ```
 
-**Lesson (2026-04-08):** pm-forseti halted release-b post-push steps because deploy.yml hadn't triggered since 2026-04-02. Production was already current via symlinks — one wasted cycle.
+When validating production state, verify:
+
+```bash
+cd /var/www/html/forseti && ./vendor/bin/drush config:status
+cd /var/www/html/forseti && git --no-pager log -1 --oneline
+```
+
+**Dual-environment safety rule:** if local and production both developed concurrently, require a rebase-on-latest-main check before merge approval to avoid accidental overwrite of production hotfixes.
 
 ## Gate R5 — Post-push production audit (PM responsibility)
 

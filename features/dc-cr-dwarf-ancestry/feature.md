@@ -4,7 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 20260412-dungeoncrawler-release-s
+- Release: 
 - Priority: P2 (extends ancestry-system with specific stat block; all deps now satisfied — ancestry-system ✓, clan-dagger shipped ✓, heritage-system ✓)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -38,13 +38,3 @@ Create a `ancestry` content entity for Dwarf with: `hp_grant: 10`, `size: medium
 - CSRF expectations: all POST/PATCH character ancestry/heritage routes require `_csrf_request_header_mode: TRUE`
 - Input validation: heritage and ancestry feat selections validated against allowed enum for dwarf; heritage mutations server-validated
 - PII/logging constraints: no PII logged; character id + ancestry id + heritage id only
-
-## Session notes (2026-04-19)
-
-QA preflight revealed API gaps: `AncestryController::buildAncestryItem()` omitted
-`bonus_language_pool`, `bonus_language_source`, `starting_equipment`, and
-`AncestryController::detail()` omitted `ancestry_feats`. Unblocked TC-DWF-05/06/09–14.
-
-Fix: Extended both methods in `AncestryController.php` to expose these fields conditionally.
-Unit test coverage: `AncestryControllerTest.php` — 12 tests / 92 assertions; all pass.
-Commit: `35e4b2cea`

@@ -3,7 +3,7 @@
 - Feature: forseti-jobhunter-application-analytics
 - Author: ba-forseti / dev-forseti
 - Date: 2026-04-13
-- Status: implemented — commit 7607c362a; route fix commit 5158c8f78
+- Status: implemented — commit 7607c362a
 
 ## Approach
 
@@ -37,16 +37,7 @@ Rendering: `wrapWithNavigation()` render array pattern (consistent with rest of 
   required for v1.
 - Do not surface company names or freeform notes in the analytics widgets.
 
-## Post-implementation fix (2026-04-18)
-
-QA first-run (audit 20260418-172927) returned HTTP 500 on `/jobhunter/analytics` for the QA user (uid=1600, zero saved jobs). Root cause: the empty-state branch called `Url::fromRoute('job_hunter.discover')` — a route that does not exist. The correct route is `job_hunter.job_discovery` (`/jobhunter/job-discovery`).
-
-Fix committed in `5158c8f78`. Drupal cache cleared (`drush cr`). Verified:
-- Authenticated + no saved jobs: HTTP 200 with empty-state markup (`analytics-empty`)
-- Authenticated + ≥1 saved job: HTTP 200 with `analytics-funnel`, `response-rate`, `source-breakdown`
-- Unauthenticated: HTTP 403
-
-
+## Verification targets
 
 ```bash
 # Verify page renders (requires auth cookie)

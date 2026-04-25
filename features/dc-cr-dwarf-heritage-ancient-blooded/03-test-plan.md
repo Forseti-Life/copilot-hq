@@ -2,7 +2,7 @@
 
 - Feature: Dwarf Heritage — Ancient-Blooded
 - Work item id: dc-cr-dwarf-heritage-ancient-blooded
-- Release target: 20260412-dungeoncrawler-release-s
+- Release target: 20260308-dungeoncrawler-release-b (NEXT RELEASE — grooming only)
 - QA owner: qa-dungeoncrawler
 - AC source: features/dc-cr-dwarf-heritage-ancient-blooded/01-acceptance-criteria.md
 - Date: 2026-03-09

@@ -31,14 +31,19 @@ llm/models/*.bin
 llm/cache/sessions/
 llm/.venv/
 
-# Runtime process ID files (all loops/daemons)
-# These are ephemeral state and should never be committed
-.*-loop.pid
-.orchestrator-loop.pid
-.dev-sync-loop.pid
+# CEO loop runtime
+.ceo-inbox-loop.pid
+.ceo-health-loop.pid
+.agent-exec-loop.pid
+.inbox-loop.pid
 inbox/responses/.ceo-health-last-queue
-
-# Python cache
+.inbox-loop.pid
+.ceo-health-loop.pid
+.agent-exec-loop.pid
+.improvement-round-loop.pid
+.publish-forseti-agent-tracker-loop.pid
+.auto-checkpoint-loop.pid
+.ceo-ops-loop.pid
 llm/__pycache__/
 llm/lib/__pycache__/
 
@@ -48,3 +53,7 @@ llm/lib/__pycache__/
 # are the org's primary audit trail and must be fully tracked in version control.
 sessions/**/artifacts/**/latest
 sessions/**/artifacts/**/latest.*
+node-identity.conf
+node-instructions.local.md
+# Machine-specific LLM routing override (never commit — contains LAN IPs/endpoints)
+llm/routing.local.yaml

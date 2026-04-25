@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import concurrent.futures
 import json
 import os
 import pathlib
@@ -21,10 +20,6 @@ HealthCheckFn = Callable[[Any, List[Any]], None]
 NowTsFn = Callable[[], int]
 
 
-HasEventsFn = Callable[..., bool]
-ConsumeEventsFn = Callable[..., None]
-
-
 @dataclass(frozen=True)
 class LangGraphDeps:
     run_cmd: RunFn
@@ -35,8 +30,6 @@ class LangGraphDeps:
     health_check_step: HealthCheckFn
     now_ts: NowTsFn
     kpi_monitor_cmd: List[str]
-    has_events: HasEventsFn = lambda *_: False      # noqa: E731
-    consume_events: ConsumeEventsFn = lambda *_: None  # noqa: E731
 
 
 import subprocess as _subprocess
@@ -56,28 +49,6 @@ def _refresh_feature_progress(hq_root: pathlib.Path) -> None:
             )
         except Exception:  # noqa: BLE001
             pass
-
-
-def _exec_worker_limit(agent_cap: int) -> int:
-    """Determine how many agent executions may run in parallel this tick."""
-    cap = max(1, int(agent_cap))
-
-    explicit = os.environ.get("ORCHESTRATOR_EXEC_WORKERS", "").strip()
-    if explicit.isdigit():
-        return max(1, min(cap, int(explicit)))
-
-    shared = os.environ.get("AGENT_EXEC_MAX_CONCURRENT", "").strip()
-    if shared.isdigit():
-        return max(1, min(cap, int(shared)))
-
-    backend = os.environ.get("HQ_AGENTIC_BACKEND", "auto").strip().lower()
-    if backend == "bedrock":
-        bedrock = os.environ.get("AGENT_EXEC_MAX_CONCURRENT_BEDROCK", "").strip()
-        if bedrock.isdigit():
-            return max(1, min(cap, int(bedrock)))
-        return min(cap, 4)
-
-    return min(cap, 6)
 
 
 def _write_tick_telemetry(state: Dict[str, Any]) -> None:
@@ -136,10 +107,10 @@ def _write_tick_telemetry(state: Dict[str, Any]) -> None:
     # Build parity record with schema expected by DashboardController::langGraphParityHealth().
     expected_steps = [
         "consume_replies", "dispatch_commands", "release_cycle", "coordinated_push",
-        "pick_agents", "exec_agents", "health_check", "kpi_monitor", "publish",
+        "pick_agents", "exec_agents", "health_check", "publish",
     ]
     actual_steps = [entry.get("step") for entry in log_entries if "step" in entry]
-    steps_match = actual_steps == expected_steps
+    steps_match = set(expected_steps).issubset(set(actual_steps))
 
     # selected_agents parity: compare pick_agents log entry vs final selected_agents.
     picked = next(
@@ -152,17 +123,12 @@ def _write_tick_telemetry(state: Dict[str, Any]) -> None:
 
     parity_errors: List[str] = list(errors)
     if not steps_match:
-        parity_errors.append(
-            f"step order mismatch: expected={expected_steps} actual={actual_steps}"
-        )
-    if not agents_match:
-        parity_errors.append(
-            f"selected_agents mismatch: picked={sorted(picked)} actual={sorted(state.get('selected_agents', []))}"
-        )
+        missing = set(expected_steps) - set(actual_steps)
+        parity_errors.append(f"missing steps: {', '.join(sorted(missing))}")
 
     parity_record = {
         "generated_at": state.get("ts"),
-        "parity_ok": bool(all_ok and steps_match and agents_match),
+        "parity_ok": bool(all_ok and steps_match),
         "selected_agents": {
             "match": agents_match,
             "actual": state.get("selected_agents", []),
@@ -216,28 +182,9 @@ def run_tick(
         return s
 
     def release_cycle(s: Dict[str, Any]) -> Dict[str, Any]:
-        # Bypass the interval gate when a release lifecycle event signal is pending.
-        _RC_SIGNALS = (
-            "release-signoff-created",
-            "release-cycle-advanced",
-            "gate2-approved",
-            "coordinated-push-done",
-        )
-        event_triggered = deps.has_events(*_RC_SIGNALS)
-        interval_elapsed = (deps.now_ts() - s["release_cycle_last_run"]) >= s["release_cycle_interval"]
-
-        if event_triggered or interval_elapsed:
-            trigger = "event" if event_triggered else "interval"
-            deps.consume_events(*_RC_SIGNALS)
+        if (deps.now_ts() - s["release_cycle_last_run"]) >= s["release_cycle_interval"]:
             deps.release_cycle_step(s["log"])
-            # Annotate the log entry with the trigger reason.
-            for entry in reversed(s["log"]):
-                if entry.get("step") == "release_cycle":
-                    entry["trigger"] = trigger
-                    break
             s["release_cycle_last_run"] = deps.now_ts()
-        else:
-            s["log"].append({"step": "release_cycle", "skipped": True})
         return s
 
     def coordinated_push(s: Dict[str, Any]) -> Dict[str, Any]:
@@ -246,16 +193,9 @@ def run_tick(
 
     def pick_agents(s: Dict[str, Any]) -> Dict[str, Any]:
         all_agents = deps.prioritized_agents()
-        # Only consider CEO for bonus slot if agent_cap > 0
-        ceo_agents = []
-        if s["agent_cap"] > 0:
-            ceo_agents = [a for a in all_agents if str(getattr(a, "agent_id", "")).startswith("ceo-copilot")][:1]
-        
+        ceo_agents = [a for a in all_agents if str(getattr(a, "agent_id", "")).startswith("ceo-copilot")][:1]
         other_agents = [a for a in all_agents if not str(getattr(a, "agent_id", "")).startswith("ceo-copilot")]
-        # CEO gets a guaranteed bonus slot that does NOT reduce the team cap.
-        # This restores one full team slot that was previously consumed by the
-        # CEO reservation (ISSUE-003 fix).
-        other_cap = max(0, s["agent_cap"])
+        other_cap = max(0, s["agent_cap"] - len(ceo_agents))
         # Respect the ordering returned by prioritized_agents(). It already
         # encodes: current-release first, then spare-capacity spillover into
         # next-release prep, then other work.
@@ -266,99 +206,20 @@ def run_tick(
         current_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_release_work", False)]
         next_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_next_release_work", False)]
         s["selected_agents"] = selected
-
-        # ISSUE-008: warn when per-tick agent coverage falls below 20%.
-        # At 4 workers / 48 agents = 8% coverage; this fires a visible log line
-        # so operators know the scheduling ratio is degraded.
-        queued_count = len(all_agents)
-        if queued_count > 0:
-            coverage_pct = 100 * len(agents) / queued_count
-            if coverage_pct < 20:
-                print(
-                    f"COVERAGE-WARN: scheduling {len(agents)}/{queued_count} "
-                    f"queued agents this tick ({coverage_pct:.0f}% coverage); "
-                    f"consider raising ORCHESTRATOR_AGENT_CAP or AGENT_EXEC_MAX_CONCURRENT_BEDROCK"
-                )
-
         s["log"].append({
             "step": "pick_agents",
             "selected": selected,
             "release_priority": current_release,
             "next_release_spillover": next_release,
-            "queued_agents": queued_count,
-            "coverage_pct": round(100 * len(agents) / queued_count, 1) if queued_count else 100,
         })
         return s
 
     def exec_agents(s: Dict[str, Any]) -> Dict[str, Any]:
         ran: List[Dict[str, Any]] = []
-        selected_agents = [str(agent_id) for agent_id in (s.get("selected_agents") or [])]
-        if not selected_agents:
-            s["log"].append({"step": "exec_agents", "ran": ran, "workers": 0})
-            return s
-
-        # AGENT_EXEC_BURST: how many inbox items each agent may process per tick.
-        # Burst > 1 reduces queue-drain latency for agents with deep inboxes.
-        # Each additional run processes the next inbox item; agent-exec-next.sh
-        # exits cleanly (rc=0) when the inbox is empty, so over-bursting is safe.
-        burst = max(1, int(os.environ.get("AGENT_EXEC_BURST", "1")))
-
-        def _run_agent_burst(agent_id: str) -> Dict[str, Any]:
-            run_results: List[int] = []
-            for _ in range(burst):
-                rc_exec, _ = provider.run_one(agent_id)
-                run_results.append(rc_exec)
-                if rc_exec != 0:
-                    break  # stop burst on failure
-            return {"agent": agent_id, "rc": run_results[-1], "runs": len(run_results)}
-
-        # ISSUE-005: Start kpi_monitor logic concurrently while agents execute.
-        # kpi_monitor only reads/writes files — safe to run in parallel with exec.
-        # Results are stashed in state so the kpi_monitor node can consume them.
-        _KPI_SIGNALS_EXEC = (
-            "release-cycle-advanced",
-            "coordinated-push-done",
-            "gate2-approved",
-        )
-        kpi_future: "concurrent.futures.Future[Dict[str, Any]] | None" = None
-        kpi_pool: "concurrent.futures.ThreadPoolExecutor | None" = None
-        kpi_event_triggered = deps.has_events(*_KPI_SIGNALS_EXEC)
-        kpi_interval_elapsed = (deps.now_ts() - s["kpi_last_run"]) >= s["kpi_interval"]
-        if kpi_event_triggered or kpi_interval_elapsed:
-            deps.consume_events(*_KPI_SIGNALS_EXEC)
-            kpi_trigger = "event" if kpi_event_triggered else "interval"
-            def _kpi_task() -> Dict[str, Any]:
-                rc, out = deps.run_cmd(deps.kpi_monitor_cmd, timeout=300)
-                return {"rc": rc, "out": out, "trigger": kpi_trigger}
-            kpi_pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-            kpi_future = kpi_pool.submit(_kpi_task)
-
-        workers = _exec_worker_limit(len(selected_agents))
-        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-            future_map = {
-                pool.submit(_run_agent_burst, agent_id): agent_id
-                for agent_id in selected_agents
-            }
-            results: Dict[str, Dict[str, Any]] = {}
-            for future in concurrent.futures.as_completed(future_map):
-                agent_id = future_map[future]
-                results[agent_id] = future.result()
-
-        for agent_id in selected_agents:
-            ran.append(results.get(agent_id, {"agent": agent_id, "rc": 1, "runs": 0}))
-        s["log"].append({"step": "exec_agents", "ran": ran, "workers": workers})
-
-        # Collect kpi result — it ran concurrently during agent execution.
-        if kpi_future is not None and kpi_pool is not None:
-            try:
-                kpi_result = kpi_future.result(timeout=60)
-            except Exception:
-                kpi_result = {"rc": 1, "out": "", "trigger": "unknown"}
-            finally:
-                kpi_pool.shutdown(wait=False)
-            s["_kpi_prefetched"] = kpi_result
-            s["kpi_last_run"] = deps.now_ts()
-
+        for agent_id in s.get("selected_agents") or []:
+            rc_exec, _ = provider.run_one(str(agent_id))
+            ran.append({"agent": agent_id, "rc": rc_exec})
+        s["log"].append({"step": "exec_agents", "ran": ran})
         return s
 
     def health_check(s: Dict[str, Any]) -> Dict[str, Any]:
@@ -366,49 +227,18 @@ def run_tick(
         return s
 
     def kpi_monitor(s: Dict[str, Any]) -> Dict[str, Any]:
-        # If exec_agents already ran kpi concurrently, consume the pre-fetched result.
-        prefetched = s.pop("_kpi_prefetched", None)
-        if prefetched is not None:
-            rc_kpi = prefetched["rc"]
-            out_kpi = prefetched["out"]
-            trigger = prefetched["trigger"]
-            s["log"].append({"step": "kpi_monitor", "rc": rc_kpi, "out": out_kpi[:kpi_max_output_chars], "trigger": trigger})
-            if "HANDOFF-GAP" in out_kpi:
-                print(f"AUTO-HANDOFF: detected {out_kpi.count('HANDOFF-GAP')} HANDOFF-GAP state(s)")
-            return s
-
-        # Bypass the interval gate when any release lifecycle event signal fired.
-        _KPI_SIGNALS = (
-            "release-cycle-advanced",
-            "coordinated-push-done",
-            "gate2-approved",
-        )
-        event_triggered = deps.has_events(*_KPI_SIGNALS)
-        interval_elapsed = (deps.now_ts() - s["kpi_last_run"]) >= s["kpi_interval"]
-
-        if event_triggered or interval_elapsed:
-            trigger = "event" if event_triggered else "interval"
-            deps.consume_events(*_KPI_SIGNALS)
+        if (deps.now_ts() - s["kpi_last_run"]) >= s["kpi_interval"]:
             rc_kpi, out_kpi = deps.run_cmd(deps.kpi_monitor_cmd, timeout=300)
-            s["log"].append({"step": "kpi_monitor", "rc": rc_kpi, "out": out_kpi[:kpi_max_output_chars], "trigger": trigger})
+            s["log"].append({"step": "kpi_monitor", "rc": rc_kpi, "out": out_kpi[:kpi_max_output_chars]})
             if "HANDOFF-GAP" in out_kpi:
                 print(f"AUTO-HANDOFF: detected {out_kpi.count('HANDOFF-GAP')} HANDOFF-GAP state(s)")
             s["kpi_last_run"] = deps.now_ts()
-        else:
-            s["log"].append({"step": "kpi_monitor", "skipped": True})
         return s
 
     def publish(s: Dict[str, Any]) -> Dict[str, Any]:
         if s["publish_enabled"]:
-            # Fire-and-forget: Drupal telemetry sync should not block the next tick.
-            # The 1200s timeout previously caused up to 20-minute tick stalls (ISSUE-004).
-            proc = _subprocess.Popen(
-                ["bash", "scripts/publish-forseti-agent-tracker.sh"],
-                cwd=str(pathlib.Path(os.environ.get("COPILOT_HQ_ROOT", str(pathlib.Path(__file__).parent.parent.parent)))),
-                stdout=_subprocess.DEVNULL,
-                stderr=_subprocess.DEVNULL,
-            )
-            s["log"].append({"step": "publish", "rc": 0, "bg_pid": proc.pid, "note": "fire-and-forget"})
+            rc_pub, _ = deps.run_cmd(["bash", "scripts/publish-forseti-agent-tracker.sh"], timeout=1200)
+            s["log"].append({"step": "publish", "rc": rc_pub})
         else:
             s["log"].append({"step": "publish", "skipped": True})
 
@@ -442,7 +272,7 @@ def run_tick(
     selected = result.get("selected_agents") or []
     print(f"tick: agents={','.join(selected) if selected else '-'}")
     return (
-        result,
+        {"ts": result.get("ts"), "selected_agents": selected, "log": result.get("log", [])},
         int(result.get("kpi_last_run", kpi_last_run)),
         int(result.get("release_cycle_last_run", release_cycle_last_run)),
     )

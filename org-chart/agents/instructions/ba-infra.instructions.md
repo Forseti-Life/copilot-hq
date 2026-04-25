@@ -7,7 +7,7 @@ This file is owned by the `ba-infra` seat.
 - Infrastructure requirements and operating procedures (clarify what "stable/scalable" means, define acceptance criteria for ops work).
 
 ## Owned file scope
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - sessions/ba-infra/**
 - org-chart/agents/instructions/ba-infra.instructions.md
 
@@ -58,18 +58,6 @@ NOT infra BA work:
 - QA verification plans — owned by qa-infra
 
 Use this list during the Release-cycle intake step to confirm whether an inbox item is in scope before proceeding.
-
-## BA traceability standard
-
-When infra BA work is driven by formal source material (runbooks, policy docs, QA manifests,
-agent-scope definitions, operating procedures), instantiate and maintain the BA traceability
-stack from `runbooks/ba-source-traceability-standard.md`:
-- source ledger
-- source-object tracker
-- audit worksheet
-- optional execution cursor for chunked ingestion only
-
-Use the templates in `templates/` when creating an infra-specific ledger/tracker.
 
 ## BA activation threshold (when pm-infra should route to ba-infra)
 pm-infra should create a feature spec and delegate to ba-infra when an infra change meets ANY of:

@@ -158,8 +158,8 @@
     },
     {
       "id": "jobhunter-entity-data",
-      "path_regex": "^/jobhunter/(?:resume/pdf/\\d+|resume/\\d+/edit|jobs/\\d+/resume/(?:generate|pdf)|resume/pdf$|resume/download/|tailor-resume/|job-discovery/company/|googlejobsdetail/\\d+|coverletter/\\d+|interview-prep/\\d+|application-submission/\\d+/screenshot/test|companies/\\d+/research)",
-      "notes": "Entity-ID or parameterized routes that require uploaded resume, saved job/application data, generated artifacts, or specific company IDs the QA test user may not have. Placeholder or data-less probes can legitimately return 404/redirect/error states here, so role-audit should ignore them rather than flagging them as ACL violations.",
+      "path_regex": "^/jobhunter/(?:resume/pdf/\\d+|jobs/\\d+/resume/(?:generate|pdf)|resume/pdf$|resume/download/|tailor-resume/|job-discovery/company/)",
+      "notes": "Entity-ID or parameterized routes that require uploaded resume, job application data, or specific company IDs the QA test user does not have. 404 with placeholder/missing data is expected \u2014 ignore rather than flag as violations.",
       "expect": {
         "anon": "deny",
         "authenticated": "ignore",
@@ -192,8 +192,8 @@
     },
     {
       "id": "jobhunter-admin",
-      "path_regex": "^/jobhunter/(?:bulk|documentation|googlejobsintegration|opportunity(?:-management)?|queue(?!/status)|settings|job(?:s)?/\\d+/delete|job-discovery/(?:company|search-ajax|save)|applications/(?:(?:add)(?:/|$)|[^/]+(?:/(?:edit|workflow))?(?:/|$))|companies/(?:(?:list|add)(?:/|$)|[^/]+/(?:edit|delete)(?:/|$)))",
-      "notes": "Admin-only jobhunter routes requiring 'administer job application automation' \u2014 authenticated users only have 'access job hunter' and should be denied. This intentionally excludes user-facing application/company surfaces such as /jobhunter/applications, /jobhunter/companies, /jobhunter/companies/my-list, and /jobhunter/companies/{id}/interest, which have feature-specific allow rules later in the file. Listed before jobhunter-surface for first-match-wins. Note: credentials-ui rule listed before this one to allow authenticated access to /jobhunter/settings/credentials.",
+      "path_regex": "^/jobhunter/(?:bulk|documentation|companies|googlejobsintegration|opportunity(?:-management)?|queue(?!/status)|settings|job(?:s)?/\\d+/delete|applications|job-discovery/(?:company|search-ajax|save))",
+      "notes": "Admin-only jobhunter routes requiring 'administer job application automation' \u2014 authenticated users only have 'access job hunter' and should be denied. Listed before jobhunter-surface for first-match-wins. Note: credentials-ui rule listed before this one to allow authenticated access to /jobhunter/settings/credentials.",
       "expect": {
         "anon": "deny",
         "authenticated": "deny",

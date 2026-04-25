@@ -4,7 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Priority: P2
+- Priority: unset (PM will set at triage)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

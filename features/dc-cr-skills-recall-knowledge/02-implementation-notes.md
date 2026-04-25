@@ -47,14 +47,6 @@ None found specific to secret check result obfuscation in prior DungeonCrawler K
 - `drush cr`: cache rebuild complete.
 - QA suite: `./vendor/bin/phpunit --filter RecallKnowledgeTest --testsuite module-test-suite`
 
-## 2026-04-18 follow-up
-- Closed the remaining `TABLE 10-7: Creature Identification Skills` roadmap row by adding focused regression coverage for `CharacterManager::recallKnowledgeSkillsForTraits()`.
-- Coverage now locks the PF2e creature-trait routing table for:
-  - single-skill groups (`humanoid`/`animal`/`undead`)
-  - multi-skill groups (`dragon`/`fey`/`spirit`)
-  - GM Lore fallback for unknown traits
-  - normalization/deduplication of mixed-case duplicate traits
-
 ## Rollback
 - Revert commit; run `drush cr`.
 

@@ -26,8 +26,7 @@ ids=set(a['id'] for a in agents)
 for a in agents:
     if 'role' not in a: missing.append((a['id'],'role'))
     if 'supervisor' not in a: missing.append((a['id'],'supervisor'))
-    elif a['supervisor'] not in ids and a['supervisor'] != 'board':
-        missing.append((a['id'],f"supervisor-not-found:{a['supervisor']}"))
+    elif a['supervisor'] not in ids: missing.append((a['id'],f"supervisor-not-found:{a['supervisor']}"))
 
 if missing:
     print('INVALID org-chart/agents/agents.yaml:')

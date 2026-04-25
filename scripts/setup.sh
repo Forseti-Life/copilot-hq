@@ -56,8 +56,8 @@ echo "HQ setup complete."
 # LangGraph orchestrator loop (authoritative scheduler)
 ./scripts/install-cron-orchestrator-loop.sh
 
-# Forseti dashboard publisher runs inside the orchestrator tick;
-# do not add a separate cron or loop publisher.
+# Forseti dashboard publisher is run by publish-forseti-agent-tracker-loop
+# managed by hq-automation; do not add a separate cron publisher.
 
 # HQ automation converge watchdog (ensures enable/disable flips actually start/stop loops).
 ./scripts/install-cron-hq-automation.sh

@@ -2,7 +2,7 @@
 
 This file is a running list of targeted regression checks derived from completed Dev items.
 
-- Automated baseline (always): operator-audit mode only — `python3 scripts/qa-suite-validate.py`, `bash scripts/lint-scripts.sh` (when present), `bash -n scripts/*.sh`, and static scope/instruction checks.
+- Automated baseline (always): URL validation + role-based permission checks (see `runbooks/role-based-url-audit.md`).
 - Manual/targeted checks: one checklist entry per completed Dev item.
 
 ## Checklist
@@ -103,11 +103,13 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260417-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260417-syshealth-merge-health-remediation.md)
 - [ ] 20260417-syshealth-copilot-rate-limit-pressure — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260417-syshealth-copilot-rate-limit-pressure.md)
 - [ ] 20260417-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260417-syshealth-executor-failures-prune.md)
-- [ ] 20260418-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260418-syshealth-merge-health-remediation.md)
-- [ ] 20260419-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260419-syshealth-merge-health-remediation.md)
-- [ ] 20260419-fix-groom-dispatch-off-by-one — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260419-fix-groom-dispatch-off-by-one.md)
-- [ ] 20260419-fix-groom-dispatch-off-by-one-release-id — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260419-fix-groom-dispatch-off-by-one-release-id.md)
-- [ ] 20260419-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260419-syshealth-executor-failures-prune.md)
-- [ ] 20260420-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260420-syshealth-merge-health-remediation.md)
-- [ ] 20260420-fix-signoff-reminder-duplicate-dispatch — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260420-fix-signoff-reminder-duplicate-dispatch.md)
+- [ ] 20260422-syshealth-orchestrator-down — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260422-syshealth-orchestrator-down.md)
+- [ ] 20260422-fix-install-crons-qa-site-audit-allow-prod — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260422-fix-install-crons-qa-site-audit-allow-prod.md)
+- [ ] 20260422-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260422-syshealth-merge-health-remediation.md)
+- [ ] 20260422-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260422-syshealth-executor-failures-prune.md)
+- [ ] 20260423-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260423-syshealth-merge-health-remediation.md)
 - [ ] 20260423-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260423-syshealth-executor-failures-prune.md)
+- [ ] 20260424-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260424-syshealth-merge-health-remediation.md)
+- [ ] 20260424-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260424-syshealth-executor-failures-prune.md)
+- [ ] 20260425-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260425-syshealth-merge-health-remediation.md)
+- [ ] 20260425-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260425-syshealth-executor-failures-prune.md)

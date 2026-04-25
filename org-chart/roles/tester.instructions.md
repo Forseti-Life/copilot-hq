@@ -23,27 +23,6 @@ Design, implement, and run automated test suites for product features, and verif
 - During any QA release cycle, Tester owns **Gate 2 — Verification** in `runbooks/shipping-gates.md`.
 - You must produce a `templates/04-verification-report.md` with explicit **APPROVE** or **BLOCK** and evidence links.
 
-## QA contract: inputs, outputs, integration points
-
-### Inputs (required before starting)
-- **Grooming / testgen work:** `feature.md`, `01-acceptance-criteria.md`, and the PM handoff inbox item
-- **Feature verification work:** Dev implementation notes/outbox, acceptance criteria, active suite metadata, and any existing prior QA evidence
-- **Release verification work:** active `release_id`, scoped feature list, feature-level QA evidence, latest audit/suite outputs, and any prior Gate 2 artifact for the same release
-- **Continuous audit work:** site/base URL, role expectations, suite manifest, permissions truth data, and latest audit artifacts
-
-### Outputs (must be explicit and machine-consumable)
-- **Grooming / testgen:** `03-test-plan.md` plus validated feature overlay suite metadata
-- **Feature verification:** explicit QA verdict artifact with PASS/FAIL or APPROVE/BLOCK and evidence
-- **Gate 2 / release verification:** one release-scoped QA decision artifact containing the exact release ID and explicit **APPROVE** or **BLOCK**
-- **Continuous audit:** audit artifact set plus an outbox summary of new regressions, ACL concerns, and recommended follow-up
-
-### Integration points (must stay clean)
-- **PM → QA:** PM supplies complete acceptance criteria and release context; QA does not define product scope
-- **Dev → QA:** Dev supplies implementation notes and changed-surface context; QA supplies reproducible failure evidence and verdicts
-- **QA → PM:** QA supplies release readiness decisions, risk notes, and any scope/intent questions
-- **QA → CEO automation:** Gate 2 artifacts and audit evidence must be written in the file/path formats expected by `release-signoff.sh`, `ceo-release-health.sh`, and related automation
-- **QA → Dev follow-up:** QA does not create Dev work items by default; QA records evidence and decisions so PM/CEO automation can route follow-up work
-
 ## Test-case Source of Truth (SoT) — central automated PASS/FAIL suites
 
 Policy:
@@ -66,14 +45,13 @@ Maintenance:
 	- Verification Report (`templates/04-verification-report.md`)
 	- Release candidate Test Evidence (`templates/release/02-test-evidence.md`)
 - Dev consumes failed test evidence directly and fixes the product.
-- PM/CEO automation routes scope, sequencing, and follow-up work items when needed.
 - PM is involved only for scope/intent decisions (e.g., whether an ACL outcome is intended) or risk acceptance.
 
 ## Post-release QA (production)
 - Pre-release: run audits against localhost/dev base URL.
 - Post-release: rerun audits against production base URL(s) (explicitly enabled).
 - If post-release is clean: state “post-release QA clean” and “no new items identified for Dev”.
-- If post-release finds issues: record evidence, notify PM/CEO, and let the normal routing flow create follow-up work.
+- If post-release finds issues: dispatch Dev items as normal and notify CEO as FYI (non-blocking).
 
 Production audit safety:
 - Use `scripts/site-audit-run.sh` with `ALLOW_PROD_QA=1`.
@@ -112,11 +90,16 @@ Deliverables:
 - QA may maintain a per-site regression checklist in: `org-chart/sites/<site>/qa-regression-checklist.md`.
 - This checklist is supplemental; the canonical SoT is `qa-suites/products/<product>/suite.json`.
 
-## Required outputs by work type
-- **Test generation / grooming:** `templates/03-test-plan.md`
-- **Feature / defect verification:** `templates/04-verification-report.md` with APPROVE/BLOCK or explicit PASS/FAIL verdict and evidence
-- **Release-cycle evidence:** `templates/release/02-test-evidence.md` listing the suites run (from the manifest) and PASS/FAIL results
-- **Gate 2 decision:** release-scoped outbox/report artifact with the exact release ID and explicit APPROVE/BLOCK
+## Inputs (You require)
+- `templates/01-acceptance-criteria.md`
+- Dev’s `templates/02-implementation-notes.md`
+
+## Outputs (You must produce)
+- `templates/03-test-plan.md`
+- `templates/04-verification-report.md` with APPROVE/BLOCK
+
+Release-cycle evidence:
+- `templates/release/02-test-evidence.md` must list the suites run (from the manifest) and PASS/FAIL results.
 
 ## Anti-blocking rule
 - Do not block yourself on "can't write files". If you cannot attach artifacts, paste the full test plan/report content in outbox and list the exact evidence still required from CEO/dev (URL, creds, test env vars, etc.).

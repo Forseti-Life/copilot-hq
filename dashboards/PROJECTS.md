@@ -30,23 +30,20 @@ Each row is a registered machine in the fleet. Nodes self-identify by `Node ID`.
 
 | Node ID | Role | Hostname | Environment | Owner | Status |
 |---|---|---|---|---|---|
-| master | master | forseti.life | AWS EC2 Ubuntu 24.04 | ceo-copilot-2 | active |
+| production | master | forseti.life | AWS EC2 Ubuntu 24.04 | ceo-copilot-2 | active |
 | dev-laptop | worker | pop-os | Keith's Dev Laptop (Pop!_OS) | dev-jobhunter | active |
 
 ### Project Assignments
 
 Which node/agent handles each project. CEO edits this to reassign work between nodes.
 
-**Worker node (dev-laptop):** JobHunter only.
-**Master node:** everything else.
-
 | Project key | Target node | Target agent | Website | Module | Execute |
 |---|---|---|---|---|---|
 | forseti-jobhunter-automation | dev-laptop | dev-jobhunter | forseti.life | job_hunter | dispatch-only |
-| forseti-safety-application | master | dev-forseti | forseti.life | forseti_content | local |
-| forseti-agent-tracker | master | dev-forseti-agent-tracker | forseti.life | copilot_agent_tracker | local |
-| dungeoncrawler | master | dev-dungeoncrawler | dungeoncrawler | dungeoncrawler_content | local |
-| infrastructure | master | dev-infra | infrastructure | infrastructure | local |
+| forseti-safety-application | dev-laptop | dev-forseti | forseti.life | forseti_content | dispatch-only |
+| forseti-agent-tracker | dev-laptop | dev-forseti-agent-tracker | forseti.life | copilot_agent_tracker | dispatch-only |
+| dungeoncrawler | dev-laptop | dev-dungeoncrawler | dungeoncrawler | dungeoncrawler_content | dispatch-only |
+| infrastructure | dev-laptop | dev-infra | infrastructure | infrastructure | dispatch-only |
 
 ---
 
@@ -54,17 +51,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 | ID | Name | Type | Product | Status | Priority | Lead | Started |
 |---|---|---|---|---|---|---|---|
-| PROJ-007 | Dungeoncrawler Product Track | product line | dungeoncrawler | separate_product_site | **P0** | pm-dungeoncrawler | 2026-04-13 |
-| PROJ-003 | DungeonCrawler Roadmap Completion | delivery project | dungeoncrawler | in_progress | **P0** | pm-dungeoncrawler | 2026-03-01 |
-| PROJ-004 | Job Hunter | product line | forseti.life | active_buildout | P1 — worker node | pm-forseti | 2026-04-12 |
+| PROJ-004 | Job Hunter | product line | forseti.life | active_buildout | P1 | pm-forseti | 2026-04-12 |
 | PROJ-005 | AI Conversation | product line | forseti.life | foundation_in_place | P1 | pm-forseti | 2026-04-12 |
 | PROJ-006 | Community Safety | product line | forseti.life | public_platform_track | P2 | pm-forseti | 2026-04-12 |
+| PROJ-007 | Dungeoncrawler Product Track | product line | dungeoncrawler | separate_product_site | P1 | pm-dungeoncrawler | 2026-04-13 |
 | PROJ-008 | Forseti Accounting Pipeline | delivery project | forseti.life | in_progress | P1 | accountant-forseti | 2026-04-13 |
 | PROJ-009 | Forseti Open Source Initiative | delivery project | org-wide | in_progress | P1 | pm-open-source | 2026-04-13 |
-| PROJ-010 | External Integration Configuration Audit | delivery project | org-wide | in_progress | P1 | pm-integrations | 2026-04-13 |
+| PROJ-010 | External Integration Configuration Audit | delivery project | org-wide | in_progress | P1 | ceo-copilot-2 | 2026-04-13 |
 | PROJ-011 | Forseti Community Resource Mesh | delivery project | forseti.life | in_progress | P1 | pm-forseti | 2026-04-13 |
 | PROJ-001 | LangGraph Console UI | delivery project | forseti.life | in_progress | P1 | pm-forseti | 2026-04-05 |
 | PROJ-002 | QA Suite Completeness | delivery project | forseti.life | in_progress | P2 | pm-forseti / qa-forseti | 2026-04-09 |
+| PROJ-003 | DungeonCrawler Roadmap Completion | delivery project | dungeoncrawler | in_progress | P1 | pm-dungeoncrawler | 2026-03-01 |
 
 ---
 
@@ -120,7 +117,7 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** The dedicated Dungeoncrawler product line, separate site, and its long-lived PF2E implementation program. Long-term mission: implement all PF2E rulebook requirements currently tracked in `dc_requirements` MySQL table (2033 implemented, 674 in_progress, 698 pending as of 2026-04-13).
 
-**Current state (2026-04-19):** Dungeoncrawler release `20260412-dungeoncrawler-release-p` was pushed through the coordinated signoff path, the lead-PM release bundle was materialized, and the cycle advanced to active release `20260412-dungeoncrawler-release-q` with next release `20260412-dungeoncrawler-release-r`. The just-shipped release closed out `dc-b2-bestiary2`, `dc-gng-guns-gears`, and `dc-som-secrets-of-magic`. Post-B2 backlog recovery has already begun: `dc-b3-bestiary3` is groomed, live in the QA suite for `release-q`, and now has a safe execution path using the repo's internal structured creature inventory plus normalization across read, JSON-write, and template-seeding paths, with seeded/internal rows now carrying or hydrating the standard core catalog fields.
+**Current state (2026-04-14):** Active runtime release is now `20260412-dungeoncrawler-release-m`, with `20260412-dungeoncrawler-release-n` queued as the next release. The roadmap page remains live and pipeline-backed: requirement status is resolved from `dc_requirements` plus HQ feature status, so implemented and in-progress work still render correctly. The current release has just rolled forward and is waiting on PM scope activation; a `scope-activate` item is already queued for `pm-dungeoncrawler`. The ready backlog is 17 features deep, and 10 Dungeoncrawler features remain `in_progress` across the broader implementation pipeline. Alongside the gnome, goblin, halfling, GMG, and UI clusters, the promoted roadmap epics remain `dc-b2-bestiary2`, `dc-gng-guns-gears`, and `dc-som-secrets-of-magic`.
 
 **Backlog coverage status (2026-04-14):**
 - `core/ch01` (Chapter 1: Introduction) — 237 pending, now mapped primarily to `dc-cr-character-creation` and `dc-cr-character-leveling`
@@ -128,15 +125,15 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 - `gng` (Guns & Gears, 5 chapters) — 30 pending, now queued in backlog via `dc-gng-guns-gears`
 - `som` (Secrets of Magic, 5 chapters) — 30 pending, now queued in backlog via `dc-som-secrets-of-magic`
 - `b2` (Bestiary 2) — 12 pending, now queued in backlog via `dc-b2-bestiary2`
-- `b3` (Bestiary 3) — 18 pending, deferral cleared now that `dc-b2-bestiary2` shipped; grooming/test-plan handoff started via `dc-b3-bestiary3`
+- `b3` (Bestiary 3) — 18 pending, still intentionally deferred until `dc-b2-bestiary2` ships
 
-**Last scoped release:** `20260412-dungeoncrawler-release-p`
+**Last scoped release:** `20260412-dungeoncrawler-release-l` (most recent scoped tranche; active runtime release is `20260412-dungeoncrawler-release-m`)
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** `dev-dungeoncrawler` extends the internal structured Bestiary 3 inventory into the richer shared creature schema for `release-q`, while `pm-dungeoncrawler` keeps `release-r` grooming ahead of the live cycle.
+**Next step:** `pm-dungeoncrawler` should process the queued `scope-activate` item for `20260412-dungeoncrawler-release-m`, then pull from the ready backlog in this order: goblin/halfling cleanup → GMG/UI tranche → `dc-b2-bestiary2` → `dc-gng-guns-gears` → `dc-som-secrets-of-magic`. `dc-b3-bestiary3` remains gated behind Bestiary 2 shipping.
 
-**Queue status:** active release `20260412-dungeoncrawler-release-q` still carries `dc-b3-bestiary3` in progress. QA testgen and live suite activation are complete; Dev now has a safe-source path using internal structured inventory data plus landed normalization across read, write, and template-import flows for legacy `source_book`-backed rows, with seeded/internal rows now carrying or hydrating the core catalog fields; next release `20260412-dungeoncrawler-release-r` already has PM grooming coverage queued.
+**Queue status:** 17 features `ready` for future activation, `scope-activate` is queued for the active runtime release `20260412-dungeoncrawler-release-m`, and 10 features are currently `in_progress` across the pipeline. Remaining true deferred gap: `dc-b3-bestiary3`.
 
 ---
 
@@ -162,13 +159,13 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Publish the Forseti autonomous Drupal development platform as open source under the `Forseti-Life` GitHub organization, including the platform overview repo, selected reusable component repos, contributor docs, and the release/security process needed to publish safely.
 
-**Current state (2026-04-17):** The effort is active and the `Forseti-Life` GitHub org now exists, so the governance prerequisite is no longer the blocker. Readiness assets already exist: `PUBLIC_REPO_PREP.md`, publication-readiness runbooks, public positioning docs, mirror/export scripts, and community/legal files (`LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`). Publication model is now explicit: use curated mirrors / extracted repos and keep live operational artifacts private. Current-tree AWS credentials have been stripped from the tracked Drupal config sync files, and open-source now has a dedicated publication-security lane via `sec-analyst-open-source`. The remaining critical blocker is publication security in history and candidate packaging: credential rotation, full history scrub / sensitive-data audit, candidate freeze, and validation evidence still remain.
+**Current state (2026-04-13):** The effort is active and the `Forseti-Life` GitHub org now exists, so the governance prerequisite is no longer the blocker. Readiness assets already exist: `PUBLIC_REPO_PREP.md`, publication-readiness runbooks, public positioning docs, mirror/export scripts, and community/legal files (`LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`). Publication model is now explicit: use curated mirrors / extracted repos and keep live operational artifacts private. Current-tree AWS credentials have been stripped from the tracked Drupal config sync files; the remaining critical blocker is publication security in history and candidate packaging: credential rotation, full history scrub / sensitive-data audit, candidate freeze, and validation evidence still remain.
 
-**Last scoped release:** none yet (portfolio initiative; not release-scoped to a product release)
+**Last scoped release:** `20260413-orgwide-release-baseline` (portfolio initiative baseline; not tied to product release scope)
 
 **Progress SLA:** 7 days without a PM-open-source re-baseline, dev-open-source publication audit, or Board/org-setup step = breach
 
-**Next step:** `drupal-ai-conversation` is now the explicit first publication candidate and the PM publication-candidate gate is written. `dev-open-source` should clear the candidate-local NO-GO findings from the Phase 1 audit (HQ/session coupling, stale absolute path, site-specific logging reference, Forseti-specific default prompt), `sec-analyst-open-source` should record the publication-security review, and CEO should confirm external AWS credential rotation; once those are done, `pm-open-source` freezes the sanitized extract and hands it to `qa-open-source`.
+**Next step:** `drupal-ai-conversation` is now the explicit first publication candidate and the PM publication-candidate gate is written. `dev-open-source` should clear the candidate-local NO-GO findings from the Phase 1 audit (HQ/session coupling, stale absolute path, site-specific logging reference, Forseti-specific default prompt) while CEO confirms external AWS credential rotation; once both are done, `pm-open-source` freezes the sanitized extract and hands it to `qa-open-source`.
 
 **Queue status:** Governance unblock is complete (`Forseti-Life` org verified) and publication scope is now explicit (curated mirror / extracted repos; operational artifacts remain private). Publication is still blocked on credential rotation + history rewrite/scrub, candidate freeze, packaging, and final validation evidence.
 
@@ -178,15 +175,15 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Inventory and audit how the org stores, resolves, and governs configuration for external systems used by the server stack and adjacent production operations, including APIs, cloud providers, billing systems, deploy workflows, token files, and Drupal-backed integration settings.
 
-**Current state (2026-04-17):** Project opened and first-pass inventory completed at `dashboards/integrations/server-integration-inventory-2026-04.md`. The Phase 1 operator entrypoint now exists at `dashboards/integrations/README.md`, and the first machine-readable registry now exists at `dashboards/integrations/integration-registry.yaml`. The centralization plan remains at `dashboards/integrations/centralized-integration-management-plan.md`. A dedicated integrations team now owns the lane: `pm-integrations`, `ba-integrations`, `dev-integrations`, `qa-integrations`, and `sec-analyst-integrations`. The current baseline confirms multiple integration storage planes already in use: Drupal sync config, active Drupal config, environment variables, local token files, and GitHub Actions secrets. Verified integration surfaces include AWS Bedrock, AWS Cost Explorer billing, GitHub billing APIs, GitHub deploy/push workflows, SerpAPI, Google Cloud Talent Solution config, Adzuna, USAJobs, Google Tag, Google social auth, reCAPTCHA, USFA NERIS, and Hugging Face model downloads. The first critical finding remains a tracked `serpapi_api_key` in `sites/forseti/config/sync/job_hunter.settings.yml`.
+**Current state (2026-04-13):** Project opened and first-pass inventory completed at `dashboards/integrations/server-integration-inventory-2026-04.md`. The Phase 1 operator entrypoint now exists at `dashboards/integrations/README.md`, and the first machine-readable registry now exists at `dashboards/integrations/integration-registry.yaml`. The centralization plan remains at `dashboards/integrations/centralized-integration-management-plan.md`. The current baseline confirms multiple integration storage planes already in use: Drupal sync config, active Drupal config, environment variables, local token files, and GitHub Actions secrets. Verified integration surfaces include AWS Bedrock, AWS Cost Explorer billing, GitHub billing APIs, GitHub deploy/push workflows, SerpAPI, Google Cloud Talent Solution config, Adzuna, USAJobs, Google Tag, Google social auth, reCAPTCHA, USFA NERIS, and Hugging Face model downloads. The first critical finding remains a tracked `serpapi_api_key` in `sites/forseti/config/sync/job_hunter.settings.yml`.
 
-**Last scoped release:** none yet (org-wide audit project)
+**Last scoped release:** `20260413-orgwide-release-baseline` (org-wide audit baseline; tracked outside product release scope)
 
-**Progress SLA:** 7 days without a `pm-integrations` update, inventory expansion, or remediation dispatch = breach
+**Progress SLA:** 7 days without a CEO update, inventory expansion, or remediation dispatch = breach
 
-**Next step:** `pm-integrations` should treat Phase 1 as established and dispatch the runtime truth audit next: confirm live active Drupal config, server env vars, token-file consumers, and workflow secret usage for every registry entry, route product-specific fixes to the owning product teams, and prioritize remediation starting with the tracked SerpAPI secret.
+**Next step:** CEO should treat Phase 1 as established and dispatch the runtime truth audit next: confirm live active Drupal config, server env vars, token-file consumers, and workflow secret usage for every registry entry, then prioritize remediation starting with the tracked SerpAPI secret.
 
-**Queue status:** Inventory, centralization plan, operator hub, first registry, and dedicated team ownership are now in place. Project is ready for integrations-team-managed runtime truth audit and remediation prioritization.
+**Queue status:** Inventory, centralization plan, operator hub, and first registry are now in place. Project is ready for CEO-managed runtime truth audit and remediation prioritization.
 
 ---
 
@@ -196,7 +193,7 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Current state (2026-04-13):** Project created and initial delivery feature stub opened as `forseti-installation-cluster-communication`. MVP architecture, daemon/runtime design, protocol schemas, state machines, pseudocode, and a sequenced roadmap now exist. No implementation is active yet. The intended MVP is autonomous-peer communication plus resource-mesh primitives, not full multi-primary data replication: each installation should have a stable installation identity, a peer registry, a trust/auth model, signed request handling, capability/need advertisement, cluster message logging, a standalone `forseti-meshd` backend, and a Drupal admin interface for peer status and operator decisions. Initial value focus is shared agent capacity and institutional-management workflows; compute and storage are intentionally deferred.
 
-**Last scoped release:** none yet (new strategic delivery project)
+**Last scoped release:** `20260413-forseti-release-baseline` (strategic project baseline; pre-activation planning phase)
 
 **Progress SLA:** 7 days without PM/BA decomposition, MVP scope refinement, or release-slot planning = breach
 
@@ -402,15 +399,15 @@ Root cause: `FORSETI_COOKIE_AUTHENTICATED` env var is never set in automation be
 **Roadmap audit runbook:** `runbooks/roadmap-audit.md`  
 **Scope:** Systematically implement all `pending` requirements in `dc_requirements` table until every requirement is either `implemented` or has a `feature_id` pointing to an active pipeline feature.
 
-Current status: The public roadmap still derives requirement state from the live pipeline, and the sync path remains intact. Coordinated release `20260412-dungeoncrawler-release-p` has now been signoff-cleared and cycled forward; active runtime release is `20260412-dungeoncrawler-release-q` with `20260412-dungeoncrawler-release-r` queued next. The post-B2 follow-on path is no longer just groomed - `dc-b3-bestiary3` is actively scoped into `release-q`, with QA suite activation complete and the first safe code slice landed against the repo's internal structured B3 inventory.
+Current status: The public roadmap still derives requirement state from the live pipeline, and the sync path remains intact. Active runtime release is `20260412-dungeoncrawler-release-m`, with `20260412-dungeoncrawler-release-n` already groomed as the next wave. The current runtime release has just advanced and is awaiting PM scope activation; a scope-activate item is already queued. The broader Dungeoncrawler pipeline remains active with 10 features `in_progress` and 17 features `ready`.
 
-**Last scoped release:** `20260412-dungeoncrawler-release-p`
+**Last scoped release:** `20260412-dungeoncrawler-release-l`
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** execute the remaining `dc-b3-bestiary3` schema-ingestion work in `20260412-dungeoncrawler-release-q`, while continuing PM grooming for `20260412-dungeoncrawler-release-r`.
+**Next step:** complete PM scope activation for `20260412-dungeoncrawler-release-m`, let that tranche execute through Gate 2, and then promote `20260412-dungeoncrawler-release-n` only after the coordinated push/post-push handoff completes.
 
-**Queue status:** the coordinated push is complete and the cycle advanced. The current operational gap is no longer release signoff or backlog recovery; it is finishing the richer shared-schema implementation for `dc-b3-bestiary3` in `release-q` while PM keeps `release-r` groomed ahead of it.
+**Queue status:** active items are queued for `pm-dungeoncrawler`, `dev-dungeoncrawler`, and `qa-dungeoncrawler`; current runtime gap is only Stage 0 activation for `20260412-dungeoncrawler-release-m`, and that PM item is already in inbox.
 
 See `runbooks/roadmap-audit.md` for full query protocol and per-chapter status.
 

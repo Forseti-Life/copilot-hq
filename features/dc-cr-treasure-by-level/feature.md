@@ -3,7 +3,7 @@
 - Work item id: dc-cr-treasure-by-level
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Release:
 20260412-dungeoncrawler-release-e
 - PM owner: pm-dungeoncrawler

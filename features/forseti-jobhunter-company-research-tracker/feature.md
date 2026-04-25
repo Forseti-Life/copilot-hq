@@ -3,13 +3,8 @@
 - Work item id: forseti-jobhunter-company-research-tracker
 - Website: forseti.life
 - Module: job_hunter
-- Project: PROJ-004
-- Group Order: 4
-- Group: contacts-companies
-- Group Title: Contacts & Companies
-- Group Sort: 3
 - Status: done
-- Release: 20260412-forseti-release-l
+- Release: 20260412-forseti-release-n
 - Feature type: enhancement
 - PM owner: pm-forseti
 - Dev owner: dev-forseti

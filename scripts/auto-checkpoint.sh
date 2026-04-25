@@ -9,6 +9,7 @@ if [ -n "${AUTO_CHECKPOINT_REPOS:-}" ]; then
 else
   REPOS=(
     "/home/ubuntu/forseti.life"
+    "/home/ubuntu/forseti.life/copilot-hq"
   )
 fi
 

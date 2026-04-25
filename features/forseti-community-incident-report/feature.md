@@ -1,13 +1,9 @@
 # Feature: forseti-community-incident-report
 
-- Group Order: 1
-- Group: safety-tools
-- Group Title: Safety Tools
-- Group Sort: 1
-- Status: done
+- Status: in_progress
 - Website: forseti.life
 - Module: community_incident_report (new)
-- Release: 20260412-forseti-release-l
+- Release: 20260412-forseti-release-n
 - Owner: pm-forseti
 - Project: PROJ-006
 

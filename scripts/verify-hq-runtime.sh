@@ -88,7 +88,9 @@ if [ "$service_active" -eq 0 ] && [ "$loop_active" -eq 0 ]; then
   fail "no orchestrator runtime active (systemd service or loop wrapper)"
 fi
 
-pass "publisher handled by orchestrator tick"
+publish_status="$(./scripts/publish-forseti-agent-tracker-loop.sh status 2>/dev/null || echo not-running)"
+[[ "$publish_status" == running* ]] || fail "publish loop not running"
+pass "publish loop active"
 
 checkpoint_status="$(./scripts/auto-checkpoint-loop.sh status 2>/dev/null || echo not-running)"
 [[ "$checkpoint_status" == running* ]] || fail "auto-checkpoint loop not running"

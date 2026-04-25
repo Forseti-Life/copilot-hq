@@ -9,7 +9,7 @@ if [ "${1:-}" = "--dry-run" ]; then
 fi
 
 SITE_ROOT="${DUNGEONCRAWLER_SITE_ROOT:-/home/ubuntu/forseti.life/sites/dungeoncrawler}"
-ARTIFACTS_ROOT="${DUNGEONCRAWLER_QA_ARTIFACTS_ROOT:-/home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/artifacts/phpunit-functional}"
+ARTIFACTS_ROOT="${DUNGEONCRAWLER_QA_ARTIFACTS_ROOT:-/home/ubuntu/forseti.life/copilot-hq/sessions/qa-dungeoncrawler/artifacts/phpunit-functional}"
 BASE_URL="${DUNGEONCRAWLER_SIMPLETEST_BASE_URL:-${SIMPLETEST_BASE_URL:-http://localhost:8080}}"
 DB_DSN="${DUNGEONCRAWLER_SIMPLETEST_DB:-${SIMPLETEST_DB:-}}"
 DB_PASSWORD_VALUE="${DUNGEONCRAWLER_DB_PASSWORD:-${DB_PASSWORD:-}}"
