@@ -22,51 +22,6 @@ function dungeoncrawler_content_form_user_login_form_alter(array &$form, FormSta
 }
 
 /**
- * Implements hook_install().
- *
- * Seeds the 6 core ancestries as Drupal nodes when the module is installed.
- * This hook ensures ancestries are created once during installation, and is
- * idempotent (does not recreate nodes if they already exist).
- */
-function dungeoncrawler_content_install(): void {
-  $core_ancestries = ['Dwarf', 'Elf', 'Gnome', 'Goblin', 'Halfling', 'Human'];
-
-  foreach ($core_ancestries as $ancestry_name) {
-    // Check if node already exists to ensure idempotency.
-    $nodes = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->loadByProperties([
-        'type' => 'ancestry',
-        'title' => $ancestry_name,
-      ]);
-
-    if (!empty($nodes)) {
-      continue;
-    }
-
-    $ancestry_data = CharacterManager::ANCESTRIES[$ancestry_name] ?? [];
-    if (empty($ancestry_data)) {
-      continue;
-    }
-
-    $node = \Drupal\node\Entity\Node::create([
-      'type' => 'ancestry',
-      'title' => $ancestry_name,
-      'status' => 1,
-      'field_ancestry_hp' => $ancestry_data['hp'] ?? 8,
-      'field_ancestry_size' => $ancestry_data['size'] ?? 'Medium',
-      'field_ancestry_speed' => $ancestry_data['speed'] ?? 25,
-      'field_ancestry_boosts' => $ancestry_data['boosts'] ?? [],
-      'field_ancestry_flaw' => $ancestry_data['flaw'] ?? '',
-      'field_ancestry_languages' => $ancestry_data['languages'] ?? [],
-      'field_ancestry_senses' => $ancestry_data['vision'] ?? 'normal',
-    ]);
-
-    $node->save();
-  }
-}
-
-/**
  * Implements hook_theme().
  *
  * Defines custom theme templates for dungeon crawler game components.

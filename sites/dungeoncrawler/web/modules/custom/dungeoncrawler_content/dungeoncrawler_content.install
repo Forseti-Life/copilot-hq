@@ -2809,6 +2809,60 @@ function dungeoncrawler_content_install() {
     \Drupal::logger('dungeoncrawler_content')->error('Ancestry node seeding during install failed: @error', ['@error' => $e->getMessage()]);
   }
 
+  // Seed 12 core character class nodes on fresh installs.
+  try {
+    $core_classes = ['alchemist', 'barbarian', 'bard', 'champion', 'cleric', 'druid',
+      'fighter', 'monk', 'ranger', 'rogue', 'sorcerer', 'wizard'];
+    $all_classes = \Drupal\dungeoncrawler_content\Service\CharacterManager::CLASSES;
+    foreach ($core_classes as $class_id) {
+      if (!isset($all_classes[$class_id])) {
+        continue;
+      }
+      $existing = \Drupal::entityQuery('node')
+        ->condition('type', 'character_class')
+        ->condition('title', $class_id)
+        ->accessCheck(FALSE)
+        ->execute();
+      if (!empty($existing)) {
+        continue;
+      }
+      $class_data = $all_classes[$class_id];
+      
+      // Serialize proficiencies and class features as JSON.
+      $proficiencies = $class_data['proficiencies'] ?? [];
+      $proficiencies_json = !empty($proficiencies) ? json_encode($proficiencies, JSON_PRETTY_PRINT) : '';
+
+      // Extract class features (everything except basic attributes).
+      $class_features = [];
+      $exclude_keys = ['id', 'name', 'description', 'hp', 'key_ability', 'proficiencies', 'armor_proficiency', 'weapons', 'skills', 'trained_skills', 'fixed_skills', 'spellcasting'];
+      foreach ($class_data as $key => $value) {
+        if (!in_array($key, $exclude_keys)) {
+          $class_features[$key] = $value;
+        }
+      }
+      $features_json = !empty($class_features) ? json_encode($class_features, JSON_PRETTY_PRINT) : '';
+
+      $node = \Drupal\node\Entity\Node::create([
+        'type'   => 'character_class',
+        'title'  => $class_id,
+        'status' => 1,
+        'uid'    => 1,
+      ]);
+      $node->set('field_class_name', $class_data['name'] ?? ucfirst($class_id));
+      $node->set('field_class_description', $class_data['description'] ?? '');
+      $node->set('field_class_key_ability', $class_data['key_ability'] ?? 'Strength');
+      $node->set('field_class_hp_per_level', (int) ($class_data['hp'] ?? 8));
+      $node->set('field_class_proficiencies', $proficiencies_json);
+      $node->set('field_class_features', $features_json);
+      $node->set('field_class_trained_skills', (int) ($class_data['trained_skills'] ?? 0));
+      $node->save();
+    }
+    \Drupal::logger('dungeoncrawler_content')->notice('hook_install: seeded core character class nodes.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('dungeoncrawler_content')->error('Character class node seeding during install failed: @error', ['@error' => $e->getMessage()]);
+  }
+
   // Seed all content from JSON files (items, creatures, etc.).
   try {
     /** @var \Drupal\dungeoncrawler_content\Service\ContentRegistry $registry */

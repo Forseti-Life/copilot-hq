@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies: {  }
+name: 'Character Class'
+type: character_class
+description: 'Pathfinder 2e character class with proficiencies, features, and abilities.'
+help: 'A character class node stores the base statistics, proficiencies, and features for a Pathfinder 2e character class.'
+new_revision: true
+preview_mode: 1
+display_submitted: true
