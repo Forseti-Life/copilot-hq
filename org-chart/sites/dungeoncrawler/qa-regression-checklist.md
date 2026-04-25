@@ -404,3 +404,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260425-140622-impl-dc-cr-halfling-weapon-expertise — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-140622-impl-dc-cr-halfling-weapon-expertise.md)
 - [ ] 20260425-fix-from-qa-block-dungeoncrawler — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-fix-from-qa-block-dungeoncrawler.md)
 - [ ] 20260425-syshealth-php-fatal-dungeoncrawler — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-syshealth-php-fatal-dungeoncrawler.md)
+- [ ] 20260425-qa-block-dc-cr-dwarf-heritage-ancient-blooded — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-qa-block-dc-cr-dwarf-heritage-ancient-blooded.md)
