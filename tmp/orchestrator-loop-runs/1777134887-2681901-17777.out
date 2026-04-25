@@ -5,4 +5,4 @@ EXECUTOR-HEALTH: 23 failures in 24h
   - Agent qa-infra has 6 failures. May need quarantine or debugging.
   - Agent pm-open-source has 6 failures. May need quarantine or debugging.
 AUTO-HANDOFF: detected 1 HANDOFF-GAP state(s)
-tick: agents=ceo-copilot-2,pm-forseti
+tick: agents=pm-forseti
