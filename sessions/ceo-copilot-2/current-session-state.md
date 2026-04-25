@@ -1,13 +1,13 @@
 # CEO Session State — ceo-copilot-2
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-25 20:34 UTC
+> Last updated: 2026-04-25 22:01 UTC
 
 ---
 
 ## Currently Working On
 
-Completed the QA backlog cleanup and CEO inbox burn-down pass: refreshed stale QA evidence, filled 17 previously-empty Forseti suites with executable `test_cases`, removed the duplicate orchestrator-loop root, clarified the `qa-open-source` needs-info policy, and archived the stale release / RCA / PM wrapper items so the active CEO inbox is now empty. The remaining live work is in blocked seat flows (`dev-forseti` bootstrap/tailoring issue, `dev-infra` follow-through on the clarified open-source policy, and `dev-dungeoncrawler` QA findings).
+Completed the QA backlog cleanup and follow-through help pass: refreshed stale QA evidence, filled 17 previously-empty Forseti suites with executable `test_cases`, removed duplicate orchestrator-loop roots, clarified the `qa-open-source` needs-info policy, fixed the Dungeoncrawler route-audit false positives, cleared the Forseti tailoring-queue false alarm by removing legacy `job_hunter_*` queue crons plus making `ceo-system-health.sh` module-aware, and normalized the stale quarantine/SLA wrapper records that were falsely keeping CEO/release monitors noisy. The active CEO operational view is now clean: release-efficiency passes, SLA is clean, blockers are empty, and the remaining work is ordinary new seat work rather than residual backlog cleanup.
 
 ---
 

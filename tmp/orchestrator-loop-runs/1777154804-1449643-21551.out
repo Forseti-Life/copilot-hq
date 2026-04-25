@@ -1,0 +1,7 @@
+EXECUTOR-HEALTH: 90 failures in 24h
+  - High failure rate (90 in 24h). Possible systemic issue.
+  - Majority of failures are systematic (not transient). Requires investigation.
+  - Agent pm-forseti has 57 failures. May need quarantine or debugging.
+  - Agent pm-infra has 19 failures. May need quarantine or debugging.
+  - Agent qa-infra has 9 failures. May need quarantine or debugging.
+tick: agents=dev-dungeoncrawler

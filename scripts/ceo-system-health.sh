@@ -618,7 +618,15 @@ echo "  Drupal Queue Health  (tailoring queue)"
 echo "$SEP"
 
 queue_log="/var/log/drupal/tailoring_queue.log"
-if [ -f "$queue_log" ]; then
+job_hunter_enabled=""
+if [ -f "$drupal_root/vendor/bin/drush" ]; then
+  job_hunter_enabled="$(cd "$drupal_root" && vendor/bin/drush --uri=https://forseti.life php:eval 'echo \Drupal::moduleHandler()->moduleExists("job_hunter") ? "yes" : "no";' 2>/dev/null || true)"
+fi
+
+if [ "$job_hunter_enabled" = "no" ]; then
+  pass "Tailoring queue check skipped: job_hunter module is disabled on live Forseti"
+  info "Legacy queue:run cron entries should be removed while job_hunter remains disabled."
+elif [ -f "$queue_log" ]; then
   last_entry=$(tail -1 "$queue_log" 2>/dev/null || true)
   last_mtime=$(stat -c %Y "$queue_log" 2>/dev/null || echo 0)
   age_h=$(( (now_ts - last_mtime) / 3600 ))

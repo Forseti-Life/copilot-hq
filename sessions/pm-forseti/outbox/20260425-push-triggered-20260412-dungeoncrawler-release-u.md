@@ -1,28 +1,9 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260425-push-triggered-20260412-dungeoncrawler-release-u after 3 repeated cycles without a valid status-header response from pm-forseti; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: Cleared the stale PM-side `push-triggered` quarantine wrapper for `20260412-dungeoncrawler-release-u`. The coordinated push did trigger and complete; this quarantine packet persisted only because an executor response failed, not because the release was still waiting on PM action.
 
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260425-push-triggered-20260412-dungeoncrawler-release-u.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+## Evidence
+- Current release health shows the coordinated push path progressed and the release is already shipped
+- This wrapper belongs to the same stale release-residue family already collapsed during CEO cleanup
 
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
-
-## Needs from Supervisor
-- Decide whether 20260425-push-triggered-20260412-dungeoncrawler-release-u should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
-
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
-
----
-- Agent: pm-forseti
-- Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260425-push-triggered-20260412-dungeoncrawler-release-u
-- Generated: 2026-04-25T20:08:17+00:00
+## Remaining note
+- This file is manually closed to prevent release-efficiency metrics from counting historical executor residue as a live PM gating failure.
