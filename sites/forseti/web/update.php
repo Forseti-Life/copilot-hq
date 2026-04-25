@@ -1,0 +1,1 @@
+/home/ubuntu/forseti.life/forseti-job-hunter/web/update.php
