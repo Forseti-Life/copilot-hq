@@ -3,4 +3,4 @@ EXECUTOR-HEALTH: 17 failures in 24h
   - Majority of failures are systematic (not transient). Requires investigation.
   - Agent pm-infra has 6 failures. May need quarantine or debugging.
   - Agent pm-open-source has 6 failures. May need quarantine or debugging.
-tick: agents=pm-forseti,dev-dungeoncrawler
+tick: agents=pm-forseti

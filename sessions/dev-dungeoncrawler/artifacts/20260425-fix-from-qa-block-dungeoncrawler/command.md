@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-25T15:31:53Z
+
 # Dev fix: QA BLOCK from qa-dungeoncrawler
 
 QA issued a BLOCK. Address all failing tests and re-submit for verification.
