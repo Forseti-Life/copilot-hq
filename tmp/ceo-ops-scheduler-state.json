@@ -1,28 +1,22 @@
 {
   "blockers": {
     "Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) \u2014 code shipped without review": {
-      "count": 2,
+      "count": 3,
       "first_seen": "2026-04-25T13:40:01.380938+00:00",
-      "last_seen": "2026-04-25T13:50:01.963356+00:00"
-    },
-    "Merge health: 1 tracked local change(s)": {
-      "count": 2,
-      "first_seen": "2026-04-25T13:40:01.380938+00:00",
-      "last_seen": "2026-04-25T13:50:01.963356+00:00"
+      "last_seen": "2026-04-25T14:00:01.463151+00:00"
     },
     "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-u": {
-      "count": 2,
+      "count": 3,
       "first_seen": "2026-04-25T13:40:01.380938+00:00",
-      "last_seen": "2026-04-25T13:50:01.963356+00:00"
+      "last_seen": "2026-04-25T14:00:01.463151+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) \u2014 code shipped without review",
-    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-u",
-    "Merge health: 1 tracked local change(s)"
+    "[dungeoncrawler] Gate 2 APPROVE not found in sessions/qa-dungeoncrawler/outbox for 20260412-dungeoncrawler-release-u"
   ],
   "last_rc": 1,
-  "last_rca_created": 1,
-  "last_run_at": "2026-04-25T13:50:01.963356+00:00"
+  "last_rca_created": 0,
+  "last_run_at": "2026-04-25T14:00:01.463151+00:00"
 }

@@ -1,10 +1,10 @@
-I'll investigate the current QA evidence for this release before writing the Gate 2 artifact.
+I'll investigate the current QA evidence for this release before writing a Gate 2 artifact.
 
 - Status: in_progress
-- Summary: Reading inbox, then checking existing QA evidence and feature scope for `dc-cr-ceaseless-shadows` before writing the Gate 2 artifact.
+- Summary: Reading the inbox item and investigating existing QA evidence for release `20260412-dungeoncrawler-release-u` and feature `dc-cr-ceaseless-shadows`.
 
 ## Next actions
-- Read feature.md and existing QA evidence, then write Gate 2 artifact.
+- Read existing QA artifacts, feature spec, acceptance criteria, and any prior verification evidence before producing a Gate 2 decision.
 
 ## Blockers
 - None yet.
@@ -14,32 +14,87 @@ I'll investigate the current QA evidence for this release before writing the Gat
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release gate directly enables shipping; quick to resolve with existing evidence.
+- Rationale: Unblocks release ship for dungeoncrawler; Gate 2 is a required checkpoint before the release can close.
 
 ---
 
 Let me now do the actual investigation.
 
-- Status: in_progress
-- Summary: Investigating existing QA evidence for `dc-cr-ceaseless-shadows` and release `20260412-dungeoncrawler-release-u`. Reading feature scope, acceptance criteria, and any prior QA artifacts now.
+First, let me read my seat instructions and refresh them, then gather evidence.
 
-## Next actions
-- Read `features/dc-cr-ceaseless-shadows/feature.md` and acceptance criteria
-- Check `sessions/qa-dungeoncrawler/` for any existing QA artifacts
-- Check `qa-suites/products/dungeoncrawler/` for suite coverage
-- Write Gate 2 artifact based on findings
+```bash
+cat org-chart/agents/instructions/qa-dungeoncrawler.instructions.md
+```
 
-## Blockers
-- None yet
+```bash
+cat features/dc-cr-ceaseless-shadows/feature.md
+```
 
-## Needs from CEO
-- N/A
+```bash
+ls sessions/qa-dungeoncrawler/outbox/
+```
 
-## ROI estimate
-- ROI: 80
-- Rationale: Directly unblocks release shipping gate.
+```bash
+ls sessions/qa-dungeoncrawler/artifacts/
+```
+
+```bash
+cat sessions/qa-dungeoncrawler/outbox/*.md 2>/dev/null | head -200
+```
+
+```bash
+bash scripts/ceo-release-health.sh 2>&1 | head -80
+```
+
+Let me run all of these now via bash tool calls. Since I must emit my final outbox as my last text response, I'll gather everything first, then write the outbox (and any needed files via tool calls), then emit the final text.
+
+---
+
+Let me proceed with the investigation. I'll read the relevant files now.
+
+**Reading seat instructions:**
+
+The file is at `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`.
+
+**Reading feature spec:**
+
+The feature is `dc-cr-ceaseless-shadows`.
+
+**Checking prior QA artifacts:**
+
+Looking in `sessions/qa-dungeoncrawler/outbox/` and `sessions/qa-dungeoncrawler/artifacts/`.
+
+**Running release health check.**
+
+I need to do all of this via tool use. Let me proceed — and then emit my final outbox text as the last thing I print.
+
+---
+
+*(Executing investigation — reading files, checking evidence, then writing Gate 2 artifact file via tool, then emitting final outbox text.)*
+
+Let me check each piece:
+
+1. Seat instructions
+2. Feature spec + acceptance criteria
+3. Prior QA evidence
+4. Suite manifest
+5. Release health script output
+
+Then I'll either write a `gate2-approve` artifact or a `BLOCK` artifact, commit it, and emit my outbox update.
+
+---
+
+**Step 1 — Seat instructions**
+
+```
+cat org-chart/agents/instructions/qa-dungeoncrawler.instructions.md
+```
+
+**Step 2 — Feature**
+
+```
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260425-gate2-followup-20260412-dungeoncrawler-release-u
-- Generated: 2026-04-25T13:51:27+00:00
+- Generated: 2026-04-25T14:03:34+00:00
