@@ -11,3 +11,5 @@
     Reference:
     - Original outbox: sessions/architect-copilot/outbox/20260420-analyze-orchestrator-watchdog.md
     - If/when rewritten with Decision needed + Recommendation, escalation will be created automatically.
+- Agent: architect-copilot
+- Status: pending
