@@ -1,28 +1,28 @@
 {
   "blockers": {
-    "Merge health: 1 tracked local change(s)": {
-      "count": 2,
-      "first_seen": "2026-04-25T14:10:01.543142+00:00",
-      "last_seen": "2026-04-25T14:20:01.405781+00:00"
+    "Merge health: 2 tracked local change(s)": {
+      "count": 1,
+      "first_seen": "2026-04-25T14:30:01.931600+00:00",
+      "last_seen": "2026-04-25T14:30:01.931600+00:00"
     },
     "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-s": {
-      "count": 1,
+      "count": 2,
       "first_seen": "2026-04-25T14:20:01.405781+00:00",
-      "last_seen": "2026-04-25T14:20:01.405781+00:00"
+      "last_seen": "2026-04-25T14:30:01.931600+00:00"
     },
     "pm-forseti has NOT co-signed 20260412-dungeoncrawler-release-u": {
-      "count": 1,
+      "count": 2,
       "first_seen": "2026-04-25T14:20:01.405781+00:00",
-      "last_seen": "2026-04-25T14:20:01.405781+00:00"
+      "last_seen": "2026-04-25T14:30:01.931600+00:00"
     }
   },
   "fast_mode": true,
   "last_blockers": [
     "pm-forseti has NOT co-signed 20260412-dungeoncrawler-release-u",
     "pm-dungeoncrawler has NOT co-signed 20260412-forseti-release-s",
-    "Merge health: 1 tracked local change(s)"
+    "Merge health: 2 tracked local change(s)"
   ],
   "last_rc": 1,
-  "last_rca_created": 0,
-  "last_run_at": "2026-04-25T14:20:01.405781+00:00"
+  "last_rca_created": 1,
+  "last_run_at": "2026-04-25T14:30:01.931600+00:00"
 }

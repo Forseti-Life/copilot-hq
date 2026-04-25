@@ -116,3 +116,5 @@ Status: ready for QA activation
 
 ## Security acceptance criteria
 - Security AC exemption: weapon proficiency cascade logic only; no new route surface beyond existing character/proficiency flows.
+- Agent: qa-dungeoncrawler
+- Status: pending

@@ -22,3 +22,4 @@ This is a coordinated cross-team co-sign requirement.
 
 ## Verification
 - `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-u` then `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-u`
+- Status: pending

@@ -113,6 +113,81 @@ class TestExecAgentParallelism(unittest.TestCase):
         self.assertEqual(provider.max_seen, 2)
         self.assertEqual([item["agent"] for item in exec_log["ran"]], [a.agent_id for a in scheduled])
 
+    def test_exec_agents_refills_freed_slots_from_remaining_queue(self):
+        scheduled = [
+            type("Agent", (), {"agent_id": "pm-forseti"})(),
+            type("Agent", (), {"agent_id": "pm-dungeoncrawler"})(),
+            type("Agent", (), {"agent_id": "qa-dungeoncrawler"})(),
+            type("Agent", (), {"agent_id": "ba-dungeoncrawler"})(),
+        ]
+
+        class Provider:
+            def __init__(self):
+                self.lock = threading.Lock()
+                self.current = 0
+                self.max_seen = 0
+                self.calls = []
+
+            def run_one(self, agent_id: str):
+                with self.lock:
+                    self.current += 1
+                    self.max_seen = max(self.max_seen, self.current)
+                    self.calls.append(agent_id)
+                time.sleep(0.02)
+                with self.lock:
+                    self.current -= 1
+                return 0, agent_id
+
+        provider = Provider()
+
+        old_root = os.environ.get("COPILOT_HQ_ROOT")
+        old_workers = os.environ.get("ORCHESTRATOR_EXEC_WORKERS")
+        with tempfile.TemporaryDirectory() as td:
+            os.environ["COPILOT_HQ_ROOT"] = td
+            os.environ["ORCHESTRATOR_EXEC_WORKERS"] = "2"
+            try:
+                deps = LangGraphDeps(
+                    run_cmd=lambda *_args, **_kwargs: (0, ""),
+                    dispatch_commands_step=lambda log: log.append({"step": "dispatch_commands", "dispatched": []}),
+                    release_cycle_step=lambda log: log.append({"step": "release_cycle", "teams": []}),
+                    coordinated_push_step=lambda log: log.append({"step": "coordinated_push", "status": "noop"}),
+                    prioritized_agents=lambda: scheduled,
+                    health_check_step=lambda _provider, log: log.append(
+                        {"step": "health_check", "idle_with_inbox": 0, "blocked_count": 0, "remediated": []}
+                    ),
+                    now_ts=lambda: 10_000,
+                    kpi_monitor_cmd=["true"],
+                )
+
+                state, _, _ = run_tick(
+                    provider,
+                    agent_cap=2,
+                    publish_enabled=True,
+                    kpi_interval=999_999,
+                    kpi_last_run=10_000,
+                    release_cycle_interval=999_999,
+                    release_cycle_last_run=10_000,
+                    deps=deps,
+                )
+            finally:
+                if old_root is None:
+                    os.environ.pop("COPILOT_HQ_ROOT", None)
+                else:
+                    os.environ["COPILOT_HQ_ROOT"] = old_root
+                if old_workers is None:
+                    os.environ.pop("ORCHESTRATOR_EXEC_WORKERS", None)
+                else:
+                    os.environ["ORCHESTRATOR_EXEC_WORKERS"] = old_workers
+
+        self.assertEqual(state["selected_agents"], ["pm-forseti", "pm-dungeoncrawler"])
+        exec_log = next(entry for entry in state["log"] if entry.get("step") == "exec_agents")
+        self.assertEqual(exec_log["workers"], 2)
+        self.assertEqual(exec_log["selected_count"], 2)
+        self.assertEqual(exec_log["queue_depth"], 4)
+        self.assertEqual([item["agent"] for item in exec_log["ran"]], [a.agent_id for a in scheduled])
+        self.assertEqual(provider.max_seen, 2)
+        self.assertEqual(provider.calls, [a.agent_id for a in scheduled])
+
 
 if __name__ == "__main__":
     unittest.main()

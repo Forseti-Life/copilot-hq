@@ -171,3 +171,4 @@ The feature is in scope; Dev will implement it this release. Tests must be live 
 
 ## Security acceptance criteria
 - Security AC exemption: feat data and character-mechanic logic only; no new route surface beyond existing character/feat flows.
+- Status: pending

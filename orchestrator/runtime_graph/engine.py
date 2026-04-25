@@ -263,9 +263,11 @@ def run_tick(
 
         agents = ceo_agents + selected_other
         selected = [str(getattr(a, "agent_id", "")) for a in agents]
+        exec_queue = [str(getattr(a, "agent_id", "")) for a in (ceo_agents + other_agents)]
         current_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_release_work", False)]
         next_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_next_release_work", False)]
         s["selected_agents"] = selected
+        s["_agent_exec_queue"] = exec_queue
 
         # ISSUE-008: warn when per-tick agent coverage falls below 20%.
         # At 4 workers / 48 agents = 8% coverage; this fires a visible log line
@@ -283,6 +285,7 @@ def run_tick(
         s["log"].append({
             "step": "pick_agents",
             "selected": selected,
+            "exec_queue_depth": len(exec_queue),
             "release_priority": current_release,
             "next_release_spillover": next_release,
             "queued_agents": queued_count,
@@ -293,7 +296,8 @@ def run_tick(
     def exec_agents(s: Dict[str, Any]) -> Dict[str, Any]:
         ran: List[Dict[str, Any]] = []
         selected_agents = [str(agent_id) for agent_id in (s.get("selected_agents") or [])]
-        if not selected_agents:
+        exec_queue = [str(agent_id) for agent_id in (s.pop("_agent_exec_queue", None) or selected_agents)]
+        if not exec_queue:
             s["log"].append({"step": "exec_agents", "ran": ran, "workers": 0})
             return s
 
@@ -333,20 +337,39 @@ def run_tick(
             kpi_pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             kpi_future = kpi_pool.submit(_kpi_task)
 
-        workers = _exec_worker_limit(len(selected_agents))
+        workers = min(_exec_worker_limit(max(len(selected_agents), 1)), len(exec_queue))
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-            future_map = {
-                pool.submit(_run_agent_burst, agent_id): agent_id
-                for agent_id in selected_agents
-            }
+            future_map: Dict[concurrent.futures.Future[Dict[str, Any]], str] = {}
             results: Dict[str, Dict[str, Any]] = {}
-            for future in concurrent.futures.as_completed(future_map):
-                agent_id = future_map[future]
-                results[agent_id] = future.result()
+            queue_iter = iter(exec_queue)
 
-        for agent_id in selected_agents:
+            def _submit_next_agent() -> bool:
+                try:
+                    agent_id = next(queue_iter)
+                except StopIteration:
+                    return False
+                future_map[pool.submit(_run_agent_burst, agent_id)] = agent_id
+                return True
+
+            for _ in range(workers):
+                if not _submit_next_agent():
+                    break
+
+            while future_map:
+                future = next(concurrent.futures.as_completed(tuple(future_map.keys())))
+                agent_id = future_map.pop(future)
+                results[agent_id] = future.result()
+                _submit_next_agent()
+
+        for agent_id in exec_queue:
             ran.append(results.get(agent_id, {"agent": agent_id, "rc": 1, "runs": 0}))
-        s["log"].append({"step": "exec_agents", "ran": ran, "workers": workers})
+        s["log"].append({
+            "step": "exec_agents",
+            "ran": ran,
+            "workers": workers,
+            "selected_count": len(selected_agents),
+            "queue_depth": len(exec_queue),
+        })
 
         # Collect kpi result — it ran concurrently during agent execution.
         if kpi_future is not None and kpi_pool is not None:

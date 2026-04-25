@@ -24,3 +24,5 @@ ALLOW_PROD_QA=1 bash scripts/site-full-audit.py forseti
 Record clean/unclean signal in your outbox.
 
 Canonical release id: `20260412-dungeoncrawler-release-u`
+- Agent: pm-forseti
+- Status: pending
