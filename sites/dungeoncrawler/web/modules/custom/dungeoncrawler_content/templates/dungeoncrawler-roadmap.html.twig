@@ -58,17 +58,15 @@
 
     {# Overall progress bar #}
     <div class="dc-roadmap__progress-wrap">
-      <div class="dc-roadmap__progress-bar" title="{{ impl_pct }}% implemented, {{ done_pct }}% done awaiting release completion, {{ prog_pct }}% in progress">
+      <div class="dc-roadmap__progress-bar" title="{{ impl_pct }}% implemented, {{ totals.done }} done awaiting release completion, {{ prog_pct }}% in progress">
         <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--implemented"
              style="width: {{ impl_pct }}%"></div>
-        <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--done"
-             style="width: {{ done_pct }}%; left: {{ impl_pct }}%"></div>
         <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--in-progress"
-             style="width: {{ prog_pct }}%; left: {{ impl_pct + done_pct }}%"></div>
+             style="width: {{ prog_pct }}%; left: {{ impl_pct }}%"></div>
       </div>
       <div class="dc-roadmap__progress-legend">
         <span class="dc-status-badge dc-status-badge--implemented">✅ {{ totals.implemented }} Implemented ({{ impl_pct }}%)</span>
-        <span class="dc-status-badge dc-status-badge--done">☑️ {{ totals.done }} Done ({{ done_pct }}%)</span>
+        <span class="dc-status-badge dc-status-badge--done">☑️ {{ totals.done }} Done</span>
         <span class="dc-status-badge dc-status-badge--in_progress">🔄 {{ totals.in_progress }} In Progress ({{ prog_pct }}%)</span>
         <span class="dc-status-badge dc-status-badge--pending">❌ {{ totals.pending }} Not Started</span>
       </div>
