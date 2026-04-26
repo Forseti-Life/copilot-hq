@@ -70,3 +70,80 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## CEO Bottleneck Log — 2026-04-26
+
+> **Source:** CEO health sweep (`scripts/ceo-system-health.sh`, `scripts/ceo-ops-once.sh`, `scripts/release-signoff-status.sh`)
+> 5 active bottleneck(s) logged for CEO tracking.
+
+### ISSUE-005 — Release flow stalled at scope/signoff despite healthy runtime
+
+**Severity:** Critical  
+**Scope:** Coordinated release flow (`20260412-forseti-release-t`, `20260412-dungeoncrawler-release-v`)  
+**Source:** CEO health sweep
+
+**Finding:** Both active releases are empty, have no Gate 2 approval, and have no PM signoffs. Runtime is healthy, but release advancement is stalled at the process layer.
+
+**Evidence:**
+- `release-signoff-status.sh 20260412-forseti-release-t` → not ready for official push
+- `release-signoff-status.sh 20260412-dungeoncrawler-release-v` → not ready for official push
+- CEO ops release health warns: no scoped features, Gate 2 APPROVE not found, PM signoff pending for both active releases
+
+**Five Whys:**
+1. **Why is release flow stalled?** Because neither active release has PM signoff or Gate 2 approval, so neither can advance to coordinated push.
+2. **Why are PM signoff and Gate 2 approval missing?** Because both active releases are empty: no features are scoped into `forseti-release-t` or `dungeoncrawler-release-v`.
+3. **Why are the active releases empty?** Because the org advanced release IDs and next-release grooming state, but did not complete the Stage 0 scope-activation/signoff pattern for the newly active release pair.
+4. **Why was Stage 0 scope/signoff not completed after release advancement?** Because operational attention was redirected into executor failures, stale escalation cleanup, and monitoring churn, so the "advance" step happened without a clean follow-through into activation and owner PM closeout.
+5. **Why did monitoring churn displace the actual release-advancement work?** Because the control system currently produces high volumes of malformed escalations, quarantine notices, and retry noise, which obscure the difference between real shipping blockers and secondary orchestration artifacts.
+
+**Root bottleneck:** The organization is bottlenecked by **release-operator follow-through and noisy orchestration signals**, not by application/runtime health.
+
+**Status:** 🔴 Open — CEO should force Stage 0 decision path or close empty releases explicitly
+
+### ISSUE-006 — Merge health debt is blocking safe throughput
+
+**Severity:** Critical  
+**Scope:** Monorepo operations  
+**Source:** CEO health sweep
+
+**Finding:** Merge health remained degraded with `205` tracked local changes and `1439` untracked files, making future merge/pull and reconciliation work unsafe and expensive.
+
+**Resolution:** Reduced the root repo to operational `sessions/**` churn, checkpointed the remaining real tracked change in `issues.md`, and removed the duplicate orchestrator root that was amplifying repo noise.
+
+**Current state:** `bash scripts/hq-status.sh` now reports `Merge health: no active merge conflicts, unfinished integration state, or blocking tracked changes`.
+
+**Status:** 🟢 Resolved — merge-heavy operations are safe again under the current merge-health contract
+
+### ISSUE-007 — CEO queue noise is overwhelming real signal
+
+**Severity:** High  
+**Scope:** CEO supervision / orchestration  
+**Source:** CEO health sweep
+
+**Finding:** CEO inbox is at `45` items, with many remediation echoes, stale RCA threads, and escalation churn. This is consuming decision bandwidth and obscuring actual release work.
+
+**Status:** 🔴 Open — requires queue triage and suppression of repeated remediation noise
+
+### ISSUE-008 — Executor failure backlog is concentrated in infra seats
+
+**Severity:** High  
+**Scope:** `pm-infra`, `qa-infra`, executor pipeline  
+**Source:** CEO health sweep
+
+**Finding:** `tmp/executor-failures/` contains `122` artifacts, with fresh failures concentrated in infra seats. This indicates repeated response-shape/validation churn rather than isolated product-specific breakage.
+
+**Status:** 🔴 Open — requires executor triage and pruning after root-cause review
+
+### ISSUE-009 — Duplicate orchestrator roots are creating automation noise
+
+**Severity:** Medium  
+**Scope:** orchestration runtime  
+**Source:** CEO health sweep
+
+**Finding:** CEO health flagged duplicate orchestrator roots (`2993413`, `3004909`). The orchestrator was alive, but the duplicate-root pattern contributed to restart/escalation churn and additional repo noise.
+
+**Current state:** The duplicate loop rooted at `3004909` was terminated, leaving a single active `scripts/orchestrator-loop.sh run 60` process.
+
+**Status:** 🟡 Mitigated — duplicate root removed live; durable normalization/detector hardening still pending
