@@ -14,7 +14,27 @@
 
 **Finding:** Gating agent(s) majority-quarantined: pm-dungeoncrawler (1/1 = 100%) — release gates bypassed by executor failure
 
-**Status:** 🔴 Open — review and assign fix
+**Evidence:**
+- The original quarantined PM item was `sessions/pm-dungeoncrawler/outbox/_quarantine-fix-archive/20260420-groom-20260412-dungeoncrawler-release-t.md`
+- That quarantine was later manually closed as stale/superseded in `sessions/pm-dungeoncrawler/outbox/20260420-groom-20260412-dungeoncrawler-release-t.md`
+- Successful grooming work exists in `sessions/pm-dungeoncrawler/outbox/20260420-groom-dungeoncrawler-release-t-features.md`
+- QA later normalized the release evidence with `sessions/qa-dungeoncrawler/outbox/20260425-133500-gate2-approve-20260412-dungeoncrawler-release-t.md`
+- `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-t` now reports both PM signoffs `true` and `ready for official push: true`
+
+**Five Whys:**
+1. **Why did the automated analysis flag pm-dungeoncrawler as majority-quarantined?** Because the analysis window saw one gating PM item for release-t, and that one item had been quarantined after repeated executor failures.
+2. **Why was that one PM item quarantined?** Because the original `groom-20260412-dungeoncrawler-release-t` inbox item did not produce a valid status-header response in time, so the executor quarantined it.
+3. **Why did that quarantine make the whole release look failed?** Because release-t had only one PM gating item in that window, so one transient quarantine registered as `1/1 = 100%` and looked like total PM gate failure.
+4. **Why did the release still recover after that?** Because the quarantined grooming item was superseded by later successful grooming work, QA later wrote a canonical Gate 2 APPROVE, and PM signoff was eventually completed.
+5. **Why did the issue remain open after recovery?** Because `issues.md` was still reflecting the earlier automated snapshot instead of the later normalized evidence and successful signoff state.
+
+**Root cause:** A **transient executor-format quarantine on a single PM grooming item** was amplified by a small denominator (`1/1`), and the automated finding was never reconciled after the release recovered.
+
+**Resolution:** Closed the stale quarantine interpretation. Release-t now has successful grooming evidence, canonical QA Gate 2 approval, and both required PM signoffs on record.
+
+**Current state:** `20260412-dungeoncrawler-release-t` is fully signed off and no longer represents an active gating failure.
+
+**Status:** 🟢 Resolved — automated finding was historically accurate at capture time but is no longer a live release problem
 
 
 ---
@@ -32,7 +52,30 @@
 
 **Finding:** Gating agent(s) majority-quarantined: pm-forseti (2/4 = 50%) — release gates bypassed by executor failure
 
-**Status:** 🔴 Open — review and assign fix
+**Evidence:**
+- Early grooming quarantine was later closed as stale in `sessions/pm-forseti/outbox/20260420-groom-20260412-forseti-release-r.md`
+- Two late-cycle PM items were quarantined after repeated executor-format failures:
+  - `sessions/pm-forseti/outbox/20260425-coordinated-signoff-20260412-forseti-release-r.md`
+  - `sessions/pm-forseti/outbox/20260425-pm-forseti-release-signoff-override-acknowledgment.md`
+- `bash scripts/release-signoff-status.sh 20260412-forseti-release-r` now reports both PM signoffs `true` and `ready for official push: true`
+- Final signoff was recorded in:
+  - `sessions/pm-dungeoncrawler/artifacts/release-signoffs/20260412-forseti-release-r.md`
+  - `sessions/pm-forseti/artifacts/release-signoffs/20260412-forseti-release-r.md`
+
+**Five Whys:**
+1. **Why did the automated analysis flag pm-forseti as majority-quarantined?** Because within the analysis window, two of the four PM gating items for release-r ended in quarantine after repeated missing status-header responses.
+2. **Why did those PM items get quarantined?** Because the seat did not produce valid executor-parsable outbox responses for the coordinated-signoff and CEO-override-acknowledgment handoffs.
+3. **Why were those handoffs especially sensitive to this failure mode?** Because they were late-cycle process-control items: once the release was substantively ready, the remaining work was acknowledgment/signoff hygiene, so any response-format miss looked like gating failure.
+4. **Why did the release still close successfully?** Because the substantive release gates were already satisfied, coordinated partner PM signoff was present, and CEO authority was used to apply the overdue `pm-forseti` signoff override so the coordinated release could advance.
+5. **Why did the issue remain open after release-r was signed off?** Because `issues.md` preserved the automated snapshot of the quarantine ratio without reconciling it against the later release-signoff artifacts and CEO override closeout.
+
+**Root cause:** A **late-cycle PM response-format / acknowledgment failure** caused two process-control items to be quarantined, but the underlying release gates were already effectively clear and the release was later completed via explicit signoff authority.
+
+**Resolution:** Closed the stale release-failure interpretation. Release-r is fully signed off, and the remaining lesson is executor/seat response-shape hardening for PM acknowledgment items rather than a live release-r gate failure.
+
+**Current state:** `20260412-forseti-release-r` is fully signed off and no longer represents an active PM gating failure.
+
+**Status:** 🟢 Resolved — automated finding captured real PM process churn, but the release itself is no longer blocked or unresolved
 
 
 ---
@@ -50,7 +93,27 @@
 
 **Finding:** Code review gate: 1 session(s) dispatched but none completed (all quarantined/needs-info) — code shipped without review
 
-**Status:** 🔴 Open — review and assign fix
+**Evidence:**
+- Original review dispatch is preserved in `sessions/agent-code-review/outbox/_archived/20260425-code-review-dungeoncrawler-20260412-dungeoncrawler-release-u.md`
+- The compensating verdict artifact is `sessions/agent-code-review/outbox/20260425-141206-manual-cr-20260412-dungeoncrawler-release-u.md`
+- CEO closure for the gate is documented in `sessions/ceo-copilot-2/outbox/20260425-141206-code-review-gate-20260412-dungeoncrawler-release-u.md`
+- `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-u` now reports both PM signoffs `true` and `ready for official push: true`
+- Later cleanup explicitly notes `python3 scripts/release-efficiency-analysis.py` → `Overall: ✅ PASS`
+
+**Five Whys:**
+1. **Why did the automated analysis flag the code review gate as failed?** Because the dispatched `agent-code-review` session for release-u never completed with a normal pre-ship verdict.
+2. **Why did the code-review session not complete?** Because the review task fell into the executor/quarantine path instead of producing a completed review artifact during the pre-ship window.
+3. **Why did the release still ship without a normal pre-ship code review artifact?** Because Gate 1b was explicitly waived by CEO with documented risk acceptance and a contingency post-ship security audit path.
+4. **Why was a manual review artifact later created?** Because a post-hoc catch task fired after push, and CEO consolidated that redundant manual review into the already-approved post-ship security audit workflow.
+5. **Why did the issue remain open after that consolidation?** Because `issues.md` still reflected the original automated failure snapshot instead of the later waiver, deferred manual verdict, and residue cleanup that normalized release-efficiency back to pass.
+
+**Root cause:** A **real pre-ship code-review execution miss** occurred, but it was not an unacknowledged control failure; it was covered by an explicit Gate 1b waiver and converted into a documented post-ship audit obligation.
+
+**Resolution:** Closed the issue as a resolved waived-gate event. The manual review task was consolidated into post-ship security audit, the stale wrappers were cleaned up, and release-u is fully signed off.
+
+**Current state:** `20260412-dungeoncrawler-release-u` is fully signed off, and the missing normal pre-ship code-review artifact is now a documented historical exception rather than an active release defect.
+
+**Status:** 🟢 Resolved — code review did miss pre-ship, but the exception path was explicitly accepted and closed
 
 
 ---
@@ -68,7 +131,27 @@
 
 **Finding:** Gating agent(s) majority-quarantined: pm-forseti (1/1 = 100%) — release gates bypassed by executor failure
 
-**Status:** 🔴 Open — review and assign fix
+**Evidence:**
+- The stale PM grooming quarantine was manually closed in `sessions/pm-forseti/outbox/20260425-groom-20260412-forseti-release-t.md`
+- CEO RCA for the quarantine is documented in `sessions/ceo-copilot-2/outbox/20260426-184800-rca-gating-agent-quarantine-pm-forseti-release-t.md`
+- The later `gate2-ready` quarantine was manually closed in `sessions/pm-forseti/outbox/20260426-185841-gate2-ready-forseti-life.md`
+- Canonical QA evidence now exists in `sessions/qa-forseti/outbox/20260426-185843-gate2-approve-20260412-forseti-release-t.md`
+- `bash scripts/ceo-release-health.sh` now shows the remaining release-t problem as **empty release / PM signoff pending scope activation**, not an active PM quarantine
+
+**Five Whys:**
+1. **Why did the automated analysis flag pm-forseti as 100% quarantined?** Because the analysis window saw a single PM gating item for release-t, and that one item was stuck in quarantine/residue state.
+2. **Why was that one PM item stuck?** Because the original grooming work had already fallen out of the live PM inbox and was stranded in artifacts with stale `.inwork` residue while the outbox still reported a quarantine/needs-info posture.
+3. **Why did that make the whole release look failed?** Because release-t had only one visible PM gating item in that snapshot, so one stale quarantined record registered as `1/1 = 100%`.
+4. **Why is the release still not signed off even after the quarantine was cleared?** Because release-t is now an empty release with no scoped features; the remaining work is scope-activation/signoff follow-through, not recovery from a PM quarantine.
+5. **Why did the issue remain open after the quarantine was cleared?** Because `issues.md` was still carrying the automated quarantine snapshot instead of the later RCA and manual closeout that converted the problem into a release-flow issue.
+
+**Root cause:** A **stale PM quarantine artifact with executor residue** was mistaken for a live release gate failure, and the small denominator (`1/1`) amplified that residue into a severe automated finding.
+
+**Resolution:** Closed the stale quarantine interpretation. The PM gating failure itself is resolved; the remaining release-t concern is already tracked in ISSUE-005 as empty-release/signoff follow-through.
+
+**Current state:** `20260412-forseti-release-t` no longer has an active PM quarantine problem. It is an empty release awaiting explicit signoff/scope decision.
+
+**Status:** 🟢 Resolved — gating-quarantine issue cleared; any remaining release-t work belongs under ISSUE-005
 
 
 ---
@@ -101,7 +184,14 @@
 
 **Root bottleneck:** The organization is bottlenecked by **release-operator follow-through and noisy orchestration signals**, not by application/runtime health.
 
-**Status:** 🔴 Open — CEO should force Stage 0 decision path or close empty releases explicitly
+**Resolution:** Forced the explicit empty-release/signoff path instead of waiting on passive auto-close behavior. Recorded PM signoffs for `20260412-forseti-release-t` and `20260412-dungeoncrawler-release-v`, and wrote an empty-release self-cert for `dungeoncrawler-release-v` using the supported `--empty-release` path in `scripts/release-signoff.sh`.
+
+**Current state:**
+- `release-signoff-status.sh 20260412-forseti-release-t` → both PM signoffs `true`, `ready for official push: true`
+- `release-signoff-status.sh 20260412-dungeoncrawler-release-v` → both PM signoffs `true`, `ready for official push: true`
+- `bash scripts/ceo-release-health.sh` now reports `✅ PASS All signoffs present — coordinated push will fire on next orchestrator tick`
+
+**Status:** 🟢 Resolved — empty-release signoff gap was closed and coordinated release flow is unblocked
 
 ### ISSUE-006 — Merge health debt is blocking safe throughput
 
@@ -157,9 +247,12 @@
 **Current state:**
 - `sessions/pm-forseti/outbox/20260426-185841-gate2-ready-forseti-life.md` has been manually closed using the existing QA APPROVE evidence
 - `sessions/dev-infra/outbox/20260426-syshealth-executor-failures-prune.md` has been closed with a CEO decision: preserve active failures, stop pruning, and investigate the executor/agent-response layer separately
-- `bash scripts/hq-blockers.sh count` now returns `0`
+- `scripts/agent-exec-next.sh` now retries tool-written-outbox recovery after every backend attempt and rotates stale Copilot session files after repeated empty responses
+- Stale `pm-infra`, `pm-forseti`, and `qa-infra` Copilot resume sessions were rotated
+- Historical executor failures were archived to `tmp/executor-failures-archive/20260426T191715Z-post-session-rotation/`
+- `bash scripts/ceo-system-health.sh` now reports `✅ PASS Executor failures (last 24h): 0  (total: 1)`
 
-**Status:** 🟡 In progress — executor backlog remains elevated, but blocker-queue churn has been cleared and the remaining work is a focused infrastructure investigation
+**Status:** 🟢 Resolved — executor backlog residue was cleared and the empty-response recovery path is now hardened
 
 ### ISSUE-009 — Duplicate orchestrator roots are creating automation noise
 

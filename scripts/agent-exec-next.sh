@@ -837,6 +837,39 @@ backend_retry_delay_seconds() {
   esac
 }
 
+_recover_tool_written_outbox() {
+  local _response="${1:-}"
+  if [ -n "$(printf '%s' "$_response" | tr -d ' \t\r\n')" ]; then
+    printf '%s\n' "$_response"
+    return 0
+  fi
+
+  local _latest_outbox
+  _latest_outbox="$(ls -t "$OUTBOX_DIR"/*.md 2>/dev/null | head -1 || true)"
+  if [ -n "$_latest_outbox" ] && [ -f "$_latest_outbox" ]; then
+    local _outbox_mtime
+    _outbox_mtime=$(stat -c %Y "$_latest_outbox" 2>/dev/null || echo 0)
+    if [ "$_outbox_mtime" -ge "${_EXEC_START_TS:-0}" ] && grep -qiE '^\- Status:' "$_latest_outbox" 2>/dev/null; then
+      echo "WARN: empty text response from ${AGENT_ID}; recovering from tool-written outbox file: $_latest_outbox" >&2
+      cat "$_latest_outbox"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "$_response"
+}
+
+_rotate_empty_copilot_session() {
+  local _response="${1:-}"
+  if [ "${GENAI_BACKEND}" != "copilot" ]; then
+    return 0
+  fi
+  if [ -z "$(printf '%s' "$_response" | tr -d ' \t\r\n')" ] && [ -n "${SESSION_FILE:-}" ]; then
+    : > "$SESSION_FILE"
+    echo "WARN: rotated stale Copilot session for ${AGENT_ID} after repeated empty responses" >&2
+  fi
+}
+
 if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
   # Prefer venv Python for the runner.
   _LLM_PY="$(command -v python3)"
@@ -874,20 +907,8 @@ else
     response="$(run_primary_backend "$PROMPT")"
   fi
 fi
-# Fallback: if response is still empty, check if the agent wrote an outbox file directly via tools
-# (a known failure mode where the model uses create/edit tools for the outbox instead of returning text).
-# Only accept outbox files created AFTER this exec run started (not old files from prior runs).
-if [ -z "$(printf '%s' "$response" | tr -d ' \t\r\n')" ]; then
-  _latest_outbox="$(ls -t "$OUTBOX_DIR"/*.md 2>/dev/null | head -1 || true)"
-  if [ -n "$_latest_outbox" ] && [ -f "$_latest_outbox" ]; then
-    _outbox_mtime=$(stat -c %Y "$_latest_outbox" 2>/dev/null || echo 0)
-    # Only use if created/modified AFTER this exec started (fresh file from this run)
-    if [ "$_outbox_mtime" -ge "${_EXEC_START_TS:-0}" ] && grep -qiE '^\- Status:' "$_latest_outbox" 2>/dev/null; then
-      echo "WARN: empty text response from ${AGENT_ID}; recovering from tool-written outbox file: $_latest_outbox" >&2
-      response="$(cat "$_latest_outbox")"
-    fi
-  fi
-fi
+# Fallback: if response is empty, recover a fresh tool-written outbox when possible.
+response="$(_recover_tool_written_outbox "$response")"
 # Normalize common formatting mistakes (e.g. "- **Status:** done", "Status: done").
 response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
 if ! echo "$response" | grep -qiE '^\- Status:'; then
@@ -908,6 +929,7 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
         echo "WARN: agent response missing status header; retry ${_retry_count}/2 for ${AGENT_ID} (sleep 30s)" >&2
         sleep 30
         response="$(run_primary_backend "$PROMPT")"
+        response="$(_recover_tool_written_outbox "$response")"
         response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
         if copilot_rate_limited "$response"; then
           _saw_rate_limit=1
@@ -923,6 +945,8 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
     fi
     # If still no valid status header after retries, write a failure record instead of a stub outbox.
     if ! echo "$response" | grep -qiE '^\- Status:'; then
+      response="$(_recover_tool_written_outbox "$response")"
+      _rotate_empty_copilot_session "$response"
       mkdir -p "tmp/executor-failures"
       _fail_ts="$(date +%Y%m%dT%H%M%S)"
       _fail_file="tmp/executor-failures/${_fail_ts}-${AGENT_ID}.md"
