@@ -218,9 +218,21 @@ Every feature you are about to activate MUST have a matching inbox item in that 
 Activate no more than 7 features per release cycle. The org-wide auto-close fires at ≥10 in_progress; activating exactly 10 fires auto-close the instant scope-activate completes, before dev can work. A cap of 7 leaves headroom. If backlog demands more, start a second release cycle after shipping the first 7.
 
 **Pre-activate count check (required — no exceptions):**
-Before activating ANY features, count current in_progress dungeoncrawler features:
+Before activating ANY features, count current release-scoped dungeoncrawler features (`Status: in_progress` OR `Status: done` when already implemented but not yet shipped):
 ```bash
-grep -rl "Status: in_progress" features/dc-*/feature.md | wc -l
+python3 - <<'PY'
+import pathlib, re
+rid = pathlib.Path("tmp/release-cycle-active/dungeoncrawler.release_id").read_text().strip()
+count = 0
+for fm in pathlib.Path("features").glob("dc-*/feature.md"):
+    text = fm.read_text(encoding="utf-8", errors="ignore")
+    if not re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE):
+        continue
+    if not re.search(rf"^-\s+Release:\s*{re.escape(rid)}\s*$", text, re.MULTILINE):
+        continue
+    count += 1
+print(count)
+PY
 ```
 If count is already ≥7, do NOT activate more. If count is <7, activate only enough to reach 7 total (not 10). Activating up to 10 triggers immediate auto-close — this is a confirmed empty-release pattern (release-c, release-d both failed this way).
 
@@ -229,7 +241,7 @@ If count is already ≥7, do NOT activate more. If count is <7, activate only en
 **Lesson (2026-04-12, GAP-DC-PM-SCOPE-UNBUILT-01):** In release-b (20260412-dungeoncrawler-release-b), PM activated 10 features simultaneously. 5 had no dev outbox (unbuilt). Auto-close fired immediately, all 10 deferred, 0 shipped. Unbuilt features consumed all cap slots and blocked dev-complete features from shipping quickly.
 
 **Scope activation ordering (required — GAP-DC-PM-SCOPE-UNBUILT-01):**
-Before activating any batch, classify the ready backlog into two tiers:
+Before activating any batch, classify the eligible backlog into two tiers:
 1. **Dev-complete**: feature has a dev-dungeoncrawler outbox confirming implementation done (commit hash present). Check: `ls sessions/dev-dungeoncrawler/outbox/ | grep <feature-id>` and confirm `Status: done` inside.
 2. **Unbuilt**: no dev outbox, or dev outbox status is not `done`.
 
@@ -237,6 +249,7 @@ Activation order rule:
 - Activate dev-complete features first, up to the soft cap.
 - Only activate unbuilt features after all dev-complete features are activated AND cap slots remain.
 - Rationale: dev-complete features can reach QA Gate 2 in 1 cycle; unbuilt features need 2+ cycles minimum. Prioritizing dev-complete features maximizes the chance of shipping before auto-close fires.
+- If a feature is already `Status: done`, it is eligible for current-release activation. Keep `Status: done`, stamp the active `Release:` id, dispatch QA release verification, and dispatch a dev release-support item rather than a fresh implementation item.
 
 **Soft cap rule (updated — GAP-DC-PM-SCOPE-CAP-COLLISION-01):**
 The ≤7 HARD STOP above applies at all times. Additionally:
@@ -256,7 +269,7 @@ Confirm output matches the release you intend to activate features into. If it d
 ```
 
 **Required at activation (stamp Release field):**
-When moving a feature from `Status: ready` → `Status: in_progress`, you MUST also set:
+When activating a feature, you MUST also set:
 ```
 - Release: <current-release-id>
 ```

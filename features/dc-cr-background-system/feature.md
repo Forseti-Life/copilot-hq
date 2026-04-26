@@ -4,7 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 20260406-dungeoncrawler-release-next
+- Release: 20260412-dungeoncrawler-release-w
 - Priority: high (required prerequisite for character creation workflow; provides ability boosts, skill training, and skill feat to character)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

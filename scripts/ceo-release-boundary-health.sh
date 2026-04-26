@@ -54,7 +54,7 @@ def release_feature_count(features_root: Path, release_id: str) -> int:
     pattern = re.compile(rf"^-\s+Release:\s*{re.escape(release_id)}\s*$", re.MULTILINE)
     for fm in features_root.glob("*/feature.md"):
         text = fm.read_text(encoding="utf-8", errors="ignore")
-        if "- Status: in_progress" not in text:
+        if not re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE):
             continue
         if pattern.search(text):
             count += 1

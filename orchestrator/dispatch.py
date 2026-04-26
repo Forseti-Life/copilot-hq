@@ -300,7 +300,7 @@ def _count_site_features_in_progress(site_keyword: str) -> int:
 
 
 def _count_site_features_for_release(site_keyword: str, release_id: str) -> int:
-    """Count features scoped to a specific release_id with Status: in_progress and Website: <site_keyword>.
+    """Count features scoped to a specific release_id with Status: in_progress|done and Website: <site_keyword>.
 
     Only counts features that explicitly declare the matching Release: field.
     Features without a Release: field are excluded (they belong to an untracked release).
@@ -309,7 +309,7 @@ def _count_site_features_for_release(site_keyword: str, release_id: str) -> int:
     for fm in (REPO_ROOT / "features").glob("*/feature.md"):
         try:
             text = fm.read_text(encoding="utf-8", errors="ignore")
-            has_status  = bool(re.search(r"^-\s+Status:\s*in_progress", text, re.MULTILINE | re.IGNORECASE))
+            has_status  = bool(re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE | re.IGNORECASE))
             has_site    = bool(re.search(rf"^-\s+Website:.*{re.escape(site_keyword)}", text, re.MULTILINE | re.IGNORECASE))
             has_release = bool(re.search(
                 rf"^-\s+Release:\s*(?:\n\s*)*{re.escape(release_id)}\s*$",

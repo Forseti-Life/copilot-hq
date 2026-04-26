@@ -5,7 +5,7 @@
 - Module: dungeoncrawler_content
 - Status: done
 - Priority: P0 (required dependency for character creation; enables ancestry feat trees and heritage selection downstream)
-- Release: 
+- Release: 20260412-dungeoncrawler-release-w
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -30,3 +30,10 @@ Content type: `ancestry` with fields for hit points, size, speed, ability boosts
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- Authentication/permission surface: authenticated users only; ancestry selection and recalculation remain character-scoped operations guarded by `_character_access: TRUE`.
+- CSRF expectations: all POST/PATCH ancestry-selection routes require `_csrf_request_header_mode: TRUE`.
+- Input validation: ancestry ids, ability boosts, HP, size, speed, senses, and ancestry feat availability are server-authoritative and cannot be overridden by client payloads.
+- PII/logging constraints: no PII logged; log character_id, ancestry_id, and selected heritage/feat ids only.

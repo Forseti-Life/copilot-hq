@@ -49,7 +49,7 @@ def _count_site_features_for_release(features_root: Path, site_keyword: str, rel
     count = 0
     for fm in features_root.glob("*/feature.md"):
         text = fm.read_text(encoding="utf-8", errors="ignore")
-        has_status = bool(re.search(r"^-\s+Status:\s*in_progress", text, re.MULTILINE | re.IGNORECASE))
+        has_status = bool(re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE | re.IGNORECASE))
         has_site = bool(re.search(rf"^-\s+Website:.*{re.escape(site_keyword)}", text, re.MULTILINE | re.IGNORECASE))
         has_release = bool(re.search(rf"^-\s+Release:\s*(?:\n\s*)*{re.escape(release_id)}\s*$", text, re.MULTILINE | re.IGNORECASE))
         if has_status and has_site and has_release:
@@ -96,6 +96,44 @@ class TestPMScopeActivateDevHandoff(unittest.TestCase):
             self.assertIn("- Status: in_progress", updated)
             self.assertIn("- Release: 20990101-forseti-release-b", updated)
 
+    def test_scope_activate_accepts_done_feature_as_release_verification(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "scripts").mkdir(parents=True)
+            shutil.copy2(SCOPE_ACTIVATE, tmp / "scripts" / "pm-scope-activate.sh")
+            (tmp / "features").mkdir()
+            (tmp / "sessions").mkdir()
+            (tmp / "tmp" / "release-cycle-active").mkdir(parents=True)
+            (tmp / "tmp" / "release-cycle-active" / "dungeoncrawler.release_id").write_text(
+                "20990101-dungeoncrawler-release-b\n", encoding="utf-8"
+            )
+            _write_feature(
+                tmp / "features",
+                "dc-cr-character-creation",
+                "dungeoncrawler",
+                "20990101-dungeoncrawler-release-old",
+                "done",
+                "dev-dungeoncrawler",
+            )
+
+            result = subprocess.run(
+                ["bash", "scripts/pm-scope-activate.sh", "dungeoncrawler", "dc-cr-character-creation"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+            dev_items = list((tmp / "sessions" / "dev-dungeoncrawler" / "inbox").glob("*-release-support-dc-cr-character-creation"))
+            qa_items = list((tmp / "sessions" / "qa-dungeoncrawler" / "inbox").glob("*-suite-activate-dc-cr-character-creation"))
+            self.assertEqual(len(dev_items), 1)
+            self.assertEqual(len(qa_items), 1)
+
+            updated = (tmp / "features" / "dc-cr-character-creation" / "feature.md").read_text(encoding="utf-8")
+            self.assertIn("- Status: done", updated)
+            self.assertIn("- Release: 20990101-dungeoncrawler-release-b", updated)
+
 
 class TestScopeActivateNudgeGuard(unittest.TestCase):
     def test_ready_release_tags_do_not_count_as_activated_scope(self):
@@ -111,6 +149,14 @@ class TestScopeActivateNudgeGuard(unittest.TestCase):
             features = Path(td) / "features"
             features.mkdir()
             _write_feature(features, "feat-live", "forseti.life", "20990101-forseti-release-b", "in_progress", "dev-forseti")
+            count = _count_site_features_for_release(features, "forseti", "20990101-forseti-release-b")
+            self.assertEqual(count, 1)
+
+    def test_done_release_feature_counts_as_activated_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            features = Path(td) / "features"
+            features.mkdir()
+            _write_feature(features, "feat-done", "forseti.life", "20990101-forseti-release-b", "done", "dev-forseti")
             count = _count_site_features_for_release(features, "forseti", "20990101-forseti-release-b")
             self.assertEqual(count, 1)
 

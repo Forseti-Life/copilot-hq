@@ -30,7 +30,7 @@ def _count_site_features_for_release(features_root: Path, site_keyword: str, rel
     for fm in features_root.glob("*/feature.md"):
         try:
             text = fm.read_text(encoding="utf-8", errors="ignore")
-            has_status  = bool(re.search(r"^-\s+Status:\s*in_progress", text, re.MULTILINE | re.IGNORECASE))
+            has_status  = bool(re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE | re.IGNORECASE))
             has_site    = bool(re.search(rf"^-\s+Website:.*{re.escape(site_keyword)}", text, re.MULTILINE | re.IGNORECASE))
             has_release = bool(re.search(rf"^-\s+Release:\s*{re.escape(release_id)}\s*$", text, re.MULTILINE | re.IGNORECASE))
             if has_status and has_site and has_release:
@@ -102,13 +102,13 @@ class TestCountSiteFeaturesForRelease(unittest.TestCase):
             _write_feature(features, "feat-gamma", "dungeoncrawler", "2099-forseti-release")
             self.assertEqual(_count_site_features_for_release(features, "forseti", "2099-forseti-release"), 0)
 
-    def test_completed_feature_not_counted(self):
-        """Status: done → not counted (only in_progress counts)."""
+    def test_done_release_feature_counted(self):
+        """Status: done with matching release → counted as active scoped work."""
         with tempfile.TemporaryDirectory() as td:
             features = Path(td) / "features"
             features.mkdir()
             _write_feature(features, "feat-done", "forseti", "2099-forseti-release", status="done")
-            self.assertEqual(_count_site_features_for_release(features, "forseti", "2099-forseti-release"), 0)
+            self.assertEqual(_count_site_features_for_release(features, "forseti", "2099-forseti-release"), 1)
 
     def test_multiple_features_counted(self):
         """Three matching in_progress features → count is 3."""
