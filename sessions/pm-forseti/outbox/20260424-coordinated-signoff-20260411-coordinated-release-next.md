@@ -1,8 +1,8 @@
 - Status: needs-info
-- Summary: Executor quarantined inbox item 20260422-clarify-escalation-20260420-code-review-forseti.life-20260419-forseti-release-c after 5 repeated cycles without a valid status-header response from agent-code-review; automatic retries have stopped to prevent infinite backlog churn.
+- Summary: Executor quarantined inbox item 20260424-coordinated-signoff-20260411-coordinated-release-next after 5 repeated cycles without a valid status-header response from pm-forseti; automatic retries have stopped to prevent infinite backlog churn.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260422-clarify-escalation-20260420-code-review-forseti.life-20260419-forseti-release-c.
+- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260424-coordinated-signoff-20260411-coordinated-release-next.
 - If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
 - If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
 
@@ -10,7 +10,7 @@
 - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
 
 ## Needs from Supervisor
-- Decide whether 20260422-clarify-escalation-20260420-code-review-forseti.life-20260419-forseti-release-c should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+- Decide whether 20260424-coordinated-signoff-20260411-coordinated-release-next should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
 
 ## Decision needed
 - Should this quarantined inbox item be manually closed or re-dispatched?
@@ -23,6 +23,6 @@
 - Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
 
 ---
-- Agent: agent-code-review
-- Source inbox: /home/ubuntu/forseti.life/sessions/agent-code-review/inbox/20260422-clarify-escalation-20260420-code-review-forseti.life-20260419-forseti-release-c
-- Generated: 2026-04-26T18:15:52+00:00
+- Agent: pm-forseti
+- Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260424-coordinated-signoff-20260411-coordinated-release-next
+- Generated: 2026-04-26T18:17:47+00:00
