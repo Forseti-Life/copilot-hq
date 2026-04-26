@@ -23,7 +23,7 @@
         "base_url_env": "FORSETI_BASE_URL",
         "local_base_url": "https://forseti.life",
         "production_url": "https://forseti.life",
-        "drupal_web_root": "/home/ubuntu/forseti.life/sites/forseti/web",
+        "drupal_web_root": "/var/www/html/forseti/web",
         "qa_artifacts_dir": "sessions/qa-forseti/artifacts/auto-site-audit",
         "route_regex": "^(?:/api/|/admin/reports/|/jobhunter|/user/login|/contact|/how-it-works)(?:/|$)",
         "qa_permissions_path": "org-chart/sites/forseti.life/qa-permissions.json"

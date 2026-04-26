@@ -162,31 +162,76 @@ echo "[suggestion-intake] Querying new suggestions for site: $SITE"
 echo "[suggestion-intake] Drupal root: $DRUPAL_ROOT"
 
 # Query new suggestions via drush php-eval
+QUERY_ERR_FILE="$(mktemp)"
+set +e
 SUGGESTIONS_JSON="$(cd "$DRUPAL_ROOT" && vendor/bin/drush php:eval '
-$query = \Drupal::entityQuery("node")
-  ->condition("type", "community_suggestion")
-  ->condition("field_suggestion_status", "new")
-  ->accessCheck(FALSE)
-  ->sort("created", "ASC")
-  ->execute();
-$nodes = \Drupal\node\Entity\Node::loadMultiple($query);
-$results = [];
-foreach ($nodes as $node) {
-  $results[] = [
-    "nid"          => $node->id(),
-    "title"        => $node->getTitle(),
-    "created"      => date("Y-m-d H:i", $node->getCreatedTime()),
-    "uid"          => $node->getOwnerId(),
-    "summary"      => $node->get("field_suggestion_summary")->value ?? "",
-    "original_msg" => $node->get("field_original_message")->value ?? "",
-    "category"     => $node->get("field_suggestion_category")->value ?? "other",
-    "conv_nid"     => $node->get("field_conversation_reference")->target_id ?? null,
-  ];
+try {
+  $query = \Drupal::entityQuery("node")
+    ->condition("type", "community_suggestion")
+    ->condition("field_suggestion_status", "new")
+    ->accessCheck(FALSE)
+    ->sort("created", "ASC")
+    ->execute();
+  $nodes = \Drupal\node\Entity\Node::loadMultiple($query);
+  $results = [];
+  foreach ($nodes as $node) {
+    $results[] = [
+      "nid"          => $node->id(),
+      "title"        => $node->getTitle(),
+      "created"      => date("Y-m-d H:i", $node->getCreatedTime()),
+      "uid"          => $node->getOwnerId(),
+      "summary"      => $node->get("field_suggestion_summary")->value ?? "",
+      "original_msg" => $node->get("field_original_message")->value ?? "",
+      "category"     => $node->get("field_suggestion_category")->value ?? "other",
+      "conv_nid"     => $node->get("field_conversation_reference")->target_id ?? null,
+    ];
+  }
+  echo json_encode($results);
+} catch (\Exception $e) {
+  // If the community_suggestion content type or field is not implemented, return empty list
+  echo "[]";
 }
-echo json_encode($results);
-' 2>/dev/null)"
+' 2>"$QUERY_ERR_FILE")"
+QUERY_RC=$?
+set -e
 
-COUNT="$(echo "$SUGGESTIONS_JSON" | python3 -c "import json,sys; print(len(json.loads(sys.stdin.read())))")"
+if [ "$QUERY_RC" -ne 0 ]; then
+  echo "ERROR: suggestion-intake query failed for site '$SITE'." >&2
+  sed -n '1,40p' "$QUERY_ERR_FILE" >&2 || true
+  rm -f "$QUERY_ERR_FILE"
+  exit 1
+fi
+
+# Empty output is not an error - it means no suggestions or no content type
+if [ -z "${SUGGESTIONS_JSON//[$' \t\r\n\[\]']/}" ]; then
+  # Try to parse it as JSON to make sure it's valid
+  COUNT="$(printf '%s' "$SUGGESTIONS_JSON" | python3 -c "import json, sys; print(len(json.loads(sys.stdin.read())))" 2>/dev/null || echo '0')"
+  if [ "$COUNT" = "0" ]; then
+    echo "[suggestion-intake] No new suggestions found for site: $SITE"
+    rm -f "$QUERY_ERR_FILE"
+    exit 0
+  fi
+fi
+
+COUNT="$(printf '%s' "$SUGGESTIONS_JSON" | python3 - <<'PY'
+import json
+import sys
+
+raw = sys.stdin.read()
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError as exc:
+    print(f"ERROR: invalid suggestion JSON: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+
+if not isinstance(data, list):
+    print("ERROR: suggestion query did not return a JSON list", file=sys.stderr)
+    raise SystemExit(1)
+
+print(len(data))
+PY
+)"
+rm -f "$QUERY_ERR_FILE"
 
 if [ "$COUNT" -eq 0 ]; then
   echo "[suggestion-intake] No new suggestions found. Nothing to do."
