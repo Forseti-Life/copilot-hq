@@ -12,7 +12,7 @@ class RoadmapPipelineStatusResolver {
   /**
    * Maps feature pipeline statuses to roadmap display statuses.
    *
-   * - 'done'    = code written and unit-tested; NOT yet QA-verified → in_progress
+   * - 'done'    = implementation finished in the backlog → done
    * - 'shipped' = QA-verified and released to production → implemented
    * - 'backlog' = deferred/unstarted work → pending
    */
@@ -24,7 +24,7 @@ class RoadmapPipelineStatusResolver {
     'deferred'   => 'pending',
     'backlog'    => 'pending',
     'in_progress' => 'in_progress',
-    'done'       => 'in_progress',
+    'done'       => 'done',
     'shipped'    => 'implemented',
   ];
 

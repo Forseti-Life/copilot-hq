@@ -48,11 +48,11 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
    * @covers ::getPipelineStatus
    */
   public function testResolveRoadmapStatusUsesPipelineStatusWhenFeatureExists(): void {
-    // 'done' = code written + unit-tested but NOT QA-verified → in_progress.
+    // 'done' should remain visible as done on the roadmap.
     $this->writeFeatureStatus('dc-cr-example', 'done');
     $resolver = new RoadmapPipelineStatusResolver($this->featuresPath);
 
-    $this->assertSame('in_progress', $resolver->resolveRoadmapStatus('dc-cr-example', 'pending'));
+    $this->assertSame('done', $resolver->resolveRoadmapStatus('dc-cr-example', 'pending'));
   }
 
   /**

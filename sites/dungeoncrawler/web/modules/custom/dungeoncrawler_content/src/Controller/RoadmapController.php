@@ -19,6 +19,7 @@ class RoadmapController extends ControllerBase {
     'pending'     => '❌ Not Started',
     'queued'      => '🗂️ Queued',
     'in_progress' => '🔄 In Progress',
+    'done'        => '☑️ Done',
     'implemented' => '✅ Implemented',
   ];
 
@@ -71,7 +72,7 @@ class RoadmapController extends ControllerBase {
 
     // Build grouped tree: books → chapters → sections → requirements.
     $books = [];
-    $totals = ['pending' => 0, 'in_progress' => 0, 'implemented' => 0];
+    $totals = ['pending' => 0, 'in_progress' => 0, 'done' => 0, 'implemented' => 0];
 
     foreach ($rows as $row) {
       $bid = $row->book_id;
@@ -83,7 +84,7 @@ class RoadmapController extends ControllerBase {
           'id'       => $bid,
           'title'    => $row->book_title,
           'chapters' => [],
-          'counts'   => ['pending' => 0, 'in_progress' => 0, 'implemented' => 0],
+          'counts'   => ['pending' => 0, 'in_progress' => 0, 'done' => 0, 'implemented' => 0],
         ];
       }
       if (!isset($books[$bid]['chapters'][$ck])) {
@@ -91,7 +92,7 @@ class RoadmapController extends ControllerBase {
           'key'      => $ck,
           'title'    => $row->chapter_title,
           'sections' => [],
-          'counts'   => ['pending' => 0, 'in_progress' => 0, 'implemented' => 0],
+          'counts'   => ['pending' => 0, 'in_progress' => 0, 'done' => 0, 'implemented' => 0],
         ];
       }
       if (!isset($books[$bid]['chapters'][$ck]['sections'][$sec])) {
@@ -134,7 +135,9 @@ class RoadmapController extends ControllerBase {
     }
 
     $total = array_sum($totals);
+    $done_pct = $total > 0 ? round(($totals['done'] / $total) * 100) : 0;
     $implemented_pct = $total > 0 ? round(($totals['implemented'] / $total) * 100) : 0;
+    $complete_pct = $total > 0 ? round((($totals['done'] + $totals['implemented']) / $total) * 100) : 0;
     $in_progress_pct = $total > 0 ? round(($totals['in_progress'] / $total) * 100) : 0;
 
     return [
@@ -142,7 +145,9 @@ class RoadmapController extends ControllerBase {
       '#books'      => $ordered_books,
       '#totals'     => $totals,
       '#total'      => $total,
+      '#done_pct'   => $done_pct,
       '#impl_pct'   => $implemented_pct,
+      '#complete_pct' => $complete_pct,
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
       '#release_snapshot' => $release_snapshot,

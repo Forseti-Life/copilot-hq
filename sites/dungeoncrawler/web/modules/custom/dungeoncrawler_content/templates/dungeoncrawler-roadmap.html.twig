@@ -5,9 +5,11 @@
  *
  * Available variables:
  * - books: Array of book data with chapters, sections, and requirements.
- * - totals: { pending, in_progress, implemented }
+ * - totals: { pending, in_progress, done, implemented }
  * - total: Total requirement count.
- * - impl_pct: Percentage implemented (0–100).
+ * - done_pct: Percentage done (0–100).
+ * - impl_pct: Percentage implemented/shipped (0–100).
+ * - complete_pct: Percentage done or implemented (0–100).
  * - prog_pct: Percentage in progress (0–100).
  * - is_admin: Whether the current user can update statuses.
  * - release_snapshot: Live release-cycle snapshot from HQ.
@@ -42,6 +44,10 @@
         <strong class="dc-roadmap__stat-value">{{ totals.implemented }}</strong>
       </article>
       <article class="dc-roadmap__stat-card">
+        <span class="dc-roadmap__stat-label">Done</span>
+        <strong class="dc-roadmap__stat-value">{{ totals.done }}</strong>
+      </article>
+      <article class="dc-roadmap__stat-card">
         <span class="dc-roadmap__stat-label">In progress</span>
         <strong class="dc-roadmap__stat-value">{{ totals.in_progress }}</strong>
       </article>
@@ -53,14 +59,17 @@
 
     {# Overall progress bar #}
     <div class="dc-roadmap__progress-wrap">
-      <div class="dc-roadmap__progress-bar" title="{{ impl_pct }}% implemented, {{ prog_pct }}% in progress">
+      <div class="dc-roadmap__progress-bar" title="{{ complete_pct }}% complete ({{ impl_pct }}% implemented, {{ done_pct }}% done), {{ prog_pct }}% in progress">
         <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--implemented"
              style="width: {{ impl_pct }}%"></div>
+        <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--done"
+             style="width: {{ done_pct }}%; left: {{ impl_pct }}%"></div>
         <div class="dc-roadmap__progress-fill dc-roadmap__progress-fill--in-progress"
-             style="width: {{ prog_pct }}%; left: {{ impl_pct }}%"></div>
+             style="width: {{ prog_pct }}%; left: {{ complete_pct }}%"></div>
       </div>
       <div class="dc-roadmap__progress-legend">
         <span class="dc-status-badge dc-status-badge--implemented">✅ {{ totals.implemented }} Implemented ({{ impl_pct }}%)</span>
+        <span class="dc-status-badge dc-status-badge--done">☑️ {{ totals.done }} Done ({{ done_pct }}%)</span>
         <span class="dc-status-badge dc-status-badge--in_progress">🔄 {{ totals.in_progress }} In Progress ({{ prog_pct }}%)</span>
         <span class="dc-status-badge dc-status-badge--pending">❌ {{ totals.pending }} Not Started</span>
       </div>
@@ -202,8 +211,8 @@
     </div>
     <div class="dc-roadmap__book-summary">
       {% for book in books %}
-        {% set book_total = book.counts.pending + book.counts.in_progress + book.counts.implemented %}
-        {% set book_pct = book_total > 0 ? ((book.counts.implemented / book_total) * 100)|round : 0 %}
+        {% set book_total = book.counts.pending + book.counts.in_progress + book.counts.done + book.counts.implemented %}
+        {% set book_pct = book_total > 0 ? (((book.counts.done + book.counts.implemented) / book_total) * 100)|round : 0 %}
         <div class="dc-roadmap__book-chip">
           <span class="dc-roadmap__book-chip-name">{{ book.title }}</span>
           <div class="dc-roadmap__book-chip-bar" title="{{ book_pct }}% implemented">
@@ -222,30 +231,32 @@
       <p class="dc-roadmap__panel-copy">Expand a rulebook, then drill into chapters and sections to inspect mapped implementation status.</p>
     </div>
     {% for book in books %}
-      {% set book_total = book.counts.pending + book.counts.in_progress + book.counts.implemented %}
-      {% set book_pct   = book_total > 0 ? ((book.counts.implemented / book_total) * 100)|round : 0 %}
+      {% set book_total = book.counts.pending + book.counts.in_progress + book.counts.done + book.counts.implemented %}
+      {% set book_pct   = book_total > 0 ? (((book.counts.done + book.counts.implemented) / book_total) * 100)|round : 0 %}
 
       <details class="dc-roadmap__book" id="book-{{ book.id }}">
         <summary class="dc-roadmap__book-summary-row">
           <span class="dc-roadmap__book-name">{{ book.title }}</span>
-          <span class="dc-roadmap__book-stats">
-            <span class="dc-status-badge dc-status-badge--implemented">{{ book.counts.implemented }}</span>
-            <span class="dc-status-badge dc-status-badge--in_progress">{{ book.counts.in_progress }}</span>
-            <span class="dc-status-badge dc-status-badge--pending">{{ book.counts.pending }}</span>
-            <span class="dc-roadmap__book-pct">{{ book_pct }}%</span>
+            <span class="dc-roadmap__book-stats">
+              <span class="dc-status-badge dc-status-badge--implemented">{{ book.counts.implemented }}</span>
+              <span class="dc-status-badge dc-status-badge--done">{{ book.counts.done }}</span>
+              <span class="dc-status-badge dc-status-badge--in_progress">{{ book.counts.in_progress }}</span>
+              <span class="dc-status-badge dc-status-badge--pending">{{ book.counts.pending }}</span>
+              <span class="dc-roadmap__book-pct">{{ book_pct }}%</span>
           </span>
         </summary>
 
         {# ── Chapters ──────────────────────────────────────────────────────── #}
         {% for chapter in book.chapters %}
-          {% set ch_total = chapter.counts.pending + chapter.counts.in_progress + chapter.counts.implemented %}
-          {% set ch_pct   = ch_total > 0 ? ((chapter.counts.implemented / ch_total) * 100)|round : 0 %}
+          {% set ch_total = chapter.counts.pending + chapter.counts.in_progress + chapter.counts.done + chapter.counts.implemented %}
+          {% set ch_pct   = ch_total > 0 ? (((chapter.counts.done + chapter.counts.implemented) / ch_total) * 100)|round : 0 %}
 
           <details class="dc-roadmap__chapter" id="chapter-{{ book.id }}-{{ chapter.key }}">
             <summary class="dc-roadmap__chapter-summary">
               <span class="dc-roadmap__chapter-title">{{ chapter.title }}</span>
               <span class="dc-roadmap__chapter-stats">
                 <span class="dc-status-badge dc-status-badge--implemented">{{ chapter.counts.implemented }}</span>
+                <span class="dc-status-badge dc-status-badge--done">{{ chapter.counts.done }}</span>
                 <span class="dc-status-badge dc-status-badge--in_progress">{{ chapter.counts.in_progress }}</span>
                 <span class="dc-status-badge dc-status-badge--pending">{{ chapter.counts.pending }}</span>
                 <span class="dc-roadmap__chapter-pct">{{ ch_pct }}%</span>

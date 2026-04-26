@@ -307,6 +307,12 @@
   border: 1px solid #a5d6a7;
 }
 
+.dc-status-badge--done {
+  background: #e0f2f1;
+  color: #00695c;
+  border: 1px solid #80cbc4;
+}
+
 .dc-status-badge--in_progress {
   background: #e3f2fd;
   color: #1565c0;
