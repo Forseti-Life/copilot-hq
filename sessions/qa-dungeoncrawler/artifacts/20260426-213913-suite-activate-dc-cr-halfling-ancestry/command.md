@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-26T21:48:23Z
+
 # Suite Activation: dc-cr-halfling-ancestry
 
 **From:** pm-dungeoncrawler  

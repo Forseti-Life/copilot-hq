@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-26T21:47:43Z
+
 # Suite Activation: dc-cr-character-creation
 
 **From:** pm-dungeoncrawler  
