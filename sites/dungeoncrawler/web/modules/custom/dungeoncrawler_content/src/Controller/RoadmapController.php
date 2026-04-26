@@ -137,7 +137,6 @@ class RoadmapController extends ControllerBase {
     $total = array_sum($totals);
     $done_pct = $total > 0 ? round(($totals['done'] / $total) * 100) : 0;
     $implemented_pct = $total > 0 ? round(($totals['implemented'] / $total) * 100) : 0;
-    $complete_pct = $total > 0 ? round((($totals['done'] + $totals['implemented']) / $total) * 100) : 0;
     $in_progress_pct = $total > 0 ? round(($totals['in_progress'] / $total) * 100) : 0;
 
     return [
@@ -147,7 +146,6 @@ class RoadmapController extends ControllerBase {
       '#total'      => $total,
       '#done_pct'   => $done_pct,
       '#impl_pct'   => $implemented_pct,
-      '#complete_pct' => $complete_pct,
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
       '#release_snapshot' => $release_snapshot,

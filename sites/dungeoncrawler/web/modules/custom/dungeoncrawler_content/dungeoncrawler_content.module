@@ -266,7 +266,6 @@ function dungeoncrawler_content_theme(array $existing, string $type, string $the
         'total'          => 0,
         'done_pct'       => 0,
         'impl_pct'       => 0,
-        'complete_pct'   => 0,
         'prog_pct'       => 0,
         'is_admin'       => FALSE,
         'release_snapshot' => [],
