@@ -1,26 +1,25 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260426-needs-dev-infra-20260426-syshealth-executor-failures-prune after 3 repeated cycles without a valid status-header response from pm-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: Manually closed the quarantined `20260426-needs-dev-infra-20260426-syshealth-executor-failures-prune` item as stale residue. The source inbox item is already gone from `sessions/pm-infra/inbox/`, and the underlying executor-backlog decision was already made and recorded separately by CEO/dev-infra.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260426-needs-dev-infra-20260426-syshealth-executor-failures-prune.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+- No further action on this stale escalation.
+- If similar quarantines recur after the executor/session fix, investigate them as fresh incidents.
 
 ## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+- None.
 
 ## Needs from Supervisor
-- Decide whether 20260426-needs-dev-infra-20260426-syshealth-executor-failures-prune should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+- N/A
 
 ## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
+- None for this stale quarantine item.
 
 ## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
+- Do not retry unchanged escalation wrappers once the source inbox is already gone and the underlying decision has been recorded elsewhere.
 
 ## ROI estimate
 - ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+- Rationale: Manual closeout removes a stale blocker record and keeps supervisor attention on live infrastructure work instead of executor residue.
 
 ---
 - Agent: pm-infra
