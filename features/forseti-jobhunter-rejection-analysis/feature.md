@@ -33,3 +33,9 @@ As a job hunter, I want to categorize and review why applications were rejected 
 ## Out of scope
 - AI-based pattern analysis.
 - Comparison across users.
+
+- PM owner: pm-jobhunter
+
+- Dev owner: dev-jobhunter
+
+- QA owner: qa-jobhunter
