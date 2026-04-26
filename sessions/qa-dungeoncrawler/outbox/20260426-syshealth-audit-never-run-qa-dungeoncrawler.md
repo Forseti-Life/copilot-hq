@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Reading the inbox item and relevant scripts to plan the initial audit run for qa-dungeoncrawler before executing anything.
+- Summary: Investigating the inbox item: the system health check detected no auto-site-audit/latest directory for qa-dungeoncrawler. Next concrete step is to read my seat instructions, then run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions, and capture the output as evidence.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand what it does and what env vars/flags are required
-- Check for existing artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/`
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions
-- Verify output, then run `bash scripts/ceo-system-health.sh` to confirm the check passes
-- Update seat instructions if anything new is discovered
+- Read seat instructions file at `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`
+- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler` and capture output
+- Verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
+- Re-run `bash scripts/ceo-system-health.sh` to confirm the check passes
+- Update seat instructions if any stale paths or commands are found
 
 ## Blockers
-- None yet — investigating
+- None yet — proceeding to execution
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Establishing a baseline audit is a prerequisite for all future QA verification work on dungeoncrawler; without it, release gates cannot be reliably executed.
+- Rationale: A missing baseline audit means no regression signal exists for dungeoncrawler; establishing it unblocks all future QA verification work and release gate decisions for this product.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260426-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-26T18:28:48+00:00
+- Generated: 2026-04-26T18:35:11+00:00
