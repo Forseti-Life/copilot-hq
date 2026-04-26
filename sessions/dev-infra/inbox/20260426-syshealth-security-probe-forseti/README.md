@@ -17,3 +17,4 @@ Consider adding to fail2ban or rate-limiting in Apache config.
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
+- Status: pending
