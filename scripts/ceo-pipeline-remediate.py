@@ -183,6 +183,40 @@ def _write_item(
     return True
 
 
+def _item_marked_done(item_dir: Path) -> bool:
+    for md in item_dir.glob("*.md"):
+        text = md.read_text(encoding="utf-8", errors="ignore")
+        if re.search(r"^-\s+Status:\s*done\b", text, re.MULTILINE | re.IGNORECASE):
+            return True
+    return False
+
+
+def _parse_md_field(text: str, field: str) -> str:
+    match = re.search(rf"^-\s+{re.escape(field)}:\s*(.+)$", text, re.MULTILINE)
+    return match.group(1).strip() if match else ""
+
+
+def _inbox_has_pending_metadata_item(
+    agent: str,
+    *,
+    required_fields: list[tuple[str, str]],
+) -> bool:
+    inbox = ROOT / "sessions" / agent / "inbox"
+    if not inbox.exists():
+        return False
+    for item_dir in inbox.iterdir():
+        if not item_dir.is_dir() or item_dir.name == "_archived":
+            continue
+        if _item_marked_done(item_dir):
+            continue
+        text = ""
+        for md in item_dir.glob("*.md"):
+            text += "\n" + md.read_text(encoding="utf-8", errors="ignore")
+        if text and all(_parse_md_field(text, key) == value for key, value in required_fields):
+            return True
+    return False
+
+
 def _inbox_has_pending_signoff_reminder(agent: str, release_id: str) -> bool:
     """Return True if any inbox item for this agent already references this release_id as a signoff-reminder."""
     inbox = ROOT / "sessions" / agent / "inbox"
@@ -286,6 +320,17 @@ def _queue_sla_item(
     supervisor = _supervisor_for(agent)
     if not supervisor or supervisor == "board":
         supervisor = "ceo-copilot-2"
+    metadata_map = {key: value for key, value in (metadata or [])}
+    escalated_agent = metadata_map.get("Escalated agent", "").strip()
+    escalated_item = metadata_map.get("Escalated item", "").strip()
+    if escalated_agent and escalated_item and _inbox_has_pending_metadata_item(
+        supervisor,
+        required_fields=[
+            ("Escalated agent", escalated_agent),
+            ("Escalated item", escalated_item),
+        ],
+    ):
+        return False
     return _write_item(supervisor, slug, roi, title, body, verification, metadata)
 
 

@@ -1,26 +1,24 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260425-groom-20260412-forseti-release-t after 3 repeated cycles without a valid status-header response from pm-forseti; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: CEO manually closed the stale quarantine record for `20260425-groom-20260412-forseti-release-t`. The original work item had already been moved out of `sessions/pm-forseti/inbox/` into `sessions/pm-forseti/artifacts/20260425-groom-20260412-forseti-release-t/`, where it was left with a stale `.inwork` lock and no live inbox entry. Current release health shows `20260412-forseti-release-t` is still an empty release with no scoped features and no ready backlog, so this was no longer a live PM gate failure.
 
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260425-groom-20260412-forseti-release-t.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+## Five Whys
+1. **Why did the CEO receive a gating quarantine escalation?** Because `pm-forseti` still had a release-scoped outbox record in `needs-info`, so the gating-health logic counted it as a quarantined release gate.
+2. **Why was that PM outbox record still `needs-info`?** Because the executor quarantined the grooming item after repeated missing status-header responses and no supervisor verdict was written afterward.
+3. **Why was no supervisor verdict written?** Because the original work item no longer existed in the live PM inbox, so it looked like an unresolved PM blocker instead of a stranded historical artifact.
+4. **Why did it disappear from the inbox without being fully closed?** Because the item had been converted into an artifact bundle with a stale `.inwork` lock, leaving the PM outbox and CEO monitoring paths out of sync with the real work state.
+5. **Why did that stale artifact keep surfacing as a live gate failure?** Because the control plane keyed off the lingering `needs-info` outbox status, not the absence of a live inbox item plus the empty-release reality.
 
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+## Root cause
+- The root cause was **stranded executor residue**: a quarantined PM grooming item was moved into artifacts and left with stale lock metadata, while its release-scoped outbox stayed `needs-info` and continued to trigger CEO gating alerts.
 
-## Needs from Supervisor
-- Decide whether 20260425-groom-20260412-forseti-release-t should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+## Resolution
+- Closed the PM quarantine record as `done` with manual CEO review.
+- Confirmed `20260412-forseti-release-t` has no scoped features and no ready backlog.
+- Treat this as stale executor residue, not a current PM release-blocker.
 
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+## Verification
+- `bash scripts/ceo-release-health.sh` reports `20260412-forseti-release-t` as an empty release with no scoped features.
+- The original source path referenced by the old quarantine record no longer exists under `sessions/pm-forseti/inbox/`.
 
 ---
 - Agent: pm-forseti

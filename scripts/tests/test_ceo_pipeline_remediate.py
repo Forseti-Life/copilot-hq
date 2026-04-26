@@ -230,6 +230,43 @@ def test_missing_escalation_items_include_structured_metadata(tmp_path):
     assert "- Escalated status: blocked" in readme
 
 
+def test_missing_escalation_dedupes_existing_pending_metadata_item(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "scripts" / "sla-report.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "echo 'SLA report @ test'\n"
+        "echo 'BREACH missing-escalation: pm-dungeoncrawler status=blocked "
+        "outbox=20260414-release-close-now-20260412-dungeoncrawler-release-m.md "
+        "supervisor=ceo-copilot-2'\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "sla-report.sh").chmod(
+        (root / "scripts" / "sla-report.sh").stat().st_mode | stat.S_IXUSR
+    )
+
+    existing = (
+        root / "sessions" / "ceo-copilot-2" / "inbox"
+        / "20260425-sla-missing-escalation-pm-dungeoncrawler-20260414-release-close-now"
+    )
+    existing.mkdir(parents=True)
+    (existing / "README.md").write_text(
+        "# SLA breach: missing escalation for pm-dungeoncrawler\n\n"
+        "- Agent: ceo-copilot-2\n"
+        "- Escalated agent: pm-dungeoncrawler\n"
+        "- Escalated item: 20260414-release-close-now-20260412-dungeoncrawler-release-m\n"
+        "- Escalated status: needs-info\n"
+        "- Status: pending\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    items = sorted(p.name for p in (root / "sessions" / "ceo-copilot-2" / "inbox").iterdir() if p.is_dir())
+    assert items == ["20260425-sla-missing-escalation-pm-dungeoncrawler-20260414-release-close-now"]
+
+
 def test_skips_signoff_reminder_when_stale_inbox_item_exists(tmp_path):
     """Guard 2: if a signoff-reminder for the same release already exists in the
     inbox (e.g. from a prior day's DATE_PREFIX run), no duplicate should be created."""

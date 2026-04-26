@@ -738,7 +738,22 @@ def _ceo_inbox_depth() -> int:
 _STAG_ITEM_STALE_SECONDS = 14400  # 4h: re-dispatch if CEO stagnation item sits unresolved this long
 
 
-def _ceo_has_pending_stagnation_item() -> bool:
+def _stagnation_signal_kinds(signals: List[str]) -> set[str]:
+    return {
+        signal.split(":", 1)[0].strip()
+        for signal in signals
+        if ":" in signal
+    }
+
+
+def _stagnation_signal_kinds_from_text(text: str) -> set[str]:
+    return {
+        match.group(1)
+        for match in re.finditer(r"^\s*-\s*([A-Z_]+):", text, re.MULTILINE)
+    }
+
+
+def _ceo_has_pending_stagnation_item(signals: List[str] | None = None) -> bool:
     """Return True if there is already an unresolved stagnation item in CEO inbox.
 
     If the item has been sitting unresolved for > _STAG_ITEM_STALE_SECONDS (4h),
@@ -750,21 +765,34 @@ def _ceo_has_pending_stagnation_item() -> bool:
     if not ceo_inbox.exists():
         return False
     now = _now_ts()
+    current_signal_kinds = _stagnation_signal_kinds(signals or [])
     for item_dir in ceo_inbox.iterdir():
         if not item_dir.is_dir() or "stagnation" not in item_dir.name:
             continue
+        text_parts: List[str] = []
+        resolved = False
+        for md in item_dir.glob("*.md"):
+            text = md.read_text(encoding="utf-8", errors="ignore")
+            text_parts.append(text)
+            if re.search(r"^-\s+Status:\s*done", text, re.MULTILINE | re.IGNORECASE):
+                resolved = True
+                break
+        if resolved:
+            continue
+        item_text = "\n".join(text_parts)
+        item_signal_kinds = _stagnation_signal_kinds_from_text(item_text)
         # If item is too old (stale), let a new dispatch happen
         age = now - int(item_dir.stat().st_mtime)
         if age > _STAG_ITEM_STALE_SECONDS:
+            if current_signal_kinds and item_signal_kinds == current_signal_kinds:
+                print(
+                    f"STAGNATION-DUPE: item {item_dir.name} has same signals "
+                    f"{sorted(current_signal_kinds)} — suppressing re-dispatch"
+                )
+                return True
             print(f"STAGNATION-STALE: item {item_dir.name} age={age}s > {_STAG_ITEM_STALE_SECONDS}s — allowing re-dispatch")
             continue
-        # Check if it's been resolved (has a Status: done in any item file)
-        for md in item_dir.glob("*.md"):
-            text = md.read_text(encoding="utf-8", errors="ignore")
-            if re.search(r"^-\s+Status:\s*done", text, re.MULTILINE | re.IGNORECASE):
-                break  # this stagnation item is resolved
-        else:
-            return True  # unresolved, within age window — block re-dispatch
+        return True  # unresolved, within age window — block re-dispatch
     return False
 
 
@@ -1015,7 +1043,7 @@ def _stagnation_check(blocked_count: int, blocked_out: str) -> None:
         return
 
     # Dedup: skip if a stagnation item is already pending in CEO inbox (not yet resolved)
-    if _ceo_has_pending_stagnation_item():
+    if _ceo_has_pending_stagnation_item(signals):
         return
 
     # Cooldown: don't re-dispatch more than once per 30 minutes

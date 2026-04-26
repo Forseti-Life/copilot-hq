@@ -45,11 +45,28 @@ def _item_marked_done(item_dir: Path) -> bool:
     return False
 
 
+def _gating_failure_keys(failures: List[str]) -> set[str]:
+    keys: set[str] = set()
+    for failure in failures:
+        match = re.match(r"^\s*([A-Za-z0-9._-]+)\s+\(", failure)
+        if match:
+            keys.add(match.group(1))
+    return keys
+
+
+def _gating_failure_keys_from_text(text: str) -> set[str]:
+    return {
+        match.group(1)
+        for match in re.finditer(r"^\s*-\s*([A-Za-z0-9._-]+)\s+\(", text, re.MULTILINE)
+    }
+
+
 def _ceo_has_pending_quarantine_item(ceo_inbox: Path, gating_failures: List[str]) -> bool:
     """Return True when a recent unresolved CEO quarantine item already covers these failures."""
     if not ceo_inbox.exists():
         return False
     now = _now_ts()
+    current_keys = _gating_failure_keys(gating_failures)
     for item_dir in ceo_inbox.iterdir():
         if not item_dir.is_dir() or item_dir.name == "_archived":
             continue
@@ -68,6 +85,8 @@ def _ceo_has_pending_quarantine_item(ceo_inbox: Path, gating_failures: List[str]
                 continue
         text = "\n".join(text_parts)
         if text and all(failure in text for failure in gating_failures):
+            return True
+        if current_keys and current_keys.issubset(_gating_failure_keys_from_text(text)):
             return True
     return False
 
