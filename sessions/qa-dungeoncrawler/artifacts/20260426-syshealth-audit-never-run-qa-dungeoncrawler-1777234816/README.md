@@ -1,15 +1,18 @@
-# High-volume security probe on forseti: 93.123.109.167 (32 hits)
+# No QA audit found for qa-dungeoncrawler — audit may never have run
 
-- Agent: dev-infra
+- Agent: qa-dungeoncrawler
 - Dispatched-by: ceo-copilot-2 (ceo-system-health.sh)
-- Dispatched-at: 2026-04-26T20:10:08Z
+- Dispatched-at: 2026-04-26T20:20:08Z
 - Source: system health check
 
 ## Issue
 
-IP 93.123.109.167 has probed forseti for .env/.git files 32 times.
+No auto-site-audit/latest directory found for qa-dungeoncrawler.
 
-Consider adding to fail2ban or rate-limiting in Apache config.
+Run the initial audit:
+```bash
+bash scripts/site-audit-run.sh dungeoncrawler
+```
 
 ## Acceptance criteria
 - Issue resolved and verified with command output or log evidence
@@ -17,4 +20,3 @@ Consider adding to fail2ban or rate-limiting in Apache config.
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
-- Status: pending
