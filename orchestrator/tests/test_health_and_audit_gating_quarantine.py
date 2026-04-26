@@ -1,4 +1,5 @@
 import importlib.util
+import os
 from pathlib import Path
 
 
@@ -114,3 +115,82 @@ def test_gating_quarantine_ignores_manual_code_review_gate_approval(tmp_path):
     mod.escalate_quarantined_gating_agents(root, state)
 
     assert not any((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())
+
+
+def test_gating_quarantine_dedupes_recent_matching_ceo_item(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+
+    ceo_inbox = root / "sessions" / "ceo-copilot-2" / "inbox"
+    existing = ceo_inbox / "20260426-120000-gating-agent-quarantine-escalation"
+    (root / "org-chart" / "products").mkdir(parents=True)
+    (root / "tmp" / "release-cycle-active").mkdir(parents=True)
+    (root / "sessions" / "pm-forseti" / "outbox").mkdir(parents=True)
+    existing.mkdir(parents=True)
+
+    (root / "org-chart" / "products" / "product-teams.json").write_text(
+        '{"teams":[{"id":"forseti","pm_agent":"pm-forseti","active":true}]}',
+        encoding="utf-8",
+    )
+    (root / "tmp" / "release-cycle-active" / "forseti.release_id").write_text(
+        "20260412-forseti-release-t\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "pm-forseti" / "outbox" / "20260426-signoff-reminder-20260412-forseti-release-t.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (existing / "command.md").write_text(
+        "# Gating Agent Quarantine Escalation\n\n"
+        "## Quarantined Gating Agents\n"
+        "- pm-forseti (1/1 = 100% quarantined, release=20260412-forseti-release-t)\n",
+        encoding="utf-8",
+    )
+
+    state = root / "tmp" / "orchestrator-quarantine-escalate-last"
+    mod.escalate_quarantined_gating_agents(root, state)
+
+    pending = [p.name for p in ceo_inbox.iterdir() if p.is_dir()]
+    assert pending == ["20260426-120000-gating-agent-quarantine-escalation"]
+    assert not state.exists()
+
+
+def test_gating_quarantine_allows_new_item_after_stale_window(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+
+    ceo_inbox = root / "sessions" / "ceo-copilot-2" / "inbox"
+    existing = ceo_inbox / "20260425-120000-gating-agent-quarantine-escalation"
+    (root / "org-chart" / "products").mkdir(parents=True)
+    (root / "tmp" / "release-cycle-active").mkdir(parents=True)
+    (root / "sessions" / "pm-forseti" / "outbox").mkdir(parents=True)
+    existing.mkdir(parents=True)
+
+    (root / "org-chart" / "products" / "product-teams.json").write_text(
+        '{"teams":[{"id":"forseti","pm_agent":"pm-forseti","active":true}]}',
+        encoding="utf-8",
+    )
+    (root / "tmp" / "release-cycle-active" / "forseti.release_id").write_text(
+        "20260412-forseti-release-t\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "pm-forseti" / "outbox" / "20260426-signoff-reminder-20260412-forseti-release-t.md").write_text(
+        "- Status: needs-info\n",
+        encoding="utf-8",
+    )
+    (existing / "command.md").write_text(
+        "# Gating Agent Quarantine Escalation\n\n"
+        "## Quarantined Gating Agents\n"
+        "- pm-forseti (1/1 = 100% quarantined, release=20260412-forseti-release-t)\n",
+        encoding="utf-8",
+    )
+    stale_at = existing.stat().st_mtime - (mod._QUARANTINE_ITEM_STALE_SECS + 60)
+    os.utime(existing, (stale_at, stale_at))
+
+    state = root / "tmp" / "orchestrator-quarantine-escalate-last"
+    mod.escalate_quarantined_gating_agents(root, state)
+
+    pending = sorted(p.name for p in ceo_inbox.iterdir() if p.is_dir())
+    assert len(pending) == 2
+    assert any(name.endswith("-gating-agent-quarantine-escalation") and name != existing.name for name in pending)
+    assert state.exists()

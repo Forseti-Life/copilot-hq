@@ -34,6 +34,44 @@ def _mark_now(state_file: Path) -> None:
     state_file.write_text(str(_now_ts()), encoding="utf-8")
 
 
+def _item_marked_done(item_dir: Path) -> bool:
+    for md in item_dir.glob("*.md"):
+        try:
+            text = md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if re.search(r"^-\s*Status:\s*done\b", text, re.MULTILINE | re.IGNORECASE):
+            return True
+    return False
+
+
+def _ceo_has_pending_quarantine_item(ceo_inbox: Path, gating_failures: List[str]) -> bool:
+    """Return True when a recent unresolved CEO quarantine item already covers these failures."""
+    if not ceo_inbox.exists():
+        return False
+    now = _now_ts()
+    for item_dir in ceo_inbox.iterdir():
+        if not item_dir.is_dir() or item_dir.name == "_archived":
+            continue
+        if "gating-agent-quarantine-escalation" not in item_dir.name:
+            continue
+        if _item_marked_done(item_dir):
+            continue
+        age = now - int(item_dir.stat().st_mtime)
+        if age > _QUARANTINE_ITEM_STALE_SECS:
+            continue
+        text_parts: List[str] = []
+        for md in item_dir.glob("*.md"):
+            try:
+                text_parts.append(md.read_text(encoding="utf-8", errors="ignore"))
+            except OSError:
+                continue
+        text = "\n".join(text_parts)
+        if text and all(failure in text for failure in gating_failures):
+            return True
+    return False
+
+
 def _run(cmd: List[str], *, timeout: int = 600) -> tuple[int, str]:
     """Execute a shell command (imported from run.py context)."""
     import subprocess
@@ -54,6 +92,7 @@ def _run(cmd: List[str], *, timeout: int = 600) -> tuple[int, str]:
 
 _INBOX_AUDIT_COOLDOWN = 3600          # re-audit at most once per hour
 _INWORK_STALE_SECS    = 7200          # .inwork lock is stale after 2h
+_QUARANTINE_ITEM_STALE_SECS = 86400   # allow fresh CEO quarantine escalation after 24h
 
 
 # ── Inbox audit ───────────────────────────────────────────────────────────────
@@ -331,11 +370,14 @@ def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) 
     if not gating_failures:
         return
 
+    ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
+    if _ceo_has_pending_quarantine_item(ceo_inbox, gating_failures):
+        return
+
     _mark_now(quarantine_state)
     print(f"QUARANTINE-ESCALATE: gating agent failures detected: {', '.join(gating_failures)}")
 
     today = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
     item_dir = ceo_inbox / f"{today}-gating-agent-quarantine-escalation"
     if item_dir.exists():
         return
