@@ -406,3 +406,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260425-syshealth-php-fatal-dungeoncrawler — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-syshealth-php-fatal-dungeoncrawler.md)
 - [ ] 20260425-qa-block-dc-cr-dwarf-heritage-ancient-blooded — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260425-qa-block-dc-cr-dwarf-heritage-ancient-blooded.md)
 - [ ] 20260426-213913-release-support-dc-cr-ancestry-system — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260426-213913-release-support-dc-cr-ancestry-system.md)
+- [ ] 20260426-213913-release-support-dc-cr-background-system — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260426-213913-release-support-dc-cr-background-system.md)
