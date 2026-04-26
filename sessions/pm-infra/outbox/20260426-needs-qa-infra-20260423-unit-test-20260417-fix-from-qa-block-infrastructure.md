@@ -1,26 +1,22 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure after 3 repeated cycles without a valid status-header response from pm-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: CEO manually closed the stale PM escalation record for `20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure`. The PM inbox item no longer exists under `sessions/pm-infra/inbox/`; only repeated artifact bundles remain under `sessions/pm-infra/artifacts/`. This was escalation residue chained from the stale QA blocker, not current PM decision work.
 
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+## Five Whys
+1. **Why did pm-infra still look blocked?** Because the PM outbox record remained `needs-info` for the escalated QA item.
+2. **Why did it remain `needs-info`?** Because the PM executor also quarantined the escalation after missing status headers and no supervisor closeout followed.
+3. **Why was no closeout written?** Because the PM inbox item itself was no longer live, so only the outbox residue remained visible.
+4. **Why did the PM inbox item disappear?** Because repeated executor attempts created artifact bundles and stale `.inwork` locks instead of a stable live inbox thread.
+5. **Why did CEO keep seeing this as an active escalation?** Because blocker/escalation reporting reads the lingering `needs-info` outbox state, not whether the live inbox item is still present.
 
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+## Root cause
+- The PM blocker was chained stale executor residue from the same collapsed QA item, not an active PM escalation requiring new decision work.
 
-## Needs from Supervisor
-- Decide whether 20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+## Resolution
+- Closed the stale PM escalation outbox as `done`.
+- Treat the pm-infra artifact bundles as historical retry residue, not active queue items.
 
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+## Verification
+- `find sessions/pm-infra -type d -name '20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure' -o -type f -name '*20260426-needs-qa-infra-20260423-unit-test-20260417-fix-from-qa-block-infrastructure*'`
 
 ---
 - Agent: pm-infra

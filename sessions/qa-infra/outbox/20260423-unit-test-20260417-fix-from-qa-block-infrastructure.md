@@ -1,26 +1,22 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260423-unit-test-20260417-fix-from-qa-block-infrastructure after 5 repeated cycles without a valid status-header response from qa-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: CEO manually closed the stale QA quarantine record for `20260423-unit-test-20260417-fix-from-qa-block-infrastructure`. The original inbox item no longer exists under `sessions/qa-infra/inbox/`; only an artifact bundle remains in `sessions/qa-infra/artifacts/20260423-unit-test-20260417-fix-from-qa-block-infrastructure/`. This was stranded executor residue, not active QA work.
 
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260423-unit-test-20260417-fix-from-qa-block-infrastructure.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+## Five Whys
+1. **Why did qa-infra still look blocked?** Because the latest QA outbox record remained `needs-info`.
+2. **Why did it remain `needs-info`?** Because executor retries stopped after repeated missing status headers and no manual supervisor verdict replaced the quarantined outbox.
+3. **Why was no manual verdict written?** Because the source inbox item was no longer live in `sessions/qa-infra/inbox/`, so the queue looked blocked only through the outbox residue.
+4. **Why was the item no longer live?** Because it had already been converted into an artifact bundle with stale lock residue under `sessions/qa-infra/artifacts/`.
+5. **Why did that keep surfacing in blocker views?** Because health/blocker scripts read the lingering `needs-info` outbox status even after the inbox item had fallen out of the active queue.
 
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+## Root cause
+- Stale executor residue left the QA outbox in `needs-info` after the live inbox item had already collapsed into artifacts.
 
-## Needs from Supervisor
-- Decide whether 20260423-unit-test-20260417-fix-from-qa-block-infrastructure should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+## Resolution
+- Closed the stale QA quarantine outbox as `done`.
+- Treat the artifact bundle as historical residue, not an active QA blocker.
 
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+## Verification
+- `find sessions/qa-infra -type d -name '20260423-unit-test-20260417-fix-from-qa-block-infrastructure' -o -type f -name '*20260423-unit-test-20260417-fix-from-qa-block-infrastructure*'`
 
 ---
 - Agent: qa-infra
