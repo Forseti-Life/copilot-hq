@@ -116,3 +116,6 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260425-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260425-syshealth-merge-health-remediation.md)
 - [ ] 20260425-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260425-syshealth-executor-failures-prune.md)
 - [ ] 20260425-syshealth-duplicate-orchestrator-roots — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260425-syshealth-duplicate-orchestrator-roots.md)
+- [ ] 20260426-syshealth-executor-failures-prune — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-syshealth-executor-failures-prune.md)
+- [ ] 20260426-syshealth-duplicate-orchestrator-roots — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-syshealth-duplicate-orchestrator-roots.md)
+- [ ] 20260426-fix-forseti-drush-bootstrap-suggestion-intake — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-fix-forseti-drush-bootstrap-suggestion-intake.md)
