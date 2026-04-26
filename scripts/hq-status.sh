@@ -102,19 +102,80 @@ agent_next_inbox() {
   echo "${next:--}"
 }
 
-agent_exec_status() {
-  # Heuristic: if outbox updated in last 30 minutes, assume executing.
+agent_active_inbox_info() {
+  # Returns tab-separated: item_id\tstarted_at_iso\tpid
+  # Best-effort: validates that the recorded pid is still running.
   local agent="$1"
-  local out_epoch
-  out_epoch=$(latest_mtime_epoch "sessions/${agent}/outbox")
-  if [ "$out_epoch" -le 0 ]; then
-    echo "no"
+  local p="sessions/${agent}/artifacts/active-inbox-item.json"
+  if [ ! -f "$p" ]; then
+    echo $'\t\t'
     return
   fi
-  local now
-  now=$(date +%s)
-  local delta=$((now-out_epoch))
-  if [ "$delta" -le 1800 ]; then
+
+  python3 - "$p" "$agent" <<'PY' 2>/dev/null || { echo $'\t\t'; exit 0; }
+import json
+import os
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+agent_expected = (sys.argv[2] or '').strip()
+
+try:
+    obj = json.loads((path.read_text(encoding='utf-8', errors='ignore') or '').strip() or '{}')
+except Exception:
+    print('\t\t')
+    raise SystemExit(0)
+
+agent_id = str(obj.get('agent_id') or '').strip()
+if agent_expected and agent_id and agent_id != agent_expected:
+    print('\t\t')
+    raise SystemExit(0)
+
+item_id = str(obj.get('item_id') or '').strip()
+started = str(obj.get('started_at_iso') or '').strip()
+pid_raw = obj.get('pid')
+
+pid = 0
+try:
+    pid = int(pid_raw)
+except Exception:
+    pid = 0
+
+alive = False
+if pid > 0:
+    try:
+        os.kill(pid, 0)
+        alive = True
+    except Exception:
+        alive = False
+
+if alive and agent_expected:
+    try:
+        cmdline = Path(f"/proc/{pid}/cmdline").read_text(encoding='utf-8', errors='ignore')
+        cmd = cmdline.replace('\x00', ' ')
+        if 'agent-exec-next.sh' not in cmd or agent_expected not in cmd:
+            alive = False
+    except Exception:
+        pass
+
+if not alive:
+    try:
+        path.unlink()
+    except Exception:
+        pass
+    print('\t\t')
+    raise SystemExit(0)
+
+sys.stdout.write(f"{item_id}\t{started}\t{pid}\n")
+PY
+}
+
+agent_exec_status() {
+  local agent="$1"
+  local active_item active_started active_pid
+  IFS=$'\t' read -r active_item active_started active_pid < <(agent_active_inbox_info "$agent")
+  if [ -n "${active_item:-}" ] && [ -n "${active_pid:-}" ]; then
     echo "yes"
   else
     echo "no"
