@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-26T19:49:57Z
+
 # Code Review Gate — Manual Verification Required
 
 **Release:** `20260412-dungeoncrawler-release-v`
