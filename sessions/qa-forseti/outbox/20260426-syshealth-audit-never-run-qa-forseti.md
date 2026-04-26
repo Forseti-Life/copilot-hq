@@ -1,26 +1,24 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260426-syshealth-audit-never-run-qa-forseti after 4 repeated cycles without a valid status-header response from qa-forseti; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: CEO manually closed the stale QA quarantine record for `20260426-syshealth-audit-never-run-qa-forseti` after running a fresh site audit and generating canonical Gate 2 evidence. The live audit completed successfully and wrote `20260426-185843-gate2-approve-20260412-forseti-release-t.md`, so this executor quarantine is no longer a live QA blocker.
 
-## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260426-syshealth-audit-never-run-qa-forseti.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+## Five Whys
+1. **Why did qa-forseti appear blocked?** Because the latest outbox for the audit-never-run item remained `needs-info`.
+2. **Why did it remain `needs-info`?** Because the executor quarantined the audit task after repeated missing status headers and no manual closeout followed.
+3. **Why was no manual closeout written?** Because the queue stalled at the executor layer before a canonical audit artifact existed.
+4. **Why is it safe to close now?** Because a fresh production audit was run successfully and produced Gate 2 approval evidence for the active release.
+5. **Why should the old quarantine record not stay open?** Because it would keep misreporting a resolved audit gap as an active QA blocker.
 
-## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+## Root cause
+- The blocker was executor residue on top of a now-resolved QA audit gap.
 
-## Needs from Supervisor
-- Decide whether 20260426-syshealth-audit-never-run-qa-forseti should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+## Resolution
+- Ran `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh forseti`.
+- Gate 2 approval artifact written: `sessions/qa-forseti/outbox/20260426-185843-gate2-approve-20260412-forseti-release-t.md`.
+- Closed the stale quarantine outbox as `done`.
 
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+## Verification
+- `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh forseti`
+- `bash scripts/hq-blockers.sh`
 
 ---
 - Agent: qa-forseti

@@ -76,7 +76,7 @@
 ## CEO Bottleneck Log — 2026-04-26
 
 > **Source:** CEO health sweep (`scripts/ceo-system-health.sh`, `scripts/ceo-ops-once.sh`, `scripts/release-signoff-status.sh`)
-> 5 active bottleneck(s) logged for CEO tracking.
+> 5 bottleneck(s) logged for CEO tracking. Statuses below reflect current remediation progress.
 
 ### ISSUE-005 — Release flow stalled at scope/signoff despite healthy runtime
 
@@ -84,12 +84,13 @@
 **Scope:** Coordinated release flow (`20260412-forseti-release-t`, `20260412-dungeoncrawler-release-v`)  
 **Source:** CEO health sweep
 
-**Finding:** Both active releases are empty, have no Gate 2 approval, and have no PM signoffs. Runtime is healthy, but release advancement is stalled at the process layer.
+**Finding:** Both active releases remain **not ready for official push** and still have no coordinated PM signoffs. Runtime is healthy, but release advancement is stalled at the process layer.
 
 **Evidence:**
-- `release-signoff-status.sh 20260412-forseti-release-t` → not ready for official push
-- `release-signoff-status.sh 20260412-dungeoncrawler-release-v` → not ready for official push
-- CEO ops release health warns: no scoped features, Gate 2 APPROVE not found, PM signoff pending for both active releases
+- `release-signoff-status.sh 20260412-forseti-release-t` → not ready for official push; coordinated PM signoffs false for both `pm-forseti` and `pm-dungeoncrawler`
+- `release-signoff-status.sh 20260412-dungeoncrawler-release-v` → not ready for official push; coordinated PM signoffs false for both `pm-forseti` and `pm-dungeoncrawler`
+- `sessions/qa-forseti/outbox/20260426-185843-gate2-approve-20260412-forseti-release-t.md` exists, so the remaining blocker on `forseti-release-t` is process/signoff follow-through rather than missing QA approval
+- No QA APPROVE evidence was found for `20260412-dungeoncrawler-release-v`
 
 **Five Whys:**
 1. **Why is release flow stalled?** Because neither active release has PM signoff or Gate 2 approval, so neither can advance to coordinated push.
@@ -137,19 +138,28 @@
 **Scope:** CEO supervision / orchestration  
 **Source:** CEO health sweep
 
-**Finding:** CEO inbox is at `45` items, with many remediation echoes, stale RCA threads, and escalation churn. This is consuming decision bandwidth and obscuring actual release work.
+**Finding:** CEO inbox previously reached `45` items, dominated by remediation echoes, stale RCA threads, and escalation churn. That noise was obscuring actual release work.
 
-**Status:** 🔴 Open — requires queue triage and suppression of repeated remediation noise
+**Resolution:** Dedupe logic was tightened in the escalation generators, stale CEO inbox items were archived/closed with Five Whys, and non-live escalations were converted into resolved historical records instead of being retried indefinitely.
+
+**Current state:** `find sessions/ceo-copilot-2/inbox -maxdepth 1 -type f | wc -l` now returns `0`.
+
+**Status:** 🟢 Resolved — CEO queue noise was reduced from active churn to zero live inbox items
 
 ### ISSUE-008 — Executor failure backlog is concentrated in infra seats
 
 **Severity:** High  
-**Scope:** `pm-infra`, `qa-infra`, executor pipeline  
+**Scope:** executor pipeline / `pm-forseti` / `dev-infra`  
 **Source:** CEO health sweep
 
-**Finding:** `tmp/executor-failures/` contains `122` artifacts, with fresh failures concentrated in infra seats. This indicates repeated response-shape/validation churn rather than isolated product-specific breakage.
+**Finding:** `tmp/executor-failures/` now contains `144` artifacts. The backlog is still real, but the hottest `pm-forseti` quarantine loop has been manually closed and the `dev-infra` prune blocker has been resolved by CEO decision. The remaining work is infrastructure investigation of the executor/agent-response layer, not blocker-queue churn.
 
-**Status:** 🔴 Open — requires executor triage and pruning after root-cause review
+**Current state:**
+- `sessions/pm-forseti/outbox/20260426-185841-gate2-ready-forseti-life.md` has been manually closed using the existing QA APPROVE evidence
+- `sessions/dev-infra/outbox/20260426-syshealth-executor-failures-prune.md` has been closed with a CEO decision: preserve active failures, stop pruning, and investigate the executor/agent-response layer separately
+- `bash scripts/hq-blockers.sh count` now returns `0`
+
+**Status:** 🟡 In progress — executor backlog remains elevated, but blocker-queue churn has been cleared and the remaining work is a focused infrastructure investigation
 
 ### ISSUE-009 — Duplicate orchestrator roots are creating automation noise
 
@@ -159,6 +169,8 @@
 
 **Finding:** CEO health flagged duplicate orchestrator roots (`2993413`, `3004909`). The orchestrator was alive, but the duplicate-root pattern contributed to restart/escalation churn and additional repo noise.
 
-**Current state:** The duplicate loop rooted at `3004909` was terminated, leaving a single active `scripts/orchestrator-loop.sh run 60` process.
+**Resolution:** Repointed watchdog ownership to the canonical HQ root, repaired the alternate-root launcher so it no longer spawns unsafe duplicate loops, and restarted orchestration under `/home/ubuntu/forseti.life`.
 
-**Status:** 🟡 Mitigated — duplicate root removed live; durable normalization/detector hardening still pending
+**Current state:** `bash scripts/ceo-system-health.sh` now reports `✅ PASS Orchestrator loop visibility: 1 process(es)` and `✅ PASS Orchestrator: running`.
+
+**Status:** 🟢 Resolved — duplicate-root automation noise was removed and the runtime is back on a single canonical orchestrator root

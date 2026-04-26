@@ -69,7 +69,7 @@ while IFS= read -r agent; do
   # Validate that needs-info outboxes have a non-empty Needs section (malformed check).
   if [ "$status" = "needs-info" ]; then
     needs_content="$(awk 'BEGIN{p=0}
-      /^## Needs from CEO/{p=1;next}
+      /^## Needs from (CEO|Supervisor|Board)/{p=1;next}
       /^## /{p=0}
       {if(p && NF>0) print}
     ' "$latest" | grep -v '^\s*-\s*N/A\s*$' | grep -v '^\s*$' | head -1 || true)"
@@ -95,7 +95,7 @@ while IFS= read -r agent; do
     {if(p) print}
   ' "$latest" | sed -n '1,20p' | sed 's/^/    /')"
   needs="$(awk 'BEGIN{p=0}
-    /^## Needs from CEO/{p=1;next}
+    /^## Needs from (CEO|Supervisor|Board)/{p=1;next}
     /^## /{p=0}
     {if(p) print}
   ' "$latest" | sed -n '1,20p' | sed 's/^/    /')"
@@ -105,7 +105,7 @@ while IFS= read -r agent; do
     echo "$blockers"
   fi
   if [ -n "$needs" ]; then
-    echo "  Needs from CEO:"
+    echo "  Needs:"
     echo "$needs"
   fi
 
