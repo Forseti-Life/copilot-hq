@@ -87,3 +87,5 @@ Anything not groomed when Stage 0 of 20260412-dungeoncrawler-release-x starts is
 ## References
 - runbooks/feature-intake.md
 - runbooks/intake-to-qa-handoff.md
+- Agent: pm-dungeoncrawler
+- Status: pending
