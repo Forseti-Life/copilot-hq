@@ -267,3 +267,21 @@
 **Current state:** `bash scripts/ceo-system-health.sh` now reports `✅ PASS Orchestrator loop visibility: 1 process(es)` and `✅ PASS Orchestrator: running`.
 
 **Status:** 🟢 Resolved — duplicate-root automation noise was removed and the runtime is back on a single canonical orchestrator root
+
+---
+
+## Release Efficiency Findings — 20260412-forseti-release-u — 2026-04-26
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-010 — Gating agent(s) majority-quarantined: pm-forseti (1/1 = 100%) — releas
+
+**Severity:** High
+**Release:** 20260412-forseti-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gating agent(s) majority-quarantined: pm-forseti (1/1 = 100%) — release gates bypassed by executor failure
+
+**Status:** 🔴 Open — review and assign fix
+
