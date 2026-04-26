@@ -52,3 +52,21 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-forseti-release-t — 2026-04-26
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-004 — Gating agent(s) majority-quarantined: pm-forseti (1/1 = 100%) — releas
+
+**Severity:** High
+**Release:** 20260412-forseti-release-t
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gating agent(s) majority-quarantined: pm-forseti (1/1 = 100%) — release gates bypassed by executor failure
+
+**Status:** 🔴 Open — review and assign fix
+
