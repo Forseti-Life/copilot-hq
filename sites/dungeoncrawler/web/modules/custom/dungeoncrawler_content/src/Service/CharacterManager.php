@@ -38,7 +38,19 @@ class CharacterManager {
         'bonus_language_per_int'    => 1,
       ],
     ],
-    'Elf' => ['hp' => 6, 'size' => 'Medium', 'speed' => 30, 'boosts' => ['Dexterity', 'Intelligence'], 'flaw' => 'Constitution', 'languages' => ['Common', 'Elven'], 'traits' => ['Elf', 'Humanoid'], 'vision' => 'low-light vision'],
+    'Elf' => [
+      'hp' => 6,
+      'size' => 'Medium',
+      'speed' => 30,
+      'boosts' => ['Dexterity', 'Intelligence'],
+      'flaw' => 'Constitution',
+      'languages' => ['Common', 'Elven'],
+      'traits' => ['Elf', 'Humanoid'],
+      'vision' => 'low-light vision',
+      // One bonus language per positive Intelligence modifier point.
+      'bonus_language_pool' => ['Celestial', 'Draconic', 'Gnoll', 'Gnomish', 'Goblin', 'Orcish', 'Sylvan'],
+      'bonus_language_source' => 'intelligence_modifier',
+    ],
     'Dwarf' => [
       'hp' => 10,
       'size' => 'Medium',
