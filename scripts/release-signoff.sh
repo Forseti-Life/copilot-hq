@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT_DIR"
 
 PRODUCT_TEAMS_JSON="org-chart/products/product-teams.json"
@@ -91,6 +91,8 @@ mkdir -p "$dir" 2>/dev/null || true
 
 slug="$(printf '%s' "$release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | cut -c1-80)"
 out_file="${dir}/${slug}.md"
+push_ready_created_flag="$(mktemp)"
+trap 'rm -f "$push_ready_created_flag"' EXIT
 
 # Gate 2 guard: require QA APPROVE evidence before writing PM signoff artifact.
 # For cross-team co-sign scenarios: the release_id may belong to a different team
@@ -215,13 +217,14 @@ echo "SIGNED_OFF: ${pm_agent} ${release_id} -> ${out_file}"
 
 # After recording signoff, check if ALL coordinated PMs have now signed.
 # If yes, queue a push-ready inbox item for the release operator (pm-forseti).
-python3 - "$PRODUCT_TEAMS_JSON" "$release_id" "$slug" "$ROOT_DIR" <<'PY'
+python3 - "$PRODUCT_TEAMS_JSON" "$release_id" "$slug" "$ROOT_DIR" "$push_ready_created_flag" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-cfg_path, release_id, slug, root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+cfg_path, release_id, slug, root, created_flag = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 root = Path(root)
+created_flag = Path(created_flag)
 
 with open(cfg_path, 'r', encoding='utf-8') as fh:
     data = json.load(fh)
@@ -278,10 +281,17 @@ As release operator, proceed with the official push:
 4. Complete post-push steps (config import, smoke test, SLA report update).
 """
 (inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
+created_flag.write_text('created\n', encoding='utf-8')
 print(f"INFO: ALL PMs signed — queued push-ready item for pm-forseti: {item_id}")
 PY
 
 # ── Board email notification ──────────────────────────────────────────────────
+# Only notify when this invocation actually created the push-ready transition.
+if [ ! -s "$push_ready_created_flag" ]; then
+  echo "INFO: Board notification skipped — coordinated release was already push-ready"
+  exit 0
+fi
+
 # Load board.conf if present (provides BOARD_EMAIL, HQ_FROM_EMAIL, HQ_SITE_NAME)
 BOARD_CONF="${ROOT_DIR}/org-chart/board.conf"
 if [ -f "$BOARD_CONF" ]; then
@@ -291,6 +301,7 @@ fi
 BOARD_EMAIL="${BOARD_EMAIL:-keith.aumiller@stlouisintegration.com}"
 HQ_FROM_EMAIL="${HQ_FROM_EMAIL:-hq-noreply@forseti.life}"
 HQ_SITE_NAME="${HQ_SITE_NAME:-forseti.life HQ}"
+SENDMAIL_BIN="${SENDMAIL_BIN:-/usr/sbin/sendmail}"
 
 # ── Build HTML features list from PM release-notes artifact ──────────────────
 _features_html=""
@@ -383,6 +394,6 @@ _email_html="<!DOCTYPE html>
 
 printf "To: %s\nFrom: %s\nSubject: [%s] FYI: coordinated release ready for operator push: %s\nContent-Type: text/html; charset=UTF-8\nMIME-Version: 1.0\n\n%s\n" \
   "$BOARD_EMAIL" "$HQ_FROM_EMAIL" "$HQ_SITE_NAME" "$release_id" "$_email_html" \
-  | /usr/sbin/sendmail -t \
+  | "$SENDMAIL_BIN" -t \
   && echo "INFO: Board notification sent to ${BOARD_EMAIL}" \
   || echo "WARN: Board notification email failed (sendmail returned non-zero)"
