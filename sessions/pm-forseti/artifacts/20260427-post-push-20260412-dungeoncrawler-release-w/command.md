@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-27T13:12:01Z
+
 # Post-push steps: coordinated release
 
 The coordinated release deploy was triggered automatically.

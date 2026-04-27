@@ -1,13 +1,16 @@
-# Push ready: 20260412-dungeoncrawler-release-w
+- Status: done
+- Completed: 2026-04-27T13:13:07Z
 
-All required PM signoffs recorded for coordinated release `20260412-dungeoncrawler-release-w`.
+# Push ready: 20260412-forseti-release-u
+
+All required PM signoffs recorded for coordinated release `20260412-forseti-release-u`.
 
 ## Signed off by
 pm-forseti (forseti.life), pm-dungeoncrawler (dungeoncrawler)
 
 ## Required action
 As release operator, proceed with the official push:
-1. Verify: `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w`
+1. Verify: `bash scripts/release-signoff-status.sh 20260412-forseti-release-u`
 2. Push per `runbooks/shipping-gates.md` Gate 4.
 3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh`
    (Files each coordinated team's own release signoff so their cycle can advance.)
