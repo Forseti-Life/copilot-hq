@@ -380,6 +380,32 @@ def manual_code_review_gate_verdict(release_id: str) -> Optional[str]:
     return "approve" if saw_approve else None
 
 
+def code_review_gate_result(
+    push_time: Optional[datetime],
+    manual_cr_verdict: Optional[str],
+    cr_total: int,
+    cr_done: int,
+) -> tuple[str, str]:
+    """Classify the code-review gate for the current release lifecycle stage."""
+    if manual_cr_verdict == "approve":
+        return PASS, "Code review gate: manual CEO approval recorded"
+    if manual_cr_verdict == "reject":
+        return FAIL, "Code review gate: manual CEO review rejected"
+    if cr_total == 0:
+        return WARN, "Code review gate: no agent-code-review sessions found for this release"
+    if cr_done == 0:
+        if push_time is None:
+            return WARN, (
+                f"Code review gate: {cr_total} session(s) dispatched but none completed yet "
+                f"(all quarantined/needs-info) — review still pending pre-ship"
+            )
+        return FAIL, (
+            f"Code review gate: {cr_total} session(s) dispatched but none completed "
+            f"(all quarantined/needs-info) — code shipped without review"
+        )
+    return PASS, f"Code review gate: {cr_done}/{cr_total} review(s) completed"
+
+
 def is_completed_outbox(path: pathlib.Path) -> bool:
     return outbox_status(path) in ("done", "approved", "approve")
 
@@ -795,6 +821,9 @@ def main() -> int:
         elif agent == "agent-code-review" and manual_cr_verdict == "approve":
             status = "✅ manual gate approve"
             flag = "   "
+        elif agent == "agent-code-review" and push_time is None and rate >= 0.5:
+            status = "⚠️  pending pre-ship review"
+            flag = "⚠️  "
         elif rate >= 0.5:
             status = "❌ majority quarantined"
             flag = "❌ "
@@ -833,17 +862,8 @@ def main() -> int:
     cr_files = gating_outbox_files_for_release("agent-code-review", release_id, feature_ids)
     cr_done = sum(1 for f in cr_files if outbox_status(f) in ("done", "approved", "approve"))
     cr_total = len(cr_files)
-    if manual_cr_verdict == "approve":
-        emit(PASS, "Code review gate: manual CEO approval recorded")
-    elif manual_cr_verdict == "reject":
-        emit(FAIL, "Code review gate: manual CEO review rejected")
-    elif cr_total == 0:
-        emit(WARN, "Code review gate: no agent-code-review sessions found for this release")
-    elif cr_done == 0:
-        emit(FAIL, f"Code review gate: {cr_total} session(s) dispatched but none completed "
-             f"(all quarantined/needs-info) — code shipped without review")
-    else:
-        emit(PASS, f"Code review gate: {cr_done}/{cr_total} review(s) completed")
+    gate_level, gate_message = code_review_gate_result(push_time, manual_cr_verdict, cr_total, cr_done)
+    emit(gate_level, gate_message)
 
     # ── 6. CEO proxy load ────────────────────────────────────────────────────
     section("CEO Proxy Load")

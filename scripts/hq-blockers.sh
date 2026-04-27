@@ -49,19 +49,21 @@ while IFS= read -r agent; do
   fi
 
   has_inbox=0
-  shopt -s nullglob
-  inbox_items=("sessions/${agent}/inbox"/*)
-  shopt -u nullglob
-  if [ "${#inbox_items[@]}" -gt 0 ]; then
+  if find "sessions/${agent}/inbox" -mindepth 1 -maxdepth 1 -type d ! -name '_archived' -print -quit 2>/dev/null | grep -q .; then
     has_inbox=1
   fi
 
   # A blocker is stale if: outbox is old AND agent has no active inbox items.
-  # Stale needs-info with no corresponding inbox is a phantom — don't count as active.
-  if [ "$outbox_age_days" -gt 0 ] && [ "$has_inbox" -eq 0 ]; then
+  # Needs-info/blocked with no active inbox is a phantom blocker — the working
+  # item has already been archived or cleared, so don't count it as currently active.
+  if [ "$has_inbox" -eq 0 ]; then
     stale_count=$((stale_count+1))
     if [ "$mode" = "list" ]; then
-      echo "- ${agent}: $(basename "$latest") [status=${status}] [STALE: >=${STALE_DAYS}d, no inbox — CEO cleanup needed]"
+      if [ "$outbox_age_days" -gt 0 ]; then
+        echo "- ${agent}: $(basename "$latest") [status=${status}] [STALE: >=${STALE_DAYS}d, no inbox — CEO cleanup needed]"
+      else
+        echo "- ${agent}: $(basename "$latest") [status=${status}] [PHANTOM: no active inbox — recent quarantine/resolution state, do not count as active blocker]"
+      fi
     fi
     continue
   fi

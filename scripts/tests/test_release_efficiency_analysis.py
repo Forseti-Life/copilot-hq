@@ -235,6 +235,29 @@ def test_manual_code_review_gate_verdict_uses_ceo_gate_approval(tmp_path):
     assert verdict == "approve"
 
 
+def test_code_review_gate_pending_pre_ship_is_warn():
+    mod = _load_module()
+
+    level, msg = mod.code_review_gate_result(None, None, 1, 0)
+
+    assert level == mod.WARN
+    assert "pending pre-ship" in msg
+
+
+def test_code_review_gate_missing_after_push_is_fail():
+    mod = _load_module()
+
+    level, msg = mod.code_review_gate_result(
+        datetime(2026, 4, 20, 5, 3, 4, tzinfo=timezone.utc),
+        None,
+        1,
+        0,
+    )
+
+    assert level == mod.FAIL
+    assert "code shipped without review" in msg
+
+
 def test_qa_gate2_evidence_recorded_true_for_release_approve(tmp_path):
     mod = _load_module()
     root = tmp_path / "hq"
