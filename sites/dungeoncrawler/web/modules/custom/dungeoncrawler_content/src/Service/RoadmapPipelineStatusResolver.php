@@ -295,6 +295,51 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+   * Returns aggregate feature counts for the given website.
+   *
+   * @return array<string, int>
+   *   Counts for all tracked feature briefs and current release buckets.
+   */
+  public function getFeatureCounts(string $website = 'dungeoncrawler', array $release_snapshot = []): array {
+    $counts = [
+      'tracked' => 0,
+      'active_release' => count($release_snapshot['active_features'] ?? []),
+      'next_release' => count($release_snapshot['next_features'] ?? []),
+    ];
+
+    if (!is_dir($this->featuresPath)) {
+      return $counts;
+    }
+
+    $feature_dirs = glob($this->featuresPath . DIRECTORY_SEPARATOR . 'dc-*', GLOB_ONLYDIR) ?: [];
+    foreach ($feature_dirs as $dir) {
+      $feature_id = basename($dir);
+      if ($feature_id === '' || str_contains($feature_id, '/') || str_contains($feature_id, '\\') || str_contains($feature_id, '..')) {
+        continue;
+      }
+
+      $feature_path = $dir . DIRECTORY_SEPARATOR . 'feature.md';
+      if (!is_readable($feature_path)) {
+        continue;
+      }
+
+      $contents = file_get_contents($feature_path);
+      if ($contents === FALSE) {
+        continue;
+      }
+
+      $feature_website = mb_strtolower($this->extractFieldValue($contents, 'Website', ''));
+      if ($feature_website !== mb_strtolower($website)) {
+        continue;
+      }
+
+      $counts['tracked']++;
+    }
+
+    return $counts;
+  }
+
+  /**
    * Extract markdown field values from "- Label: value" patterns.
    */
   private function extractFieldValue(string $markdown, string $label, string $fallback): string {
