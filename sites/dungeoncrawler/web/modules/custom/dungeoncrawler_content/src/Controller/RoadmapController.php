@@ -134,6 +134,31 @@ class RoadmapController extends ControllerBase {
       }
     }
 
+    $feature_ids = [];
+    foreach ($release_snapshot['active_features'] ?? [] as $feature) {
+      if (!empty($feature['feature_id'])) {
+        $feature_ids[$feature['feature_id']] = TRUE;
+      }
+    }
+    foreach ($release_snapshot['next_features'] ?? [] as $feature) {
+      if (!empty($feature['feature_id'])) {
+        $feature_ids[$feature['feature_id']] = TRUE;
+      }
+    }
+    foreach ($backlog_groups as $group) {
+      foreach ($group['features'] ?? [] as $feature) {
+        if (!empty($feature['feature_id'])) {
+          $feature_ids[$feature['feature_id']] = TRUE;
+        }
+      }
+    }
+
+    $feature_counts = [
+      'tracked' => count($feature_ids),
+      'active_release' => count($release_snapshot['active_features'] ?? []),
+      'next_release' => count($release_snapshot['next_features'] ?? []),
+    ];
+
     $total = array_sum($totals);
     $done_pct = $total > 0 ? round(($totals['done'] / $total) * 100) : 0;
     $implemented_pct = $total > 0 ? round(($totals['implemented'] / $total) * 100) : 0;
@@ -148,6 +173,7 @@ class RoadmapController extends ControllerBase {
       '#impl_pct'   => $implemented_pct,
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
+      '#feature_counts' => $feature_counts,
       '#release_snapshot' => $release_snapshot,
       '#backlog_groups' => $backlog_groups,
       '#status_labels' => self::STATUS_LABELS,

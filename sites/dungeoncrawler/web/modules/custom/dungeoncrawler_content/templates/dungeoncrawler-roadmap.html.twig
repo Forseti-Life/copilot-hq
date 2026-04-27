@@ -11,6 +11,7 @@
  * - impl_pct: Percentage implemented/shipped (0–100).
  * - prog_pct: Percentage in progress (0–100).
  * - is_admin: Whether the current user can update statuses.
+ * - feature_counts: Live feature totals shown in tracked-information cards.
  * - release_snapshot: Live release-cycle snapshot from HQ.
  * - backlog_groups: Grouped backlog features from HQ feature briefs.
  * - status_labels: Map of status => human label.
@@ -93,6 +94,18 @@
           <article class="dc-roadmap__tracked-card">
             <span class="dc-roadmap__tracked-label">Requirements tracked</span>
             <strong class="dc-roadmap__tracked-value">{{ total }}</strong>
+          </article>
+          <article class="dc-roadmap__tracked-card">
+            <span class="dc-roadmap__tracked-label">Features tracked</span>
+            <strong class="dc-roadmap__tracked-value">{{ feature_counts.tracked }}</strong>
+          </article>
+          <article class="dc-roadmap__tracked-card">
+            <span class="dc-roadmap__tracked-label">Active release features</span>
+            <strong class="dc-roadmap__tracked-value">{{ feature_counts.active_release }}</strong>
+          </article>
+          <article class="dc-roadmap__tracked-card">
+            <span class="dc-roadmap__tracked-label">Next release features</span>
+            <strong class="dc-roadmap__tracked-value">{{ feature_counts.next_release }}</strong>
           </article>
         </div>
       </aside>
