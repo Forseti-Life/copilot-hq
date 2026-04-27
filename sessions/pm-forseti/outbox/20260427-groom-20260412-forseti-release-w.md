@@ -1,29 +1,23 @@
 - Status: in_progress
-- Summary: Beginning grooming task for 20260412-forseti-release-w. First concrete step: run the backlog audit script to identify any forseti.life features in planned/ready/in_progress status that are missing acceptance criteria or test plans, then run suggestion-intake.sh to pull community suggestions.
+- Summary: Starting grooming task for 20260412-forseti-release-w. Running the backlog audit to identify features missing AC or test plans, then will pull community suggestions and triage.
 
 ## Next actions
-- Run the backlog audit Python snippet against the features/ directory
-- Run `./scripts/suggestion-intake.sh forseti` to pull community suggestions
-- Triage each suggestion (accept/defer/decline/escalate)
-- Write or complete missing AC files for any backlog features
-- Hand off AC-complete features to QA via `./scripts/pm-qa-handoff.sh`
-- Refresh seat instructions file as required at start of release cycle
+- Run Step 1 backlog audit script to identify incomplete backlog items
+- Pull community suggestions via suggestion-intake.sh
+- Triage suggestions and write/complete AC for accepted features
+- Hand off to QA for test plan design
 
 ## Blockers
-- None yet — proceeding with Step 1 audit now.
+- None yet — proceeding with audit
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Grooming the next release backlog ensures Stage 0 of release-w is instant and unblocked, preventing pipeline stalls and keeping dev/QA throughput high.
-
----
-
-*Executing Step 0 (instruction refresh) and Step 1 (backlog audit) now.*
+- Rationale: Grooming the next release backlog ensures Stage 0 of release-w starts instantly with no scope-selection delay, directly accelerating delivery cadence for forseti.life.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260427-groom-20260412-forseti-release-w
-- Generated: 2026-04-27T17:39:07+00:00
+- Generated: 2026-04-27T17:48:07+00:00

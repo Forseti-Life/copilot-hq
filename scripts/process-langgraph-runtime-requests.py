@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import subprocess
@@ -14,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_PRIVATE_ROOT = Path("/var/www/html/forseti/web/sites/default/files/private/drupal_langgraph")
 FALLBACK_REQUEST_ROOT = REPO_ROOT / "tmp" / "langgraph-control-requests"
 RUN_LOG_DIR = REPO_ROOT / "tmp" / "langgraph-runtime-request-runs"
+LOCK_PATH = REPO_ROOT / "tmp" / ".langgraph-runtime-requests.lock"
 
 
 def now_iso() -> str:
@@ -226,26 +228,34 @@ def main() -> int:
         print(f"No runtime request root found at {root}")
         return 0
 
-    requests = pending_runtime_requests(root, args.flow_id)
-    if not requests:
-        print("No pending runtime requests found.")
-        return 0
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with LOCK_PATH.open("w", encoding="utf-8") as lock_fh:
+        try:
+            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print("Runtime request worker already running.")
+            return 0
 
-    supersede_older_requests(requests)
-    requests = pending_runtime_requests(root, args.flow_id)
-    processed = 0
+        requests = pending_runtime_requests(root, args.flow_id)
+        if not requests:
+            print("No pending runtime requests found.")
+            return 0
 
-    for path, payload in requests:
-        if args.request_id and str(payload.get("request_id", "")) != args.request_id:
-            continue
-        process_request(path, payload)
-        processed += 1
-        print(f"Processed {payload.get('request_id', path.stem)} -> {path}")
-        if processed >= max(1, args.limit):
-            break
+        supersede_older_requests(requests)
+        requests = pending_runtime_requests(root, args.flow_id)
+        processed = 0
 
-    if processed == 0:
-        print("No matching runtime requests were processed.")
+        for path, payload in requests:
+            if args.request_id and str(payload.get("request_id", "")) != args.request_id:
+                continue
+            process_request(path, payload)
+            processed += 1
+            print(f"Processed {payload.get('request_id', path.stem)} -> {path}")
+            if processed >= max(1, args.limit):
+                break
+
+        if processed == 0:
+            print("No matching runtime requests were processed.")
 
     return 0
 

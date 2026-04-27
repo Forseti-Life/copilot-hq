@@ -67,9 +67,9 @@ Approach:
 | Validate structure | Check graph completeness and shape | Test | Nested `Validate Structure` report | Supported | Validates saved flow contract against structural and runtime expectations |
 | Validate parity | Compare runtime against expected structure | Test | Current parity evidence page | Supported | Runtime parity evidence is already surfaced |
 | Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | Nested `Replay Checkpoints` inventory | Partial | Artifact inventory exists; replay/resume action is not wired yet |
-| Run now | Trigger manual execution | Run | Nested `Run Now` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
-| Pause run | Halt flow execution | Run | Nested `Pause / Resume` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
-| Resume run | Resume paused execution | Run | Nested `Pause / Resume` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
+| Run now | Trigger manual execution | Run | Nested `Run Now` request form | Partial | Fully executed for `hq_orchestrator_tick`; other flows remain request-only |
+| Pause run | Halt flow execution | Run | Nested `Pause / Resume` request form | Partial | Fully executed for `hq_orchestrator_tick` via org control; other flows remain request-only |
+| Resume run | Resume paused execution | Run | Nested `Pause / Resume` request form | Partial | Fully executed for `hq_orchestrator_tick` via org control; other flows remain request-only |
 | Inspect recent runs | Review recent execution activity | Run | Recent tick timeline | Supported | Present as execution-plane evidence |
 | Inspect traces | Inspect node/step traces | Observe | Node Traces subsection | Supported | Artifact-backed |
 | Inspect metrics | Review cadence/worker/anomaly metrics | Observe | Runtime Metrics subsection | Supported | Artifact-backed |
@@ -110,7 +110,7 @@ Approach:
 | Feature progress snapshot | LangGraph-owned work progress | Feature progress artifact | Observe Feature Progress | Supported | Working |
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
 | Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test checkpoint inventory | Partial | Artifacts are visible; replay UX is not wired yet |
-| Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces, Observe control-request visibility | Partial | Request capture and visibility exist; execution backend is not wired yet |
+| Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces, Observe control-request visibility | Partial | Shared artifact model exists and `hq_orchestrator_tick` now has a real executor; other flows are still request-only |
 | Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace, Observe control-request visibility | Partial | Version snapshots exist; promotion state is still request-backed only |
 
 ## Section-by-section definition of done
@@ -274,6 +274,21 @@ Concrete integration target:
 - Phase 1 should fully support `hq_orchestrator_tick`.
 - Other flows may remain request-only until they expose equivalent runtime
   entrypoints.
+
+Current status:
+- Phase 1 implemented for `hq_orchestrator_tick`.
+- The Drupal UI now shows runtime request status, executor outcome, and current
+  runtime state for that flow.
+- A runtime worker script now consumes `hq_orchestrator_tick` requests and maps
+  them to the real HQ hooks:
+  - `Run Now` -> `orchestrator/run.py --once`
+  - `Pause` / `Resume` -> `scripts/org-control.sh disable|enable`
+  - runtime state -> `scripts/orchestrator-loop.sh status`
+- The worker is now attached to `scripts/hq-automation-watchdog.sh`, so runtime
+  requests are processed by the existing minute-level automation path instead of
+  requiring manual execution.
+- Other flows still need their own runtime adapters before this workstream can
+  be considered complete across the entire flow registry.
 
 ### Workstream 4: version history and promotion workflow
 
