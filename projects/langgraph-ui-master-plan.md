@@ -342,12 +342,12 @@ Goal:
 Close the biggest remaining non-runtime gaps in flow management itself.
 
 Current status:
-Initial authoring hardening is now in place. Flow detail and Build both surface
-version snapshot history plus current promotion state, and Build validation now
-prevents authors from saving a default entrypoint that is not present in the
-configured node list or a node list with duplicate node names. Remaining work
-is to deepen routing/tool validation and decide whether any additional
-authoring actions belong outside nested Build.
+Authoring maturity is now complete for the current Drupal LangGraph scope. Flow
+detail and Build both surface version snapshot history plus current promotion
+state, Build/Test validation now catches duplicate nodes, duplicate routing
+rules, unknown tool bindings, and entrypoints that do not match configured
+nodes, and the UI now explicitly keeps Build as the single edit surface for the
+flow contract while leaving version capture and promotion in Release.
 
 Scope:
 1. Add richer flow version browsing from the flow detail/build side, not just
@@ -373,6 +373,13 @@ Concrete design guardrail:
 Goal:
 Finish the control-plane governance story now that the UI has real writable
 surfaces.
+
+Current status:
+Admin governance is now in place for the current control-plane artifact model.
+The Admin workspace surfaces per-root request volume, requested/running,
+failed, stale, and orphaned counts, plus writable control contracts and
+retention/cleanup guidance for runtime requests, replay requests, version
+snapshots, promotion requests, and promoted-version state.
 
 Scope:
 1. Add admin visibility for request volumes, stale requests, failed requests,
