@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarf-heritage-strong-blooded
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: deferred
 - Defer reason: Depends on dc-cr-dwarf-ancestry (deferred); re-evaluate when dwarf ancestry is activated
 - Merged into: dc-cr-dwarf-ancestry (all heritages and ancestry feats covered in bulk AC)
 - Priority: P2

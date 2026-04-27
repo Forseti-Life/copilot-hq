@@ -3,7 +3,7 @@
 - Work item id: dc-cr-alchemical-items
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: deferred
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-equipment-ch06 (requirements covered in that feature's acceptance criteria)
 - Priority: P2
