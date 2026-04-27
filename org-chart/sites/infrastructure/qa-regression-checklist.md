@@ -121,3 +121,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260426-fix-forseti-drush-bootstrap-suggestion-intake — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-fix-forseti-drush-bootstrap-suggestion-intake.md)
 - [ ] 20260426-syshealth-security-probe-forseti — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-syshealth-security-probe-forseti.md)
 - [ ] 20260426-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260426-syshealth-merge-health-remediation.md)
+- [ ] 20260427-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260427-syshealth-merge-health-remediation.md)
