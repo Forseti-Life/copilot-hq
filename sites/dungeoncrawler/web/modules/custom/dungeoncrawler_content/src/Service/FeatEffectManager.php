@@ -1741,6 +1741,32 @@ class FeatEffectManager {
         $effects['notes'][] = 'Hillock Halfling: +level HP on overnight rest; +level HP snack rider when receiving a successful Treat Wounds action.';
         break;
 
+      case 'cavern':
+        // AC: Cavern Elf — darkvision; supersedes Low-Light Vision; no duplicate.
+        $already_has_darkvision = FALSE;
+        foreach ($effects['senses'] as $sense) {
+          if (($sense['id'] ?? '') === 'darkvision') {
+            $already_has_darkvision = TRUE;
+            break;
+          }
+        }
+        if (!$already_has_darkvision) {
+          $this->addSense(
+            $effects,
+            'darkvision',
+            'Darkvision',
+            'See in complete darkness as well as bright light, in black and white. Supersedes Low-Light Vision.',
+            ['precision' => 'precise']
+          );
+        }
+        // Remove low-light-vision: darkvision is strictly superior.
+        $effects['senses'] = array_values(array_filter(
+          $effects['senses'],
+          static fn($s) => ($s['id'] ?? '') !== 'low-light-vision'
+        ));
+        $effects['notes'][] = 'Cavern Elf: darkvision (supersedes Low-Light Vision; no duplicate if already possessed).';
+        break;
+
       case 'halfling-resolve':
         // AC: Halfling Resolve (Feat 9) — when a halfling with this feat rolls
         // a success on a saving throw against an emotion effect, upgrade to crit.
