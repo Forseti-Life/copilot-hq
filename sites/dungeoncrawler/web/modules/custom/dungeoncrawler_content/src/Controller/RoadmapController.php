@@ -98,6 +98,16 @@ class RoadmapController extends ControllerBase {
     $is_admin = FALSE;
     $release_snapshot = $this->pipelineStatusResolver->getReleaseCycleSnapshot('dungeoncrawler');
     $backlog_groups = $this->pipelineStatusResolver->getFeatureBacklogGroups('dungeoncrawler');
+    $active_release_feature_ids = array_fill_keys(array_map(
+      static fn(array $feature): string => (string) ($feature['feature_id'] ?? ''),
+      $release_snapshot['active_features'] ?? []
+    ), TRUE);
+    unset($active_release_feature_ids['']);
+    $next_release_feature_ids = array_fill_keys(array_map(
+      static fn(array $feature): string => (string) ($feature['feature_id'] ?? ''),
+      $release_snapshot['next_features'] ?? []
+    ), TRUE);
+    unset($next_release_feature_ids['']);
 
     // Fetch all requirements ordered for grouping.
     $rows = $this->database->select('dc_requirements', 'r')
@@ -112,6 +122,16 @@ class RoadmapController extends ControllerBase {
     // Build grouped tree: books → chapters → sections → requirements.
     $books = [];
     $totals = ['pending' => 0, 'in_progress' => 0, 'done' => 0, 'implemented' => 0];
+    $release_scope_counts = [
+      'active' => [
+        'features' => count($release_snapshot['active_features'] ?? []),
+        'requirements' => 0,
+      ],
+      'next' => [
+        'features' => count($release_snapshot['next_features'] ?? []),
+        'requirements' => 0,
+      ],
+    ];
 
     foreach ($rows as $row) {
       $bid = $row->book_id;
@@ -157,6 +177,16 @@ class RoadmapController extends ControllerBase {
       $books[$bid]['counts'][$resolved_status]++;
       $books[$bid]['chapters'][$ck]['counts'][$resolved_status]++;
       $totals[$resolved_status]++;
+
+      $feature_id = (string) ($row->feature_id ?? '');
+      if ($feature_id !== '') {
+        if (isset($active_release_feature_ids[$feature_id])) {
+          $release_scope_counts['active']['requirements']++;
+        }
+        elseif (isset($next_release_feature_ids[$feature_id])) {
+          $release_scope_counts['next']['requirements']++;
+        }
+      }
     }
 
     // Sort books by canonical order.
@@ -176,6 +206,7 @@ class RoadmapController extends ControllerBase {
     $feature_counts = $this->pipelineStatusResolver->getFeatureCounts('dungeoncrawler', $release_snapshot);
     $feature_flow_counts = $this->pipelineStatusResolver->getFeatureFlowCounts('dungeoncrawler');
     $delivery_flow = $this->buildDeliveryFlow($totals, $feature_flow_counts);
+    $release_process_flow = $this->buildReleaseProcessFlow($release_snapshot, $release_scope_counts);
 
     $total = array_sum($totals);
     $done_pct = $total > 0 ? round(($totals['done'] / $total) * 100) : 0;
@@ -193,6 +224,7 @@ class RoadmapController extends ControllerBase {
       '#is_admin'   => $is_admin,
       '#feature_counts' => $feature_counts,
       '#delivery_flow' => $delivery_flow,
+      '#release_process_flow' => $release_process_flow,
       '#release_snapshot' => $release_snapshot,
       '#backlog_groups' => $backlog_groups,
       '#status_labels' => self::STATUS_LABELS,
@@ -260,6 +292,72 @@ class RoadmapController extends ControllerBase {
     }
 
     return $flow;
+  }
+
+  /**
+   * Builds the ordered release process flow with stage-specific counts.
+   *
+   * @param array<string, mixed> $release_snapshot
+   *   Live release snapshot data.
+   * @param array<string, array<string, int>> $release_scope_counts
+   *   Requirement/feature counts for active and next release scope.
+   *
+   * @return array<int, array<string, int|string|bool>>
+   *   Ordered release process rows for Twig.
+   */
+  private function buildReleaseProcessFlow(array $release_snapshot, array $release_scope_counts): array {
+    $is_pushed_pending_advance = ($release_snapshot['active_release_status'] ?? '') === 'pushed_pending_advance';
+    $active_features = (int) ($release_scope_counts['active']['features'] ?? 0);
+    $active_requirements = (int) ($release_scope_counts['active']['requirements'] ?? 0);
+    $next_features = (int) ($release_scope_counts['next']['features'] ?? 0);
+    $next_requirements = (int) ($release_scope_counts['next']['requirements'] ?? 0);
+
+    return [
+      [
+        'step' => 1,
+        'badge_label' => $is_pushed_pending_advance ? 'Completed' : 'Current',
+        'badge_status' => $is_pushed_pending_advance ? 'done' : 'in_progress',
+        'stage_class' => $is_pushed_pending_advance ? 'done' : 'active',
+        'title' => 'Work active release',
+        'value' => (string) ($release_snapshot['active_release'] ?: '—'),
+        'features' => $active_features,
+        'requirements' => $active_requirements,
+        'copy' => 'This is the release currently being built, tested, and scoped.',
+      ],
+      [
+        'step' => 2,
+        'badge_label' => $is_pushed_pending_advance ? 'Recorded' : 'Awaiting',
+        'badge_status' => $is_pushed_pending_advance ? 'implemented' : 'pending',
+        'stage_class' => $is_pushed_pending_advance ? 'done' : 'pending',
+        'title' => 'Push to production',
+        'value' => (string) (($release_snapshot['active_release_pushed_at'] ?? '') ?: 'Not pushed yet'),
+        'features' => $active_features,
+        'requirements' => $active_requirements,
+        'copy' => 'Production deployment of the active release lands here.',
+      ],
+      [
+        'step' => 3,
+        'badge_label' => $is_pushed_pending_advance ? 'Current' : 'Later',
+        'badge_status' => $is_pushed_pending_advance ? 'in_progress' : 'pending',
+        'stage_class' => $is_pushed_pending_advance ? 'active' : 'pending',
+        'title' => 'Advance release cycle',
+        'value' => $is_pushed_pending_advance ? 'Ready to activate next release' : 'Waiting for production push',
+        'features' => $next_features,
+        'requirements' => $next_requirements,
+        'copy' => 'After push, the boundary advances so the next release can begin.',
+      ],
+      [
+        'step' => 4,
+        'badge_label' => 'Queued',
+        'badge_status' => 'queued',
+        'stage_class' => 'tracked',
+        'title' => 'Start next release',
+        'value' => (string) ($release_snapshot['next_release'] ?: '—'),
+        'features' => $next_features,
+        'requirements' => $next_requirements,
+        'copy' => 'This release becomes active once the cycle boundary advances.',
+      ],
+    ];
   }
 
 }

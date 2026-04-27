@@ -270,6 +270,7 @@ function dungeoncrawler_content_theme(array $existing, string $type, string $the
         'is_admin'       => FALSE,
         'feature_counts' => [],
         'delivery_flow'  => [],
+        'release_process_flow' => [],
         'release_snapshot' => [],
         'backlog_groups' => [],
         'status_labels'  => [],

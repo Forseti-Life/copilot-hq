@@ -13,6 +13,7 @@
  * - is_admin: Whether the current user can update statuses.
  * - feature_counts: Live feature totals shown in tracked-information cards.
  * - delivery_flow: Ordered feature-led delivery stages with requirement rollups.
+ * - release_process_flow: Ordered release-cycle stages with scope metrics.
  * - release_snapshot: Live release-cycle snapshot from HQ.
  * - backlog_groups: Grouped backlog features from HQ feature briefs.
  * - status_labels: Map of status => human label.
@@ -117,7 +118,6 @@
         <p class="dc-roadmap__panel-copy">Live HQ release-cycle state for the DungeonCrawler product team.</p>
       </div>
 
-      {% set is_pushed_pending_advance = release_snapshot.active_release_status == 'pushed_pending_advance' %}
       <div class="dc-roadmap__release-overview">
         <section class="dc-roadmap__release-process" aria-labelledby="dc-roadmap-process-flow">
           <div class="dc-roadmap__release-section-header">
@@ -126,51 +126,27 @@
           </div>
 
           <ol class="dc-roadmap__release-flow">
-            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'done' : 'active' }}">
-              <div class="dc-roadmap__release-stage-head">
-                <span class="dc-roadmap__release-step">1</span>
-                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'done' : 'in_progress' }}">
-                  {{ is_pushed_pending_advance ? 'Completed' : 'Current' }}
-                </span>
-              </div>
-              <strong class="dc-roadmap__release-stage-title">Work active release</strong>
-              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release ?: '—' }}</div>
-              <p class="dc-roadmap__release-stage-copy">This is the release currently being built, tested, and scoped.</p>
-            </li>
-
-            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'done' : 'pending' }}">
-              <div class="dc-roadmap__release-stage-head">
-                <span class="dc-roadmap__release-step">2</span>
-                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'implemented' : 'pending' }}">
-                  {{ is_pushed_pending_advance ? 'Recorded' : 'Awaiting' }}
-                </span>
-              </div>
-              <strong class="dc-roadmap__release-stage-title">Push to production</strong>
-              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release_pushed_at ?: 'Not pushed yet' }}</div>
-              <p class="dc-roadmap__release-stage-copy">Production deployment of the active release lands here.</p>
-            </li>
-
-            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'active' : 'pending' }}">
-              <div class="dc-roadmap__release-stage-head">
-                <span class="dc-roadmap__release-step">3</span>
-                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'in_progress' : 'pending' }}">
-                  {{ is_pushed_pending_advance ? 'Current' : 'Later' }}
-                </span>
-              </div>
-              <strong class="dc-roadmap__release-stage-title">Advance release cycle</strong>
-              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release_status_label ?: '—' }}</div>
-              <p class="dc-roadmap__release-stage-copy">After push, the boundary advances so the next cycle can begin.</p>
-            </li>
-
-            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--tracked">
-              <div class="dc-roadmap__release-stage-head">
-                <span class="dc-roadmap__release-step">4</span>
-                <span class="dc-status-badge dc-status-badge--queued">Queued</span>
-              </div>
-              <strong class="dc-roadmap__release-stage-title">Start next release</strong>
-              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.next_release ?: '—' }}</div>
-              <p class="dc-roadmap__release-stage-copy">This release becomes active once the cycle boundary advances.</p>
-            </li>
+            {% for stage in release_process_flow %}
+              <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ stage.stage_class }}">
+                <div class="dc-roadmap__release-stage-head">
+                  <span class="dc-roadmap__release-step">{{ stage.step }}</span>
+                  <span class="dc-status-badge dc-status-badge--{{ stage.badge_status }}">{{ stage.badge_label }}</span>
+                </div>
+                <strong class="dc-roadmap__release-stage-title">{{ stage.title }}</strong>
+                <div class="dc-roadmap__release-stage-value">{{ stage.value }}</div>
+                <div class="dc-roadmap__release-stage-metrics">
+                  <div class="dc-roadmap__release-stage-metric">
+                    <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
+                    <strong class="dc-roadmap__release-stage-metric-value">{{ stage.requirements }}</strong>
+                  </div>
+                  <div class="dc-roadmap__release-stage-metric">
+                    <span class="dc-roadmap__release-stage-metric-label">Features</span>
+                    <strong class="dc-roadmap__release-stage-metric-value">{{ stage.features }}</strong>
+                  </div>
+                </div>
+                <p class="dc-roadmap__release-stage-copy">{{ stage.copy }}</p>
+              </li>
+            {% endfor %}
           </ol>
 
           {% if release_snapshot.release_sync_note %}
