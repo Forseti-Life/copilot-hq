@@ -23,6 +23,45 @@ class RoadmapController extends ControllerBase {
     'implemented' => '✅ Implemented',
   ];
 
+  const DELIVERY_FLOW = [
+    'pending' => [
+      'step' => 1,
+      'title' => 'Not started',
+      'badge_label' => 'First stage',
+      'badge_status' => 'pending',
+      'stage_class' => 'pending',
+      'is_final' => FALSE,
+      'copy' => 'Features not yet pulled into active implementation work.',
+    ],
+    'in_progress' => [
+      'step' => 2,
+      'title' => 'In progress',
+      'badge_label' => 'Working',
+      'badge_status' => 'in_progress',
+      'stage_class' => 'active',
+      'is_final' => FALSE,
+      'copy' => 'Features actively being built, wired, or validated.',
+    ],
+    'done' => [
+      'step' => 3,
+      'title' => 'Done',
+      'badge_label' => 'Ready to ship',
+      'badge_status' => 'done',
+      'stage_class' => 'done',
+      'is_final' => FALSE,
+      'copy' => 'Feature implementation is complete and awaiting release completion.',
+    ],
+    'implemented' => [
+      'step' => 4,
+      'title' => 'Implemented',
+      'badge_label' => 'Last stage',
+      'badge_status' => 'implemented',
+      'stage_class' => 'done',
+      'is_final' => TRUE,
+      'copy' => 'Features already shipped and reflected in live product behavior.',
+    ],
+  ];
+
   const BOOK_ORDER = ['core', 'apg', 'gmg', 'gng', 'som', 'gam', 'b1', 'b2', 'b3'];
 
   protected Connection $database;
@@ -136,6 +175,7 @@ class RoadmapController extends ControllerBase {
 
     $feature_counts = $this->pipelineStatusResolver->getFeatureCounts('dungeoncrawler', $release_snapshot);
     $feature_flow_counts = $this->pipelineStatusResolver->getFeatureFlowCounts('dungeoncrawler');
+    $delivery_flow = $this->buildDeliveryFlow($totals, $feature_flow_counts);
 
     $total = array_sum($totals);
     $done_pct = $total > 0 ? round(($totals['done'] / $total) * 100) : 0;
@@ -152,7 +192,7 @@ class RoadmapController extends ControllerBase {
       '#prog_pct'   => $in_progress_pct,
       '#is_admin'   => $is_admin,
       '#feature_counts' => $feature_counts,
-      '#feature_flow_counts' => $feature_flow_counts,
+      '#delivery_flow' => $delivery_flow,
       '#release_snapshot' => $release_snapshot,
       '#backlog_groups' => $backlog_groups,
       '#status_labels' => self::STATUS_LABELS,
@@ -193,8 +233,33 @@ class RoadmapController extends ControllerBase {
     return new JsonResponse([
       'id'     => $req_id,
       'status' => $status,
-      'label'  => self::STATUS_LABELS[$status],
+        'label'  => self::STATUS_LABELS[$status],
     ]);
+  }
+
+  /**
+   * Builds the unified feature-led delivery flow for the roadmap dashboard.
+   *
+   * @param array<string, int> $requirement_counts
+   *   Requirement totals keyed by roadmap stage.
+   * @param array<string, int> $feature_counts
+   *   Feature totals keyed by roadmap stage.
+   *
+   * @return array<int, array<string, int|string|bool>>
+   *   Ordered dashboard stage rows.
+   */
+  private function buildDeliveryFlow(array $requirement_counts, array $feature_counts): array {
+    $flow = [];
+
+    foreach (self::DELIVERY_FLOW as $status => $meta) {
+      $flow[] = $meta + [
+        'status' => $status,
+        'requirements' => (int) ($requirement_counts[$status] ?? 0),
+        'features' => (int) ($feature_counts[$status] ?? 0),
+      ];
+    }
+
+    return $flow;
   }
 
 }

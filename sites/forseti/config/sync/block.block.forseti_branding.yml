@@ -1,0 +1,25 @@
+uuid: bc04043e-8f70-476d-a2de-26ff3b2c1576
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - forseti
+_core:
+  default_config_hash: ZDOkb7vnnJePSKWwgU2vtHTF9-4W2VPirPhOsT6KmbA
+id: forseti_branding
+theme: forseti
+region: navbar_branding
+weight: -1
+provider: null
+plugin: system_branding_block
+settings:
+  id: system_branding_block
+  label: 'Site branding'
+  label_display: '0'
+  provider: system
+  use_site_logo: true
+  use_site_name: false
+  use_site_slogan: false
+visibility: {  }

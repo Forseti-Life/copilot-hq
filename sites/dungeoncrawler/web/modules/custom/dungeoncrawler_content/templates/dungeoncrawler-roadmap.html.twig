@@ -12,7 +12,7 @@
  * - prog_pct: Percentage in progress (0–100).
  * - is_admin: Whether the current user can update statuses.
  * - feature_counts: Live feature totals shown in tracked-information cards.
- * - feature_flow_counts: Feature totals mapped to the roadmap flow stages.
+ * - delivery_flow: Ordered feature-led delivery stages with requirement rollups.
  * - release_snapshot: Live release-cycle snapshot from HQ.
  * - backlog_groups: Grouped backlog features from HQ feature briefs.
  * - status_labels: Map of status => human label.
@@ -27,7 +27,7 @@
       Tracking {{ total }} requirements extracted from 9 Pathfinder 2E rulebooks.
     </p>
     <p class="dc-roadmap__subtitle">
-      Requirements linked to a <code>feature_id</code> inherit status from the live pipeline automatically; unlinked requirements fall back to roadmap import status.
+      Features are the delivery units in this dashboard. Requirements linked to a <code>feature_id</code> inherit status from the mapped feature automatically; unlinked requirements fall back to roadmap import status.
     </p>
     <p class="dc-roadmap__nav">
       <a href="https://forseti.life/roadmap">Forseti portfolio roadmap</a>
@@ -36,88 +36,33 @@
     </p>
 
     <div class="dc-roadmap__requirements-overview">
-      <section class="dc-roadmap__requirements-process" aria-labelledby="dc-roadmap-requirements-flow">
+      <section class="dc-roadmap__requirements-process" aria-labelledby="dc-roadmap-delivery-flow">
         <div class="dc-roadmap__release-section-header">
-          <h2 class="dc-roadmap__release-section-title" id="dc-roadmap-requirements-flow">Requirement delivery flow</h2>
-          <p class="dc-roadmap__release-section-copy">Ordered status stages from backlog to shipped implementation.</p>
+          <h2 class="dc-roadmap__release-section-title" id="dc-roadmap-delivery-flow">Feature delivery flow</h2>
+          <p class="dc-roadmap__release-section-copy">Features move through these stages; mapped requirements roll up under the same stage as supporting scope.</p>
         </div>
 
         <ol class="dc-roadmap__release-flow dc-roadmap__release-flow--requirements">
-          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--pending">
-            <div class="dc-roadmap__release-stage-head">
-              <span class="dc-roadmap__release-step">1</span>
-              <span class="dc-status-badge dc-status-badge--pending">First stage</span>
-            </div>
-            <strong class="dc-roadmap__release-stage-title">Not started</strong>
-            <div class="dc-roadmap__release-stage-metrics">
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ totals.pending }}</strong>
+          {% for stage in delivery_flow %}
+            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ stage.stage_class }}{% if stage.is_final %} dc-roadmap__release-stage--final{% endif %}">
+              <div class="dc-roadmap__release-stage-head">
+                <span class="dc-roadmap__release-step">{{ stage.step }}</span>
+                <span class="dc-status-badge dc-status-badge--{{ stage.badge_status }}">{{ stage.badge_label }}</span>
               </div>
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Features</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ feature_flow_counts.pending }}</strong>
+              <strong class="dc-roadmap__release-stage-title">{{ stage.title }}</strong>
+              <div class="dc-roadmap__release-stage-metrics">
+                <div class="dc-roadmap__release-stage-metric">
+                  <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
+                  <strong class="dc-roadmap__release-stage-metric-value">{{ stage.requirements }}</strong>
+                </div>
+                <div class="dc-roadmap__release-stage-metric">
+                  <span class="dc-roadmap__release-stage-metric-label">Features</span>
+                  <strong class="dc-roadmap__release-stage-metric-value">{{ stage.features }}</strong>
+                </div>
               </div>
-            </div>
-            <p class="dc-roadmap__release-stage-copy">Requirements not yet pulled into active implementation work.</p>
-          </li>
-
-          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--active">
-            <div class="dc-roadmap__release-stage-head">
-              <span class="dc-roadmap__release-step">2</span>
-              <span class="dc-status-badge dc-status-badge--in_progress">Working</span>
-            </div>
-            <strong class="dc-roadmap__release-stage-title">In progress</strong>
-            <div class="dc-roadmap__release-stage-metrics">
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ totals.in_progress }}</strong>
-              </div>
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Features</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ feature_flow_counts.in_progress }}</strong>
-              </div>
-            </div>
-            <p class="dc-roadmap__release-stage-copy">Requirements actively being built, wired, or validated.</p>
-          </li>
-
-          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--done">
-            <div class="dc-roadmap__release-stage-head">
-              <span class="dc-roadmap__release-step">3</span>
-              <span class="dc-status-badge dc-status-badge--done">Ready to ship</span>
-            </div>
-            <strong class="dc-roadmap__release-stage-title">Done</strong>
-            <div class="dc-roadmap__release-stage-metrics">
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ totals.done }}</strong>
-              </div>
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Features</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ feature_flow_counts.done }}</strong>
-              </div>
-            </div>
-            <p class="dc-roadmap__release-stage-copy">Implementation is complete and awaiting release completion.</p>
-          </li>
-
-          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--done dc-roadmap__release-stage--final">
-            <div class="dc-roadmap__release-stage-head">
-              <span class="dc-roadmap__release-step">4</span>
-              <span class="dc-status-badge dc-status-badge--implemented">Last stage</span>
-            </div>
-            <strong class="dc-roadmap__release-stage-title">Implemented</strong>
-            <div class="dc-roadmap__release-stage-metrics">
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Requirements</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ totals.implemented }}</strong>
-              </div>
-              <div class="dc-roadmap__release-stage-metric">
-                <span class="dc-roadmap__release-stage-metric-label">Features</span>
-                <strong class="dc-roadmap__release-stage-metric-value">{{ feature_flow_counts.implemented }}</strong>
-              </div>
-            </div>
-            <p class="dc-roadmap__release-stage-copy">Requirements already shipped and reflected in live product behavior.</p>
-          </li>
+              <p class="dc-roadmap__release-stage-copy">{{ stage.copy }}</p>
+            </li>
+          {% endfor %}
         </ol>
       </section>
 

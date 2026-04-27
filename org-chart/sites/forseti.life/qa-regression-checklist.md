@@ -220,3 +220,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260423-1776962948-impl-forseti-safety-content-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-safety-content-automation-validation.md)
 - [ ] 20260423-1776962948-impl-forseti-shared-modules-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-forseti-shared-modules-automation-validation.md)
 - [ ] 20260423-syshealth-tailoring-queue-errors — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-syshealth-tailoring-queue-errors.md)
+- [ ] 20260427-syshealth-drupal-watchdog-errors — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260427-syshealth-drupal-watchdog-errors.md)

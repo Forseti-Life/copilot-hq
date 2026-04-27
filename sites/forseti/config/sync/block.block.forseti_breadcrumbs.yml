@@ -1,0 +1,22 @@
+uuid: 4dfb05a1-bc7f-48e1-b461-d6fac6f07dc9
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - forseti
+_core:
+  default_config_hash: NOn8afQ_ni70Vi62VOaFoEqHk-t4lVYOSo6MpxXoQdE
+id: forseti_breadcrumbs
+theme: forseti
+region: breadcrumb
+weight: 0
+provider: null
+plugin: system_breadcrumb_block
+settings:
+  id: system_breadcrumb_block
+  label: Breadcrumbs
+  label_display: '0'
+  provider: system
+visibility: {  }

@@ -1,0 +1,22 @@
+uuid: 82a2bce1-7d13-4e5d-9262-15be32269ca2
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - forseti
+_core:
+  default_config_hash: QzYjHu1Jk7_zQnmCuGpPrwyv1QnMFR_mxxogWSDjgU4
+id: forseti_content
+theme: forseti
+region: content
+weight: -5
+provider: null
+plugin: system_main_block
+settings:
+  id: system_main_block
+  label: 'Main page content'
+  label_display: '0'
+  provider: system
+visibility: {  }
