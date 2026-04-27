@@ -3,9 +3,10 @@
 - Work item id: dc-cr-action-economy
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P0 (foundation for all encounter-mode gameplay; all class features, spells, and skill actions depend on this)
-- Release: 20260412-dungeoncrawler-release-x
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the three-action economy is already live via RulesEngine validation and combat encounter turn-state handling, including 1/2/3-action costs, free actions, reactions, and automated action consumption checks with test coverage; original shipped release provenance was not recoverable from feature history.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

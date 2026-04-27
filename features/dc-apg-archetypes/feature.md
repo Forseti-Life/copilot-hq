@@ -3,8 +3,9 @@
 - Work item id: dc-apg-archetypes
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit found only adjacent variant-rule support (for free archetype) and prerequisite dependencies, but did not find concrete APG archetype data, dedication-feat handling, or archetype feat-slot enforcement matching this feature brief.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

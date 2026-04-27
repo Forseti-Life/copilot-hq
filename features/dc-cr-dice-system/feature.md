@@ -3,9 +3,10 @@
 - Work item id: dc-cr-dice-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P0 (foundational — every resolution system depends on this)
-- Release: 20260412-dungeoncrawler-release-x
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the dice system is already live via DiceRollController and NumberGenerationService, including NdX parsing, modifiers, d%, keep-highest/keep-lowest support, roll logging, and functional/unit test coverage; original shipped release provenance was not recoverable from feature history.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

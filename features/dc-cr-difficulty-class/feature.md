@@ -3,10 +3,11 @@
 - Work item id: dc-cr-difficulty-class
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P0 (core check resolution mechanic — encounter and skill systems depend on this)
-- Release: 20260412-dungeoncrawler-release-x
-- Previous release tag: 20260407-dungeoncrawler-release-b (no shipped push evidence found during 2026-04-27 audit)
+- Release: 
+- Historical release tag: 20260407-dungeoncrawler-release-b
+- Audit note: 2026-04-27 implementation audit confirmed the DC system is already live via Calculator and CombatCalculator, including four-degree resolution, natural 1/20 degree shifts, and reusable simple/task DC tables with test coverage; original shipped release provenance was not recoverable from metadata alone.
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 1–300
