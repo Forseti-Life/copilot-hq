@@ -20,7 +20,8 @@
 # Exit 0 = all checks pass. Exit 1 = at least one FAIL.
 #
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "${ROOT_DIR}"
 
 FIX_MODE=0
 RELEASE_START_GRACE_SECONDS="${RELEASE_START_GRACE_SECONDS:-14400}"
@@ -418,7 +419,13 @@ echo "  Coordinated push readiness"
 hr
 
 SORTED_IDS="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | tr '\n' '_' | sed 's/_$//')"
-PUSH_MARKER_KEY="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | paste -sd '__')"
+PUSH_MARKER_KEY="$(
+echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | python3 -c '
+import sys
+ids = [line.strip() for line in sys.stdin if line.strip()]
+print("__".join(ids))
+'
+)"
 PUSH_MARKER="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.pushed"
 
 ADVANCE_MISSING=0

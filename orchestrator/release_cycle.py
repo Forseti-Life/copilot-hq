@@ -701,6 +701,15 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
         )
         print(f"COORDINATED-PUSH: notified pm-forseti that push was triggered for {canonical_slug}")
 
+    advance_rc, advance_out = _run(
+        ["bash", "scripts/post-coordinated-push.sh"],
+        timeout=300,
+    )
+    if advance_rc == 0:
+        print(f"COORDINATED-PUSH: post-coordinated-push completed for {combined_key}")
+    else:
+        print(f"COORDINATED-PUSH: post-coordinated-push rc={advance_rc} for {combined_key}")
+
     log.append({
         "step": "coordinated_push",
         "status": "pushed",
@@ -709,5 +718,6 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
         "signed_teams": signed_teams,
         "waiting_teams": waiting_teams,
         "deploy_rc": rc,
+        "post_push_advance_rc": advance_rc,
     })
     _emit_event("coordinated-push-done")

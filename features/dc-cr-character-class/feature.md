@@ -3,7 +3,7 @@
 - Work item id: dc-cr-character-class
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-w
 - Priority: high (core pillar of character building; defines proficiencies, HP/level, class features, and class feats — required for character creation workflow)
 - PM owner: pm-dungeoncrawler

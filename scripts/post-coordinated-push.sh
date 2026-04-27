@@ -20,28 +20,91 @@ RUNTIME_DIR="${ROOT_DIR}/tmp/release-cycle-active"
 
 echo "=== post-coordinated-push: running pre-push validation ==="
 
+# If a coordinated push marker already exists for the current release pair but
+# advance sentinels are missing, we are in post-push recovery mode. In that
+# case do not block boundary repair on unrelated tracked changes.
+RECOVERY_COMBINED_KEY="$(
+python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" <<'PY'
+import sys
+from pathlib import Path
+
+teams_json = Path(sys.argv[1])
+runtime_dir = Path(sys.argv[2])
+root = Path(sys.argv[3])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from release_cycle_helpers import combined_release_marker_key, coordinated_teams  # noqa: E402
+
+coord_teams = coordinated_teams(teams_json)
+team_release_ids = {}
+for team in coord_teams:
+    rid_file = runtime_dir / f"{team['id']}.release_id"
+    if not rid_file.exists():
+        continue
+    release_id = rid_file.read_text(encoding="utf-8").strip()
+    if release_id:
+        team_release_ids[team["id"]] = release_id
+
+if not team_release_ids:
+    raise SystemExit(0)
+
+combined_key = combined_release_marker_key(team_release_ids, coord_teams)
+if not combined_key:
+    raise SystemExit(0)
+
+pushed_dir = root / "tmp" / "auto-push-dispatched"
+marker = pushed_dir / f"{combined_key}.pushed"
+if not marker.exists():
+    raise SystemExit(0)
+
+missing_advance = False
+for team in coord_teams:
+    team_id = team["id"]
+    if team_id not in team_release_ids:
+        continue
+    if not (pushed_dir / f"{combined_key}.{team_id}.advanced").exists():
+        missing_advance = True
+        break
+
+if missing_advance:
+    print(combined_key)
+PY
+)"
+
 # ════════════════════════════════════════════════════════════════════════════
 # ROOT CAUSE FIX #3: Enforce incremental commits via pre-push validation gate
+# Recovery exception: once the push marker exists, boundary advancement must be
+# allowed to complete even if the repo has unrelated tracked changes.
 # ════════════════════════════════════════════════════════════════════════════
-if ! bash "${ROOT_DIR}/scripts/pre-push-validation.sh"; then
-    echo "❌ PRE-PUSH VALIDATION FAILED"
-    echo "Fix issues and retry:"
-    echo "  1. Run 'git status' to see changes"
-    echo "  2. Commit outstanding changes: git add + git commit"
-    echo "  3. Fix malformed escalations (run scripts/lib/escalations.sh validate)"
-    echo "  4. Re-run post-coordinated-push.sh"
-    exit 1
+if [ -n "$RECOVERY_COMBINED_KEY" ]; then
+    echo "INFO: detected pushed coordinated release awaiting boundary advance (${RECOVERY_COMBINED_KEY})"
+    echo "INFO: skipping pre-push validation because deployment already happened; completing post-push recovery instead"
+else
+    if ! bash "${ROOT_DIR}/scripts/pre-push-validation.sh"; then
+        echo "❌ PRE-PUSH VALIDATION FAILED"
+        echo "Fix issues and retry:"
+        echo "  1. Run 'git status' to see changes"
+        echo "  2. Commit outstanding changes: git add + git commit"
+        echo "  3. Fix malformed escalations (run scripts/lib/escalations.sh validate)"
+        echo "  4. Re-run post-coordinated-push.sh"
+        exit 1
+    fi
 fi
 
 echo "✅ Pre-push validation passed"
 echo "=== post-coordinated-push: advancing team release cycles ==="
 
-python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" <<'PY'
+ADVANCE_STATE_FILE="$(mktemp)"
+python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "$ADVANCE_STATE_FILE" <<'PY'
 import sys, subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-teams_json, runtime_dir, root = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+teams_json, runtime_dir, root, advance_state_file = (
+    Path(sys.argv[1]),
+    Path(sys.argv[2]),
+    Path(sys.argv[3]),
+    Path(sys.argv[4]),
+)
 sys.path.insert(0, str(root / "scripts" / "lib"))
 from release_cycle_helpers import (  # noqa: E402
     archive_stale_pm_release_items,
@@ -53,6 +116,7 @@ from release_cycle_helpers import (  # noqa: E402
 coord_teams = coordinated_teams(teams_json)
 
 team_release_ids = {}
+advanced_team_ids = set()
 
 # Step 1 — file any missing team-scoped signoffs
 for team in sorted(coord_teams, key=lambda t: t['id']):
@@ -127,7 +191,6 @@ if team_release_ids:
     # advancement target.
     today = datetime.now(timezone.utc).strftime("%Y%m%d")
     new_current_release_ids = {}
-    advanced_team_ids = set()
     for team in sorted(coord_teams, key=lambda t: t['id']):
         team_id = team['id']
         current_rid = (runtime_dir / f"{team_id}.release_id").read_text(encoding='utf-8').strip()
@@ -206,7 +269,18 @@ if team_release_ids:
                 print(f"FEATURES {release_id}: {stdout}")
 else:
     print("WARNING: no active team releases found — nothing to push")
+
+advance_state_file.write_text("1\n" if advanced_team_ids else "0\n", encoding="utf-8")
 PY
+
+ADVANCED_ANY="$(cat "${ADVANCE_STATE_FILE}" 2>/dev/null || echo 0)"
+rm -f "${ADVANCE_STATE_FILE}"
+
+if [ "${ADVANCED_ANY}" != "1" ] && [ -z "${RECOVERY_COMBINED_KEY}" ]; then
+    echo
+    echo "INFO: no release boundary changes detected; skipping boundary health and Gate R5 dispatch"
+    exit 0
+fi
 
 echo
 # Immediately apply any existing clean audit to the freshly-advanced release cycle.

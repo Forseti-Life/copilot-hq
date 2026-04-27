@@ -80,6 +80,12 @@ def _make_root(tmp: Path, *, signoffs_done: bool = True) -> Path:
     stub = scripts_dir / "release-signoff.sh"
     stub.write_text("#!/usr/bin/env bash\nexit 0\n")
     stub.chmod(0o755)
+    pre_push = scripts_dir / "pre-push-validation.sh"
+    pre_push.write_text("#!/usr/bin/env bash\nexit 0\n")
+    pre_push.chmod(0o755)
+    gate2_backstop = scripts_dir / "gate2-clean-audit-backstop.py"
+    gate2_backstop.write_text("#!/usr/bin/env python3\nprint('backstop noop')\n", encoding="utf-8")
+    gate2_backstop.chmod(0o755)
     shutil.copy2(BOUNDARY_SCRIPT, scripts_dir / "ceo-release-boundary-health.sh")
     shutil.copy2(RELEASE_CYCLE_START, scripts_dir / "release-cycle-start.sh")
     shutil.copy2(HELPER_MODULE, lib_dir / "release_cycle_helpers.py")
@@ -334,3 +340,32 @@ class TestReleaseIdAdvancement:
 
         for path in keep_items:
             assert path.is_dir(), f"non-stale item should remain in inbox: {path}"
+
+    def test_existing_push_marker_bypasses_pre_push_validation_for_recovery(self, tmp_path):
+        """Once a push marker exists, missing advance markers should recover even if validation fails."""
+        root = _make_root(tmp_path)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        active = root / "tmp" / "release-cycle-active"
+        pushed_dir = root / "tmp" / "auto-push-dispatched"
+        pushed_dir.mkdir(parents=True, exist_ok=True)
+        current_pair = "__".join(
+            [
+                f"{today}-dungeoncrawler-release-b",
+                f"{today}-forseti-release-b",
+            ]
+        )
+        (pushed_dir / f"{current_pair}.pushed").write_text("2026-04-27T12:37:40+00:00\n")
+        (root / "scripts" / "pre-push-validation.sh").write_text(
+            "#!/usr/bin/env bash\nexit 1\n",
+            encoding="utf-8",
+        )
+        (root / "scripts" / "pre-push-validation.sh").chmod(0o755)
+
+        result = _run(root)
+
+        assert result.returncode == 0, result.stderr
+        assert "skipping pre-push validation because deployment already happened" in result.stdout
+        for team_id in ("forseti", "dungeoncrawler"):
+            advanced_rid = (active / f"{team_id}.release_id").read_text().strip()
+            assert advanced_rid == f"{today}-{team_id}-release-c"
+            assert (pushed_dir / f"{current_pair}.{team_id}.advanced").exists()
