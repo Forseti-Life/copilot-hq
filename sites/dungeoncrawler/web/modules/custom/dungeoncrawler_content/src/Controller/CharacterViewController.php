@@ -286,6 +286,14 @@ class CharacterViewController extends ControllerBase {
       ? ($char_data['personality']['backstory'] ?? NULL)
       : ($char_data['backstory'] ?? NULL);
 
+    $renderer = \Drupal::service('renderer');
+    $portrait_regenerate_form = (string) $renderer->renderRoot(
+      \Drupal::formBuilder()->getForm(CharacterPortraitRegenerateForm::class, (int) $record->id, $campaign_id)
+    );
+    $portrait_upload_form = (string) $renderer->renderRoot(
+      \Drupal::formBuilder()->getForm(CharacterPortraitUploadForm::class, (int) $record->id, $campaign_id)
+    );
+
     $build = [
       '#theme' => 'character_sheet',
       '#character' => [
@@ -298,6 +306,8 @@ class CharacterViewController extends ControllerBase {
         'status' => $record->status ? 'active' : 'incomplete',
         'portrait' => $portrait_url,
         'step' => $char_data['step'] ?? 1,
+        'portrait_regenerate_form' => $portrait_regenerate_form,
+        'portrait_upload_form' => $portrait_upload_form,
       ],
       '#char_data' => $char_data,
       '#ancestry' => [
@@ -352,8 +362,6 @@ class CharacterViewController extends ControllerBase {
       '#raw_json' => json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
       '#edit_url' => Url::fromRoute('dungeoncrawler_content.character_step', ['step' => 1], ['query' => ['character_id' => $record->id]])->toString(),
       '#archive_url' => Url::fromRoute('dungeoncrawler_content.character_archive', ['character_id' => $record->id])->toString(),
-      '#portrait_regenerate_form' => \Drupal::formBuilder()->getForm(CharacterPortraitRegenerateForm::class, (int) $record->id, $campaign_id),
-      '#portrait_upload_form' => \Drupal::formBuilder()->getForm(CharacterPortraitUploadForm::class, (int) $record->id, $campaign_id),
       '#launch_url' => $launch_url->toString(),
       '#tavern_url' => $tavern_url,
       '#campaign_id' => $campaign_id,

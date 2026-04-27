@@ -47,8 +47,8 @@
       </div>
       {% if not embed_mode %}
         <div class="dc-sheet__portrait-actions">
-          {{ portrait_regenerate_form }}
-          {{ portrait_upload_form }}
+          {{ character.portrait_regenerate_form|raw }}
+          {{ character.portrait_upload_form|raw }}
         </div>
       {% endif %}
     </div>

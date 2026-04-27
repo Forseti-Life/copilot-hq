@@ -22,7 +22,7 @@ dungeoncrawler_content.dashboard:
   defaults:
     _controller: '\Drupal\dungeoncrawler_content\Controller\DashboardController::content'
     _title: 'Game Content Dashboard'
-  methods: [GET]
+  methods: [GET, POST]
   requirements:
     _permission: 'access content overview'
 

@@ -1,50 +1,52 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph flow action-surface implementation
+> Last updated: 2026-04-27 during Drupal LangGraph org-chart implementation
 
 ---
 
 ## Currently Working On
 
-Deepening the `drupal_langgraph` process-flow control panel so flow registry
-entries are directly actionable, not just descriptive.
+Deepening the `drupal_langgraph` control plane so seat relationships,
+instruction layers, and flow ownership are visible alongside workflow surfaces.
 
 ### Current state
 
-- The console already had:
-  - a first-class `Flows` tab
-  - a flow registry
-  - a flow detail page
-  - a new-flow form
-  - flow context carried across lifecycle and subsection pages
-  - nested Build/Test/Run/Observe/Release workspace controls
-- This session added direct flow actions to the registry/context surfaces:
-  - `Open`
-  - `Edit metadata`
-  - `Versions`
-  - `Archive` (custom/custom-override flows only)
-- Added a dedicated archive confirmation form/route for custom flows.
-- Reused the existing Build metadata editor and Release versions workspace
-  instead of creating duplicate action-specific editors.
-- Drupal caches were rebuilt and the new action routes were confirmed live.
-- Current runtime config has no custom flows yet, so archive actions are ready
-  but not visible until a custom flow exists.
+- Added a new top-level **Org Chart** admin page to `drupal_langgraph`.
+- Introduced an `OrgChartService` that reads:
+  - `org-chart/agents/agents.yaml`
+  - `org-chart/ownership/module-ownership.yaml`
+  - `org-chart/ownership/repository-ownership.yaml`
+  - instruction-layer file presence across org-wide / role / site / seat levels
+- The Org Chart page now renders:
+  - seat registry and reporting relationships
+  - ownership context from module/repository mappings
+  - instruction-layer coverage per seat
+  - flow-to-seat ownership mapping
+- Built-in flow ownership was normalized to the real seat ID
+  `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
+- Flow registry/detail/current-flow surfaces now render owners as seat
+  relationships rather than raw labels.
+- Flow owner help text/schema were updated so owner values are treated as seat
+  IDs.
+- Drupal caches were rebuilt and the new org chart route was confirmed live.
 
 ### Key decisions
 
 1. Keep the control-plane work inside `drupal_langgraph`.
 2. Build toward a real graph-management console in slices.
-3. Reuse nested Build/Release workspace controls as the canonical edit/version
-   surfaces instead of inventing parallel action UIs.
-4. Restrict direct archive actions to mutable custom flow records; built-ins can
-   still be edited through override-capable workspace controls.
+3. Treat seat/agent behavior as a first-class read-only model in the module,
+   sourced from org files rather than duplicated into Drupal config.
+4. Flow ownership should point to real seat IDs; for HQ orchestration flows the
+   owner is `ceo-copilot-2`.
+5. Represent the instruction stack explicitly in the UI before introducing any
+   editing affordances.
 
 ### Next actions
 
-1. Verify the action links end-to-end in the authenticated admin UI after a
-   custom flow is created.
-2. Decide whether custom archived flows need a first-class restore shortcut in
-   addition to metadata editing.
+1. Decide whether the next slice should add seat-detail routes or keep the org
+   chart as a single-page registry with collapsed details.
+2. Decide whether flow owner entry should become a constrained seat selector
+   instead of a freeform seat-ID field.
 3. Continue the next UX slice around richer node/routing/tool/prompt editing
-   surfaces and workspace IA.
+   surfaces once the org/ownership model is settled.

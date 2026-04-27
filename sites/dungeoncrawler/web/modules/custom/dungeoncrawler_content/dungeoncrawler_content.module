@@ -175,6 +175,8 @@ function dungeoncrawler_content_theme(array $existing, string $type, string $the
         'back_url' => NULL,
         'portrait_action_url' => NULL,
         'portrait_action_label' => NULL,
+        'portrait_regenerate_form' => [],
+        'portrait_upload_form' => [],
         'embed_mode' => FALSE,
       ],
       'template' => 'character-sheet',
