@@ -66,7 +66,7 @@ Approach:
 | Configure prompts / policy | Manage orchestration notes, prompt guardrails, policy | Build | Nested `Prompts & Policy` editor | Supported | Text-based editor for now |
 | Validate structure | Check graph completeness and shape | Test | Nested `Validate Structure` report | Supported | Validates saved flow contract against structural and runtime expectations |
 | Validate parity | Compare runtime against expected structure | Test | Current parity evidence page | Supported | Runtime parity evidence is already surfaced |
-| Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | Nested `Replay Checkpoints` inventory | Partial | Artifact inventory exists; replay/resume action is not wired yet |
+| Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | Nested `Replay Checkpoints` form + inventory + replay requests | Partial | Replay worker now validates checkpoint artifacts and dispatches an artifact-referenced dry-run rerun for `hq_orchestrator_tick`; native state restore is still not available |
 | Run now | Trigger manual execution | Run | Nested `Run Now` request form | Partial | Fully executed for `hq_orchestrator_tick`; other flows remain request-only |
 | Pause run | Halt flow execution | Run | Nested `Pause / Resume` request form | Partial | Fully executed for `hq_orchestrator_tick` via org control; other flows remain request-only |
 | Resume run | Resume paused execution | Run | Nested `Pause / Resume` request form | Partial | Fully executed for `hq_orchestrator_tick` via org control; other flows remain request-only |
@@ -109,7 +109,7 @@ Approach:
 | Incidents/alerts | Error/blocker/anomaly summaries | Observe artifacts/services | Observe Alerts | Supported | Working |
 | Feature progress snapshot | LangGraph-owned work progress | Feature progress artifact | Observe Feature Progress | Supported | Working |
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
-| Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test checkpoint inventory | Partial | Artifacts are visible; replay UX is not wired yet |
+| Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test replay candidate inventory + replay requests | Partial | Replay requests are now consumed for `hq_orchestrator_tick`, but only as artifact-referenced dry-run reruns; native checkpoint restore is still pending |
 | Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces, Observe control-request visibility | Partial | Shared artifact model exists and `hq_orchestrator_tick` now has a real executor; other flows are still request-only |
 | Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace, Observe control-request visibility | Partial | Version snapshots exist; promotion state is still request-backed only |
 
@@ -237,6 +237,15 @@ Concrete integration target:
 - First implementation should target the built-in `hq_orchestrator_tick` flow,
   because it already has observable checkpoint artifacts and a real LangGraph
   runtime entrypoint via `orchestrator/run.py --once`.
+
+Current status:
+- Replay candidate inventory is now separated from checkpoint support artifacts.
+- The Test workspace now includes a replay request form backed by the shared
+  control-plane artifact model.
+- Replay request history is visible per flow.
+- A replay worker now validates checkpoint artifacts and dispatches a dry-run
+  tick for `hq_orchestrator_tick`, with explicit status text stating that this
+  is artifact-referenced rerun behavior rather than native checkpoint restore.
 
 ### Workstream 3: runtime execution backend
 

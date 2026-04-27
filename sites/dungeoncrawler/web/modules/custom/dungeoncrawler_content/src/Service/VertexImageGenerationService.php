@@ -57,19 +57,19 @@ class VertexImageGenerationService {
    * @return array<string, mixed>
    *   Integration status values.
    */
-  public function getIntegrationStatus(): array {
+  public function getIntegrationStatus(array $settings = []): array {
     $config = $this->getSettings();
-    $api_key = $this->resolveApiKey($config);
+    $api_key = $this->resolveApiKey($config, $settings);
 
     return [
-      'enabled' => (bool) $config->get('vertex_image_enabled'),
+      'enabled' => $this->resolveEnabled($config, $settings),
       'has_api_key' => $api_key !== '',
-      'api_key_source' => $config->get('vertex_image_api_key') ? 'config' : (getenv('VERTEX_API_KEY') ? 'env' : 'none'),
-      'project_id' => $this->resolveProjectId($config),
-      'location' => $this->resolveLocation($config),
-      'model' => $this->resolveModel($config),
-      'endpoint' => $this->resolveEndpointTemplate($config),
-      'timeout' => $this->resolveTimeout($config),
+      'api_key_source' => $this->resolveApiKeySource($config, $settings),
+      'project_id' => $this->resolveProjectId($config, $settings),
+      'location' => $this->resolveLocation($config, $settings),
+      'model' => $this->resolveModel($config, $settings),
+      'endpoint' => $this->resolveEndpointTemplate($config, $settings),
+      'timeout' => $this->resolveTimeout($config, $settings),
     ];
   }
 
@@ -82,11 +82,11 @@ class VertexImageGenerationService {
    * @return array<string, mixed>
    *   Normalized generation result.
    */
-  public function generateImage(array $payload): array {
+  public function generateImage(array $payload, array $settings = [], bool $force_live = FALSE, bool $skip_cache = FALSE): array {
     $timestamp = $this->time->getCurrentTime();
     $request_id = sprintf('vertex-stub-%d-%d', $timestamp, random_int(1000, 9999));
     $config = $this->getSettings();
-    $status = $this->getIntegrationStatus();
+    $status = $this->getIntegrationStatus($settings);
 
     $normalized_payload = [
       'prompt' => trim((string) ($payload['prompt'] ?? '')),
@@ -107,7 +107,7 @@ class VertexImageGenerationService {
       'habitat_name' => $this->normalizeString($payload['habitat_name'] ?? ''),
     ];
 
-    if (!$status['enabled'] || !$status['has_api_key']) {
+    if (!$force_live && (!$status['enabled'] || !$status['has_api_key'])) {
       $mode = !$status['enabled'] ? 'stub' : 'stub_missing_api_key';
       $message = !$status['enabled']
         ? 'Stub accepted. External Vertex API call is not enabled in settings.'
@@ -133,19 +133,47 @@ class VertexImageGenerationService {
       ];
     }
 
-    $request_id = sprintf('vertex-live-%d-%d', $timestamp, random_int(1000, 9999));
-    $api_key = $this->resolveApiKey($config);
-    $project_id = $this->resolveProjectId($config);
-    $location = $this->resolveLocation($config);
-    $model = $this->resolveModel($config);
-
-    $cached = $this->loadCachedResult($normalized_payload, $model);
-    if ($cached !== NULL) {
-      return $cached;
+    if (!$status['has_api_key']) {
+      return [
+        'success' => FALSE,
+        'provider' => 'vertex',
+        'provider_model' => $this->resolveModel($config, $settings),
+        'mode' => $force_live ? 'live_test' : 'live',
+        'request_id' => sprintf('vertex-test-%d-%d', $timestamp, random_int(1000, 9999)),
+        'status' => 'failed',
+        'message' => 'Vertex live test requires an API key from the form, saved configuration, or VERTEX_API_KEY.',
+        'payload' => $normalized_payload,
+      ];
     }
 
-    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config), $project_id, $location, $model, $api_key);
-    $timeout = $this->resolveTimeout($config);
+    $request_id = sprintf($force_live ? 'vertex-test-%d-%d' : 'vertex-live-%d-%d', $timestamp, random_int(1000, 9999));
+    $api_key = $this->resolveApiKey($config, $settings);
+    $project_id = $this->resolveProjectId($config, $settings);
+    $location = $this->resolveLocation($config, $settings);
+    $model = $this->resolveModel($config, $settings);
+
+    if ($project_id === '') {
+      return [
+        'success' => FALSE,
+        'provider' => 'vertex',
+        'provider_model' => $model,
+        'mode' => $force_live ? 'live_test' : 'live',
+        'request_id' => $request_id,
+        'status' => 'failed',
+        'message' => $force_live ? 'Vertex live test requires a project ID.' : 'Vertex live request requires a project ID.',
+        'payload' => $normalized_payload,
+      ];
+    }
+
+    if (!$force_live && !$skip_cache) {
+      $cached = $this->loadCachedResult($normalized_payload, $model);
+      if ($cached !== NULL) {
+        return $cached;
+      }
+    }
+
+    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config, $settings), $project_id, $location, $model, $api_key);
+    $timeout = $this->resolveTimeout($config, $settings);
     $request_body = $this->buildVertexRequestBody($normalized_payload);
 
     try {
@@ -164,48 +192,71 @@ class VertexImageGenerationService {
       }
 
       $parsed_output = $this->extractOutput($decoded);
+      $has_image = $parsed_output['image_data_uri'] !== NULL || $parsed_output['image_url'] !== NULL;
+      if (!$has_image) {
+        throw new \RuntimeException('Vertex response did not include an image payload.');
+      }
 
-      $this->storeCacheEntry($normalized_payload, $model, $decoded, $parsed_output, 'ready');
+      if (!$force_live && !$skip_cache) {
+        $this->storeCacheEntry($normalized_payload, $model, $decoded, $parsed_output, 'ready');
+      }
 
-      $this->loggerFactory->get('dungeoncrawler_content')->notice('Vertex image generation live request completed.', [
+      $this->loggerFactory->get('dungeoncrawler_content')->notice($force_live ? 'Vertex image generation live test completed.' : 'Vertex image generation live request completed.', [
         'request_id' => $request_id,
         'http_status' => $response->getStatusCode(),
-        'has_image' => $parsed_output['image_data_uri'] !== NULL || $parsed_output['image_url'] !== NULL,
+        'has_image' => $has_image,
       ]);
 
       return [
         'success' => TRUE,
         'provider' => 'vertex',
         'provider_model' => $model,
-        'mode' => 'live',
+        'mode' => $force_live ? 'live_test' : 'live',
         'request_id' => $request_id,
         'status' => 'completed',
-        'message' => 'Vertex API request completed.',
+        'message' => $force_live ? 'Vertex live integration test completed.' : 'Vertex API request completed.',
         'payload' => $normalized_payload,
         'output' => $parsed_output,
       ];
     }
     catch (GuzzleException | \RuntimeException $exception) {
-      $this->loggerFactory->get('dungeoncrawler_content')->error('Vertex image generation request failed.', [
+      $this->loggerFactory->get('dungeoncrawler_content')->error($force_live ? 'Vertex image generation live test failed.' : 'Vertex image generation request failed.', [
         'request_id' => $request_id,
         'message' => $exception->getMessage(),
       ]);
 
-      $this->storeCacheEntry($normalized_payload, $model, [
-        'error' => $exception->getMessage(),
-      ], NULL, 'failed');
+      if (!$force_live && !$skip_cache) {
+        $this->storeCacheEntry($normalized_payload, $model, [
+          'error' => $exception->getMessage(),
+        ], NULL, 'failed');
+      }
 
       return [
         'success' => FALSE,
         'provider' => 'vertex',
         'provider_model' => $model,
-        'mode' => 'live',
+        'mode' => $force_live ? 'live_test' : 'live',
         'request_id' => $request_id,
         'status' => 'failed',
-        'message' => 'Vertex request failed: ' . $exception->getMessage(),
+        'message' => ($force_live ? 'Vertex live test failed: ' : 'Vertex request failed: ') . $exception->getMessage(),
         'payload' => $normalized_payload,
       ];
     }
+  }
+
+  /**
+   * Force a live Vertex provider call for connection validation.
+   *
+   * @param array<string, mixed> $payload
+   *   Integration test payload.
+   * @param array<string, mixed> $settings
+   *   Unsaved form values.
+   *
+   * @return array<string, mixed>
+   *   Live provider result.
+   */
+  public function testLiveConnection(array $payload, array $settings = []): array {
+    return $this->generateImage($payload, $settings, TRUE, TRUE);
   }
 
   /**
@@ -366,7 +417,12 @@ class VertexImageGenerationService {
   /**
    * Resolve API key from config first, then environment.
    */
-  private function resolveApiKey(ImmutableConfig $config): string {
+  private function resolveApiKey(ImmutableConfig $config, array $settings = []): string {
+    $configured_key = trim((string) ($settings['vertex_image_api_key'] ?? ''));
+    if ($configured_key !== '') {
+      return $configured_key;
+    }
+
     $configured_key = trim((string) $config->get('vertex_image_api_key'));
     if ($configured_key !== '') {
       return $configured_key;
@@ -383,31 +439,31 @@ class VertexImageGenerationService {
   /**
    * Resolve configured project id.
    */
-  private function resolveProjectId(ImmutableConfig $config): string {
-    return trim((string) $config->get('vertex_image_project_id'));
+  private function resolveProjectId(ImmutableConfig $config, array $settings = []): string {
+    return trim((string) ($settings['vertex_image_project_id'] ?? $config->get('vertex_image_project_id')));
   }
 
   /**
    * Resolve configured location.
    */
-  private function resolveLocation(ImmutableConfig $config): string {
-    $location = trim((string) $config->get('vertex_image_location'));
+  private function resolveLocation(ImmutableConfig $config, array $settings = []): string {
+    $location = trim((string) ($settings['vertex_image_location'] ?? $config->get('vertex_image_location')));
     return $location !== '' ? $location : 'us-central1';
   }
 
   /**
    * Resolve configured model name.
    */
-  private function resolveModel(ImmutableConfig $config): string {
-    $model = trim((string) $config->get('vertex_image_model'));
+  private function resolveModel(ImmutableConfig $config, array $settings = []): string {
+    $model = trim((string) ($settings['vertex_image_model'] ?? $config->get('vertex_image_model')));
     return $model !== '' ? $model : 'imagen-3.0-generate-002';
   }
 
   /**
    * Resolve configured endpoint template.
    */
-  private function resolveEndpointTemplate(ImmutableConfig $config): string {
-    $endpoint = trim((string) $config->get('vertex_image_endpoint'));
+  private function resolveEndpointTemplate(ImmutableConfig $config, array $settings = []): string {
+    $endpoint = trim((string) ($settings['vertex_image_endpoint'] ?? $config->get('vertex_image_endpoint')));
     return $endpoint !== ''
       ? $endpoint
       : 'https://{location}-aiplatform.googleapis.com/v1/projects/{project_id}/locations/{location}/publishers/google/models/{model}:predict';
@@ -416,9 +472,29 @@ class VertexImageGenerationService {
   /**
    * Resolve configured request timeout.
    */
-  private function resolveTimeout(ImmutableConfig $config): int {
-    $timeout = (int) $config->get('vertex_image_timeout');
+  private function resolveTimeout(ImmutableConfig $config, array $settings = []): int {
+    $timeout = array_key_exists('vertex_image_timeout', $settings) ? (int) $settings['vertex_image_timeout'] : (int) $config->get('vertex_image_timeout');
     return $timeout >= 5 ? $timeout : 30;
+  }
+
+  /**
+   * Resolve whether Vertex is enabled.
+   */
+  private function resolveEnabled(ImmutableConfig $config, array $settings = []): bool {
+    return array_key_exists('vertex_image_enabled', $settings)
+      ? (bool) $settings['vertex_image_enabled']
+      : (bool) $config->get('vertex_image_enabled');
+  }
+
+  /**
+   * Resolve the current API key source label.
+   */
+  private function resolveApiKeySource(ImmutableConfig $config, array $settings = []): string {
+    if (trim((string) ($settings['vertex_image_api_key'] ?? '')) !== '') {
+      return 'form';
+    }
+
+    return $config->get('vertex_image_api_key') ? 'config' : (getenv('VERTEX_API_KEY') ? 'env' : 'none');
   }
 
   /**
