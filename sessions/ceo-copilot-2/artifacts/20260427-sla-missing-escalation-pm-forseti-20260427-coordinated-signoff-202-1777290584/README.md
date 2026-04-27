@@ -2,7 +2,7 @@
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-27T11:50:05Z
+- Dispatched-at: 2026-04-27T11:40:06Z
 - Escalated agent: pm-forseti
 - Escalated item: 20260427-coordinated-signoff-20260412-dungeoncrawler-release-v
 - Escalated status: needs-info

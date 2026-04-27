@@ -2,7 +2,7 @@
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-27T11:50:05Z
+- Dispatched-at: 2026-04-27T09:40:05Z
 - Escalated agent: pm-infra
 - Escalated item: 20260427-sla-missing-escalation-qa-infra-20260427-unit-test-20260427-sysh
 - Escalated status: needs-info
@@ -20,3 +20,4 @@ Create or handle the required escalation so the blocked item is actively owned.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH missing-escalation: pm-infra`
+- Status: pending
