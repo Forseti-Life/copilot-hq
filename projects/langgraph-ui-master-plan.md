@@ -67,17 +67,17 @@ Approach:
 | Validate structure | Check graph completeness and shape | Test | Nested `Validate Structure` report | Supported | Validates saved flow contract against structural and runtime expectations |
 | Validate parity | Compare runtime against expected structure | Test | Current parity evidence page | Supported | Runtime parity evidence is already surfaced |
 | Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | Nested `Replay Checkpoints` inventory | Partial | Artifact inventory exists; replay/resume action is not wired yet |
-| Run now | Trigger manual execution | Run | No action yet | Missing | Run page is read-only today |
-| Pause run | Halt flow execution | Run | No action yet | Missing | Requires control artifact/action path |
-| Resume run | Resume paused execution | Run | No action yet | Missing | Same control path as pause |
+| Run now | Trigger manual execution | Run | Nested `Run Now` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
+| Pause run | Halt flow execution | Run | Nested `Pause / Resume` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
+| Resume run | Resume paused execution | Run | Nested `Pause / Resume` request form | Partial | Writes auditable runtime request artifacts; no worker consumes them yet |
 | Inspect recent runs | Review recent execution activity | Run | Recent tick timeline | Supported | Present as execution-plane evidence |
 | Inspect traces | Inspect node/step traces | Observe | Node Traces subsection | Supported | Artifact-backed |
 | Inspect metrics | Review cadence/worker/anomaly metrics | Observe | Runtime Metrics subsection | Supported | Artifact-backed |
 | Inspect drift | Review deviations from baseline | Observe | Drift subsection | Supported | Artifact-backed |
 | Inspect alerts/incidents | Review failures and blockers | Observe | Alerts & Incidents subsection | Supported | Artifact-backed |
 | Inspect flow-scoped feature progress | View LangGraph work status by flow | Observe | Feature Progress subsection | Supported | Explicitly flow-scoped |
-| Create version | Save/reify releaseable graph version | Release | No action yet | Missing | Needs version object + UI |
-| Promote version | Promote a version toward release | Release | No action yet | Missing | Release page is evidence-oriented today |
+| Create version | Save/reify releaseable graph version | Release | Nested `Versions` snapshot form | Supported | Writes version snapshot artifacts for the selected flow |
+| Promote version | Promote a version toward release | Release | Nested `Promote` request form | Partial | Writes auditable promotion requests; no release worker consumes them yet |
 | Review release evidence | Inspect release readiness and signoffs | Release | Release Evidence subsection | Supported | Artifact-backed |
 | Troubleshoot release blockers | Work blocker queue and inbox pressure | Release | Release Troubleshooting subsection | Supported | Artifact-backed |
 | Inspect runtime roots | Validate filesystem/runtime contract | Admin | Runtime Roots subsection | Supported | Present |
@@ -110,8 +110,8 @@ Approach:
 | Feature progress snapshot | LangGraph-owned work progress | Feature progress artifact | Observe Feature Progress | Supported | Working |
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
 | Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test checkpoint inventory | Partial | Artifacts are visible; replay UX is not wired yet |
-| Execution commands | Run/pause/resume actions | Not yet modeled in Drupal | None | Missing | Required for true runtime control |
-| Version history | Version list, provenance, promotion state | Not yet modeled in Drupal | None | Missing | Required for full release management |
+| Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces | Partial | Request capture exists; execution backend is not wired yet |
+| Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace | Partial | Version snapshots exist; promotion state is still request-backed only |
 
 ## Section-by-section definition of done
 
@@ -136,7 +136,7 @@ Approach:
 
 ### Run
 - Done when users can manually trigger, pause, resume, and inspect executions.
-- Current state: nested Run workspace exists with execution history; execution controls do not.
+- Current state: nested Run workspace exists with execution history and request surfaces; execution backend is still not wired.
 
 ### Observe
 - Done when traces, metrics, drift, alerts, and flow-scoped progress are easy
@@ -146,7 +146,7 @@ Approach:
 ### Release
 - Done when users can inspect evidence, create versions, and promote versions
   with explicit readiness signals and blockers.
-- Current state: nested Release workspace exists with evidence and troubleshooting; versioning/promote controls do not.
+- Current state: nested Release workspace exists with version snapshots, promotion requests, evidence, and troubleshooting; promotion is still partial.
 
 ### Admin
 - Done when runtime roots, artifact health, and control files are visible and

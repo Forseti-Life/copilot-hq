@@ -56,6 +56,37 @@ This file is owned by the `pm-dungeoncrawler` seat.
 - **Expected QA return (release verification):** explicit feature-level verdicts plus one release-scoped Gate 2 APPROVE/BLOCK artifact containing the exact release ID
 - **Routing rule:** do not expect qa-dungeoncrawler to create Dev inbox items; QA supplies evidence, PM/CEO route follow-up
 
+## Repo-state proof rule (required — added 2026-04-27)
+
+Your outbox must describe only actions that are already visible in repo state.
+
+Before writing `- Status: done` for any PM task that claims to have changed scope, grooming, dispatch, or feature metadata, you MUST verify the source of truth directly and base your summary on that verification:
+
+```bash
+# Verify feature directory contents
+ls -la features/<feature-id>/
+
+# Verify feature metadata changed as intended
+grep -n "^- Status:\\|^- Release:" features/<feature-id>/feature.md
+
+# Verify any dispatched follow-up inbox items actually exist
+find sessions/pm-dungeoncrawler/inbox sessions/dev-dungeoncrawler/inbox sessions/qa-dungeoncrawler/inbox \
+  -maxdepth 1 -type d | grep "<feature-id>\\|<release-id>"
+```
+
+If the repo state does not yet match the claimed result:
+- do **not** write `Status: done`
+- do **not** say files were authored, committed, dispatched, descoped, or updated
+- instead write `Status: in_progress` or `Status: blocked` and name the exact missing state
+
+Forbidden outbox patterns:
+- planning text inside the final outbox (`Let me do the actual work now`, `I'll now...`)
+- pasted tool-call transcripts or fenced pseudo-commands as proof of work not yet performed
+- claiming `commit hash below` or `artifacts were written` when the hash/files are not present
+- claiming a feature was descoped while `feature.md` still shows the active release
+
+Lesson (2026-04-27, GAP-PM-DC-SUCCESS-SHAPED-OUTBOX-01): `dc-cr-elf-heritage-arctic` produced conflicting PM outboxes — one said the feature was descoped, another said grooming artifacts were created and committed, while actual repo state still showed only `feature.md`, `Status: in_progress`, and `Release: 20260412-dungeoncrawler-release-x`. Root cause: PM wrote a success-shaped narrative without first verifying source-of-truth files. This is now a hard gate.
+
 ## Stale scope-activate fast-exit rule (required — added 2026-04-09)
 
 **Pattern:** The orchestrator's scope-activate dispatch counts features using `- Status: in_progress` + `- Website: dungeoncrawler` but does NOT filter by active release ID. If prior-release features are in_progress (stale), the count is inflated and scope-activate is never triggered for the new release. Conversely, if the orchestrator reads 0 scoped features while the PM has already activated (because it reads `Status: in_progress` from feature.md but fails to match the `Release:` field on the next line), it will fire repeated stale scope-activate dispatches.

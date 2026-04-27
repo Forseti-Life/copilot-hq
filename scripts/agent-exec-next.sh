@@ -441,7 +441,38 @@ PROMPT+="\n\nEscalation heading rule: when blocked/needs-info, put your ask unde
 
 PROMPT+="\n\nNeeds-info validity rule (CRITICAL): If you set Status: needs-info, the '## Needs from CEO' (or '## Needs from Supervisor') section MUST contain at least one specific, non-N/A item. A needs-info outbox with an empty or N/A-only Needs section is a malformed response — the orchestrator will flag it as a phantom blocker and it will NOT be routed to a supervisor. If you have no actual needs, set Status: done or Status: blocked with a specific blocker. Never use needs-info as a hedge."
 
+PROMPT+="\n\nTruthfulness rule (CRITICAL): your outbox must describe only actions already reflected in repo state or command output you actually observed. Do NOT include planning prose, tool-call transcripts, placeholder commit language, or success claims about files/inbox items that do not exist. If repo state does not yet match the claimed result, use Status: in_progress or blocked instead of done."
+
 PROMPT+="\n\n## ROI estimate\n- ROI: <integer 1-infinity>\n- Rationale: <1-3 sentences>\n\nROI guidance: higher ROI = higher org value/urgency/leverage. Use ROI to prioritize next actions and to justify escalations/delegations. Be reasonable relative to your current queue (avoid inflating everything)."
+
+invalid_outbox_reason() {
+  local text="$1"
+  local status_count
+
+  status_count="$(printf '%s\n' "$text" | grep -ciE '^\- Status:' || true)"
+  [[ "$status_count" =~ ^[0-9]+$ ]] || status_count=0
+  if [ "$status_count" -gt 1 ]; then
+    echo "response contains multiple status headers instead of one final canonical outbox"
+    return 0
+  fi
+
+  if printf '%s\n' "$text" | grep -qiE '<tool_call>|</tool_call>|Let me do the actual work now|Let me verify and execute this now|here is the real final outbox|Let me proceed with the file operations|I need to actually run the commands before claiming done|Correcting:|I'\''ll read the feature file'; then
+    echo "response contains planning or tool-transcript text instead of a canonical outbox"
+    return 0
+  fi
+
+  if printf '%s\n' "$text" | grep -qiE 'commit hash below|see below after tool execution'; then
+    echo "response references a placeholder commit hash instead of a verified hash"
+    return 0
+  fi
+
+  if printf '%s\n' "$text" | grep -qiE '\bcommitted\b' && ! printf '%s\n' "$text" | grep -qE '\b[0-9a-f]{7,40}\b'; then
+    echo "response claims committed work without including a commit hash"
+    return 0
+  fi
+
+  return 1
+}
 
 PROMPT+="$(read_file "org-chart/org-wide.instructions.md")"
 PROMPT+="$(read_file "org-chart/DECISION_OWNERSHIP_MATRIX.md")"
@@ -911,6 +942,11 @@ fi
 response="$(_recover_tool_written_outbox "$response")"
 # Normalize common formatting mistakes (e.g. "- **Status:** done", "Status: done").
 response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
+_semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
+if [ -n "$_semantic_validation_error" ]; then
+  echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
+  response=""
+fi
 if ! echo "$response" | grep -qiE '^\- Status:'; then
   if [ "$is_qa_findings_item" -eq 1 ]; then
     response=$'- Status: in_progress\n- Summary: QA findings item acknowledged; remediation work is in progress and will continue on this queue item until fixes are completed and handed off to QA.\n\n## Next actions\n- Review findings-summary evidence and prioritize highest-impact failures first.\n- Apply fixes and post clear QA handoff markers after each fix.\n- Continue until all required tests pass, then mark done.\n\n## Blockers\n- None right now.\n\n## Needs from CEO\n- N/A\n\n'"$response"
@@ -931,6 +967,11 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
         response="$(run_primary_backend "$PROMPT")"
         response="$(_recover_tool_written_outbox "$response")"
         response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
+        _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
+        if [ -n "$_semantic_validation_error" ]; then
+          echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
+          response=""
+        fi
         if copilot_rate_limited "$response"; then
           _saw_rate_limit=1
           _rate_limit_backoff="$(copilot_rate_limit_backoff_seconds "$response")"
@@ -951,6 +992,9 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
       _fail_ts="$(date +%Y%m%dT%H%M%S)"
       _fail_file="tmp/executor-failures/${_fail_ts}-${AGENT_ID}.md"
       _failure_reason="agent response missing required status header after ${_retry_count} retries"
+      if [ -n "${_semantic_validation_error:-}" ]; then
+        _failure_reason="semantic outbox validation failed: ${_semantic_validation_error}"
+      fi
       if [ "$_saw_rate_limit" -eq 1 ]; then
         _failure_reason="Copilot rate limit encountered; executor preserved inbox item for a later retry"
       fi
