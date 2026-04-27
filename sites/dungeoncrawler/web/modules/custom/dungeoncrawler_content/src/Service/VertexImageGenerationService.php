@@ -7,6 +7,8 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Google\Auth\ApplicationDefaultCredentials;
+use Google\Auth\HttpHandler\HttpHandlerFactory;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -60,11 +62,15 @@ class VertexImageGenerationService {
   public function getIntegrationStatus(): array {
     $config = $this->getSettings();
     $api_key = $this->resolveApiKey($config);
+    $adc_source = $this->resolveApplicationDefaultCredentialsSource();
+    $auth_source = $api_key !== ''
+      ? ($config->get('vertex_image_api_key') ? 'config' : 'env')
+      : $adc_source;
 
     return [
       'enabled' => (bool) $config->get('vertex_image_enabled'),
-      'has_api_key' => $api_key !== '',
-      'api_key_source' => $config->get('vertex_image_api_key') ? 'config' : (getenv('VERTEX_API_KEY') ? 'env' : 'none'),
+      'has_api_key' => $api_key !== '' || $adc_source !== 'none',
+      'api_key_source' => $auth_source,
       'project_id' => $this->resolveProjectId($config),
       'location' => $this->resolveLocation($config),
       'model' => $this->resolveModel($config),
@@ -136,29 +142,39 @@ class VertexImageGenerationService {
     }
 
     $request_id = sprintf('vertex-live-%d-%d', $timestamp, random_int(1000, 9999));
-    $api_key = $this->resolveApiKey($config);
     $project_id = $this->resolveProjectId($config);
     $location = $this->resolveLocation($config);
     $model = $this->resolveModel($config);
+    $api_key = $this->resolveApiKey($config);
+    $auth_source = (string) ($status['api_key_source'] ?? 'none');
 
     $cached = $this->loadCachedResult($normalized_payload, $model);
     if ($cached !== NULL) {
       return $cached;
     }
 
-    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config), $project_id, $location, $model, $api_key);
+    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config), $project_id, $location, $model, $api_key !== '' ? $api_key : NULL);
     $timeout = $this->resolveTimeout($config);
     $request_body = $this->buildVertexRequestBody($normalized_payload);
+    $request_options = [
+      'headers' => [
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+      ],
+      'json' => $request_body,
+      'timeout' => $timeout,
+    ];
+
+    if ($api_key === '') {
+      $access_token = $this->fetchApplicationDefaultAccessToken();
+      if ($access_token === '') {
+        throw new \RuntimeException('Vertex live mode is enabled but no API key or Google application default credentials were found.');
+      }
+      $request_options['headers']['Authorization'] = 'Bearer ' . $access_token;
+    }
 
     try {
-      $response = $this->httpClient->request('POST', $endpoint, [
-        'headers' => [
-          'Accept' => 'application/json',
-          'Content-Type' => 'application/json',
-        ],
-        'json' => $request_body,
-        'timeout' => $timeout,
-      ]);
+      $response = $this->httpClient->request('POST', $endpoint, $request_options);
 
       $decoded = json_decode((string) $response->getBody(), TRUE);
       if (!is_array($decoded)) {
@@ -180,6 +196,7 @@ class VertexImageGenerationService {
         'provider' => 'vertex',
         'provider_model' => $model,
         'mode' => 'live',
+        'auth_source' => $auth_source,
         'request_id' => $request_id,
         'status' => 'completed',
         'message' => 'Vertex API request completed.',
@@ -202,6 +219,7 @@ class VertexImageGenerationService {
         'provider' => 'vertex',
         'provider_model' => $model,
         'mode' => 'live',
+        'auth_source' => $auth_source,
         'request_id' => $request_id,
         'status' => 'failed',
         'message' => 'Vertex request failed: ' . $exception->getMessage(),
@@ -424,19 +442,49 @@ class VertexImageGenerationService {
   }
 
   /**
-   * Build endpoint URL with location, project, model and API key.
+   * Build endpoint URL with location, project, model and optional API key.
    */
-  private function buildEndpoint(string $template, string $project_id, string $location, string $model, string $api_key): string {
+  private function buildEndpoint(string $template, string $project_id, string $location, string $model, ?string $api_key = NULL): string {
     $endpoint = str_replace('{project_id}', rawurlencode($project_id), $template);
     $endpoint = str_replace('{location}', rawurlencode($location), $endpoint);
     $endpoint = str_replace('{model}', rawurlencode($model), $endpoint);
 
-    if (strpos($endpoint, 'key=') === FALSE) {
+    if ($api_key !== NULL && $api_key !== '' && strpos($endpoint, 'key=') === FALSE) {
       $separator = strpos($endpoint, '?') === FALSE ? '?' : '&';
       $endpoint .= $separator . 'key=' . rawurlencode($api_key);
     }
 
     return $endpoint;
+  }
+
+  /**
+   * Resolve whether application default credentials are available.
+   */
+  private function resolveApplicationDefaultCredentialsSource(): string {
+    $env_path = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+    if (is_string($env_path) && trim($env_path) !== '' && is_file(trim($env_path))) {
+      return 'google_application_credentials';
+    }
+
+    $home = getenv('HOME');
+    if (is_string($home) && trim($home) !== '') {
+      $well_known = rtrim($home, DIRECTORY_SEPARATOR) . '/.config/gcloud/application_default_credentials.json';
+      if (is_file($well_known)) {
+        return 'well_known_adc';
+      }
+    }
+
+    return 'none';
+  }
+
+  /**
+   * Fetch an OAuth access token via application default credentials.
+   */
+  private function fetchApplicationDefaultAccessToken(): string {
+    $credentials = ApplicationDefaultCredentials::getCredentials(['https://www.googleapis.com/auth/cloud-platform']);
+    $token = $credentials->fetchAuthToken(HttpHandlerFactory::build($this->httpClient));
+    $access_token = is_array($token) ? ($token['access_token'] ?? '') : '';
+    return is_string($access_token) ? trim($access_token) : '';
   }
 
   /**
