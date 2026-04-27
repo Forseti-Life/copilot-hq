@@ -2,7 +2,7 @@
 
 - Agent: pm-dungeoncrawler
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-27T02:40:06Z
+- Dispatched-at: 2026-04-27T02:30:05Z
 - Escalated agent: dev-dungeoncrawler
 - Escalated item: 20260427-fix-from-qa-block-dungeoncrawler
 - Escalated status: needs-info
