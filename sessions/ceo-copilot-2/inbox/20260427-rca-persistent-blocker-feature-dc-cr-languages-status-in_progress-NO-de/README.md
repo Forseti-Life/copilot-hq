@@ -1,11 +1,11 @@
-# Persistent blocker RCA: [forseti] PHP Fatal/Parse/Exception errors: 7 in last 24h (6 in last 30m)
+# Persistent blocker RCA: feature: dc-cr-languages (status=in_progress, NO dev outbox found — implementation missing)
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-ops-scheduler.py
-- Blocker: [forseti] PHP Fatal/Parse/Exception errors: 7 in last 24h (6 in last 30m)
+- Blocker: feature: dc-cr-languages (status=in_progress, NO dev outbox found — implementation missing)
 - Consecutive CEO cycles observed: 2
-- First seen: 2026-04-27T17:30:01.350831+00:00
-- Last seen: 2026-04-27T17:40:01.932839+00:00
+- First seen: 2026-04-27T18:10:01.332570+00:00
+- Last seen: 2026-04-27T18:20:01.516114+00:00
 
 ## Issue
 
