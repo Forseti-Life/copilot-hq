@@ -77,7 +77,7 @@ Approach:
 | Inspect alerts/incidents | Review failures and blockers | Observe | Alerts & Incidents subsection | Supported | Artifact-backed |
 | Inspect flow-scoped feature progress | View LangGraph work status by flow | Observe | Feature Progress subsection | Supported | Explicitly flow-scoped |
 | Create version | Save/reify releaseable graph version | Release | Nested `Versions` snapshot form | Supported | Writes version snapshot artifacts for the selected flow |
-| Promote version | Promote a version toward release | Release | Nested `Promote` request form | Partial | Writes auditable promotion requests; no release worker consumes them yet |
+| Promote version | Promote a version toward release | Release | Nested `Promote` request form + promotion state | Partial | Promotion worker now validates snapshots and records the current promoted version; richer multi-stage release semantics are still pending |
 | Review release evidence | Inspect release readiness and signoffs | Release | Release Evidence subsection | Supported | Artifact-backed |
 | Troubleshoot release blockers | Work blocker queue and inbox pressure | Release | Release Troubleshooting subsection | Supported | Artifact-backed |
 | Inspect runtime roots | Validate filesystem/runtime contract | Admin | Runtime Roots subsection | Supported | Present |
@@ -111,7 +111,7 @@ Approach:
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
 | Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test replay candidate inventory + replay requests | Partial | Replay requests are now consumed for `hq_orchestrator_tick`, but only as artifact-referenced dry-run reruns; native checkpoint restore is still pending |
 | Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces, Observe control-request visibility | Partial | Shared artifact model exists and `hq_orchestrator_tick` now has a real executor; other flows are still request-only |
-| Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace, Observe control-request visibility | Partial | Version snapshots exist; promotion state is still request-backed only |
+| Version history | Version list, provenance, promotion state | Private version snapshots, promotion request artifacts, and promoted-version state | Release workspace, Observe control-request visibility | Partial | Current promoted version is now tracked; richer provenance/history semantics are still pending |
 
 ## Section-by-section definition of done
 
@@ -327,10 +327,27 @@ Definition of done:
 Operators can follow a flow version from snapshot through promotion outcome
 without leaving the LangGraph console.
 
+Current status:
+- Promotion requests are now consumed by a watchdog-driven promotion worker.
+- Promotion validates that the requested version snapshot exists and that
+  release-cycle control is enabled before recording the current promoted version.
+- The Release workspace now shows current promotion state alongside version
+  snapshots and promotion request history.
+- Richer multi-stage promotion semantics (candidate vs shipped vs superseded
+  timelines) are still future work.
+
 ### Workstream 5: flow lifecycle and authoring maturity
 
 Goal:
 Close the biggest remaining non-runtime gaps in flow management itself.
+
+Current status:
+Initial authoring hardening is now in place. Flow detail and Build both surface
+version snapshot history plus current promotion state, and Build validation now
+prevents authors from saving a default entrypoint that is not present in the
+configured node list or a node list with duplicate node names. Remaining work
+is to deepen routing/tool validation and decide whether any additional
+authoring actions belong outside nested Build.
 
 Scope:
 1. Add richer flow version browsing from the flow detail/build side, not just

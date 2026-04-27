@@ -294,7 +294,7 @@ class DungeonCrawlerSettingsForm extends ConfigFormBase {
       '#type' => 'details',
       '#title' => $this->t('Vertex integration'),
       '#group' => 'settings_tabs',
-      '#description' => $this->t('Vertex-specific live-mode settings. Changes here do not affect Gemini.'),
+      '#description' => $this->t('Vertex-specific live-mode settings. Changes here do not affect Gemini. Authenticate with either a Vertex API key or GOOGLE_APPLICATION_CREDENTIALS service-account auth.'),
     ];
 
     $section['vertex_image_enabled'] = [
@@ -347,7 +347,7 @@ class DungeonCrawlerSettingsForm extends ConfigFormBase {
     $section['vertex_image_api_key'] = [
       '#type' => 'password',
       '#title' => $this->t('Vertex API key (optional)'),
-      '#description' => $this->t('Prefer environment variable VERTEX_API_KEY. If set here, this value is stored in Drupal configuration.'),
+      '#description' => $this->t('Prefer environment variable VERTEX_API_KEY. If set here, this value is stored in Drupal configuration. Leave blank when using GOOGLE_APPLICATION_CREDENTIALS service-account auth instead.'),
       '#maxlength' => 255,
       '#attributes' => [
         'autocomplete' => 'new-password',

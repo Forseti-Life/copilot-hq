@@ -34,6 +34,12 @@ else
   log "replay-requests result=warn detail=$(printf '%s' "$replay_out" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/[[:space:]]+$//')"
 fi
 
+if promotion_out="$(python3 ./scripts/process-langgraph-promotion-requests.py --limit 10 2>&1)"; then
+  log "promotion-requests result=ok detail=$(printf '%s' "$promotion_out" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/[[:space:]]+$//')"
+else
+  log "promotion-requests result=warn detail=$(printf '%s' "$promotion_out" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/[[:space:]]+$//')"
+fi
+
 # Keep community suggestions flowing into PM inbox automatically.
 for site in forseti dungeoncrawler; do
   if ./scripts/suggestion-intake.sh "$site" >/dev/null 2>&1; then

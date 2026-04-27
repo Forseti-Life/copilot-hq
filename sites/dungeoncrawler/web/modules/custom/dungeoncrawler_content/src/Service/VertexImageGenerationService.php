@@ -7,6 +7,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Google\Auth\Credentials\ServiceAccountCredentials;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -60,12 +61,18 @@ class VertexImageGenerationService {
   public function getIntegrationStatus(array $settings = []): array {
     $config = $this->getSettings();
     $api_key = $this->resolveApiKey($config, $settings);
+    $service_account_credentials = $this->resolveServiceAccountCredentials($settings);
+    $has_credentials = $api_key !== '' || $service_account_credentials !== NULL;
+    $auth_method = $api_key !== '' ? 'api_key' : ($service_account_credentials !== NULL ? 'service_account' : 'none');
 
     return [
       'enabled' => $this->resolveEnabled($config, $settings),
+      'has_credentials' => $has_credentials,
       'has_api_key' => $api_key !== '',
+      'has_service_account' => $service_account_credentials !== NULL,
+      'auth_method' => $auth_method,
       'api_key_source' => $this->resolveApiKeySource($config, $settings),
-      'project_id' => $this->resolveProjectId($config, $settings),
+      'project_id' => $this->resolveProjectId($config, $settings, $service_account_credentials),
       'location' => $this->resolveLocation($config, $settings),
       'model' => $this->resolveModel($config, $settings),
       'endpoint' => $this->resolveEndpointTemplate($config, $settings),
@@ -107,11 +114,11 @@ class VertexImageGenerationService {
       'habitat_name' => $this->normalizeString($payload['habitat_name'] ?? ''),
     ];
 
-    if (!$force_live && (!$status['enabled'] || !$status['has_api_key'])) {
-      $mode = !$status['enabled'] ? 'stub' : 'stub_missing_api_key';
+    if (!$force_live && (!$status['enabled'] || !$status['has_credentials'])) {
+      $mode = !$status['enabled'] ? 'stub' : 'stub_missing_credentials';
       $message = !$status['enabled']
         ? 'Stub accepted. External Vertex API call is not enabled in settings.'
-        : 'Stub accepted. Vertex live mode enabled but no API key was found.';
+        : 'Stub accepted. Vertex live mode enabled but no API key or Google service-account credentials were found.';
 
       $this->loggerFactory->get('dungeoncrawler_content')->notice('Vertex image generation stub invoked.', [
         'request_id' => $request_id,
@@ -133,7 +140,7 @@ class VertexImageGenerationService {
       ];
     }
 
-    if (!$status['has_api_key']) {
+    if (!$status['has_credentials']) {
       return [
         'success' => FALSE,
         'provider' => 'vertex',
@@ -141,14 +148,15 @@ class VertexImageGenerationService {
         'mode' => $force_live ? 'live_test' : 'live',
         'request_id' => sprintf('vertex-test-%d-%d', $timestamp, random_int(1000, 9999)),
         'status' => 'failed',
-        'message' => 'Vertex live test requires an API key from the form, saved configuration, or VERTEX_API_KEY.',
+        'message' => 'Vertex requires either an API key or GOOGLE_APPLICATION_CREDENTIALS service-account auth.',
         'payload' => $normalized_payload,
       ];
     }
 
     $request_id = sprintf($force_live ? 'vertex-test-%d-%d' : 'vertex-live-%d-%d', $timestamp, random_int(1000, 9999));
     $api_key = $this->resolveApiKey($config, $settings);
-    $project_id = $this->resolveProjectId($config, $settings);
+    $service_account_credentials = $this->resolveServiceAccountCredentials($settings);
+    $project_id = $this->resolveProjectId($config, $settings, $service_account_credentials);
     $location = $this->resolveLocation($config, $settings);
     $model = $this->resolveModel($config, $settings);
 
@@ -172,16 +180,21 @@ class VertexImageGenerationService {
       }
     }
 
+    $access_token = $api_key === '' ? $this->fetchServiceAccountAccessToken($service_account_credentials) : NULL;
     $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config, $settings), $project_id, $location, $model, $api_key);
     $timeout = $this->resolveTimeout($config, $settings);
     $request_body = $this->buildVertexRequestBody($normalized_payload);
+    $headers = [
+      'Accept' => 'application/json',
+      'Content-Type' => 'application/json',
+    ];
+    if ($access_token !== NULL) {
+      $headers['Authorization'] = 'Bearer ' . $access_token;
+    }
 
     try {
       $response = $this->httpClient->request('POST', $endpoint, [
-        'headers' => [
-          'Accept' => 'application/json',
-          'Content-Type' => 'application/json',
-        ],
+        'headers' => $headers,
         'json' => $request_body,
         'timeout' => $timeout,
       ]);
@@ -439,8 +452,18 @@ class VertexImageGenerationService {
   /**
    * Resolve configured project id.
    */
-  private function resolveProjectId(ImmutableConfig $config, array $settings = []): string {
-    return trim((string) ($settings['vertex_image_project_id'] ?? $config->get('vertex_image_project_id')));
+  private function resolveProjectId(ImmutableConfig $config, array $settings = [], ?array $service_account_credentials = NULL): string {
+    $project_id = trim((string) ($settings['vertex_image_project_id'] ?? $config->get('vertex_image_project_id')));
+    if ($project_id !== '') {
+      return $project_id;
+    }
+
+    if (is_array($service_account_credentials) && !empty($service_account_credentials['project_id'])) {
+      return trim((string) $service_account_credentials['project_id']);
+    }
+
+    $env_project = getenv('GOOGLE_CLOUD_PROJECT');
+    return is_string($env_project) ? trim($env_project) : '';
   }
 
   /**
@@ -494,7 +517,19 @@ class VertexImageGenerationService {
       return 'form';
     }
 
-    return $config->get('vertex_image_api_key') ? 'config' : (getenv('VERTEX_API_KEY') ? 'env' : 'none');
+    if ($config->get('vertex_image_api_key')) {
+      return 'config';
+    }
+
+    if (getenv('VERTEX_API_KEY')) {
+      return 'env';
+    }
+
+    if ($this->resolveServiceAccountCredentials($settings) !== NULL) {
+      return 'service_account_env';
+    }
+
+    return 'none';
   }
 
   /**
@@ -505,7 +540,7 @@ class VertexImageGenerationService {
     $endpoint = str_replace('{location}', rawurlencode($location), $endpoint);
     $endpoint = str_replace('{model}', rawurlencode($model), $endpoint);
 
-    if (strpos($endpoint, 'key=') === FALSE) {
+    if ($api_key !== '' && strpos($endpoint, 'key=') === FALSE) {
       $separator = strpos($endpoint, '?') === FALSE ? '?' : '&';
       $endpoint .= $separator . 'key=' . rawurlencode($api_key);
     }
@@ -556,6 +591,60 @@ class VertexImageGenerationService {
     }
 
     return NULL;
+  }
+
+  /**
+   * Resolve Google service-account credentials from environment.
+   *
+   * @param array<string, mixed> $settings
+   *   Unsaved form values.
+   *
+   * @return array<string, mixed>|null
+   *   Decoded credentials or NULL.
+   */
+  private function resolveServiceAccountCredentials(array $settings = []): ?array {
+    if (!empty($settings['vertex_service_account_credentials']) && is_array($settings['vertex_service_account_credentials'])) {
+      return $settings['vertex_service_account_credentials'];
+    }
+
+    $credentials_path = getenv('GOOGLE_APPLICATION_CREDENTIALS');
+    if (!is_string($credentials_path) || trim($credentials_path) === '' || !is_readable($credentials_path)) {
+      return NULL;
+    }
+
+    $decoded = json_decode((string) file_get_contents($credentials_path), TRUE);
+    if (!is_array($decoded) || empty($decoded['client_email']) || empty($decoded['private_key'])) {
+      return NULL;
+    }
+
+    return $decoded;
+  }
+
+  /**
+   * Fetch an OAuth access token from Google service-account credentials.
+   *
+   * @param array<string, mixed>|null $credentials
+   *   Decoded credentials.
+   *
+   * @return string|null
+   *   Access token or NULL.
+   */
+  private function fetchServiceAccountAccessToken(?array $credentials): ?string {
+    if ($credentials === NULL) {
+      return NULL;
+    }
+
+    $client = new ServiceAccountCredentials(
+      'https://www.googleapis.com/auth/cloud-platform',
+      $credentials
+    );
+    $token = $client->fetchAuthToken();
+
+    if (!is_array($token) || empty($token['access_token'])) {
+      throw new \RuntimeException('Failed to obtain Vertex access token from GOOGLE_APPLICATION_CREDENTIALS.');
+    }
+
+    return (string) $token['access_token'];
   }
 
   /**
