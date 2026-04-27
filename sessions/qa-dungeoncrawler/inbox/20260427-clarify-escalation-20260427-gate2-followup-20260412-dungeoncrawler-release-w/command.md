@@ -11,3 +11,5 @@
     Reference:
     - Original outbox: sessions/qa-dungeoncrawler/outbox/20260427-gate2-followup-20260412-dungeoncrawler-release-w.md
     - If/when rewritten with Decision needed + Recommendation, escalation will be created automatically.
+- Agent: qa-dungeoncrawler
+- Status: pending
