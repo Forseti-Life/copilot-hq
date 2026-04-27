@@ -1,50 +1,40 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph flows console implementation
+> Last updated: 2026-04-27 during Drupal LangGraph flow-context implementation
 
 ---
 
 ## Currently Working On
 
-Building the first real process-flow control surface inside the live
-`drupal_langgraph` module for the Forseti LangGraph console.
+Continuing the `drupal_langgraph` control-panel buildout so the selected process
+flow carries across the lifecycle tabs rather than living only in the registry.
 
 ### Current state
 
 - Added a new first-class `Flows` tab to the `drupal_langgraph` console.
-- Added new routes for:
-  - `/admin/reports/drupal-langgraph/langgraph-console/flows`
-  - `/admin/reports/drupal-langgraph/langgraph-console/flows/add`
-  - `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}`
-- Added a `ProcessFlowRegistryService` that exposes built-in process flows plus
-  custom flows saved in Drupal config.
-- Added a `ProcessFlowAddForm` so new process flows can be created directly from
-  the console as draft definitions.
-- Updated the console controller so the Flows page now shows:
-  - a process flow registry
-  - a new-flow call to action
-  - a command-to-control mapping table
-  - a detail page for each flow
-- Updated local task labels so the console now presents `Overview` plus the new
-  `Flows` tab.
-- Rebuilt Drupal caches and verified the new routes, controller surface, and
-  form surface resolve successfully in Drupal.
+- Added routes for the flow registry, flow detail, and new-flow form.
+- Added a config-backed process flow registry and a new-flow Drupal form.
+- Added a `ProcessFlowContextService` that stores the currently selected flow
+  per user using Drupal `user.data`.
+- Updated the flow detail page so opening a flow selects it as the current flow.
+- Updated the lifecycle pages so `Build`, `Test`, `Run`, `Observe`, and
+  `Release` now render a current-flow summary panel when a flow is selected.
+- Rebuilt Drupal caches and verified the selected flow context appears on all of
+  those lifecycle pages.
 
 ### Key decisions
 
-1. Keep the new work entirely inside `drupal_langgraph`.
-2. Introduce `Flows` as a first-class tab instead of overloading the current
-   home page.
-3. Use config-backed draft definitions as the first persistence layer so the UI
-   can become operational without waiting for a larger entity-model buildout.
-4. Treat this as the first slice of the broader control-plane design, not the
-   final graph editor.
+1. Keep the control-plane work entirely inside `drupal_langgraph`.
+2. Use per-user Drupal persistence for the selected flow context instead of a
+   global setting.
+3. Build the process-flow UX in slices: registry first, then flow context, then
+   deeper flow-aware authoring and operations.
 
 ### Next actions
 
-1. Add flow-aware subsections under `Build`, `Test`, `Run`, `Observe`, and
-   `Release` so the selected flow context carries across the full console.
+1. Make subsection pages under `Build`, `Test`, `Run`, `Observe`, and
+   `Release` explicitly flow-aware as well.
 2. Expand the new-flow experience from metadata capture into node, routing,
    tool, and prompt configuration.
-3. Add edit/archive actions and version-aware release controls for custom flows.
+3. Add edit/archive/version actions for custom process flows.
