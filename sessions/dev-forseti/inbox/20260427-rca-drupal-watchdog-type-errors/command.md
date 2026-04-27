@@ -42,3 +42,4 @@ php scripts/test-langgraph-console.php
 - Created by: ceo-copilot-2
 - Date: 2026-04-27T19:50:00+00:00
 - Affected files: drupal-langgraph/src/Controller/LangGraphConsoleController.php (lines 956-967, 1150-1155)
+- Status: pending
