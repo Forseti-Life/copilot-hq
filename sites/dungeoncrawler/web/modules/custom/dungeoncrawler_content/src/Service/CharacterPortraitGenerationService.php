@@ -77,7 +77,8 @@ class CharacterPortraitGenerationService {
       ];
     }
 
-    if ($this->hasExistingPortrait($character_id, $campaign_id)) {
+    $force_regenerate = !empty($options['force_regenerate']);
+    if (!$force_regenerate && $this->hasExistingPortrait($character_id, $campaign_id)) {
       return [
         'attempted' => FALSE,
         'reason' => 'already_exists',
@@ -92,8 +93,7 @@ class CharacterPortraitGenerationService {
     $provider_status = is_array($integration_status['providers'][$provider] ?? NULL)
       ? $integration_status['providers'][$provider]
       : [];
-    $has_credentials = !empty($provider_status['has_credentials']) || !empty($provider_status['has_api_key']);
-    if (empty($provider_status['enabled']) || !$has_credentials) {
+    if (empty($provider_status['enabled']) || empty($provider_status['has_api_key'])) {
       $this->logger->warning('Character portrait generation unavailable for character @character_id: provider @provider is not fully configured.', [
         '@character_id' => $character_id,
         '@provider' => $provider,
@@ -108,6 +108,7 @@ class CharacterPortraitGenerationService {
 
     $user_prompt = (string) ($options['user_prompt'] ?? ($character_data['portrait_prompt'] ?? ''));
     $prompt = $this->promptBuilder->buildPortraitPrompt($character_data, $user_prompt);
+    $character_profile_spreadsheet = $this->promptBuilder->buildCharacterProfileSpreadsheet($character_data);
 
     $payload = [
       'prompt' => $prompt,
@@ -116,6 +117,8 @@ class CharacterPortraitGenerationService {
       'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->getDefaultNegativePrompt()),
       'campaign_context' => (string) ($options['campaign_context'] ?? 'character_creation'),
       'requested_by_uid' => $owner_uid,
+      'character_profile_spreadsheet' => $character_profile_spreadsheet,
+      'character_profile_json' => json_encode($character_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
     ];
 
     try {
@@ -131,6 +134,17 @@ class CharacterPortraitGenerationService {
         'visibility' => 'owner',
         'is_primary' => 1,
       ]);
+
+      if (!empty($storage['stored']) && !empty($options['replace_existing']) && !empty($storage['image_id'])) {
+        $this->generatedImageRepository->archiveObjectImages(
+          'dc_campaign_characters',
+          (string) $character_id,
+          $campaign_id,
+          'portrait',
+          'original',
+          (int) $storage['image_id']
+        );
+      }
 
       return [
         'attempted' => TRUE,

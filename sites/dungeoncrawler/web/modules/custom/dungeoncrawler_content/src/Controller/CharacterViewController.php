@@ -6,7 +6,10 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Url;
+use Drupal\dungeoncrawler_content\Form\CharacterPortraitRegenerateForm;
+use Drupal\dungeoncrawler_content\Form\CharacterPortraitUploadForm;
 use Drupal\dungeoncrawler_content\Service\CharacterManager;
+use Drupal\dungeoncrawler_content\Service\CharacterPortraitGenerationService;
 use Drupal\dungeoncrawler_content\Service\FeatEffectManager;
 use Drupal\dungeoncrawler_content\Service\GeneratedImageRepository;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -21,13 +24,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class CharacterViewController extends ControllerBase {
 
   protected CharacterManager $characterManager;
+  protected CharacterPortraitGenerationService $portraitGenerator;
   protected FeatEffectManager $featEffectManager;
   protected GeneratedImageRepository $imageRepository;
   protected Connection $database;
   protected TimeInterface $time;
 
-  public function __construct(CharacterManager $character_manager, FeatEffectManager $feat_effect_manager, GeneratedImageRepository $image_repository, Connection $database, TimeInterface $time) {
+  public function __construct(CharacterManager $character_manager, CharacterPortraitGenerationService $portrait_generator, FeatEffectManager $feat_effect_manager, GeneratedImageRepository $image_repository, Connection $database, TimeInterface $time) {
     $this->characterManager = $character_manager;
+    $this->portraitGenerator = $portrait_generator;
     $this->featEffectManager = $feat_effect_manager;
     $this->imageRepository = $image_repository;
     $this->database = $database;
@@ -37,6 +42,7 @@ class CharacterViewController extends ControllerBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('dungeoncrawler_content.character_manager'),
+      $container->get('dungeoncrawler_content.character_portrait_generator'),
       $container->get('dungeoncrawler_content.feat_effect_manager'),
       $container->get('dungeoncrawler_content.generated_image_repository'),
       $container->get('database'),
@@ -185,16 +191,6 @@ class CharacterViewController extends ControllerBase {
       $back_url = Url::fromRoute('dungeoncrawler_content.campaigns');
     }
 
-    $character_step = max(1, min(8, (int) ($char_data['step'] ?? 1)));
-    $portrait_action_query = ['character_id' => $record->id];
-    if ($campaign_id > 0) {
-      $portrait_action_query['campaign_id'] = $campaign_id;
-    }
-    $portrait_action_step = $character_step >= 8 ? 8 : $character_step;
-    $portrait_action_url = Url::fromRoute('dungeoncrawler_content.character_step', ['step' => $portrait_action_step], [
-      'query' => $portrait_action_query,
-    ])->toString();
-
     $ancestry_name = is_array($char_data['ancestry'] ?? NULL)
       ? ($char_data['ancestry']['name'] ?? 'Unknown')
       : ($char_data['ancestry'] ?? 'Unknown');
@@ -301,7 +297,7 @@ class CharacterViewController extends ControllerBase {
         'hero_points' => $char_data['hero_points'] ?? 1,
         'status' => $record->status ? 'active' : 'incomplete',
         'portrait' => $portrait_url,
-        'step' => $character_step,
+        'step' => $char_data['step'] ?? 1,
       ],
       '#char_data' => $char_data,
       '#ancestry' => [
@@ -356,14 +352,12 @@ class CharacterViewController extends ControllerBase {
       '#raw_json' => json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
       '#edit_url' => Url::fromRoute('dungeoncrawler_content.character_step', ['step' => 1], ['query' => ['character_id' => $record->id]])->toString(),
       '#archive_url' => Url::fromRoute('dungeoncrawler_content.character_archive', ['character_id' => $record->id])->toString(),
+      '#portrait_regenerate_form' => \Drupal::formBuilder()->getForm(CharacterPortraitRegenerateForm::class, (int) $record->id, $campaign_id),
+      '#portrait_upload_form' => \Drupal::formBuilder()->getForm(CharacterPortraitUploadForm::class, (int) $record->id, $campaign_id),
       '#launch_url' => $launch_url->toString(),
       '#tavern_url' => $tavern_url,
       '#campaign_id' => $campaign_id,
       '#back_url' => $back_url->toString(),
-      '#portrait_action_url' => !$portrait_url ? $portrait_action_url : NULL,
-      '#portrait_action_label' => $character_step >= 8
-        ? $this->t('Add profile picture')
-        : $this->t('Continue setup to add profile picture'),
       '#attached' => [
         'library' => ['dungeoncrawler_content/character-sheet'],
       ],
@@ -530,6 +524,50 @@ class CharacterViewController extends ControllerBase {
   public function viewTitle(int $character_id): string {
     $record = $this->characterManager->loadCharacter($character_id);
     return $record ? $record->name : 'Character Not Found';
+  }
+
+  /**
+   * Regenerate a character portrait using the saved character record.
+   */
+  public function regeneratePortrait(int $character_id): RedirectResponse {
+    $record = $this->characterManager->loadCharacter($character_id);
+    if (!$record) {
+      throw new NotFoundHttpException();
+    }
+
+    if (!$this->characterManager->isOwner($record) && !$this->currentUser()->hasPermission('administer site configuration')) {
+      throw new AccessDeniedHttpException();
+    }
+
+    $campaign_id = (int) (\Drupal::request()->query->get('campaign_id') ?? 0);
+    $character_data = $this->characterManager->getCharacterData($record);
+    $portrait_result = $this->portraitGenerator->generatePortrait(
+      $character_data,
+      $character_id,
+      (int) $this->currentUser()->id(),
+      $campaign_id > 0 ? $campaign_id : NULL,
+      [
+        'generate' => TRUE,
+        'user_prompt' => $character_data['portrait_prompt'] ?? '',
+        'force_regenerate' => TRUE,
+        'replace_existing' => TRUE,
+      ]
+    );
+
+    $storage = $portrait_result['storage'] ?? [];
+    if (!empty($storage['stored'])) {
+      $this->messenger()->addStatus($this->t('Portrait regenerated successfully.'));
+    }
+    elseif (($portrait_result['reason'] ?? '') === 'provider_unavailable') {
+      $this->messenger()->addWarning($this->t('Portrait regeneration is currently unavailable because the configured image provider is not ready.'));
+    }
+    else {
+      $reason = (string) ($storage['reason'] ?? ($portrait_result['reason'] ?? 'generation_failed'));
+      $this->messenger()->addWarning($this->t('Portrait regeneration did not produce a stored image (@reason).', ['@reason' => $reason]));
+    }
+
+    $redirect = Url::fromRoute('dungeoncrawler_content.character_view', ['character_id' => $character_id], $campaign_id > 0 ? ['query' => ['campaign_id' => $campaign_id]] : [])->toString();
+    return new RedirectResponse($redirect);
   }
 
   /**

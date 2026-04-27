@@ -380,6 +380,14 @@
   flex-wrap: wrap;
 }
 
+.dc-sheet__portrait-panel {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .dc-sheet__portrait-wrap {
   width: 120px;
   height: 120px;
@@ -387,20 +395,13 @@
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
+  margin: 0 auto;
 }
 
 .dc-sheet__portrait {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.dc-sheet__portrait-link {
-  display: block;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  text-decoration: none;
 }
 
 .dc-sheet__portrait-placeholder {
@@ -410,40 +411,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed rgba(255, 255, 255, 0.28);
 }
 
 .dc-sheet__portrait-placeholder span {
   font-family: 'Cinzel', serif;
   font-size: 3rem;
   color: var(--dc-torch-gold);
-}
-
-.dc-sheet__portrait-cta {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  top: 8px;
-  padding: 0.35rem 0.5rem;
-  border-radius: var(--dc-radius-md);
-  background: rgba(15, 23, 42, 0.88);
-  color: var(--bs-light);
-  font-size: 0.7rem;
-  font-weight: 700;
-  line-height: 1.2;
-  text-align: center;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-}
-
-.dc-sheet__portrait-link:hover .dc-sheet__portrait-placeholder,
-.dc-sheet__portrait-link:focus-visible .dc-sheet__portrait-placeholder {
-  border-color: rgba(255, 215, 0, 0.65);
-}
-
-.dc-sheet__portrait-link:focus-visible {
-  outline: 2px solid var(--dc-torch-gold);
-  outline-offset: 3px;
-  border-radius: var(--dc-radius-lg);
 }
 
 .dc-sheet__status-dead {
@@ -457,6 +430,33 @@
   font-weight: 700;
   font-size: 0.75rem;
   padding: 2px;
+}
+
+.dc-sheet__portrait-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dc-sheet__portrait-actions .dc-btn,
+.dc-sheet__portrait-actions .form-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.dc-sheet__portrait-actions .form-item {
+  margin: 0;
+}
+
+.dc-sheet__portrait-actions .description {
+  font-size: 0.75rem;
+  color: var(--dc-text-muted);
+  margin-top: 0.25rem;
+}
+
+.dc-sheet__portrait-actions input[type="file"] {
+  width: 100%;
+  font-size: 0.8rem;
 }
 
 .dc-sheet__identity {

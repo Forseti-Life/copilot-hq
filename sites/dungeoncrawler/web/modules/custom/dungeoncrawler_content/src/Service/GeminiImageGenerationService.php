@@ -63,17 +63,17 @@ class GeminiImageGenerationService {
    * @return array<string, mixed>
    *   Integration status values.
    */
-  public function getIntegrationStatus(array $settings = []): array {
+  public function getIntegrationStatus(): array {
     $config = $this->getSettings();
-    $api_key = $this->resolveApiKey($config, $settings);
+    $api_key = $this->resolveApiKey($config);
 
     return [
-      'enabled' => $this->resolveEnabled($config, $settings),
+      'enabled' => (bool) $config->get('gemini_image_enabled'),
       'has_api_key' => $api_key !== '',
-      'api_key_source' => $this->resolveApiKeySource($config, $settings),
-      'model' => $this->resolveModel($config, $settings),
-      'endpoint' => $this->resolveEndpointTemplate($config, $settings),
-      'timeout' => $this->resolveTimeout($config, $settings),
+      'api_key_source' => $config->get('gemini_image_api_key') ? 'config' : (getenv('GEMINI_API_KEY') ? 'env' : 'none'),
+      'model' => $this->resolveModel($config),
+      'endpoint' => $this->resolveEndpointTemplate($config),
+      'timeout' => $this->resolveTimeout($config),
     ];
   }
 
@@ -86,11 +86,11 @@ class GeminiImageGenerationService {
    * @return array
    *   Stubbed response payload.
    */
-  public function generateImage(array $payload, array $settings = [], bool $force_live = FALSE): array {
+  public function generateImage(array $payload): array {
     $timestamp = $this->time->getCurrentTime();
     $request_id = sprintf('gemini-stub-%d-%d', $timestamp, random_int(1000, 9999));
     $config = $this->getSettings();
-    $status = $this->getIntegrationStatus($settings);
+    $status = $this->getIntegrationStatus();
 
     $normalized_payload = [
       'prompt' => trim((string) ($payload['prompt'] ?? '')),
@@ -101,10 +101,12 @@ class GeminiImageGenerationService {
       'negative_prompt' => trim((string) ($payload['negative_prompt'] ?? '')),
       'campaign_context' => trim((string) ($payload['campaign_context'] ?? '')),
       'requested_by_uid' => (int) ($payload['requested_by_uid'] ?? 0),
+      'character_profile_spreadsheet' => trim((string) ($payload['character_profile_spreadsheet'] ?? '')),
+      'character_profile_json' => trim((string) ($payload['character_profile_json'] ?? '')),
       'requested_at' => $timestamp,
     ];
 
-    if (!$force_live && (!$status['enabled'] || !$status['has_api_key'])) {
+    if (!$status['enabled'] || !$status['has_api_key']) {
       $mode = !$status['enabled'] ? 'stub' : 'stub_missing_api_key';
       $message = !$status['enabled']
         ? 'Stub accepted. External Gemini API call is not enabled in settings.'
@@ -130,23 +132,11 @@ class GeminiImageGenerationService {
       ];
     }
 
-    if (!$status['has_api_key']) {
-      return [
-        'success' => FALSE,
-        'provider' => 'gemini',
-        'mode' => $force_live ? 'live_test' : 'live',
-        'request_id' => sprintf('gemini-test-%d-%d', $timestamp, random_int(1000, 9999)),
-        'status' => 'failed',
-        'message' => 'Gemini live test requires an API key from the form, saved configuration, or GEMINI_API_KEY.',
-        'payload' => $normalized_payload,
-      ];
-    }
-
-    $request_id = sprintf($force_live ? 'gemini-test-%d-%d' : 'gemini-live-%d-%d', $timestamp, random_int(1000, 9999));
-    $api_key = $this->resolveApiKey($config, $settings);
-    $model = $this->resolveModel($config, $settings);
-    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config, $settings), $model, $api_key);
-    $timeout = $this->resolveTimeout($config, $settings);
+    $request_id = sprintf('gemini-live-%d-%d', $timestamp, random_int(1000, 9999));
+    $api_key = $this->resolveApiKey($config);
+    $model = $this->resolveModel($config);
+    $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config), $model, $api_key);
+    $timeout = $this->resolveTimeout($config);
     $request_body = $this->buildGeminiRequestBody($normalized_payload);
 
     try {
@@ -165,30 +155,26 @@ class GeminiImageGenerationService {
       }
 
       $parsed_output = $this->extractOutput($decoded);
-      $has_image = $parsed_output['image_data_uri'] !== NULL || $parsed_output['image_url'] !== NULL;
-      if (!$has_image) {
-        throw new \RuntimeException('Gemini response did not include an image payload.');
-      }
 
-      $this->loggerFactory->get('dungeoncrawler_content')->notice($force_live ? 'Gemini image generation live test completed.' : 'Gemini image generation live request completed.', [
+      $this->loggerFactory->get('dungeoncrawler_content')->notice('Gemini image generation live request completed.', [
         'request_id' => $request_id,
         'http_status' => $response->getStatusCode(),
-        'has_image' => $has_image,
+        'has_image' => $parsed_output['image_data_uri'] !== NULL || $parsed_output['image_url'] !== NULL,
       ]);
 
       return [
         'success' => TRUE,
         'provider' => 'gemini',
-        'mode' => $force_live ? 'live_test' : 'live',
+        'mode' => 'live',
         'request_id' => $request_id,
         'status' => 'completed',
-        'message' => $force_live ? 'Gemini live integration test completed.' : 'Gemini API request completed.',
+        'message' => 'Gemini API request completed.',
         'payload' => $normalized_payload,
         'output' => $parsed_output,
       ];
     }
     catch (GuzzleException | \RuntimeException $exception) {
-      $this->loggerFactory->get('dungeoncrawler_content')->error($force_live ? 'Gemini image generation live test failed.' : 'Gemini image generation request failed.', [
+      $this->loggerFactory->get('dungeoncrawler_content')->error('Gemini image generation request failed.', [
         'request_id' => $request_id,
         'message' => $exception->getMessage(),
       ]);
@@ -196,28 +182,13 @@ class GeminiImageGenerationService {
       return [
         'success' => FALSE,
         'provider' => 'gemini',
-        'mode' => $force_live ? 'live_test' : 'live',
+        'mode' => 'live',
         'request_id' => $request_id,
         'status' => 'failed',
-        'message' => ($force_live ? 'Gemini live test failed: ' : 'Gemini request failed: ') . $exception->getMessage(),
+        'message' => 'Gemini request failed: ' . $exception->getMessage(),
         'payload' => $normalized_payload,
       ];
     }
-  }
-
-  /**
-   * Force a live Gemini provider call for connection validation.
-   *
-   * @param array<string, mixed> $payload
-   *   Integration test payload.
-   * @param array<string, mixed> $settings
-   *   Unsaved form values.
-   *
-   * @return array<string, mixed>
-   *   Live provider result.
-   */
-  public function testLiveConnection(array $payload, array $settings = []): array {
-    return $this->generateImage($payload, $settings, TRUE);
   }
 
   /**
@@ -230,12 +201,7 @@ class GeminiImageGenerationService {
   /**
    * Resolve API key from config first, then environment.
    */
-  private function resolveApiKey(ImmutableConfig $config, array $settings = []): string {
-    $configured_key = trim((string) ($settings['gemini_image_api_key'] ?? ''));
-    if ($configured_key !== '') {
-      return $configured_key;
-    }
-
+  private function resolveApiKey(ImmutableConfig $config): string {
     $configured_key = trim((string) $config->get('gemini_image_api_key'));
     if ($configured_key !== '') {
       return $configured_key;
@@ -252,45 +218,25 @@ class GeminiImageGenerationService {
   /**
    * Resolve configured model name.
    */
-  private function resolveModel(ImmutableConfig $config, array $settings = []): string {
-    $model = trim((string) ($settings['gemini_image_model'] ?? $config->get('gemini_image_model')));
+  private function resolveModel(ImmutableConfig $config): string {
+    $model = trim((string) $config->get('gemini_image_model'));
     return $model !== '' ? $model : 'gemini-2.0-flash-exp';
   }
 
   /**
    * Resolve configured endpoint template.
    */
-  private function resolveEndpointTemplate(ImmutableConfig $config, array $settings = []): string {
-    $endpoint = trim((string) ($settings['gemini_image_endpoint'] ?? $config->get('gemini_image_endpoint')));
+  private function resolveEndpointTemplate(ImmutableConfig $config): string {
+    $endpoint = trim((string) $config->get('gemini_image_endpoint'));
     return $endpoint !== '' ? $endpoint : 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent';
   }
 
   /**
    * Resolve configured request timeout.
    */
-  private function resolveTimeout(ImmutableConfig $config, array $settings = []): int {
-    $timeout = array_key_exists('gemini_image_timeout', $settings) ? (int) $settings['gemini_image_timeout'] : (int) $config->get('gemini_image_timeout');
+  private function resolveTimeout(ImmutableConfig $config): int {
+    $timeout = (int) $config->get('gemini_image_timeout');
     return $timeout >= 5 ? $timeout : 30;
-  }
-
-  /**
-   * Resolve whether Gemini is enabled.
-   */
-  private function resolveEnabled(ImmutableConfig $config, array $settings = []): bool {
-    return array_key_exists('gemini_image_enabled', $settings)
-      ? (bool) $settings['gemini_image_enabled']
-      : (bool) $config->get('gemini_image_enabled');
-  }
-
-  /**
-   * Resolve the current API key source label.
-   */
-  private function resolveApiKeySource(ImmutableConfig $config, array $settings = []): string {
-    if (trim((string) ($settings['gemini_image_api_key'] ?? '')) !== '') {
-      return 'form';
-    }
-
-    return $config->get('gemini_image_api_key') ? 'config' : (getenv('GEMINI_API_KEY') ? 'env' : 'none');
   }
 
   /**

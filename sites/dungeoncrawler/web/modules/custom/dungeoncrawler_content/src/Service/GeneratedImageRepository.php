@@ -8,6 +8,7 @@ use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Component\Uuid\UuidInterface;
+use Drupal\file\FileInterface;
 
 /**
  * Repository for generated image records and object links.
@@ -439,6 +440,186 @@ class GeneratedImageRepository {
 
     $rows = $query->execute()->fetchAll(\PDO::FETCH_ASSOC);
     return is_array($rows) ? $rows : [];
+  }
+
+  /**
+   * Archives linked images for an object slot, optionally preserving one image.
+   */
+  public function archiveObjectImages(string $table_name, string $object_id, ?int $campaign_id = NULL, ?string $slot = NULL, ?string $variant = NULL, ?int $exclude_image_id = NULL): int {
+    $query = $this->database->select('dc_generated_image_links', 'l');
+    $query->fields('l', ['image_id']);
+    $query->condition('l.table_name', $table_name);
+    $query->condition('l.object_id', $object_id);
+
+    if ($campaign_id !== NULL) {
+      $query->condition('l.campaign_id', $campaign_id);
+    }
+    if ($slot !== NULL && $slot !== '') {
+      $query->condition('l.slot', $slot);
+    }
+    if ($variant !== NULL && $variant !== '') {
+      $query->condition('l.variant', $variant);
+    }
+    if ($exclude_image_id !== NULL) {
+      $query->condition('l.image_id', $exclude_image_id, '<>');
+    }
+
+    $image_ids = $query->execute()->fetchCol();
+    if (!is_array($image_ids) || $image_ids === []) {
+      return 0;
+    }
+
+    $image_ids = array_values(array_unique(array_map('intval', $image_ids)));
+
+    $delete = $this->database->delete('dc_generated_image_links')
+      ->condition('table_name', $table_name)
+      ->condition('object_id', $object_id)
+      ->condition('image_id', $image_ids, 'IN');
+
+    if ($campaign_id !== NULL) {
+      $delete->condition('campaign_id', $campaign_id);
+    }
+    if ($slot !== NULL && $slot !== '') {
+      $delete->condition('slot', $slot);
+    }
+    if ($variant !== NULL && $variant !== '') {
+      $delete->condition('variant', $variant);
+    }
+
+    $delete->execute();
+
+    $now = $this->time->getCurrentTime();
+    foreach ($image_ids as $image_id) {
+      $remaining_links = (int) $this->database->select('dc_generated_image_links', 'l')
+        ->condition('l.image_id', $image_id)
+        ->countQuery()
+        ->execute()
+        ->fetchField();
+
+      if ($remaining_links === 0) {
+        $this->database->update('dc_generated_images')
+          ->fields([
+            'deleted' => 1,
+            'updated' => $now,
+          ])
+          ->condition('id', $image_id)
+          ->execute();
+      }
+    }
+
+    return count($image_ids);
+  }
+
+  /**
+   * Persists an uploaded image file and links it to an object slot.
+   *
+   * @param \Drupal\file\FileInterface $file
+   *   Uploaded file entity.
+   * @param array<string, mixed> $link_context
+   *   Optional link context matching persistGeneratedImage().
+   *
+   * @return array<string, mixed>
+   *   Persistence summary.
+   */
+  public function persistUploadedImage(FileInterface $file, array $link_context = []): array {
+    if (!$this->database->schema()->tableExists('dc_generated_images') || !$this->database->schema()->tableExists('dc_generated_image_links')) {
+      return [
+        'stored' => FALSE,
+        'reason' => 'tables_missing',
+      ];
+    }
+
+    $file_uri = $file->getFileUri();
+    if ($file_uri === '') {
+      return [
+        'stored' => FALSE,
+        'reason' => 'missing_file_uri',
+      ];
+    }
+
+    $image_uuid = $this->uuid->generate();
+    $now = $this->time->getCurrentTime();
+    $real_path = $this->fileSystem->realpath($file_uri) ?: NULL;
+    $dimensions = ($real_path && is_file($real_path)) ? (@getimagesize($real_path) ?: [NULL, NULL]) : [NULL, NULL];
+    $bytes = ($real_path && is_file($real_path)) ? @filesize($real_path) : ($file->getSize() ?: NULL);
+    $storage_scheme = strstr($file_uri, '://', TRUE) ?: 'public';
+    $public_url = NULL;
+
+    try {
+      $public_url = $this->fileUrlGenerator->generateString($file_uri);
+    }
+    catch (\Throwable) {
+      $public_url = NULL;
+    }
+
+    $owner_uid = (int) ($link_context['owner_uid'] ?? $file->getOwnerId() ?? 0);
+    $image_id = (int) $this->database->insert('dc_generated_images')
+      ->fields([
+        'image_uuid' => $image_uuid,
+        'owner_uid' => $owner_uid,
+        'provider' => 'upload',
+        'provider_request_id' => '',
+        'provider_model' => '',
+        'status' => 'ready',
+        'mime_type' => (string) ($file->getMimeType() ?? ''),
+        'width' => isset($dimensions[0]) ? (int) $dimensions[0] : NULL,
+        'height' => isset($dimensions[1]) ? (int) $dimensions[1] : NULL,
+        'bytes' => $bytes !== FALSE && $bytes !== NULL ? (int) $bytes : NULL,
+        'storage_scheme' => $storage_scheme,
+        'file_uri' => $file_uri,
+        'public_url' => $public_url,
+        'sha256' => NULL,
+        'prompt_text' => '',
+        'negative_prompt' => '',
+        'generation_params' => json_encode([
+          'mode' => 'upload',
+          'filename' => $file->getFilename(),
+        ], JSON_UNESCAPED_UNICODE),
+        'safety_metadata' => NULL,
+        'created' => $now,
+        'updated' => $now,
+        'deleted' => 0,
+      ])
+      ->execute();
+
+    $link_table = isset($link_context['table_name']) && is_string($link_context['table_name']) ? trim($link_context['table_name']) : '';
+    $link_object = isset($link_context['object_id']) && is_scalar($link_context['object_id']) ? trim((string) $link_context['object_id']) : '';
+
+    if ($link_table !== '' && $link_object !== '') {
+      $scope_type = isset($link_context['scope_type']) && is_string($link_context['scope_type']) ? $link_context['scope_type'] : 'campaign';
+      $campaign_id = isset($link_context['campaign_id']) && $link_context['campaign_id'] !== '' ? (int) $link_context['campaign_id'] : NULL;
+      $slot = isset($link_context['slot']) && is_string($link_context['slot']) ? $link_context['slot'] : 'portrait';
+      $variant = isset($link_context['variant']) && is_string($link_context['variant']) ? $link_context['variant'] : 'original';
+      $visibility = isset($link_context['visibility']) && is_string($link_context['visibility']) ? $link_context['visibility'] : 'owner';
+      $is_primary = isset($link_context['is_primary']) ? (int) (!empty($link_context['is_primary'])) : 1;
+
+      $this->database->insert('dc_generated_image_links')
+        ->fields([
+          'image_id' => $image_id,
+          'scope_type' => $scope_type,
+          'campaign_id' => $campaign_id,
+          'table_name' => $link_table,
+          'object_id' => $link_object,
+          'slot' => $slot,
+          'variant' => $variant,
+          'is_primary' => $is_primary,
+          'sort_weight' => 0,
+          'visibility' => $visibility,
+          'created' => $now,
+          'updated' => $now,
+        ])
+        ->execute();
+    }
+
+    return [
+      'stored' => TRUE,
+      'image_id' => $image_id,
+      'image_uuid' => $image_uuid,
+      'url' => $this->resolveClientUrl([
+        'public_url' => $public_url,
+        'file_uri' => $file_uri,
+      ]),
+    ];
   }
 
   /**
