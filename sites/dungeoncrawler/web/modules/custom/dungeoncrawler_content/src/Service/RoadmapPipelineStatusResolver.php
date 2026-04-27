@@ -238,7 +238,7 @@ class RoadmapPipelineStatusResolver {
       'next_features' => [],
     ];
 
-    $snapshot += $this->resolveReleaseSnapshotState($active_release, $next_release);
+    $snapshot = array_merge($snapshot, $this->resolveReleaseSnapshotState($active_release, $next_release));
 
     if (!is_dir($this->featuresPath) || ($active_release === '' && $next_release === '')) {
       return $snapshot;

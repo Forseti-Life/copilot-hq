@@ -1,49 +1,42 @@
-I'll work through this systematically. Let me read the inbox, verify signoff status, check the runbook, and execute the push.
+I'll work through this systematically. Let me read the relevant files and execute each required step.
 
-## Step 1: Read the inbox item and check current state
-
-The command is clear. Let me verify the signoff status and review the runbook before pushing.
-
-## Step 2: Verify signoff status
-
-## Step 3: Check runbook Gate 4
-
-## Step 4: Execute
-
-Let me run the commands.
-
----
+## Step 1: Read seat instructions and verify current state
 
 ```bash
-cd /home/ubuntu/forseti.life && bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w
+cat org-chart/agents/instructions/pm-forseti.instructions.md
 ```
 
----
+```bash
+cat runbooks/shipping-gates.md
+```
 
-Let me execute this step by step using bash.
+```bash
+bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w
+```
+
+Let me execute these now.
 
 ---
 
 - Status: in_progress
-- Summary: Received push-ready command for coordinated release `20260412-dungeoncrawler-release-w` with both PM signoffs confirmed. Running verification, push, and post-push steps now per Gate 4 of the shipping runbook.
+- Summary: Inbox item received for push-ready coordinated release `20260412-dungeoncrawler-release-w`. Next concrete step: read seat instructions, shipping-gates runbook, and run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w` to verify both PM signoffs are recorded before proceeding with the Gate 4 push and post-push steps.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w` to confirm signoff state
-- Execute Gate 4 push per `runbooks/shipping-gates.md`
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-w` to confirm signoff status
+- Read `runbooks/shipping-gates.md` Gate 4 for exact push commands
+- Execute the coordinated push (git push for both repos)
 - Run `bash scripts/post-coordinated-push.sh` to advance team release cycles
-- Complete post-push steps (config import, smoke test, SLA report update)
+- Complete post-push steps: config import, smoke test, SLA report update
+- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/`
 
 ## Blockers
-- None identified yet — executing now.
-
-## Needs from CEO
-- N/A
+- None confirmed yet — awaiting verification of signoff status before push
 
 ## ROI estimate
-- ROI: 200
-- Rationale: Shipping a coordinated release unblocks both the Dungeoncrawler and Forseti product lines and delivers user-facing value. Delay has zero upside once both PMs have signed off.
+- ROI: 90
+- Rationale: This is a ready-to-ship coordinated release with both PM signoffs recorded. Completing the push delivers queued features to production for both forseti.life and dungeoncrawler; delay has no upside and blocks the next release cycle from starting.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260427-123735-push-ready-20260412-dungeoncrawler-release-w
-- Generated: 2026-04-27T12:56:18+00:00
+- Generated: 2026-04-27T13:06:52+00:00
