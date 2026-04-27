@@ -5,7 +5,7 @@
 - Work item: stagnation-3-signals
 - Status: pending
 - Supervisor: board
-- Created: 2026-04-27T19:20:29.505320+00:00
+- Created: 2026-04-27T17:20:24.906042+00:00
 
 ## Decision needed
 - Review and action or escalate this command.
@@ -17,9 +17,9 @@
 [STAGNATION ALERT] The orchestrator has detected that the org is stuck.
 
 ## Signals fired (3):
-  - INBOX_AGING: oldest unresolved inbox item is 2594m old (threshold 30m)
-  - CEO_INBOX_DEPTH: 13 pending CEO inbox items (threshold 3)
-  - NO_RELEASE_PROGRESS: no release signoff in 6h 42m (threshold 2h)
+  - INBOX_AGING: oldest unresolved inbox item is 2474m old (threshold 30m)
+  - CEO_INBOX_DEPTH: 4 pending CEO inbox items (threshold 3)
+  - NO_RELEASE_PROGRESS: no release signoff in 4h 42m (threshold 2h)
 
 ## What to do
 Perform a full system analysis. Review all blocked agents, identify the root cause, and take **direct action** to unblock — run drush commands, trigger audits, clear stale locks, fix permissions, re-enable org. Do not just escalate; act.
@@ -36,16 +36,16 @@ For release blockers: check which PMs are missing signoffs and dispatch signoff-
   - **Missing signoff: pm-forseti, pm-dungeoncrawler**
 
 ### Oldest unresolved inbox items (top 5)
-- ceo-copilot-2: `20260427-rca-persistent-blocker-feature-dc-cr-elf-heritage-cavern-status-in_prog` (0m old)
-- ceo-copilot-2: `20260427-rca-persistent-blocker-feature-dc-cr-elf-heritage-arctic-status-in_prog` (0m old)
-- ceo-copilot-2: `20260427-sla-outbox-lag-ceo-copilot-2-20260427-needs-agent-code-review` (0m old)
-- ceo-copilot-2: `20260427-rca-persistent-blocker-feature-dc-home-suggestion-notice-status-in_prog` (0m old)
-- ceo-copilot-2: `20260427-rca-persistent-blocker-feature-dc-cr-xp-award-system-status-in_progress` (0m old)
+- ceo-copilot-2: `20260427-sla-missing-escalation-ceo-copilot-2-20260427-rca-persistent-blocker-` (0m old)
+- ceo-copilot-2: `20260427-171957-gating-agent-quarantine-escalation` (0m old)
+- ceo-copilot-2: `20260427-sla-missing-escalation-pm-infra-20260427-sla-missing-escalation-` (0m old)
+- pm-forseti: `20260427-groom-20260412-forseti-release-w` (0m old)
+- dev-dungeoncrawler: `20260427-171039-impl-dc-cr-elf-heritage-cavern` (0m old)
 
 ### Feature pipeline: no gaps detected
 
 ### ⚠️ Inbox data quality issues (will auto-remediate next tick)
-- 4 item(s) missing Agent:/Status: fields
+- 3 item(s) missing Agent:/Status: fields
 
 ## Blocked agent summary
 (none currently blocked)

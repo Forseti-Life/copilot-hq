@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: dev-dungeoncrawler inbox=20260427-171039-impl-dc-cr-elf-heritage-cavern`
+- Status: pending

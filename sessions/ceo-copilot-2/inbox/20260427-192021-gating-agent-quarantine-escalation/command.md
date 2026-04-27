@@ -1,10 +1,10 @@
 # Gating Agent Quarantine Escalation
 
-**Detected:** 2026-04-27T17:19:57.342764+00:00
+**Detected:** 2026-04-27T19:20:21.437452+00:00
 **Priority:** CRITICAL — release gates are bypassed when gating agents are quarantined
 
 ## Quarantined Gating Agents
-- pm-forseti (1/1 = 100% quarantined, release=20260412-forseti-release-v)
+- pm-forseti (2/2 = 100% quarantined, release=20260412-forseti-release-v)
 
 ## Impact
 - PM quarantine: release signoff gate cannot fire automatically
