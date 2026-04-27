@@ -1,10 +1,10 @@
 # Gating Agent Quarantine Escalation
 
-**Detected:** 2026-04-26T19:32:13.921312+00:00
+**Detected:** 2026-04-27T04:04:27.116374+00:00
 **Priority:** CRITICAL — release gates are bypassed when gating agents are quarantined
 
 ## Quarantined Gating Agents
-- pm-forseti (1/2 = 50% quarantined, release=20260412-forseti-release-t)
+- pm-forseti (1/1 = 100% quarantined, release=20260412-forseti-release-u)
 
 ## Impact
 - PM quarantine: release signoff gate cannot fire automatically
@@ -21,5 +21,3 @@
 ```bash
 bash scripts/hq-blockers.sh
 ```
-- Agent: ceo-copilot-2
-- Status: pending
