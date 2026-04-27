@@ -3,8 +3,9 @@
 - Work item id: dc-cr-heritage-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed heritage selection is already live in the character creation wizard, API validation, heritage definitions, and stored-record handling; prior release metadata had only placeholder values and did not preserve recoverable shipped provenance.
 - Priority: P1 (character creation dependency; heritage selection step immediately follows ancestry in creation wizard)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

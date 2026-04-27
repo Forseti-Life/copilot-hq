@@ -3,7 +3,7 @@
 - Work item id: dc-cr-low-light-vision
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -12,7 +12,8 @@
 - Category: rule-system
 - Schema changes: no
 - Cross-site modules: none
-- Release: 20260412-dungeoncrawler-release-x
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed low-light vision is already live in CharacterManager, CombatEngine, and ExplorationPhaseHandler; original shipped release provenance was not recoverable from feature history.
 - Created: 2026-04-06
 
 ## Goal

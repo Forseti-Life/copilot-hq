@@ -3,8 +3,9 @@
 - Work item id: dc-cr-darkvision
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed darkvision is already live in ancestry data, combat/exploration visibility, line-of-sight handling, and sense persistence; original shipped release provenance was not recoverable from feature history.
 - Priority: medium
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

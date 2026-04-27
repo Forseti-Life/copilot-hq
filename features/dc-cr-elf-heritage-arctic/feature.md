@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-heritage-arctic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -14,6 +14,7 @@
 - Schema changes: no
 - Cross-site modules: none
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit found only a heritage definition with descriptive benefit text. No concrete implementation was found for half-level cold resistance or the environmental cold severity downgrade described in the feature brief.
 - Created: 2026-04-06
 
 ## Goal

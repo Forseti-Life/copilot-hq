@@ -1,40 +1,45 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph flow-context implementation
+> Last updated: 2026-04-27 during Drupal LangGraph richer flow-definition implementation
 
 ---
 
 ## Currently Working On
 
-Continuing the `drupal_langgraph` control-panel buildout so the selected process
-flow carries across the lifecycle tabs rather than living only in the registry.
+Deepening the `drupal_langgraph` process-flow control panel so new flows capture
+real structure hints, not just metadata.
 
 ### Current state
 
-- Added a new first-class `Flows` tab to the `drupal_langgraph` console.
-- Added routes for the flow registry, flow detail, and new-flow form.
-- Added a config-backed process flow registry and a new-flow Drupal form.
-- Added a `ProcessFlowContextService` that stores the currently selected flow
-  per user using Drupal `user.data`.
-- Updated the flow detail page so opening a flow selects it as the current flow.
-- Updated the lifecycle pages so `Build`, `Test`, `Run`, `Observe`, and
-  `Release` now render a current-flow summary panel when a flow is selected.
-- Rebuilt Drupal caches and verified the selected flow context appears on all of
-  those lifecycle pages.
+- The console has:
+  - a first-class `Flows` tab
+  - a flow registry
+  - a flow detail page
+  - a new-flow form
+  - flow context carried across lifecycle and subsection pages
+- Feature Progress is flow-scoped in the console.
+- Legacy `/langgraph/*` routes now redirect to canonical console routes.
+- The New Process Flow form now captures:
+  - state schema summary
+  - nodes
+  - routing rules
+  - tools
+  - prompt notes
+- The flow detail page now shows those structure details for each flow.
+- Drupal caches were rebuilt and the expanded form and detail surfaces were
+  verified.
 
 ### Key decisions
 
-1. Keep the control-plane work entirely inside `drupal_langgraph`.
-2. Use per-user Drupal persistence for the selected flow context instead of a
-   global setting.
-3. Build the process-flow UX in slices: registry first, then flow context, then
-   deeper flow-aware authoring and operations.
+1. Keep the control-plane work inside `drupal_langgraph`.
+2. Build toward a real graph-management console in slices.
+3. Use the existing config-backed flow registry for richer draft definitions
+   before introducing more complex editing models.
 
 ### Next actions
 
-1. Make subsection pages under `Build`, `Test`, `Run`, `Observe`, and
-   `Release` explicitly flow-aware as well.
-2. Expand the new-flow experience from metadata capture into node, routing,
-   tool, and prompt configuration.
-3. Add edit/archive/version actions for custom process flows.
+1. Add edit/archive/version actions for custom process flows.
+2. Expand from structure hints into editable node/routing/tool/prompt surfaces.
+3. When the next IA pass begins, move lifecycle tabs under the selected flow
+   workspace.

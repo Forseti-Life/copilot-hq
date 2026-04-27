@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-heritage-cavern
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -14,6 +14,7 @@
 - Schema changes: no
 - Cross-site modules: none
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit found partial plumbing only. CharacterManager supports heritage vision overrides during character build, but the Cavern Elf heritage definition does not actually set a darkvision override, so the feature brief's low-light-to-darkvision replacement is not implemented.
 - Created: 2026-04-06
 
 ## Goal
