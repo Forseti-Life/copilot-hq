@@ -1,14 +1,15 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph org-chart implementation
+> Last updated: 2026-04-27 during Drupal LangGraph org-chart diagram implementation
 
 ---
 
 ## Currently Working On
 
 Deepening the `drupal_langgraph` control plane so seat relationships,
-instruction layers, and flow ownership are visible alongside workflow surfaces.
+instruction layers, and flow ownership are visible as an actual hierarchy, not
+just tables.
 
 ### Current state
 
@@ -19,6 +20,9 @@ instruction layers, and flow ownership are visible alongside workflow surfaces.
   - `org-chart/ownership/repository-ownership.yaml`
   - instruction-layer file presence across org-wide / role / site / seat levels
 - The Org Chart page now renders:
+  - a Chart.js hierarchy diagram with Board as the synthetic root
+  - CEO on the second level by default
+  - click-to-expand subordinate branches
   - seat registry and reporting relationships
   - ownership context from module/repository mappings
   - instruction-layer coverage per seat
@@ -41,11 +45,14 @@ instruction layers, and flow ownership are visible alongside workflow surfaces.
    owner is `ceo-copilot-2`.
 5. Represent the instruction stack explicitly in the UI before introducing any
    editing affordances.
+6. The hierarchy needs both a visual overview and a textual registry; the
+   diagram is the orientation layer and the seat details remain the source of
+   drill-down depth.
 
 ### Next actions
 
-1. Decide whether the next slice should add seat-detail routes or keep the org
-   chart as a single-page registry with collapsed details.
+1. Decide whether the next slice should add direct links from diagram nodes into
+   seat detail sections or dedicated seat-detail routes.
 2. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
 3. Continue the next UX slice around richer node/routing/tool/prompt editing

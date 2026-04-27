@@ -104,6 +104,7 @@ class VertexImageGenerationService {
       'character_profile_spreadsheet' => trim((string) ($payload['character_profile_spreadsheet'] ?? '')),
       'character_profile_json' => trim((string) ($payload['character_profile_json'] ?? '')),
       'requested_at' => $timestamp,
+      'force_regenerate' => !empty($payload['force_regenerate']),
       'campaign_id' => $this->normalizeInt($payload['campaign_id'] ?? NULL),
       'map_id' => $this->normalizeString($payload['map_id'] ?? ''),
       'dungeon_id' => $this->normalizeString($payload['dungeon_id'] ?? ($payload['dungeon'] ?? '')),
@@ -148,9 +149,11 @@ class VertexImageGenerationService {
     $api_key = $this->resolveApiKey($config);
     $auth_source = (string) ($status['api_key_source'] ?? 'none');
 
-    $cached = $this->loadCachedResult($normalized_payload, $model);
-    if ($cached !== NULL) {
-      return $cached;
+    if (empty($normalized_payload['force_regenerate'])) {
+      $cached = $this->loadCachedResult($normalized_payload, $model);
+      if ($cached !== NULL) {
+        return $cached;
+      }
     }
 
     $endpoint = $this->buildEndpoint($this->resolveEndpointTemplate($config), $project_id, $location, $model, $api_key !== '' ? $api_key : NULL);
@@ -357,6 +360,7 @@ class VertexImageGenerationService {
       'style' => $normalized_payload['style'],
       'aspect_ratio' => $normalized_payload['aspect_ratio'],
       'model' => $model,
+      'character_profile_spreadsheet' => $normalized_payload['character_profile_spreadsheet'],
     ];
 
     return hash('sha256', json_encode($hash_payload, JSON_UNESCAPED_UNICODE));

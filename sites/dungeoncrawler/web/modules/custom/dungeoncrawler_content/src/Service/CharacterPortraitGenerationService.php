@@ -114,9 +114,10 @@ class CharacterPortraitGenerationService {
       'prompt' => $prompt,
       'style' => (string) ($options['style'] ?? 'fantasy'),
       'aspect_ratio' => (string) ($options['aspect_ratio'] ?? '1:1'),
-      'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->getDefaultNegativePrompt()),
+      'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->buildNegativePrompt($character_data)),
       'campaign_context' => (string) ($options['campaign_context'] ?? 'character_creation'),
       'requested_by_uid' => $owner_uid,
+      'force_regenerate' => $force_regenerate,
       'character_profile_spreadsheet' => $character_profile_spreadsheet,
       'character_profile_json' => json_encode($character_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
     ];

@@ -37,33 +37,29 @@ class CharacterImagePromptBuilder {
       'Render exactly one character and no other focal subject.',
       'Do not render any text, letters, numbers, captions, logos, watermarks, signatures, readable runes, parchment writing, book pages, scroll text, or typographic marks anywhere in the image.',
       'If the character carries books, scrolls, labels, engraved items, or written gear, keep any writing hidden, illegible, or out of frame.',
+      'Use the provided ancestry, class, gender, age, appearance, and concept as authoritative identity facts. If any inventory item, spell, feat, trait, or metadata term conflicts with those facts, ignore the conflicting term for appearance decisions.',
+      'The full character profile spreadsheet is reference metadata only. Do not depict it literally, do not turn list entries into visible text, and do not let item traits or spell names override the character\'s actual ancestry or appearance.',
+      'Avoid props that commonly introduce text artifacts, especially visible scrolls, spellbooks, open books, banners, signs, or glowing runes.',
       'No copyrighted characters.',
       'Keep a clear silhouette, consistent lighting, and game-ready detail.',
       'Portrait framing: head and shoulders, neutral background.',
     ];
 
-    $ability_guidance = $this->buildAbilityAppearanceGuidance($character_data);
-    if ($ability_guidance !== '') {
-      $lines[] = 'Appearance weighting:';
-      $lines[] = $ability_guidance;
+    $ancestry_guidance = $this->buildAncestryIdentityGuidance($character_data);
+    if ($ancestry_guidance !== '') {
+      $lines[] = $ancestry_guidance;
     }
 
-    $attribute_lines = $this->buildAttributeLines($character_data);
-    if (!empty($attribute_lines)) {
-      $lines[] = 'Character attributes:';
-      $lines = array_merge($lines, $attribute_lines);
+    $identity_summary = $this->buildIdentitySummary($character_data);
+    if ($identity_summary !== '') {
+      $lines[] = 'Identity summary:';
+      $lines[] = $identity_summary;
     }
 
     $resolved_user_prompt = trim($user_prompt);
     if ($resolved_user_prompt !== '') {
       $lines[] = 'User direction:';
       $lines[] = $resolved_user_prompt;
-    }
-
-    $profile_spreadsheet = $this->buildCharacterProfileSpreadsheet($character_data);
-    if ($profile_spreadsheet !== '') {
-      $lines[] = 'Full character profile spreadsheet:';
-      $lines[] = $profile_spreadsheet;
     }
 
     return implode("\n", $lines);
@@ -88,6 +84,20 @@ class CharacterImagePromptBuilder {
    */
   public function getDefaultNegativePrompt(): string {
     return self::DEFAULT_NEGATIVE_PROMPT;
+  }
+
+  /**
+   * Builds a portrait-specific negative prompt from character identity.
+   */
+  public function buildNegativePrompt(array $character_data): string {
+    $parts = [self::DEFAULT_NEGATIVE_PROMPT];
+    $ancestry = strtolower($this->resolveAncestryName($character_data));
+
+    if ($ancestry === 'human') {
+      $parts[] = 'elf, elven, pointed ears, long pointed ears, non-human ears, dwarven face, tusks, horns, animal ears';
+    }
+
+    return implode(', ', array_filter($parts));
   }
 
   /**
@@ -236,6 +246,78 @@ class CharacterImagePromptBuilder {
     }
 
     return implode(', ', $parts);
+  }
+
+  /**
+   * Builds ancestry-specific identity lock guidance.
+   */
+  private function buildAncestryIdentityGuidance(array $character_data): string {
+    $ancestry = strtolower($this->resolveAncestryName($character_data));
+
+    return match ($ancestry) {
+      'human' => 'Ancestry lock: this character is human. Render a fully human face and anatomy with rounded human ears. Absolutely no pointed ears, elf traits, half-elf traits, elven facial structure, or other non-human ancestry features.',
+      default => '',
+    };
+  }
+
+  /**
+   * Builds a compact identity summary for the portrait model.
+   */
+  private function buildIdentitySummary(array $character_data): string {
+    $parts = [];
+
+    $name = $this->stringValue($character_data['name'] ?? '');
+    $age = $this->stringValue($character_data['age'] ?? '');
+    $ancestry = $this->resolveAncestryName($character_data);
+    $class = $this->stringValue($character_data['class'] ?? '');
+    $background = $this->stringValue($character_data['background'] ?? '');
+    $gender = $this->stringValue($character_data['gender'] ?? '');
+    $appearance = $this->stringValue($character_data['appearance'] ?? '');
+    $concept = $this->stringValue($character_data['concept'] ?? '');
+    $deity = $this->stringValue($character_data['deity'] ?? '');
+
+    if ($name !== '') {
+      $parts[] = $name;
+    }
+    if ($age !== '') {
+      $parts[] = $age . '-year-old';
+    }
+    if ($ancestry !== '') {
+      $parts[] = $ancestry;
+    }
+    if ($gender !== '') {
+      $parts[] = $gender;
+    }
+    if ($class !== '') {
+      $parts[] = $class;
+    }
+    if ($background !== '') {
+      $parts[] = 'with an ' . $background . ' background';
+    }
+    if ($deity !== '') {
+      $parts[] = 'devotee of ' . $deity;
+    }
+    if ($appearance !== '') {
+      $parts[] = 'appearance: ' . $appearance;
+    }
+    if ($concept !== '') {
+      $parts[] = 'vibe: ' . $concept;
+    }
+
+    return implode(', ', $parts);
+  }
+
+  /**
+   * Resolves the ancestry name from flat or nested payloads.
+   */
+  private function resolveAncestryName(array $character_data): string {
+    $ancestry = $character_data['ancestry'] ?? '';
+    if (is_array($ancestry)) {
+      $name = $ancestry['name'] ?? '';
+      return is_scalar($name) ? trim((string) $name) : '';
+    }
+
+    return is_scalar($ancestry) ? trim((string) $ancestry) : '';
   }
 
   /**
