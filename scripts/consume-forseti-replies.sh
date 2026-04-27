@@ -37,6 +37,17 @@ active_ceo_agent() {
 
 CEO_AGENT="$(active_ceo_agent)"
 
+table_exists="$(
+  (cd "$FORSITI_SITE_DIR" && "$DRUSH_BIN" -q php:eval '
+    print(\Drupal::database()->schema()->tableExists("copilot_agent_tracker_replies") ? "yes" : "no");
+  ')
+)"
+
+if [ "$table_exists" != "yes" ]; then
+  echo "Skipping consume replies: copilot_agent_tracker_replies table missing"
+  exit 0
+fi
+
 json="$(
   (cd "$FORSITI_SITE_DIR" && "$DRUSH_BIN" -q php:eval '
     $rows = \Drupal::database()->select("copilot_agent_tracker_replies","r")
@@ -51,13 +62,13 @@ json="$(
 )"
 
 result="$(
-  python3 - "$json" "$CEO_AGENT" <<'PY'
+  python3 - "$json" "$CEO_AGENT" "$ROOT_DIR" <<'PY'
 import json, re, sys, time
 from pathlib import Path
 
 data = json.loads(sys.argv[1] or "[]")
 ceo_agent = (sys.argv[2] or "ceo-copilot").strip() or "ceo-copilot"
-root = Path("/home/ubuntu/forseti.life")
+root = Path(sys.argv[3] or ".").resolve()
 ids=[]
 resolved=[]
 mapping={}
