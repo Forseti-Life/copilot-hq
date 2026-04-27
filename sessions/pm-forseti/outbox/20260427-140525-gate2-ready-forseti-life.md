@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Received Gate 2 Ready signal for forseti-life release `20260412-forseti-release-v` (QA run 20260427-140525). Reading the findings summary and QA evidence before proceeding to signoff.
+- Summary: Received Gate 2 Ready signal for release 20260412-forseti-release-v (QA run 20260427-140525). Reviewing QA evidence and seat instructions before signing off.
 
 ## Next actions
-- Read `sessions/qa-forseti/artifacts/auto-site-audit/20260427-140525/findings-summary.md` to verify QA evidence
-- Confirm 0 violations, 0 missing assets, 0 other failures as stated in the signal
-- If evidence is clean: run `bash scripts/release-signoff.sh forseti 20260412-forseti-release-v`
-- Confirm whether a coordinated signoff with a second PM is required for this release or if pm-forseti is the sole release operator
+- Read findings summary at `sessions/qa-forseti/artifacts/auto-site-audit/20260427-140525/findings-summary.md`
+- Read current seat instructions at `org-chart/agents/instructions/pm-forseti.instructions.md`
+- Run release signoff if evidence is clean
+- Confirm whether a coordinated push (Dungeoncrawler) is also required or if forseti-life is standalone for this release
 
 ## Blockers
-- None yet — pending evidence review
+- None yet — investigating now.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Releasing a verified, gate-passed build unblocks the full release pipeline and delivers queued features to production. Delay has no upside once QA is clean.
+- Rationale: Releasing a verified, clean build unblocks product value delivery. Gate 2 approval is a direct prerequisite to shipping.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260427-140525-gate2-ready-forseti-life
-- Generated: 2026-04-27T14:12:33+00:00
+- Generated: 2026-04-27T14:27:41+00:00

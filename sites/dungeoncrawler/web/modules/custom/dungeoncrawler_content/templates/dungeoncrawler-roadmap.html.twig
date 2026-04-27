@@ -33,27 +33,69 @@
       <a href="/architecture">System architecture</a>
     </p>
 
-    <div class="dc-roadmap__stats-grid">
-      <article class="dc-roadmap__stat-card">
-        <span class="dc-roadmap__stat-label">Requirements tracked</span>
-        <strong class="dc-roadmap__stat-value">{{ total }}</strong>
-      </article>
-      <article class="dc-roadmap__stat-card">
-        <span class="dc-roadmap__stat-label">Implemented</span>
-        <strong class="dc-roadmap__stat-value">{{ totals.implemented }}</strong>
-      </article>
-      <article class="dc-roadmap__stat-card">
-        <span class="dc-roadmap__stat-label">Done</span>
-        <strong class="dc-roadmap__stat-value">{{ totals.done }}</strong>
-      </article>
-      <article class="dc-roadmap__stat-card">
-        <span class="dc-roadmap__stat-label">In progress</span>
-        <strong class="dc-roadmap__stat-value">{{ totals.in_progress }}</strong>
-      </article>
-      <article class="dc-roadmap__stat-card">
-        <span class="dc-roadmap__stat-label">Not started</span>
-        <strong class="dc-roadmap__stat-value">{{ totals.pending }}</strong>
-      </article>
+    <div class="dc-roadmap__requirements-overview">
+      <section class="dc-roadmap__requirements-process" aria-labelledby="dc-roadmap-requirements-flow">
+        <div class="dc-roadmap__release-section-header">
+          <h2 class="dc-roadmap__release-section-title" id="dc-roadmap-requirements-flow">Requirement delivery flow</h2>
+          <p class="dc-roadmap__release-section-copy">Ordered status stages from backlog to shipped implementation.</p>
+        </div>
+
+        <ol class="dc-roadmap__release-flow dc-roadmap__release-flow--requirements">
+          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--pending">
+            <div class="dc-roadmap__release-stage-head">
+              <span class="dc-roadmap__release-step">1</span>
+              <span class="dc-status-badge dc-status-badge--pending">First stage</span>
+            </div>
+            <strong class="dc-roadmap__release-stage-title">Not started</strong>
+            <div class="dc-roadmap__release-stage-value">{{ totals.pending }}</div>
+            <p class="dc-roadmap__release-stage-copy">Requirements not yet pulled into active implementation work.</p>
+          </li>
+
+          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--active">
+            <div class="dc-roadmap__release-stage-head">
+              <span class="dc-roadmap__release-step">2</span>
+              <span class="dc-status-badge dc-status-badge--in_progress">Working</span>
+            </div>
+            <strong class="dc-roadmap__release-stage-title">In progress</strong>
+            <div class="dc-roadmap__release-stage-value">{{ totals.in_progress }}</div>
+            <p class="dc-roadmap__release-stage-copy">Requirements actively being built, wired, or validated.</p>
+          </li>
+
+          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--done">
+            <div class="dc-roadmap__release-stage-head">
+              <span class="dc-roadmap__release-step">3</span>
+              <span class="dc-status-badge dc-status-badge--done">Ready to ship</span>
+            </div>
+            <strong class="dc-roadmap__release-stage-title">Done</strong>
+            <div class="dc-roadmap__release-stage-value">{{ totals.done }}</div>
+            <p class="dc-roadmap__release-stage-copy">Implementation is complete and awaiting release completion.</p>
+          </li>
+
+          <li class="dc-roadmap__release-stage dc-roadmap__release-stage--done dc-roadmap__release-stage--final">
+            <div class="dc-roadmap__release-stage-head">
+              <span class="dc-roadmap__release-step">4</span>
+              <span class="dc-status-badge dc-status-badge--implemented">Last stage</span>
+            </div>
+            <strong class="dc-roadmap__release-stage-title">Implemented</strong>
+            <div class="dc-roadmap__release-stage-value">{{ totals.implemented }}</div>
+            <p class="dc-roadmap__release-stage-copy">Requirements already shipped and reflected in live product behavior.</p>
+          </li>
+        </ol>
+      </section>
+
+      <aside class="dc-roadmap__requirements-tracked" aria-labelledby="dc-roadmap-requirements-tracked">
+        <div class="dc-roadmap__release-section-header">
+          <h2 class="dc-roadmap__release-section-title" id="dc-roadmap-requirements-tracked">Tracked information</h2>
+          <p class="dc-roadmap__release-section-copy">Reference totals that describe the size of the roadmap, not a stage in the flow.</p>
+        </div>
+
+        <div class="dc-roadmap__tracked-grid">
+          <article class="dc-roadmap__tracked-card">
+            <span class="dc-roadmap__tracked-label">Requirements tracked</span>
+            <strong class="dc-roadmap__tracked-value">{{ total }}</strong>
+          </article>
+        </div>
+      </aside>
     </div>
 
     {# Overall progress bar #}

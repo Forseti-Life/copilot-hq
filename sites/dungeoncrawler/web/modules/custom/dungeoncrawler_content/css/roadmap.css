@@ -59,6 +59,62 @@
   font-weight: 600;
 }
 
+.dc-roadmap__requirements-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.dc-roadmap__requirements-process,
+.dc-roadmap__requirements-tracked {
+  background: var(--dc-roadmap-surface-muted);
+  border: 1px solid var(--dc-roadmap-border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.dc-roadmap__release-flow--requirements {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.dc-roadmap__release-stage--final {
+  border-color: color-mix(in srgb, var(--dc-roadmap-implemented) 70%, var(--dc-roadmap-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--dc-roadmap-surface) 82%, var(--dc-roadmap-implemented) 18%),
+    color-mix(in srgb, var(--dc-roadmap-surface) 90%, var(--dc-roadmap-implemented) 10%)
+  );
+}
+
+.dc-roadmap__requirements-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+  gap: 1rem;
+  margin-top: 1.1rem;
+}
+
+.dc-roadmap__requirements-process,
+.dc-roadmap__requirements-tracked {
+  background: var(--dc-roadmap-surface-muted);
+  border: 1px solid var(--dc-roadmap-border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.dc-roadmap__release-flow--requirements {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.dc-roadmap__release-stage--final {
+  border-color: color-mix(in srgb, var(--dc-roadmap-implemented) 70%, var(--dc-roadmap-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--dc-roadmap-surface) 82%, var(--dc-roadmap-implemented) 18%),
+    color-mix(in srgb, var(--dc-roadmap-surface) 90%, var(--dc-roadmap-implemented) 10%)
+  );
+}
+
 .dc-roadmap__stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -697,6 +753,14 @@
   }
 
   .dc-roadmap__release-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .dc-roadmap__requirements-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .dc-roadmap__requirements-overview {
     grid-template-columns: 1fr;
   }
 
