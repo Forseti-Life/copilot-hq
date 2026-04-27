@@ -112,8 +112,8 @@ class CharacterPortraitGenerationService {
 
     $payload = [
       'prompt' => $prompt,
-      'style' => (string) ($options['style'] ?? 'fantasy'),
-      'aspect_ratio' => (string) ($options['aspect_ratio'] ?? '1:1'),
+      'style' => (string) ($options['style'] ?? 'cinematic-portrait'),
+      'aspect_ratio' => (string) ($options['aspect_ratio'] ?? '3:4'),
       'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->buildNegativePrompt($character_data)),
       'campaign_context' => (string) ($options['campaign_context'] ?? 'character_creation'),
       'requested_by_uid' => $owner_uid,

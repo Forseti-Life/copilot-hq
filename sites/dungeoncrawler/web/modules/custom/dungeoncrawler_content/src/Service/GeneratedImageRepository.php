@@ -749,6 +749,7 @@ class GeneratedImageRepository {
     return ['ok' => FALSE, 'reason' => 'empty_output'];
   }
 
+
   /**
    * Maps image MIME type to file extension.
    */

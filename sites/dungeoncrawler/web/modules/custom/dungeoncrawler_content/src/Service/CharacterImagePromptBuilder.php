@@ -10,7 +10,7 @@ class CharacterImagePromptBuilder {
   /**
    * Default negative prompt for portrait generation.
    */
-  private const DEFAULT_NEGATIVE_PROMPT = 'text, words, letters, numbers, captions, subtitles, watermark, logo, signature, label, readable inscription, runes, glyphs, book text, scroll text, parchment writing, UI overlay, blurry, low quality, deformed';
+  private const DEFAULT_NEGATIVE_PROMPT = 'elf, elven, half-elf, pointed ears, long pointed ears, non-human ears, runes, glyphs, sigils, pseudo-text, text, words, letters, numbers, captions, subtitles, watermark, logo, signature, label, readable inscription, book text, scroll text, parchment writing, banners, spellbook pages, UI overlay, blurry, low quality, deformed';
 
   /**
    * Internal-only fields excluded from the exported profile.
@@ -32,34 +32,27 @@ class CharacterImagePromptBuilder {
    *   The prompt text.
    */
   public function buildPortraitPrompt(array $character_data, string $user_prompt = ''): string {
-    $lines = [
-      'Create a high-fantasy character portrait for a tabletop RPG.',
-      'Render exactly one character and no other focal subject.',
-      'Do not render any text, letters, numbers, captions, logos, watermarks, signatures, readable runes, parchment writing, book pages, scroll text, or typographic marks anywhere in the image.',
-      'If the character carries books, scrolls, labels, engraved items, or written gear, keep any writing hidden, illegible, or out of frame.',
-      'Use the provided ancestry, class, gender, age, appearance, and concept as authoritative identity facts. If any inventory item, spell, feat, trait, or metadata term conflicts with those facts, ignore the conflicting term for appearance decisions.',
-      'The full character profile spreadsheet is reference metadata only. Do not depict it literally, do not turn list entries into visible text, and do not let item traits or spell names override the character\'s actual ancestry or appearance.',
-      'Avoid props that commonly introduce text artifacts, especially visible scrolls, spellbooks, open books, banners, signs, or glowing runes.',
+    $subject = $this->buildSubjectLine($character_data);
+    $action = $this->buildActionLine($character_data);
+    $context = $this->buildContextLine($character_data);
+    $composition = 'Composition: vertical head-and-shoulders portrait, eye-level camera, centered face, both ears anatomically human and rounded, clean silhouette.';
+    $style = 'Style: polished fantasy character portrait, realistic facial anatomy, detailed skin and hair, soft cinematic lighting, no props, no symbols.';
+
+    $lines = array_values(array_filter([
+      'Generate exactly one original fantasy portrait character image.',
+      $subject,
+      $action,
+      $context,
+      $composition,
+      $style,
+      'Positive framing: plain clothing details, clean neutral backdrop, no written surfaces, no magical glyphs, no decorative lettering.',
+      'Identity rule: ancestry, gender, appearance, and concept are authoritative. Ignore conflicting inventory traits, feat names, or spell names when deciding anatomy or styling.',
       'No copyrighted characters.',
-      'Keep a clear silhouette, consistent lighting, and game-ready detail.',
-      'Portrait framing: head and shoulders, neutral background.',
-    ];
-
-    $ancestry_guidance = $this->buildAncestryIdentityGuidance($character_data);
-    if ($ancestry_guidance !== '') {
-      $lines[] = $ancestry_guidance;
-    }
-
-    $identity_summary = $this->buildIdentitySummary($character_data);
-    if ($identity_summary !== '') {
-      $lines[] = 'Identity summary:';
-      $lines[] = $identity_summary;
-    }
+    ]));
 
     $resolved_user_prompt = trim($user_prompt);
     if ($resolved_user_prompt !== '') {
-      $lines[] = 'User direction:';
-      $lines[] = $resolved_user_prompt;
+      $lines[] = 'Additional direction: ' . $resolved_user_prompt;
     }
 
     return implode("\n", $lines);
@@ -86,17 +79,11 @@ class CharacterImagePromptBuilder {
     return self::DEFAULT_NEGATIVE_PROMPT;
   }
 
-  /**
-   * Builds a portrait-specific negative prompt from character identity.
-   */
   public function buildNegativePrompt(array $character_data): string {
     $parts = [self::DEFAULT_NEGATIVE_PROMPT];
-    $ancestry = strtolower($this->resolveAncestryName($character_data));
-
-    if ($ancestry === 'human') {
-      $parts[] = 'elf, elven, pointed ears, long pointed ears, non-human ears, dwarven face, tusks, horns, animal ears';
+    if (strtolower($this->resolveAncestryName($character_data)) === 'human') {
+      $parts[] = 'elven facial structure, elf wizard, fae features';
     }
-
     return implode(', ', array_filter($parts));
   }
 
@@ -251,30 +238,14 @@ class CharacterImagePromptBuilder {
   /**
    * Builds ancestry-specific identity lock guidance.
    */
-  private function buildAncestryIdentityGuidance(array $character_data): string {
-    $ancestry = strtolower($this->resolveAncestryName($character_data));
-
-    return match ($ancestry) {
-      'human' => 'Ancestry lock: this character is human. Render a fully human face and anatomy with rounded human ears. Absolutely no pointed ears, elf traits, half-elf traits, elven facial structure, or other non-human ancestry features.',
-      default => '',
-    };
-  }
-
-  /**
-   * Builds a compact identity summary for the portrait model.
-   */
-  private function buildIdentitySummary(array $character_data): string {
+  private function buildSubjectLine(array $character_data): string {
     $parts = [];
-
     $name = $this->stringValue($character_data['name'] ?? '');
     $age = $this->stringValue($character_data['age'] ?? '');
     $ancestry = $this->resolveAncestryName($character_data);
-    $class = $this->stringValue($character_data['class'] ?? '');
-    $background = $this->stringValue($character_data['background'] ?? '');
     $gender = $this->stringValue($character_data['gender'] ?? '');
+    $class = $this->stringValue($character_data['class'] ?? '');
     $appearance = $this->stringValue($character_data['appearance'] ?? '');
-    $concept = $this->stringValue($character_data['concept'] ?? '');
-    $deity = $this->stringValue($character_data['deity'] ?? '');
 
     if ($name !== '') {
       $parts[] = $name;
@@ -283,28 +254,45 @@ class CharacterImagePromptBuilder {
       $parts[] = $age . '-year-old';
     }
     if ($ancestry !== '') {
-      $parts[] = $ancestry;
+      $parts[] = strtolower($ancestry);
     }
     if ($gender !== '') {
       $parts[] = $gender;
     }
     if ($class !== '') {
-      $parts[] = $class;
-    }
-    if ($background !== '') {
-      $parts[] = 'with an ' . $background . ' background';
-    }
-    if ($deity !== '') {
-      $parts[] = 'devotee of ' . $deity;
+      $parts[] = strtolower($class);
     }
     if ($appearance !== '') {
-      $parts[] = 'appearance: ' . $appearance;
-    }
-    if ($concept !== '') {
-      $parts[] = 'vibe: ' . $concept;
+      $parts[] = 'with ' . strtolower($appearance);
     }
 
-    return implode(', ', $parts);
+    return 'Subject: ' . implode(', ', $parts) . '.';
+  }
+
+  private function buildActionLine(array $character_data): string {
+    $concept = $this->stringValue($character_data['concept'] ?? '');
+    $action = 'Action: facing the camera with a calm, confident, sly expression.';
+    if ($concept !== '') {
+      $action = 'Action: facing the camera with a ' . strtolower($concept) . ' expression and controlled posture.';
+    }
+    return $action;
+  }
+
+  private function buildContextLine(array $character_data): string {
+    $background = $this->stringValue($character_data['background'] ?? '');
+    $deity = $this->stringValue($character_data['deity'] ?? '');
+    $context = 'Context: plain studio-like fantasy backdrop, soft diffuse light, no props, no books, no scrolls, no magical symbols.';
+    if ($background !== '' || $deity !== '') {
+      $details = [];
+      if ($background !== '') {
+        $details[] = strtolower($background) . ' upbringing';
+      }
+      if ($deity !== '') {
+        $details[] = 'subtle ' . strtolower($deity) . ' influence without symbols or text';
+      }
+      $context = 'Context: plain studio-like fantasy backdrop, soft diffuse light, no props, no books, no scrolls, no magical symbols; styling cues only from ' . implode(' and ', $details) . '.';
+    }
+    return $context;
   }
 
   /**
@@ -331,61 +319,6 @@ class CharacterImagePromptBuilder {
     return trim((string) $value);
   }
 
-  /**
-   * Resolve abilities from nested schema or flat wizard fields.
-   *
-   * @param array $character_data
-   *   Character data payload.
-   *
-   * @return array<string, int>
-   *   Normalized map.
-   */
-  private function resolveAbilities(array $character_data): array {
-    if (!empty($character_data['abilities']) && is_array($character_data['abilities'])) {
-      return $this->normalizeAbilities($character_data['abilities']);
-    }
-
-    return $this->normalizeAbilities($character_data);
-  }
-
-  /**
-   * Normalizes abilities to the standard PF2e short keys.
-   *
-   * @param array $values
-   *   Ability map or full character payload with flat ability fields.
-   *
-   * @return array<string, int>
-   *   Normalized map.
-   */
-  private function normalizeAbilities(array $values): array {
-    if (!is_array($values)) {
-      return [];
-    }
-
-    $mapping = [
-      'str' => ['str', 'strength'],
-      'dex' => ['dex', 'dexterity'],
-      'con' => ['con', 'constitution'],
-      'int' => ['int', 'intelligence'],
-      'wis' => ['wis', 'wisdom'],
-      'cha' => ['cha', 'charisma'],
-    ];
-
-    $normalized = [];
-    foreach ($mapping as $target => $aliases) {
-      foreach ($aliases as $alias) {
-        if (!array_key_exists($alias, $values) || !is_numeric($values[$alias])) {
-          continue;
-        }
-
-        $value = (int) $values[$alias];
-        $normalized[$target] = max(3, min(18, $value));
-        break;
-      }
-    }
-
-    return $normalized;
-  }
 
   /**
    * Append flattened spreadsheet rows using dotted paths.
