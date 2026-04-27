@@ -218,16 +218,37 @@ echo "SIGNED_OFF: ${pm_agent} ${release_id} -> ${out_file}"
 # After recording signoff, check if ALL coordinated PMs have now signed.
 # If yes, queue a push-ready inbox item for the release operator (pm-forseti).
 python3 - "$PRODUCT_TEAMS_JSON" "$team_id" "$release_id" "$slug" "$ROOT_DIR" "$push_ready_created_flag" <<'PY'
+import json
 import sys
 from pathlib import Path
 
 cfg_path, signing_team_id, release_id, slug, root, created_flag = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
 root = Path(root)
 created_flag = Path(created_flag)
-sys.path.insert(0, str(root / 'scripts' / 'lib'))
-from release_cycle_helpers import release_cohort, slugify  # noqa: E402
 
-teams = release_cohort(Path(cfg_path), signing_team_id)
+with open(cfg_path, 'r', encoding='utf-8') as fh:
+    data = json.load(fh)
+
+team_map = {}
+for team in data.get('teams') or []:
+    team_id = str(team.get('id') or '').strip()
+    if not team_id:
+        continue
+    if not (team.get('active') and team.get('release_preflight_enabled')):
+        continue
+    team_map[team_id] = team
+
+primary = team_map.get(signing_team_id)
+if primary is None:
+    sys.exit(0)
+
+dependency_ids = []
+for dep in primary.get('release_dependencies') or []:
+    dep_id = str(dep or '').strip()
+    if dep_id and dep_id != signing_team_id and dep_id in team_map and dep_id not in dependency_ids:
+        dependency_ids.append(dep_id)
+
+teams = [team_map[signing_team_id], *[team_map[dep_id] for dep_id in sorted(dependency_ids)]]
 if len(teams) < 2:
     sys.exit(0)
 
@@ -246,7 +267,8 @@ for team in teams:
     if not required_release_id:
         print(f"INFO: release cohort not yet push-ready — blank active release_id for {team_id}")
         sys.exit(0)
-    required.append((team, required_release_id, slugify(required_release_id, 80)))
+    required_slug = ''.join(ch if ch.isalnum() or ch in '._-' else '-' for ch in required_release_id).strip('-')[:80]
+    required.append((team, required_release_id, required_slug))
 
 all_signed = all(
     (root / 'sessions' / team['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{required_slug}.md").exists()

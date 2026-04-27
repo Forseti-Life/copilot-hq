@@ -10,13 +10,28 @@ UI can be called complete.
 Approach:
 1. Treat the LangGraph UI as a control plane for three things: graph
    definition, graph execution, and graph observation/governance.
-2. Use the existing top-level IA as the current frame:
-   `Overview`, `Flows`, `Build`, `Test`, `Run`, `Observe`, `Release`, `Admin`.
+2. Use the ideal IA as the target frame:
+   global `Overview`, `Flows`, `Admin`; then per-flow `Overview`, `Build`,
+   `Test`, `Run`, `Observe`, `Release`.
 3. Track every LangGraph command and data structure against a concrete Drupal
    route, control, and support level: `Supported`, `Partial`, or `Missing`.
 4. Use this file as the master completion contract for the UI. The UI is not
    done until every required capability below is either implemented or
    intentionally deferred.
+
+## Ideal nested workspace contract
+
+| Layer | UI section | Route pattern | Purpose |
+| --- | --- | --- | --- |
+| Global | Overview | `/admin/reports/drupal-langgraph/langgraph-console` | Operator summary and entry into LangGraph management |
+| Global | Flows | `/admin/reports/drupal-langgraph/langgraph-console/flows` | Registry of all flows and entry into flow workspaces |
+| Global | Admin | `/admin/reports/drupal-langgraph/langgraph-console/admin` | Runtime roots, artifact health, and control contracts |
+| Flow workspace | Overview | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}` | Flow summary and workspace index |
+| Flow workspace | Build | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/build` | Graph authoring, structure, and policy |
+| Flow workspace | Test | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/test` | Validation, parity, and checkpoint replay |
+| Flow workspace | Run | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/run` | Manual execution and execution history |
+| Flow workspace | Observe | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/observe` | Traces, metrics, drift, alerts, and progress |
+| Flow workspace | Release | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/release` | Versions, promotion, evidence, and troubleshooting |
 
 ## Current route contract
 
@@ -25,13 +40,14 @@ Approach:
 | Overview | `/admin/reports/drupal-langgraph/langgraph-console` | Operator dashboard and health summary |
 | Flows | `/admin/reports/drupal-langgraph/langgraph-console/flows` | Registry of built-in and custom flows |
 | New Process Flow | `/admin/reports/drupal-langgraph/langgraph-console/flows/add` | Create draft flow definition |
-| Flow Detail | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}` | Per-flow summary and structure display |
-| Build | `/admin/reports/drupal-langgraph/langgraph-console/build` | Design-time graph shape frame |
-| Test | `/admin/reports/drupal-langgraph/langgraph-console/test` | Validation/parity frame |
-| Run | `/admin/reports/drupal-langgraph/langgraph-console/run` | Execution timeline frame |
-| Observe | `/admin/reports/drupal-langgraph/langgraph-console/observe` | Runtime observability frame |
-| Release | `/admin/reports/drupal-langgraph/langgraph-console/release` | Version/promotion/release posture |
+| Flow Detail / Workspace Overview | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}` | Per-flow summary and workspace index |
+| Flow Build | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/build` | Flow-scoped Build workspace with stubbed controls |
+| Flow Test | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/test` | Flow-scoped Test workspace with stubbed controls |
+| Flow Run | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/run` | Flow-scoped Run workspace with stubbed controls |
+| Flow Observe | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/observe` | Flow-scoped Observe workspace with nested controls |
+| Flow Release | `/admin/reports/drupal-langgraph/langgraph-console/flows/{flow_id}/release` | Flow-scoped Release workspace with nested controls |
 | Admin | `/admin/reports/drupal-langgraph/langgraph-console/admin` | Runtime roots and artifact contract |
+| Compatibility Build/Test/Run/Observe/Release | `/admin/reports/drupal-langgraph/langgraph-console/{section}` | Flow-selection landing or redirect into the selected flow workspace |
 
 ## LangGraph command model -> UI mapping
 
@@ -39,7 +55,7 @@ Approach:
 | --- | --- | --- | --- | --- | --- |
 | Create flow | Register a new graph/process flow | Flows | `New Process Flow` form | Supported | Draft flow creation works |
 | Open flow control panel | Enter a specific flow workspace | Flows | Flow row link / flow detail page | Supported | Also sets selected flow context |
-| Select active flow context | Scope lifecycle work to one flow | Flow Detail + global tabs | Auto-selected via flow detail + user.data | Supported | Current IA is still top-level, not nested |
+| Select active flow context | Scope lifecycle work to one flow | Flow Detail + nested flow tabs | Auto-selected via flow detail + user.data | Supported | Flow-scoped workspace is now the preferred path |
 | Edit flow metadata | Change label, owner, status, entrypoint, version | Flows / Flow Detail | No edit control yet | Missing | Add edit action and edit form |
 | Archive flow | Retire a flow without deleting it | Flows / Flow Detail | Status can only be set on create | Partial | Needs explicit archive/unarchive control |
 | Define state schema | Describe state model carried across nodes | Build | Stored as `state_schema_summary` on create | Partial | Capture exists, dedicated editor does not |
@@ -107,30 +123,30 @@ Approach:
 ### Flows
 - Done when users can create, open, edit, archive, and version flows from the
   registry and detail surfaces.
-- Current state: create/open are done; edit/archive/version are not.
+- Current state: create/open and nested workspace entry are done; edit/archive/version are not.
 
 ### Build
 - Done when users can author and update the graph contract:
   state schema, nodes, routing, tools, and prompt policy.
-- Current state: only structure display/capture exists; authoring is incomplete.
+- Current state: nested Build workspace exists with stubbed controls; authoring is incomplete.
 
 ### Test
 - Done when users can validate graph shape, parity, and replay/checkpoint paths.
-- Current state: parity evidence exists; structure validation and replay do not.
+- Current state: nested Test workspace exists with parity evidence; structure validation and replay do not.
 
 ### Run
 - Done when users can manually trigger, pause, resume, and inspect executions.
-- Current state: inspection exists; execution controls do not.
+- Current state: nested Run workspace exists with execution history; execution controls do not.
 
 ### Observe
 - Done when traces, metrics, drift, alerts, and flow-scoped progress are easy
   to inspect from one coherent flow-aware workspace.
-- Current state: strongest existing section; mostly complete as read-only ops UI.
+- Current state: nested Observe workspace exists and is the strongest read-only ops surface.
 
 ### Release
 - Done when users can inspect evidence, create versions, and promote versions
   with explicit readiness signals and blockers.
-- Current state: evidence exists; versioning/promote controls do not.
+- Current state: nested Release workspace exists with evidence and troubleshooting; versioning/promote controls do not.
 
 ### Admin
 - Done when runtime roots, artifact health, and control files are visible and
@@ -144,6 +160,7 @@ Approach:
 - [x] Add flow detail with structural summary
 - [x] Add operator-focused overview dashboard
 - [x] Collapse legacy routes to canonical console routes
+- [x] Add nested flow workspace tabs and stub control pages
 - [ ] Add flow edit/archive actions
 - [ ] Add Build editors for schema, nodes, routing, tools, and prompt policy
 - [ ] Add Test actions for structural validation and checkpoint replay
@@ -161,11 +178,11 @@ Todos:
 - Pending: audit the live UI against this matrix and close remaining gaps.
 
 Notes:
-- Current architecture is still the agreed intermediate state: global lifecycle
-  tabs with flow context carried across them.
-- Future-state intention remains valid: `Overview`, `Flows`, and `Admin` stay
-  global, while `Build`, `Test`, `Run`, `Observe`, and `Release` eventually
-  become a nested workspace under the selected flow.
+- The preferred architecture is now explicitly reflected in the UI:
+  `Overview`, `Flows`, and `Admin` are global, while `Build`, `Test`, `Run`,
+  `Observe`, and `Release` live under the selected flow workspace.
+- Compatibility routes for global lifecycle sections still exist so older entry
+  points can redirect into the selected flow or prompt the user to choose one.
 - The command map currently shown in the UI is aspirational in places. This plan
   now distinguishes aspirational mappings from truly implemented controls so we
   can close the gap deliberately.

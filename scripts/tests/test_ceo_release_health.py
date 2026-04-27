@@ -1,10 +1,12 @@
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "ceo-release-health.sh"
+HELPER_MODULE = Path(__file__).resolve().parents[1] / "lib" / "release_cycle_helpers.py"
 
 
 def _make_root(tmp_path: Path) -> Path:
@@ -12,8 +14,10 @@ def _make_root(tmp_path: Path) -> Path:
     (root / "org-chart" / "products").mkdir(parents=True)
     (root / "tmp" / "release-cycle-active").mkdir(parents=True)
     (root / "features").mkdir(parents=True)
+    (root / "scripts" / "lib").mkdir(parents=True)
     (root / "sessions" / "qa-forseti" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True)
+    shutil.copy2(HELPER_MODULE, root / "scripts" / "lib" / "release_cycle_helpers.py")
 
     teams = {
         "teams": [
@@ -23,6 +27,7 @@ def _make_root(tmp_path: Path) -> Path:
                 "pm_agent": "pm-forseti",
                 "qa_agent": "qa-forseti",
                 "active": True,
+                "release_preflight_enabled": True,
                 "coordinated_release_default": True,
             }
         ]
@@ -86,10 +91,12 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
     (root / "tmp" / "release-cycle-active").mkdir(parents=True)
     (root / "tmp" / "auto-push-dispatched").mkdir(parents=True)
     (root / "features").mkdir(parents=True)
+    (root / "scripts" / "lib").mkdir(parents=True)
     (root / "sessions" / "qa-forseti" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True)
     (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True)
+    shutil.copy2(HELPER_MODULE, root / "scripts" / "lib" / "release_cycle_helpers.py")
 
     teams = {
         "teams": [
@@ -99,6 +106,8 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
                 "pm_agent": "pm-forseti",
                 "qa_agent": "qa-forseti",
                 "active": True,
+                "release_preflight_enabled": True,
+                "release_dependencies": ["dungeoncrawler"],
                 "coordinated_release_default": True,
             },
             {
@@ -107,6 +116,8 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
                 "pm_agent": "pm-dungeoncrawler",
                 "qa_agent": "qa-dungeoncrawler",
                 "active": True,
+                "release_preflight_enabled": True,
+                "release_dependencies": ["forseti"],
                 "coordinated_release_default": True,
             },
         ]
@@ -131,5 +142,5 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
     result = _run(root)
 
     assert result.returncode == 1, result.stdout + result.stderr
-    assert f"Missing advance marker: {dc_rid}__{forseti_rid}.forseti.advanced" in result.stdout
-    assert "post-coordinated-push.sh did not complete" in result.stdout
+    assert f"{dc_rid}__{forseti_rid}" in result.stdout
+    assert "boundary advance is incomplete" in result.stdout

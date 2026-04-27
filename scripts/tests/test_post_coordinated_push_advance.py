@@ -97,7 +97,7 @@ def _make_root(tmp: Path, *, signoffs_done: bool = True) -> Path:
 
 def _run(root: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["bash", str(SCRIPT)],
+        ["bash", str(SCRIPT), "forseti", "dungeoncrawler"],
         cwd=str(root),
         capture_output=True,
         text=True,

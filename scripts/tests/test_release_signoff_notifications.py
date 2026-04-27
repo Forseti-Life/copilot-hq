@@ -26,7 +26,9 @@ def _make_root(tmp_path: Path) -> Path:
                         "pm_agent": "pm-forseti",
                         "qa_agent": "qa-forseti",
                         "active": True,
+                        "release_preflight_enabled": True,
                         "coordinated_release_default": True,
+                        "release_dependencies": ["dungeoncrawler"],
                     },
                     {
                         "id": "dungeoncrawler",
@@ -35,7 +37,9 @@ def _make_root(tmp_path: Path) -> Path:
                         "pm_agent": "pm-dungeoncrawler",
                         "qa_agent": "qa-dungeoncrawler",
                         "active": True,
+                        "release_preflight_enabled": True,
                         "coordinated_release_default": True,
+                        "release_dependencies": [],
                     },
                 ]
             }
@@ -50,7 +54,15 @@ def _make_root(tmp_path: Path) -> Path:
         "20260412-forseti-release-u\nAPPROVE\n",
     )
     _write(
-        root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-forseti-release-u.md",
+        root / "tmp" / "release-cycle-active" / "forseti.release_id",
+        "20260412-forseti-release-u\n",
+    )
+    _write(
+        root / "tmp" / "release-cycle-active" / "dungeoncrawler.release_id",
+        "20260412-dungeoncrawler-release-v\n",
+    )
+    _write(
+        root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-dungeoncrawler-release-v.md",
         "# PM signoff\n",
     )
     return root
@@ -101,5 +113,6 @@ def test_release_signoff_only_sends_email_when_push_ready_is_new(tmp_path):
         check=False,
     )
     assert second.returncode == 0, second.stderr
-    assert "already signed off" in second.stdout
+    assert "SIGNED_OFF: pm-dungeoncrawler" in second.stdout
+    assert "Board notification skipped" in second.stdout
     assert log.read_text(encoding="utf-8").count("Subject:") == 1

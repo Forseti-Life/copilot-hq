@@ -38,7 +38,7 @@ from release_cycle_helpers import combined_release_marker_key, release_enabled_t
 
 if requested_ids:
     team_map = release_enabled_team_map(teams_json)
-    coord_teams = [team_map[team_id] for team_id in requested_ids if team_id in team_map]
+    coord_teams = [team_map[team_id] for team_id in sorted(requested_ids) if team_id in team_map]
 else:
     coord_teams = release_enabled_teams(teams_json)
 team_release_ids = {}
@@ -123,7 +123,7 @@ from release_cycle_helpers import (  # noqa: E402
 
 if requested_ids:
     team_map = release_enabled_team_map(teams_json)
-    coord_teams = [team_map[team_id] for team_id in requested_ids if team_id in team_map]
+    coord_teams = [team_map[team_id] for team_id in sorted(requested_ids) if team_id in team_map]
 else:
     coord_teams = release_enabled_teams(teams_json)
 
@@ -233,6 +233,10 @@ if team_release_ids:
         # dispatch off-by-one bug.
         if not marker_preexisting and latest_advance_sentinel.exists():
             sentinel_val = latest_advance_sentinel.read_text(encoding='utf-8').strip()
+            if current_rid == sentinel_val:
+                print(f"SKIP {team_id}: release_id already advanced to {sentinel_val}")
+                seed_handoff(team_id, current_rid, new_current)
+                continue
             if new_current == sentinel_val:
                 print(f"SKIP {team_id}: release_id already advanced to {sentinel_val}")
                 seed_handoff(team_id, current_rid, new_current)

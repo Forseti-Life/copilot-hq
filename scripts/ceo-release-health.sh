@@ -59,7 +59,7 @@ echo "  CEO Release Cycle Health Check"
 echo "  $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 echo "═══════════════════════════════════════════════════════"
 
-# ── Load coordinated teams ───────────────────────────────────────────────────
+# ── Load release-enabled teams ───────────────────────────────────────────────
 if [ ! -f "$PRODUCT_TEAMS_JSON" ]; then
   fail "product-teams.json missing: $PRODUCT_TEAMS_JSON"
   exit 1
@@ -69,7 +69,7 @@ COORDINATED_TEAMS="$(python3 - "$PRODUCT_TEAMS_JSON" <<'PY'
 import json, sys
 data = json.load(open(sys.argv[1], encoding='utf-8'))
 for t in data.get('teams', []):
-    if t.get('active') and t.get('coordinated_release_default'):
+    if t.get('active') and t.get('release_preflight_enabled'):
         print('\t'.join([
             t.get('id',''),
             t.get('pm_agent', 'pm-' + t.get('id','')),
@@ -79,7 +79,7 @@ PY
 )"
 
 if [ -z "$COORDINATED_TEAMS" ]; then
-  fail "No active coordinated-release teams found in product-teams.json"
+  fail "No active release-enabled teams found in product-teams.json"
   exit 1
 fi
 
@@ -359,115 +359,154 @@ PY
 
 done <<<"$COORDINATED_TEAMS"
 
-# ── Cross-team signoffs ───────────────────────────────────────────────────────
+# ── Dependency signoff matrix ────────────────────────────────────────────────
 echo
 hr
-echo "  Cross-team signoff matrix"
+echo "  Dependency signoff matrix"
 hr
 
-# For each coordinated team, each OTHER team's PM must have signed off on it
-TEAMS_LIST=()
-RELEASE_MAP=()
-while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT; do
-  [ -n "$TEAM" ] || continue
-  TEAMS_LIST+=("$TEAM")
-  RID="$(cat "$ACTIVE_DIR/${TEAM}.release_id" 2>/dev/null | tr -d '[:space:]' || echo '')"
-  RELEASE_MAP+=("$TEAM:$PM_AGENT:$QA_AGENT:$RID")
-done <<<"$COORDINATED_TEAMS"
+DEPENDENCY_STATUS="$(
+python3 - "$PRODUCT_TEAMS_JSON" "$ACTIVE_DIR" "$ROOT_DIR" <<'PY'
+import json, sys
+from pathlib import Path
 
-for SIGNING_ENTRY in "${RELEASE_MAP[@]:-}"; do
-  [ -n "$SIGNING_ENTRY" ] || continue
-  SIGNING_TEAM="${SIGNING_ENTRY%%:*}"
-  REST="${SIGNING_ENTRY#*:}"
-  SIGNING_PM="${REST%%:*}"
-  REST="${REST#*:}"
-  SIGNING_QA="${REST%%:*}"
-  SIGNING_RID="${REST##*:}"
-  [ -n "$SIGNING_RID" ] || continue
+cfg_path = Path(sys.argv[1])
+active_dir = Path(sys.argv[2])
+root = Path(sys.argv[3])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from release_cycle_helpers import explicit_release_dependencies, release_enabled_team_map  # noqa: E402
 
-  for TARGET_ENTRY in "${RELEASE_MAP[@]:-}"; do
-    [ -n "$TARGET_ENTRY" ] || continue
-    TARGET_TEAM="${TARGET_ENTRY%%:*}"
-    TARGET_REST="${TARGET_ENTRY#*:}"
-    TARGET_PM="${TARGET_REST%%:*}"
-    TARGET_REST="${TARGET_REST#*:}"
-    TARGET_QA="${TARGET_REST%%:*}"
-    TARGET_RID="${TARGET_REST##*:}"
-    [ "$SIGNING_TEAM" = "$TARGET_TEAM" ] && continue  # skip self
-    [ -n "$TARGET_RID" ] || continue
+team_map = release_enabled_team_map(cfg_path)
+failures = 0
+lines = []
+any_dependencies = False
 
-    CROSS_FILE="sessions/${SIGNING_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
-    TARGET_OWNER_SIGNOFF="sessions/${TARGET_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
-    TARGET_GATE2="$(find_gate2_evidence "sessions/${TARGET_QA}/outbox" "$TARGET_RID")"
-    if [ ! -f "$TARGET_OWNER_SIGNOFF" ]; then
-      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (owner PM signoff missing)"
-    elif [ -z "$TARGET_GATE2" ]; then
-      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (Gate 2 evidence missing)"
-    elif [ -f "$CROSS_FILE" ]; then
-      pass "$SIGNING_PM co-signed $TARGET_RID"
-    else
-      fail "$SIGNING_PM has NOT co-signed $TARGET_RID"
-      info "Run: bash scripts/release-signoff.sh $TARGET_TEAM $TARGET_RID  (as $SIGNING_PM)"
-    fi
-  done
-done
+for team_id in sorted(team_map):
+    team = team_map[team_id]
+    deps = [dep for dep in explicit_release_dependencies(team) if dep in team_map]
+    if not deps:
+        lines.append(f"PASS [{team_id}] No explicit cross-release dependencies configured")
+        continue
+    any_dependencies = True
+    for dep in deps:
+        dep_team = team_map[dep]
+        dep_rid_file = active_dir / f"{dep}.release_id"
+        dep_rid = dep_rid_file.read_text(encoding='utf-8').strip() if dep_rid_file.exists() else ""
+        if not dep_rid:
+            lines.append(f"WARN [{team_id}] dependency {dep} has no active release_id yet")
+            continue
+        pm_agent = str(dep_team.get("pm_agent") or "").strip()
+        signoff = root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{dep_rid}.md"
+        if signoff.exists():
+            lines.append(f"PASS [{team_id}] dependency signoff satisfied: {dep} `{dep_rid}`")
+        else:
+            failures += 1
+            lines.append(f"FAIL [{team_id}] dependency signoff missing: {dep} `{dep_rid}`")
+
+if not any_dependencies:
+    lines = ["PASS No explicit cross-release dependencies configured — releases are independent by default"]
+
+for line in lines:
+    print(line)
+print(f"FAILURES_DELTA={failures}")
+PY
+)"
+while IFS= read -r LINE; do
+  [ -n "$LINE" ] || continue
+  case "$LINE" in
+    FAILURES_DELTA=*) FAILURES=$((FAILURES + ${LINE#FAILURES_DELTA=}));;
+    PASS\ *) pass "${LINE#PASS }";;
+    WARN\ *) warn "${LINE#WARN }";;
+    FAIL\ *) fail "${LINE#FAIL }";;
+  esac
+done <<<"$DEPENDENCY_STATUS"
 
 # ── Push readiness ────────────────────────────────────────────────────────────
 echo
 hr
-echo "  Coordinated push readiness"
+echo "  Release push readiness"
 hr
 
-SORTED_IDS="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | tr '\n' '_' | sed 's/_$//')"
-PUSH_MARKER_KEY="$(
-echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | python3 -c '
+PUSH_READINESS="$(
+python3 - "$PRODUCT_TEAMS_JSON" "$ACTIVE_DIR" "$ROOT_DIR" <<'PY'
 import sys
-ids = [line.strip() for line in sys.stdin if line.strip()]
-print("__".join(ids))
-'
+from pathlib import Path
+
+cfg_path = Path(sys.argv[1])
+active_dir = Path(sys.argv[2])
+root = Path(sys.argv[3])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from release_cycle_helpers import combined_release_marker_key, explicit_release_dependencies, release_enabled_team_map  # noqa: E402
+
+team_map = release_enabled_team_map(cfg_path)
+failures = 0
+printed_independent = False
+
+for team_id in sorted(team_map):
+    team = team_map[team_id]
+    release_id_file = active_dir / f"{team_id}.release_id"
+    release_id = release_id_file.read_text(encoding='utf-8').strip() if release_id_file.exists() else ""
+    if not release_id:
+        continue
+    pm_agent = str(team.get("pm_agent") or "").strip()
+    signoff_path = root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{release_id}.md"
+    deps = [dep for dep in explicit_release_dependencies(team) if dep in team_map]
+    if not deps:
+        if signoff_path.exists():
+            print(f"PASS [{team_id}] Independent release `{release_id}` is push-ready on its own signoff")
+        else:
+            print(f"INFO [{team_id}] Independent release `{release_id}` is waiting on owner PM signoff")
+        printed_independent = True
+        continue
+
+    cohort = [team, *[team_map[dep] for dep in sorted(deps)]]
+    team_release_ids = {}
+    missing_signoffs = []
+    for member in cohort:
+        member_id = str(member.get("id") or "").strip()
+        member_release_file = active_dir / f"{member_id}.release_id"
+        member_release = member_release_file.read_text(encoding='utf-8').strip() if member_release_file.exists() else ""
+        if not member_release:
+            missing_signoffs.append(member_id)
+            continue
+        team_release_ids[member_id] = member_release
+        member_pm = str(member.get("pm_agent") or "").strip()
+        member_signoff = root / "sessions" / member_pm / "artifacts" / "release-signoffs" / f"{member_release}.md"
+        if not member_signoff.exists():
+            missing_signoffs.append(member_id)
+
+    combined_key = combined_release_marker_key(team_release_ids, cohort)
+    marker = root / "tmp" / "auto-push-dispatched" / f"{combined_key}.pushed"
+    missing_advances = [
+        member_id for member_id in team_release_ids
+        if not (root / "tmp" / "auto-push-dispatched" / f"{combined_key}.{member_id}.advanced").exists()
+    ]
+
+    if marker.exists() and missing_advances:
+        failures += 1
+        print(f"FAIL [{team_id}] push marker exists for `{combined_key}` but boundary advance is incomplete: {', '.join(sorted(missing_advances))}")
+    elif marker.exists():
+        print(f"WARN [{team_id}] push already dispatched for cohort `{combined_key}`")
+    elif missing_signoffs:
+        print(f"INFO [{team_id}] push not yet ready — waiting on signoffs from: {', '.join(sorted(set(missing_signoffs)))}")
+    else:
+        print(f"PASS [{team_id}] dependency cohort is push-ready: `{combined_key}`")
+
+if printed_independent:
+    print("PASS Independent-by-default release logic active")
+print(f"FAILURES_DELTA={failures}")
+PY
 )"
-PUSH_MARKER="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.pushed"
-
-ADVANCE_MISSING=0
-for ENTRY in "${RELEASE_MAP[@]:-}"; do
-  [ -n "$ENTRY" ] || continue
-  TEAM="${ENTRY%%:*}"
-  PAIR_ADVANCED="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.${TEAM}.advanced"
-  if [ ! -f "$PAIR_ADVANCED" ]; then
-    ADVANCE_MISSING=1
-    info "Missing advance marker: ${PUSH_MARKER_KEY}.${TEAM}.advanced"
-  fi
-done
-
-if [ -f "$PUSH_MARKER" ]; then
-  if [ "$ADVANCE_MISSING" = "1" ]; then
-    fail "Push marker exists but release boundary was not advanced for all coordinated teams"
-    info "Root risk: deploy was triggered, but scripts/post-coordinated-push.sh did not complete."
-    info "Run: bash scripts/post-coordinated-push.sh"
-  else
-    warn "Push marker exists: $PUSH_MARKER_KEY.pushed — coordinated push was already dispatched"
-    info "Advance markers exist for all coordinated teams."
-  fi
-else
-  # Check if all signoffs are present
-  ALL_SIGNED=1
-  for ENTRY in "${RELEASE_MAP[@]:-}"; do
-    [ -n "$ENTRY" ] || continue
-    TEAM="${ENTRY%%:*}"
-    REST="${ENTRY#*:}"
-    PM="${REST%%:*}"
-    RID="${REST##*:}"
-    [ -n "$RID" ] || { ALL_SIGNED=0; continue; }
-    [ -f "sessions/${PM}/artifacts/release-signoffs/${RID}.md" ] || { ALL_SIGNED=0; break; }
-  done
-  if [ "$ALL_SIGNED" = "1" ] && [ "$FAILURES" -eq 0 ]; then
-    pass "All signoffs present — coordinated push will fire on next orchestrator tick"
-  elif [ "$ALL_SIGNED" = "1" ]; then
-    warn "All PM signoffs present but there are FAIL items above — resolve before push"
-  else
-    info "Push not yet ready — waiting on signoffs listed above"
-  fi
-fi
+while IFS= read -r LINE; do
+  [ -n "$LINE" ] || continue
+  case "$LINE" in
+    FAILURES_DELTA=*) FAILURES=$((FAILURES + ${LINE#FAILURES_DELTA=}));;
+    PASS\ *) pass "${LINE#PASS }";;
+    WARN\ *) warn "${LINE#WARN }";;
+    FAIL\ *) fail "${LINE#FAIL }";;
+    INFO\ *) info "${LINE#INFO }";;
+  esac
+done <<<"$PUSH_READINESS"
 
 # ── Feature backlog health ────────────────────────────────────────────────────
 echo
