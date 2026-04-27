@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph org-chart diagram implementation
+> Last updated: 2026-04-27 during Drupal LangGraph org-chart diagram refactor
 
 ---
 
@@ -20,8 +20,9 @@ just tables.
   - `org-chart/ownership/repository-ownership.yaml`
   - instruction-layer file presence across org-wide / role / site / seat levels
 - The Org Chart page now renders:
-  - a Chart.js hierarchy diagram with Board as the synthetic root
+  - a refactored Chart.js hierarchy diagram with Board as the synthetic root
   - CEO on the second level by default
+  - subtree-aware parent/child layout instead of row-based placement
   - click-to-expand subordinate branches
   - seat registry and reporting relationships
   - ownership context from module/repository mappings
@@ -48,6 +49,8 @@ just tables.
 6. The hierarchy needs both a visual overview and a textual registry; the
    diagram is the orientation layer and the seat details remain the source of
    drill-down depth.
+7. Tree diagrams need subtree-aware layout and reliable click geometry; naive
+   depth-row placement was not good enough for the real seat graph.
 
 ### Next actions
 
