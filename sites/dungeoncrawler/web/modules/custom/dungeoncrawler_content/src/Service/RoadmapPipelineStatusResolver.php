@@ -340,6 +340,56 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+   * Returns feature counts mapped onto roadmap flow statuses.
+   *
+   * @return array<string, int>
+   *   Counts keyed by pending, in_progress, done, implemented.
+   */
+  public function getFeatureFlowCounts(string $website = 'dungeoncrawler'): array {
+    $counts = [
+      'pending' => 0,
+      'in_progress' => 0,
+      'done' => 0,
+      'implemented' => 0,
+    ];
+
+    if (!is_dir($this->featuresPath)) {
+      return $counts;
+    }
+
+    $feature_dirs = glob($this->featuresPath . DIRECTORY_SEPARATOR . 'dc-*', GLOB_ONLYDIR) ?: [];
+    foreach ($feature_dirs as $dir) {
+      $feature_id = basename($dir);
+      if ($feature_id === '' || str_contains($feature_id, '/') || str_contains($feature_id, '\\') || str_contains($feature_id, '..')) {
+        continue;
+      }
+
+      $feature_path = $dir . DIRECTORY_SEPARATOR . 'feature.md';
+      if (!is_readable($feature_path)) {
+        continue;
+      }
+
+      $contents = file_get_contents($feature_path);
+      if ($contents === FALSE) {
+        continue;
+      }
+
+      $feature_website = mb_strtolower($this->extractFieldValue($contents, 'Website', ''));
+      if ($feature_website !== mb_strtolower($website)) {
+        continue;
+      }
+
+      $status = mb_strtolower($this->extractFieldValue($contents, 'Status', ''));
+      $mapped_status = self::PIPELINE_TO_ROADMAP[$status] ?? 'pending';
+      if (isset($counts[$mapped_status])) {
+        $counts[$mapped_status]++;
+      }
+    }
+
+    return $counts;
+  }
+
+  /**
    * Extract markdown field values from "- Label: value" patterns.
    */
   private function extractFieldValue(string $markdown, string $label, string $fallback): string {
