@@ -5,8 +5,8 @@
 - Module: dungeoncrawler_content
 - Status: done
 - Priority: P0 (core check resolution mechanic — encounter and skill systems depend on this)
-- Release: 
-20260407-dungeoncrawler-release-b
+- Release: 20260412-dungeoncrawler-release-x
+- Previous release tag: 20260407-dungeoncrawler-release-b (no shipped push evidence found during 2026-04-27 audit)
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 1–300

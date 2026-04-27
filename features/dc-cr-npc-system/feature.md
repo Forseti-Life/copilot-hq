@@ -3,7 +3,7 @@
 - Work item id: dc-cr-npc-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260411-dungeoncrawler-release-b
 - Priority: P2
 - PM owner: pm-dungeoncrawler

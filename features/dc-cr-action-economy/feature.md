@@ -5,7 +5,7 @@
 - Module: dungeoncrawler_content
 - Status: done
 - Priority: P0 (foundation for all encounter-mode gameplay; all class features, spells, and skill actions depend on this)
-- Release: 
+- Release: 20260412-dungeoncrawler-release-x
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

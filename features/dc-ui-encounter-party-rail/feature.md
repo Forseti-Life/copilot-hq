@@ -3,7 +3,7 @@
 - Work item id: dc-ui-encounter-party-rail
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P1
 - PM owner: pm-dungeoncrawler

@@ -3,7 +3,7 @@
 - Work item id: dc-b3-bestiary3
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-q
 - Feature type: enhancement
 - Priority: P3

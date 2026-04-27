@@ -4,7 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 20260406-dungeoncrawler-release-next
+- Release: 20260412-dungeoncrawler-release-x
 - Priority: P1 (character creation dependency; heritage selection step immediately follows ancestry in creation wizard)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

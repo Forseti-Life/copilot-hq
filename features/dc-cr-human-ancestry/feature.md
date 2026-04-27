@@ -3,7 +3,7 @@
 - Work item id: dc-cr-human-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

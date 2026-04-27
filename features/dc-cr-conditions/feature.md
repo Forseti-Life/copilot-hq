@@ -4,8 +4,8 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 
-20260407-dungeoncrawler-release-b
+- Release: 20260412-dungeoncrawler-release-x
+- Previous release tag: 20260407-dungeoncrawler-release-b (no shipped push evidence found during 2026-04-27 audit)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

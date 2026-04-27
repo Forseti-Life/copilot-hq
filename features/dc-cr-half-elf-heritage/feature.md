@@ -3,7 +3,7 @@
 - Work item id: dc-cr-half-elf-heritage
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: deferred
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -13,7 +13,7 @@
 - Category: game-mechanic
 - Schema changes: no
 - Cross-site modules: none
-- Release: (set by PM at activation)
+- Defer reason: Depends on deferred feature dc-cr-ancestry-feat-schedule; hold until ancestry feat schedule validation is explicitly reactivated.
 - Created: 2026-04-18
 
 ## Goal

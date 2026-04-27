@@ -5,7 +5,7 @@
 - Module: dungeoncrawler_content
 - Priority: P2
 - Status: done
-- Release: 
+- Release: 20260412-dungeoncrawler-release-x
 - Dependencies: dc-cr-equipment-system, dc-cr-character-creation
 
 ## Goal

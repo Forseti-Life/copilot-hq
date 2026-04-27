@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gnome-heritage-fey-touched
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

@@ -3,8 +3,8 @@
 - Work item id: dc-apg-class-witch
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 
+- Status: deferred
+- Defer reason: Depends on dc-cr-focus-spells, which is still deferred pending explicit validation of spell rules coverage.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

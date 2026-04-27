@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-alchemist
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 20260409-dungeoncrawler-release-f
 - Dev owner: dev-dungeoncrawler

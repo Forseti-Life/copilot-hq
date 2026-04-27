@@ -4,7 +4,7 @@
 - Website: dungeoncrawler.life
 - Module: dungeoncrawler_content (home page / front page block)
 - Status: done
-- Release: 
+- Release: 20260412-dungeoncrawler-release-x
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

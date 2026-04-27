@@ -3,7 +3,7 @@
 - Work item id: dc-cr-spells-ch07
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P1
 - Release: 
 20260412-dungeoncrawler-release-r

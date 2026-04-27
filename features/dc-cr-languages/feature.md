@@ -4,7 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 
+- Release: 20260412-dungeoncrawler-release-x
 - Priority: P2 (blocks dc-cr-elf-ancestry and dc-cr-elf-heritage-cavern; accepted for 20260407-dungeoncrawler-release-b)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

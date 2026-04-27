@@ -3,7 +3,7 @@
 - Work item id: dc-b1-bestiary1
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 - Priority: P3
 - PM owner: pm-dungeoncrawler

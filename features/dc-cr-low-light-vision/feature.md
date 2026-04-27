@@ -12,7 +12,7 @@
 - Category: rule-system
 - Schema changes: no
 - Cross-site modules: none
-- Release: 
+- Release: 20260412-dungeoncrawler-release-x
 - Created: 2026-04-06
 
 ## Goal

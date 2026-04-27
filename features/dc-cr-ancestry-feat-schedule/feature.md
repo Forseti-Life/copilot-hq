@@ -3,7 +3,8 @@
 - Work item id: dc-cr-ancestry-feat-schedule
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: deferred
+- Defer reason: Depends on dc-cr-character-leveling (deferred); re-evaluate when character leveling is activated.
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

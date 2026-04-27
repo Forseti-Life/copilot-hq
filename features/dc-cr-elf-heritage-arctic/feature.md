@@ -13,7 +13,7 @@
 - Category: game-mechanic
 - Schema changes: no
 - Cross-site modules: none
-- Release: (set by PM at activation)
+- Release: 20260412-dungeoncrawler-release-x
 - Created: 2026-04-06
 
 ## Goal

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-burrow-elocutionist
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-i
 - Priority: P3
 - PM owner: pm-dungeoncrawler

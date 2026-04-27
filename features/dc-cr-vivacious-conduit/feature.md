@@ -3,7 +3,7 @@
 - Work item id: dc-cr-vivacious-conduit
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P3
 - PM owner: pm-dungeoncrawler

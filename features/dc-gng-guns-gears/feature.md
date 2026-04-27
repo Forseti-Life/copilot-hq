@@ -3,7 +3,7 @@
 - Work item id: dc-gng-guns-gears
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-p
 - Priority: P3
 - PM owner: pm-dungeoncrawler

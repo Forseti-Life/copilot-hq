@@ -32,8 +32,15 @@ When remediating Backup and Migrate private-path warnings on live Drupal sites:
 4. Verify both:
    - `stream_wrapper_manager()->isValidScheme('private') === true`
    - `file_system()->realpath('private://backup_migrate')` resolves correctly
+5. When executing a real backup from the shell on this host, run the Backup and
+   Migrate Drush command as `www-data`.
 
 ## Why it matters
 
 Without the cache rebuild, the setting can appear correct in `settings.php`
 while Backup and Migrate still behaves as if `private://` is not configured.
+
+Also, on this host, `backup_migrate:quick_backup` reported a destination
+writeability failure when run as `root`, even though the same destination was
+valid and writable for `www-data`. Running the command as `www-data` produced
+successful `.mysql.gz` and `.info` artifacts immediately.
