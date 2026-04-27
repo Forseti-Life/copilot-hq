@@ -17,3 +17,4 @@ Follow up with the owning seat, unblock it, or resolve the stale item.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH outbox-lag: ceo-copilot-2 inbox=20260427-sla-outbox-lag-ceo-copilot-2-20260427-040427-gating-agent-qua`
+- Status: pending
