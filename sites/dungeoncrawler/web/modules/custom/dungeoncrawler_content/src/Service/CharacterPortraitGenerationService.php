@@ -92,7 +92,8 @@ class CharacterPortraitGenerationService {
     $provider_status = is_array($integration_status['providers'][$provider] ?? NULL)
       ? $integration_status['providers'][$provider]
       : [];
-    if (empty($provider_status['enabled']) || empty($provider_status['has_api_key'])) {
+    $has_credentials = !empty($provider_status['has_credentials']) || !empty($provider_status['has_api_key']);
+    if (empty($provider_status['enabled']) || !$has_credentials) {
       $this->logger->warning('Character portrait generation unavailable for character @character_id: provider @provider is not fully configured.', [
         '@character_id' => $character_id,
         '@provider' => $provider,

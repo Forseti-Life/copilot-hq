@@ -30,9 +30,12 @@
       {% if character.portrait %}
         <img src="{{ character.portrait }}" alt="{{ character.name }}" class="dc-sheet__portrait" />
       {% else %}
-        <div class="dc-sheet__portrait-placeholder">
-          <span>{{ character.name|first|upper }}</span>
-        </div>
+        <a href="{{ portrait_action_url ?: edit_url }}" class="dc-sheet__portrait-link" aria-label="{{ portrait_action_label ?: 'Add profile picture' }}">
+          <div class="dc-sheet__portrait-placeholder">
+            <span>{{ character.name|first|upper }}</span>
+          </div>
+          <span class="dc-sheet__portrait-cta">{{ portrait_action_label ?: 'Add profile picture' }}</span>
+        </a>
       {% endif %}
       {% if character.status == 'incomplete' %}
         {% if not character.portrait and character.step >= 8 %}

@@ -118,8 +118,8 @@ class DashboardController extends ControllerBase {
     $vertex_status = $integration_status['providers']['vertex'] ?? [];
     $default_provider = (string) ($integration_status['default_provider'] ?? 'gemini');
 
-    $gemini_mode = (!empty($gemini_status['enabled']) && !empty($gemini_status['has_api_key'])) ? 'live-ready' : 'stub';
-    $vertex_mode = (!empty($vertex_status['enabled']) && !empty($vertex_status['has_api_key'])) ? 'live-ready' : 'stub';
+    $gemini_mode = (!empty($gemini_status['enabled']) && (!empty($gemini_status['has_credentials']) || !empty($gemini_status['has_api_key']))) ? 'live-ready' : 'stub';
+    $vertex_mode = (!empty($vertex_status['enabled']) && (!empty($vertex_status['has_credentials']) || !empty($vertex_status['has_api_key']))) ? 'live-ready' : 'stub';
 
     $build['gemini_image_generation'] = [
       '#type' => 'details',

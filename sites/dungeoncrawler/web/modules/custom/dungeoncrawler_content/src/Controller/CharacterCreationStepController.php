@@ -293,6 +293,7 @@ class CharacterCreationStepController extends ControllerBase {
     if (!empty($result['provider_status']) && is_array($result['provider_status'])) {
       $summary['provider_status'] = [
         'enabled' => (bool) ($result['provider_status']['enabled'] ?? FALSE),
+        'has_credentials' => (bool) (($result['provider_status']['has_credentials'] ?? FALSE) || ($result['provider_status']['has_api_key'] ?? FALSE)),
         'has_api_key' => (bool) ($result['provider_status']['has_api_key'] ?? FALSE),
       ];
     }

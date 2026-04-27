@@ -185,6 +185,16 @@ class CharacterViewController extends ControllerBase {
       $back_url = Url::fromRoute('dungeoncrawler_content.campaigns');
     }
 
+    $character_step = max(1, min(8, (int) ($char_data['step'] ?? 1)));
+    $portrait_action_query = ['character_id' => $record->id];
+    if ($campaign_id > 0) {
+      $portrait_action_query['campaign_id'] = $campaign_id;
+    }
+    $portrait_action_step = $character_step >= 8 ? 8 : $character_step;
+    $portrait_action_url = Url::fromRoute('dungeoncrawler_content.character_step', ['step' => $portrait_action_step], [
+      'query' => $portrait_action_query,
+    ])->toString();
+
     $ancestry_name = is_array($char_data['ancestry'] ?? NULL)
       ? ($char_data['ancestry']['name'] ?? 'Unknown')
       : ($char_data['ancestry'] ?? 'Unknown');
@@ -291,7 +301,7 @@ class CharacterViewController extends ControllerBase {
         'hero_points' => $char_data['hero_points'] ?? 1,
         'status' => $record->status ? 'active' : 'incomplete',
         'portrait' => $portrait_url,
-        'step' => $char_data['step'] ?? 1,
+        'step' => $character_step,
       ],
       '#char_data' => $char_data,
       '#ancestry' => [
@@ -350,6 +360,10 @@ class CharacterViewController extends ControllerBase {
       '#tavern_url' => $tavern_url,
       '#campaign_id' => $campaign_id,
       '#back_url' => $back_url->toString(),
+      '#portrait_action_url' => !$portrait_url ? $portrait_action_url : NULL,
+      '#portrait_action_label' => $character_step >= 8
+        ? $this->t('Add profile picture')
+        : $this->t('Continue setup to add profile picture'),
       '#attached' => [
         'library' => ['dungeoncrawler_content/character-sheet'],
       ],

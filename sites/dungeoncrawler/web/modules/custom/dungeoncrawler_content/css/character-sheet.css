@@ -395,6 +395,14 @@
   object-fit: cover;
 }
 
+.dc-sheet__portrait-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
 .dc-sheet__portrait-placeholder {
   width: 100%;
   height: 100%;
@@ -402,12 +410,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px dashed rgba(255, 255, 255, 0.28);
 }
 
 .dc-sheet__portrait-placeholder span {
   font-family: 'Cinzel', serif;
   font-size: 3rem;
   color: var(--dc-torch-gold);
+}
+
+.dc-sheet__portrait-cta {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--dc-radius-md);
+  background: rgba(15, 23, 42, 0.88);
+  color: var(--bs-light);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.dc-sheet__portrait-link:hover .dc-sheet__portrait-placeholder,
+.dc-sheet__portrait-link:focus-visible .dc-sheet__portrait-placeholder {
+  border-color: rgba(255, 215, 0, 0.65);
+}
+
+.dc-sheet__portrait-link:focus-visible {
+  outline: 2px solid var(--dc-torch-gold);
+  outline-offset: 3px;
+  border-radius: var(--dc-radius-lg);
 }
 
 .dc-sheet__status-dead {
