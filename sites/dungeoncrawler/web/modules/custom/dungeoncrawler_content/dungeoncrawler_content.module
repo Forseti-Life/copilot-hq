@@ -269,6 +269,7 @@ function dungeoncrawler_content_theme(array $existing, string $type, string $the
         'prog_pct'       => 0,
         'is_admin'       => FALSE,
         'feature_counts' => [],
+        'feature_flow_counts' => [],
         'release_snapshot' => [],
         'backlog_groups' => [],
         'status_labels'  => [],

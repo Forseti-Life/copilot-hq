@@ -410,3 +410,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260426-213913-release-support-dc-cr-character-class — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260426-213913-release-support-dc-cr-character-class.md)
 - [ ] 20260426-213913-release-support-dc-cr-character-creation — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260426-213913-release-support-dc-cr-character-creation.md)
 - [ ] 20260426-213913-release-support-dc-cr-halfling-ancestry — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260426-213913-release-support-dc-cr-halfling-ancestry.md)
+- [ ] 20260427-syshealth-php-fatal-dungeoncrawler — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260427-syshealth-php-fatal-dungeoncrawler.md)
