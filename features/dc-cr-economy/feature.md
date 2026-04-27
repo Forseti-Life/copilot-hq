@@ -4,8 +4,9 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: in_progress
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit found substantial economy plumbing already live, including GP/SP/CP currency handling, bulk and encumbrance calculations, and buy/sell transaction logic, but did not confirm the broader feature brief as complete. Character creation still defaults to a fixed gold value rather than class-based starting gold, and a full services-layer implementation matching this brief was not found.
 - Dependencies: dc-cr-equipment-system, dc-cr-character-creation
 
 ## Goal

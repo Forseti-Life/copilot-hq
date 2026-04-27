@@ -3,8 +3,9 @@
 - Work item id: dc-cr-xp-award-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: in_progress
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit found only partial XP plumbing: character records store experience points and CharacterStateService can add XP to a single character, but the GM/session award service, party-wide distribution, award-event logging, and milestone-mode workflow described in the feature brief were not found.
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

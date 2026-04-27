@@ -3,8 +3,9 @@
 - Work item id: dc-home-suggestion-notice
 - Website: dungeoncrawler.life
 - Module: dungeoncrawler_content (home page / front page block)
-- Status: done
+- Status: in_progress
 - Release: 20260412-dungeoncrawler-release-x
+- Audit note: 2026-04-27 implementation audit did not find the requested suggestion-feedback notice on the live https://dungeoncrawler.forseti.life/ homepage, and no matching front-page code/config evidence was found in the site module/theme paths reviewed. This remains scoped work, not a metadata-only cleanup.
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

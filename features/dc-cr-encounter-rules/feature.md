@@ -3,8 +3,9 @@
 - Work item id: dc-cr-encounter-rules
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the encounter loop is live through CombatEngine and CombatApiController, including initiative order, turn tracking, attack/MAP math, degree-of-success resolution, damage flow, and end-of-turn condition ticking; original shipped release provenance was not recoverable from feature history.
 - Priority: P1 (primary gameplay loop; depends on dice and DC)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

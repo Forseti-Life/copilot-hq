@@ -3,8 +3,9 @@
 - Work item id: dc-apg-ancestries
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the six APG ancestries are live in CharacterManager::ANCESTRIES, the character-creation flow consumes ancestry and heritage data through CharacterManager::HERITAGES, and APG versatile heritages are implemented in CharacterManager::VERSATILE_HERITAGES; original shipped release provenance was not recoverable from feature history.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

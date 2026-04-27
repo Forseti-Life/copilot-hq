@@ -3,8 +3,9 @@
 - Work item id: dc-apg-class-expansions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed APG class-expansion data is already live in CharacterManager, including APG hunter's edges, research fields, dragon-type support for Barbarian instinct flows, and related feat/class option content; original shipped release provenance was not recoverable from feature history.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

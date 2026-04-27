@@ -3,9 +3,10 @@
 - Work item id: dc-cr-conditions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
 - Previous release tag: 20260407-dungeoncrawler-release-b (no shipped push evidence found during 2026-04-27 audit)
+- Audit note: 2026-04-27 implementation audit confirmed the conditions system is live through ConditionManager, including a PF2E condition catalog, apply/remove/decrement flows, persistence in combat_conditions, and integration with combat math for condition penalties; original shipped release provenance was not recoverable from feature history.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

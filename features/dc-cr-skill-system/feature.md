@@ -3,8 +3,9 @@
 - Work item id: dc-cr-skill-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the skill system is live through trained-skill selection in character creation, proficiency-bonus calculation, skill-check rolling, and recall-knowledge/skill-routing support; original shipped release provenance was not recoverable from feature history.
 - Priority: P1 (core activity resolution; exploration and social gameplay)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

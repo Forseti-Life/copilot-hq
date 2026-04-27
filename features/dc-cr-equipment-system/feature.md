@@ -3,8 +3,9 @@
 - Work item id: dc-cr-equipment-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
-- Release: 20260412-dungeoncrawler-release-x
+- Status: shipped
+- Release: 
+- Audit note: 2026-04-27 implementation audit confirmed the equipment system is already live via InventoryManagementService and InventoryManagementController, including item-instance persistence, inventory mutation flows, bulk/encumbrance handling, and starting-equipment hooks in character data; original shipped release provenance was not recoverable from feature history.
 - Priority: P1 (combat and character creation dependency; InventoryManagementService partial impl exists)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
