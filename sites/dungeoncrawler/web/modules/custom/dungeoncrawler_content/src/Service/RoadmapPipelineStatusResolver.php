@@ -44,6 +44,11 @@ class RoadmapPipelineStatusResolver {
   private string $releaseStatePath;
 
   /**
+   * Absolute path to coordinated push marker files.
+   */
+  private string $pushStatePath;
+
+  /**
    * Request-local cache of parsed feature statuses.
    *
    * @var array<string, string|null>
@@ -53,13 +58,17 @@ class RoadmapPipelineStatusResolver {
   /**
    * Constructs the resolver.
    */
-  public function __construct(?string $features_path = NULL, ?string $release_state_path = NULL) {
+  public function __construct(?string $features_path = NULL, ?string $release_state_path = NULL, ?string $push_state_path = NULL) {
     $this->featuresPath = rtrim(
       $features_path ?: Settings::get('dungeoncrawler_pipeline_features_path', '/home/ubuntu/forseti.life/features'),
       DIRECTORY_SEPARATOR
     );
     $this->releaseStatePath = rtrim(
       $release_state_path ?: Settings::get('dungeoncrawler_pipeline_release_state_path', '/home/ubuntu/forseti.life/tmp/release-cycle-active'),
+      DIRECTORY_SEPARATOR
+    );
+    $this->pushStatePath = rtrim(
+      $push_state_path ?: Settings::get('dungeoncrawler_pipeline_push_state_path', dirname($this->releaseStatePath) . '/auto-push-dispatched'),
       DIRECTORY_SEPARATOR
     );
   }
@@ -220,9 +229,16 @@ class RoadmapPipelineStatusResolver {
       'active_release' => $active_release,
       'next_release' => $next_release,
       'started_at' => $started_at,
+      'active_release_status' => '',
+      'active_release_status_display' => 'pending',
+      'active_release_status_label' => 'Unavailable',
+      'active_release_pushed_at' => '',
+      'release_sync_note' => '',
       'active_features' => [],
       'next_features' => [],
     ];
+
+    $snapshot += $this->resolveReleaseSnapshotState($active_release, $next_release);
 
     if (!is_dir($this->featuresPath) || ($active_release === '' && $next_release === '')) {
       return $snapshot;
@@ -352,6 +368,63 @@ class RoadmapPipelineStatusResolver {
       'deferred' => 'Deferred',
       default => $status !== '' ? ucwords(str_replace('_', ' ', $status)) : 'Pending',
     };
+  }
+
+  /**
+   * Resolves live release status details from coordinated-push markers.
+   *
+   * @return array<string, string>
+   *   Status fields for the release snapshot.
+   */
+  private function resolveReleaseSnapshotState(string $active_release, string $next_release): array {
+    if ($active_release === '') {
+      return [
+        'active_release_status' => '',
+        'active_release_status_display' => 'pending',
+        'active_release_status_label' => 'Unavailable',
+        'active_release_pushed_at' => '',
+        'release_sync_note' => '',
+      ];
+    }
+
+    $push_marker = $this->findPushMarker($active_release);
+    if ($push_marker !== '') {
+      return [
+        'active_release_status' => 'pushed_pending_advance',
+        'active_release_status_display' => 'implemented',
+        'active_release_status_label' => 'Pushed — awaiting cycle advance',
+        'active_release_pushed_at' => date(DATE_ATOM, filemtime($push_marker) ?: time()),
+        'release_sync_note' => $next_release !== ''
+          ? 'The coordinated push is recorded. The release-cycle files have not advanced yet, so the next release remains queued behind post-push follow-through.'
+          : 'The coordinated push is recorded for this release.',
+      ];
+    }
+
+    return [
+      'active_release_status' => 'in_progress',
+      'active_release_status_display' => 'in_progress',
+      'active_release_status_label' => 'In Progress',
+      'active_release_pushed_at' => '',
+      'release_sync_note' => '',
+    ];
+  }
+
+  /**
+   * Finds the coordinated push marker for a release, if present.
+   */
+  private function findPushMarker(string $release_id): string {
+    if ($release_id === '' || !is_dir($this->pushStatePath)) {
+      return '';
+    }
+
+    foreach (glob($this->pushStatePath . DIRECTORY_SEPARATOR . '*.pushed') ?: [] as $path) {
+      $name = basename($path);
+      if (str_contains($name, $release_id)) {
+        return $path;
+      }
+    }
+
+    return '';
   }
 
   /**

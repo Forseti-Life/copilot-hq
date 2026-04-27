@@ -86,6 +86,10 @@
           <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release ?: '—' }}</strong>
         </article>
         <article class="dc-roadmap__stat-card">
+          <span class="dc-roadmap__stat-label">Release status</span>
+          <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release_status_label ?: '—' }}</strong>
+        </article>
+        <article class="dc-roadmap__stat-card">
           <span class="dc-roadmap__stat-label">Next release</span>
           <strong class="dc-roadmap__stat-value">{{ release_snapshot.next_release ?: '—' }}</strong>
         </article>
@@ -93,7 +97,15 @@
           <span class="dc-roadmap__stat-label">Cycle started</span>
           <strong class="dc-roadmap__stat-value">{{ release_snapshot.started_at ?: '—' }}</strong>
         </article>
+        <article class="dc-roadmap__stat-card">
+          <span class="dc-roadmap__stat-label">Pushed at</span>
+          <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release_pushed_at ?: '—' }}</strong>
+        </article>
       </div>
+
+      {% if release_snapshot.release_sync_note %}
+        <p class="dc-roadmap__panel-copy">{{ release_snapshot.release_sync_note }}</p>
+      {% endif %}
 
       <div class="dc-roadmap__backlog-groups">
         <section class="dc-roadmap__backlog-group">
