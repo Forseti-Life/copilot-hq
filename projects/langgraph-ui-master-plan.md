@@ -195,6 +195,16 @@ Definition of done:
 Every request-backed control renders from the same data model, and operators can
 see request status without opening raw artifact files.
 
+Current status:
+- Implemented.
+- A shared Drupal service now owns runtime request, replay request, version
+  snapshot, and promotion request directories plus normalized record reading.
+- Run, Release, Observe, Test, and Admin now render request-backed artifacts
+  through that shared model.
+- New artifacts include a standard contract with `schema_version`,
+  `artifact_type`, `request_id`, `status`, `status_message`, flow identity, and
+  actor/timestamp metadata.
+
 ### Workstream 2: checkpoint replay and resume
 
 Goal:
@@ -209,14 +219,24 @@ UI work:
    was resumed and when.
 
 Backend work:
-1. Define how a replay request points to a specific checkpoint artifact.
+1. Define how a replay request points to a specific checkpoint artifact from the
+   existing auto-checkpoint inventory (`inbox/responses/auto-checkpoint*.log`,
+   checkpoint loop state, and related scripts).
 2. Add a replay executor/consumer that validates checkpoint existence and
-   produces status updates/results.
-3. Record replay outputs so they feed Run history and Observe incident surfaces.
+   compatibility before handing replay work to the relevant runtime entrypoint.
+3. Reuse the shared control-plane artifact model so replay requests and replay
+   outcomes publish `requested/accepted/running/completed/failed/cancelled`
+   status transitions instead of bespoke result files.
+4. Record replay outputs so they feed Run history and Observe incident surfaces.
 
 Definition of done:
 An operator can choose a checkpoint, request replay/resume, and later see a
 clear success/failure result in the console.
+
+Concrete integration target:
+- First implementation should target the built-in `hq_orchestrator_tick` flow,
+  because it already has observable checkpoint artifacts and a real LangGraph
+  runtime entrypoint via `orchestrator/run.py --once`.
 
 ### Workstream 3: runtime execution backend
 
@@ -234,13 +254,26 @@ UI work:
 Backend work:
 1. Implement a consumer that reads runtime control requests and applies them to
    the relevant LangGraph execution environment.
-2. Add locking/idempotency rules so duplicate clicks do not trigger conflicting
+2. For the built-in `hq_orchestrator_tick` flow, map UI actions to the real HQ
+   runtime hooks:
+   - `Run Now` -> `orchestrator/run.py --once`
+   - runtime status -> `scripts/orchestrator-loop.sh status`
+   - `Pause` / `Resume` -> `scripts/hq-automation.sh stop|start` plus org
+     control/reason visibility from `scripts/org-control.sh`
+3. Add locking/idempotency rules so duplicate clicks do not trigger conflicting
    runs.
-3. Write executor results back to the shared control-plane artifact model.
+4. Write executor results back to the shared control-plane artifact model.
+5. Keep the executor adapter-based so other flows can plug in their own
+   LangGraph-native entrypoints later without changing the Drupal UI contract.
 
 Definition of done:
 Submitting a runtime request causes real execution state changes and those
 results are visible in Run and Observe.
+
+Concrete integration target:
+- Phase 1 should fully support `hq_orchestrator_tick`.
+- Other flows may remain request-only until they expose equivalent runtime
+  entrypoints.
 
 ### Workstream 4: version history and promotion workflow
 
@@ -260,7 +293,11 @@ Backend work:
    requests together.
 2. Implement a promotion consumer/executor that validates requested versions and
    records promotion outcomes.
-3. Link promotion results to release evidence and troubleshooting surfaces.
+3. First concrete integration should target the existing release-cycle and
+   release promotion tooling already present in the repo (`release-cycle-control`
+   state, release-cycle active markers, and post-push/release promotion scripts)
+   instead of inventing a parallel release engine.
+4. Link promotion results to release evidence and troubleshooting surfaces.
 
 Definition of done:
 Operators can follow a flow version from snapshot through promotion outcome
@@ -284,6 +321,11 @@ Scope:
 Definition of done:
 Flow authors can safely evolve a flow in the workspace without relying on raw
 config literacy.
+
+Concrete design guardrail:
+- Flow authoring improvements must stay aligned to LangGraph-native concepts
+  (state, nodes, routing, tools, entrypoints) and should not introduce a second
+  competing graph model inside Drupal.
 
 ### Workstream 6: admin and governance completion
 
