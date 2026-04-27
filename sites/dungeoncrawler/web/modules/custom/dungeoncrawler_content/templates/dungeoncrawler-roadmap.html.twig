@@ -80,32 +80,93 @@
         <p class="dc-roadmap__panel-copy">Live HQ release-cycle state for the DungeonCrawler product team.</p>
       </div>
 
-      <div class="dc-roadmap__stats-grid">
-        <article class="dc-roadmap__stat-card">
-          <span class="dc-roadmap__stat-label">Active release</span>
-          <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release ?: '—' }}</strong>
-        </article>
-        <article class="dc-roadmap__stat-card">
-          <span class="dc-roadmap__stat-label">Release status</span>
-          <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release_status_label ?: '—' }}</strong>
-        </article>
-        <article class="dc-roadmap__stat-card">
-          <span class="dc-roadmap__stat-label">Next release</span>
-          <strong class="dc-roadmap__stat-value">{{ release_snapshot.next_release ?: '—' }}</strong>
-        </article>
-        <article class="dc-roadmap__stat-card">
-          <span class="dc-roadmap__stat-label">Cycle started</span>
-          <strong class="dc-roadmap__stat-value">{{ release_snapshot.started_at ?: '—' }}</strong>
-        </article>
-        <article class="dc-roadmap__stat-card">
-          <span class="dc-roadmap__stat-label">Pushed at</span>
-          <strong class="dc-roadmap__stat-value">{{ release_snapshot.active_release_pushed_at ?: '—' }}</strong>
-        </article>
-      </div>
+      {% set is_pushed_pending_advance = release_snapshot.active_release_status == 'pushed_pending_advance' %}
+      <div class="dc-roadmap__release-overview">
+        <section class="dc-roadmap__release-process" aria-labelledby="dc-roadmap-process-flow">
+          <div class="dc-roadmap__release-section-header">
+            <h3 class="dc-roadmap__release-section-title" id="dc-roadmap-process-flow">Process flow</h3>
+            <p class="dc-roadmap__release-section-copy">Ordered release steps from current work through the next cycle handoff.</p>
+          </div>
 
-      {% if release_snapshot.release_sync_note %}
-        <p class="dc-roadmap__panel-copy">{{ release_snapshot.release_sync_note }}</p>
-      {% endif %}
+          <ol class="dc-roadmap__release-flow">
+            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'done' : 'active' }}">
+              <div class="dc-roadmap__release-stage-head">
+                <span class="dc-roadmap__release-step">1</span>
+                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'done' : 'in_progress' }}">
+                  {{ is_pushed_pending_advance ? 'Completed' : 'Current' }}
+                </span>
+              </div>
+              <strong class="dc-roadmap__release-stage-title">Work active release</strong>
+              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release ?: '—' }}</div>
+              <p class="dc-roadmap__release-stage-copy">This is the release currently being built, tested, and scoped.</p>
+            </li>
+
+            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'done' : 'pending' }}">
+              <div class="dc-roadmap__release-stage-head">
+                <span class="dc-roadmap__release-step">2</span>
+                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'implemented' : 'pending' }}">
+                  {{ is_pushed_pending_advance ? 'Recorded' : 'Awaiting' }}
+                </span>
+              </div>
+              <strong class="dc-roadmap__release-stage-title">Push to production</strong>
+              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release_pushed_at ?: 'Not pushed yet' }}</div>
+              <p class="dc-roadmap__release-stage-copy">Production deployment of the active release lands here.</p>
+            </li>
+
+            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--{{ is_pushed_pending_advance ? 'active' : 'pending' }}">
+              <div class="dc-roadmap__release-stage-head">
+                <span class="dc-roadmap__release-step">3</span>
+                <span class="dc-status-badge dc-status-badge--{{ is_pushed_pending_advance ? 'in_progress' : 'pending' }}">
+                  {{ is_pushed_pending_advance ? 'Current' : 'Later' }}
+                </span>
+              </div>
+              <strong class="dc-roadmap__release-stage-title">Advance release cycle</strong>
+              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.active_release_status_label ?: '—' }}</div>
+              <p class="dc-roadmap__release-stage-copy">After push, the boundary advances so the next cycle can begin.</p>
+            </li>
+
+            <li class="dc-roadmap__release-stage dc-roadmap__release-stage--tracked">
+              <div class="dc-roadmap__release-stage-head">
+                <span class="dc-roadmap__release-step">4</span>
+                <span class="dc-status-badge dc-status-badge--queued">Queued</span>
+              </div>
+              <strong class="dc-roadmap__release-stage-title">Start next release</strong>
+              <div class="dc-roadmap__release-stage-value">{{ release_snapshot.next_release ?: '—' }}</div>
+              <p class="dc-roadmap__release-stage-copy">This release becomes active once the cycle boundary advances.</p>
+            </li>
+          </ol>
+
+          {% if release_snapshot.release_sync_note %}
+            <p class="dc-roadmap__release-note">{{ release_snapshot.release_sync_note }}</p>
+          {% endif %}
+        </section>
+
+        <aside class="dc-roadmap__release-tracked" aria-labelledby="dc-roadmap-tracked-info">
+          <div class="dc-roadmap__release-section-header">
+            <h3 class="dc-roadmap__release-section-title" id="dc-roadmap-tracked-info">Tracked information</h3>
+            <p class="dc-roadmap__release-section-copy">Reference data that explains the current stage without changing the process order.</p>
+          </div>
+
+          <div class="dc-roadmap__tracked-grid">
+            <article class="dc-roadmap__tracked-card">
+              <span class="dc-roadmap__tracked-label">Active release</span>
+              <strong class="dc-roadmap__tracked-value">{{ release_snapshot.active_release ?: '—' }}</strong>
+            </article>
+            <article class="dc-roadmap__tracked-card">
+              <span class="dc-roadmap__tracked-label">Next release</span>
+              <strong class="dc-roadmap__tracked-value">{{ release_snapshot.next_release ?: '—' }}</strong>
+            </article>
+            <article class="dc-roadmap__tracked-card">
+              <span class="dc-roadmap__tracked-label">Cycle started</span>
+              <strong class="dc-roadmap__tracked-value">{{ release_snapshot.started_at ?: '—' }}</strong>
+            </article>
+            <article class="dc-roadmap__tracked-card">
+              <span class="dc-roadmap__tracked-label">Pushed at</span>
+              <strong class="dc-roadmap__tracked-value">{{ release_snapshot.active_release_pushed_at ?: '—' }}</strong>
+            </article>
+          </div>
+        </aside>
+      </div>
 
       <div class="dc-roadmap__backlog-groups">
         <section class="dc-roadmap__backlog-group">
