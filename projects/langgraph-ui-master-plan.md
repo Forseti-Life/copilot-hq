@@ -110,8 +110,8 @@ Approach:
 | Feature progress snapshot | LangGraph-owned work progress | Feature progress artifact | Observe Feature Progress | Supported | Working |
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
 | Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test checkpoint inventory | Partial | Artifacts are visible; replay UX is not wired yet |
-| Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces | Partial | Request capture exists; execution backend is not wired yet |
-| Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace | Partial | Version snapshots exist; promotion state is still request-backed only |
+| Execution commands | Run/pause/resume actions | Private runtime request artifacts | Run request surfaces, Observe control-request visibility | Partial | Request capture and visibility exist; execution backend is not wired yet |
+| Version history | Version list, provenance, promotion state | Private version snapshots and promotion request artifacts | Release workspace, Observe control-request visibility | Partial | Version snapshots exist; promotion state is still request-backed only |
 
 ## Section-by-section definition of done
 
@@ -141,7 +141,7 @@ Approach:
 ### Observe
 - Done when traces, metrics, drift, alerts, and flow-scoped progress are easy
   to inspect from one coherent flow-aware workspace.
-- Current state: nested Observe workspace exists and is the strongest read-only ops surface.
+- Current state: nested Observe workspace exists and now includes control-request visibility alongside the main read-only ops surfaces.
 
 ### Release
 - Done when users can inspect evidence, create versions, and promote versions
@@ -151,7 +151,7 @@ Approach:
 ### Admin
 - Done when runtime roots, artifact health, and control files are visible and
   any writable controls needed by the UI can be managed safely.
-- Current state: read-only inspection exists.
+- Current state: read-only inspection exists, including the private Drupal LangGraph artifact roots used by runtime and release controls.
 
 ## Completion checklist
 
@@ -163,26 +163,166 @@ Approach:
 - [x] Add nested flow workspace tabs and stub control pages
 - [x] Add flow edit/archive actions
 - [x] Add Build editors for schema, nodes, routing, tools, and prompt policy
-- [ ] Add Test actions for structural validation and checkpoint replay
-- [ ] Add Run actions for manual execution and pause/resume
-- [ ] Add Release actions for version creation and promotion
-- [ ] Add explicit writable control surfaces where runtime actions require them
-- [ ] Audit every command/data structure in this document against the live UI
+- [x] Add Test actions for structural validation and checkpoint replay
+- [x] Add Run actions for manual execution and pause/resume
+- [x] Add Release actions for version creation and promotion
+- [x] Add explicit writable control surfaces where runtime actions require them
+- [x] Audit every command/data structure in this document against the live UI
 
-Todos:
-- Done: establish this file as the UI master contract and tracking source.
-- Pending: implement missing command controls in Flows, Build, Test, Run, and
-  Release.
-- Pending: add real editors for LangGraph data structures, not just create-time
-  capture and read-only display.
-- Pending: audit the live UI against this matrix and close remaining gaps.
+## Next-phase implementation roadmap
 
-Notes:
+The UI shell and operator-facing information architecture are now in place. The
+next phase is about turning the remaining `Partial` surfaces into a real control
+plane with backend execution, status tracking, and provenance.
+
+### Workstream 1: control-plane artifact model
+
+Goal:
+Create one normalized model for runtime requests, checkpoint replay requests,
+version snapshots, and promotion requests so the UI is not just writing loose
+JSON files.
+
+Deliverables:
+1. Define a shared artifact contract for request IDs, timestamps, actor, flow,
+   requested action, current status, status message, and related artifacts.
+2. Add shared storage/helpers so Run, Test, Release, Observe, and Admin all read
+   the same structured records.
+3. Add status values that match actual lifecycle state: `requested`,
+   `accepted`, `running`, `completed`, `failed`, `cancelled`.
+4. Surface those states consistently in Run, Observe, Release, and Admin.
+
+Definition of done:
+Every request-backed control renders from the same data model, and operators can
+see request status without opening raw artifact files.
+
+### Workstream 2: checkpoint replay and resume
+
+Goal:
+Turn checkpoint inventory into an actual replay/resume workflow.
+
+UI work:
+1. Expand `Test > Replay Checkpoints` from inventory-only to a selectable replay
+   form.
+2. Show checkpoint metadata: source flow, timestamp, source artifact, replay
+   eligibility, and last replay outcome.
+3. Add per-flow replay history in Observe or Run so operators can inspect what
+   was resumed and when.
+
+Backend work:
+1. Define how a replay request points to a specific checkpoint artifact.
+2. Add a replay executor/consumer that validates checkpoint existence and
+   produces status updates/results.
+3. Record replay outputs so they feed Run history and Observe incident surfaces.
+
+Definition of done:
+An operator can choose a checkpoint, request replay/resume, and later see a
+clear success/failure result in the console.
+
+### Workstream 3: runtime execution backend
+
+Goal:
+Turn `Run Now` and `Pause / Resume` into real actions rather than request
+capture only.
+
+UI work:
+1. Keep the existing request forms, but add request status, latest executor
+   outcome, and links to resulting run evidence.
+2. Show active runtime state for the flow: idle, queued, running, paused,
+   failed, completed.
+3. Add clear operator feedback when a newer request supersedes an older one.
+
+Backend work:
+1. Implement a consumer that reads runtime control requests and applies them to
+   the relevant LangGraph execution environment.
+2. Add locking/idempotency rules so duplicate clicks do not trigger conflicting
+   runs.
+3. Write executor results back to the shared control-plane artifact model.
+
+Definition of done:
+Submitting a runtime request causes real execution state changes and those
+results are visible in Run and Observe.
+
+### Workstream 4: version history and promotion workflow
+
+Goal:
+Turn version snapshots and promotion requests into a coherent release state
+model.
+
+UI work:
+1. Expand `Release > Versions` from flat snapshots to a browsable per-flow
+   version history with provenance and summary details.
+2. Expand `Release > Promote` to show current request status, target release
+   lane/environment, and latest promotion outcome.
+3. Show which version is current, candidate, promoted, superseded, or failed.
+
+Backend work:
+1. Add a version/promotion state model that ties snapshots and promotion
+   requests together.
+2. Implement a promotion consumer/executor that validates requested versions and
+   records promotion outcomes.
+3. Link promotion results to release evidence and troubleshooting surfaces.
+
+Definition of done:
+Operators can follow a flow version from snapshot through promotion outcome
+without leaving the LangGraph console.
+
+### Workstream 5: flow lifecycle and authoring maturity
+
+Goal:
+Close the biggest remaining non-runtime gaps in flow management itself.
+
+Scope:
+1. Add richer flow version browsing from the flow detail/build side, not just
+   release-side snapshots.
+2. Improve Build authoring beyond text/line-based editing where it materially
+   improves correctness: node structure, routing rules, and tool bindings.
+3. Add stronger validation between Build and Test so invalid authoring surfaces
+   are caught before runtime actions are requested.
+4. Decide whether Flows needs explicit archive/version actions outside Build or
+   whether nested Build remains the single edit surface.
+
+Definition of done:
+Flow authors can safely evolve a flow in the workspace without relying on raw
+config literacy.
+
+### Workstream 6: admin and governance completion
+
+Goal:
+Finish the control-plane governance story now that the UI has real writable
+surfaces.
+
+Scope:
+1. Add admin visibility for request volumes, stale requests, failed requests,
+   and orphaned artifacts.
+2. Surface writable control contracts and retention rules for private artifacts.
+3. Decide whether org/release controls remain read-only in Drupal or gain
+   explicit operator actions.
+4. Add cleanup/retention views for old runtime and release artifacts.
+
+Definition of done:
+Admins can understand control-plane health and artifact hygiene without shell
+access.
+
+## Proposed execution order
+
+1. Workstream 1 first, because replay, runtime execution, and promotion all need
+   the same status/provenance model.
+2. Workstream 3 next, because Run has the clearest operator value and already
+   has request capture in place.
+3. Workstream 4 after that, because Release depends on the same artifact/status
+   foundation.
+4. Workstream 2 in parallel with or immediately after 3/4, depending on whether
+   replay can reuse the same executor framework.
+5. Workstream 5 after backend control flow is stable.
+6. Workstream 6 throughout, but with final hardening after the main consumers
+   exist.
+
+## Tracking notes
+
 - The preferred architecture is now explicitly reflected in the UI:
   `Overview`, `Flows`, and `Admin` are global, while `Build`, `Test`, `Run`,
   `Observe`, and `Release` live under the selected flow workspace.
 - Compatibility routes for global lifecycle sections still exist so older entry
   points can redirect into the selected flow or prompt the user to choose one.
-- The command map currently shown in the UI is aspirational in places. This plan
-  now distinguishes aspirational mappings from truly implemented controls so we
-  can close the gap deliberately.
+- The current UI is now fully mapped and audited. Remaining gaps are not
+  unknowns; they are specific implementation workstreams captured above.
