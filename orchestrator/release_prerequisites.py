@@ -6,9 +6,13 @@ This is the REAL fix for coordinated release deadlocks, not a bandaid.
 
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "lib"))
+from release_cycle_helpers import explicit_release_dependencies, release_enabled_team_map  # type: ignore
 
 
 class ReleasePrerequisiteValidator:
@@ -22,7 +26,7 @@ class ReleasePrerequisiteValidator:
         self.signoff_dir = repo_root / "sessions"
 
     def get_active_teams(self) -> Dict[str, Dict[str, str]]:
-        """Load active coordinated-release teams from product-teams.json.
+        """Load active release-enabled teams from product-teams.json.
 
         Returns:
             Dict mapping team_id -> {id, pm_agent, ba_agent, site}
@@ -36,12 +40,9 @@ class ReleasePrerequisiteValidator:
             return {}
 
         teams = {}
-        for team in data.get("teams", []):
-            if not (team.get("active") and team.get("coordinated_release_default")):
-                continue
-            team_id = str(team.get("id") or "").strip()
+        for team_id, team in release_enabled_team_map(self.teams_file).items():
             pm_agent = str(team.get("pm_agent") or "").strip()
-            if team_id and pm_agent:
+            if pm_agent:
                 teams[team_id] = {
                     "id": team_id,
                     "pm_agent": pm_agent,
@@ -50,14 +51,13 @@ class ReleasePrerequisiteValidator:
                 }
         return teams
 
-    def get_other_coordinated_teams(self) -> List[str]:
-        """Get list of other coordinated-release teams.
-
-        For now, hardcoded as forseti/dungeoncrawler. In future, this should
-        read from product-teams.json coordination graph.
-        """
-        # FIXME: Should read from product-teams.json "coordinated_with" field
-        return ["forseti", "dungeoncrawler"]
+    def get_required_dependency_teams(self, team_id: str) -> List[str]:
+        """Get explicit release dependencies for a team."""
+        team_map = release_enabled_team_map(self.teams_file)
+        team = team_map.get(team_id)
+        if not team:
+            return []
+        return [dep for dep in explicit_release_dependencies(team) if dep in team_map]
 
     def get_release_for_team(self, team_id: str) -> Optional[str]:
         """Get current active release for a team.
@@ -106,8 +106,7 @@ class ReleasePrerequisiteValidator:
         Returns:
             (all_signed_off: bool, missing_signoffs: List[team_id])
         """
-        other_teams = self.get_other_coordinated_teams()
-        other_teams = [t for t in other_teams if t != team_id]
+        other_teams = self.get_required_dependency_teams(team_id)
 
         missing = []
         for other_team in other_teams:
@@ -126,8 +125,7 @@ class ReleasePrerequisiteValidator:
         Returns:
             List of team_ids that haven't signed off yet
         """
-        other_teams = self.get_other_coordinated_teams()
-        other_teams = [t for t in other_teams if t != team_id]
+        other_teams = self.get_required_dependency_teams(team_id)
 
         missing = []
         for other_team in other_teams:
@@ -141,9 +139,9 @@ class ReleasePrerequisiteValidator:
     ) -> Tuple[bool, List[str]]:
         """Validate that a release has all prerequisites for PUSH_REQUIRED state.
 
-        For coordinated releases, this means:
+        For dependency-coupled releases, this means:
         1. Primary team's PM has signed off
-        2. All other coordinated teams have also signed off
+        2. All explicitly required dependency teams have also signed off
 
         Does NOT auto-remediate. If prerequisites are missing, returns False
         with diagnostic info so CEO can investigate root cause.
@@ -166,8 +164,8 @@ class ReleasePrerequisiteValidator:
         missing = self.get_missing_cross_team_signoffs(team_id, release_id)
         if missing:
             issues.append(
-                f"Missing co-signoffs from: {', '.join(missing)}. "
-                f"Investigate why {team_id} released without waiting for coordinated teams."
+                f"Missing dependency signoffs from: {', '.join(missing)}. "
+                f"Investigate whether explicit cross-repo dependencies are configured correctly."
             )
             return False, issues
 

@@ -88,6 +88,15 @@ def main() -> None:
             if not isinstance(team.get(bool_key), bool):
                 errors.append(f"{ctx}: '{bool_key}' must be boolean")
 
+        release_dependencies = team.get("release_dependencies", [])
+        if release_dependencies is not None:
+            if not isinstance(release_dependencies, list):
+                errors.append(f"{ctx}: 'release_dependencies' must be an array when present")
+            else:
+                for dep in release_dependencies:
+                    if not isinstance(dep, str) or not dep.strip():
+                        errors.append(f"{ctx}: release_dependencies must contain non-empty strings")
+
         aliases = team.get("aliases")
         if not isinstance(aliases, list) or not aliases:
             errors.append(f"{ctx}: 'aliases' must be a non-empty array")

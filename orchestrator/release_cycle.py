@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import json as _json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from orchestrator.release_prerequisites import ReleasePrerequisiteValidator
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "lib"))
+from release_cycle_helpers import combined_release_marker_key, release_cohort, release_enabled_teams  # type: ignore
 
 
 def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
@@ -309,7 +313,7 @@ def _next_release_id_after(release_id: str, team_id: str, current_day: str) -> s
 def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
     """Ensure each coordinated-release team has an active release cycle.
 
-    For each eligible team (active + release_preflight_enabled + coordinated_release_default):
+    For each eligible team (active + release_preflight_enabled):
       - If no active release → start a new one (current + next IDs)
       - If active but no next_release_id tracked → write it so the cycle can advance
       - If current release is signed off → advance: next becomes current, generate new next
@@ -338,7 +342,7 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
     results: List[Dict[str, Any]] = []
 
     for team in teams_data.get("teams", []):
-        if not (team.get("active") and team.get("release_preflight_enabled") and team.get("coordinated_release_default")):
+        if not (team.get("active") and team.get("release_preflight_enabled")):
             continue
         team_id = (team.get("id") or "").strip()
         site = (team.get("site") or team_id).strip() or team_id
@@ -381,11 +385,11 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
 
             if not can_advance:
                 diag = validator.diagnose_stalled_release(team_id, current_release)
-                print(f"RELEASE-CYCLE: {team_id} {current_release} → BLOCKED waiting for coordinated teams")
+                print(f"RELEASE-CYCLE: {team_id} {current_release} → BLOCKED waiting for dependency signoffs")
                 print(f"  Issues: {prereq_issues}")
                 print(f"  Diagnostics: {diag}")
-                print(f"  ACTION: Investigate why coordinated teams haven't signed off (root cause analysis needed)")
-                action = "blocked_waiting_cross_team_signoffs"
+                print(f"  ACTION: Investigate whether cross-repo dependencies are configured correctly and signed off")
+                action = "blocked_waiting_dependency_signoffs"
                 results.append({
                     "team": team_id,
                     "action": action,
@@ -563,161 +567,165 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
         log.append({"step": "coordinated_push", "error": "could not read product-teams.json"})
         return
 
-    required: List[Dict[str, Any]] = []
-    for team in teams_data.get("teams", []):
-        if not (team.get("active") and team.get("coordinated_release_default")):
-            continue
-        pm_agent = (team.get("pm_agent") or "").strip()
-        if pm_agent:
-            required.append({
-                "team_id": team.get("id", ""),
-                "pm_agent": pm_agent,
-                "qa_agent": team.get("qa_agent", ""),
-            })
-
-    if not required:
+    release_teams = [
+        team for team in release_enabled_teams(teams_path)
+        if (team.get("pm_agent") or "").strip()
+    ]
+    if not release_teams:
         return
 
     active_dir = repo_root / "tmp" / "release-cycle-active"
-
-    team_release_ids: Dict[str, str] = {}
-    team_ready: Dict[str, bool] = {}
-
-    for entry in required:
-        team_id = entry["team_id"]
-        pm_agent = entry["pm_agent"]
-        release_id_file = active_dir / f"{team_id}.release_id"
-        if not release_id_file.exists():
-            team_ready[team_id] = False
-            continue
-        rid = release_id_file.read_text(encoding="utf-8").strip()
-        if not rid:
-            team_ready[team_id] = False
-            continue
-        team_release_ids[team_id] = rid
-        slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
-        signoff_file = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
-        team_ready[team_id] = signoff_file.exists()
-
-    any_ready = any(team_ready.get(e["team_id"], False) for e in required)
-    if not any_ready:
-        not_ready = [e["team_id"] for e in required if not team_ready.get(e["team_id"], False)]
-        log.append({"step": "coordinated_push", "status": "waiting", "not_ready": not_ready,
-                    "team_releases": team_release_ids})
-        return
-
-    signed_teams = [e["team_id"] for e in required if team_ready.get(e["team_id"], False)]
-    waiting_teams = [e["team_id"] for e in required if not team_ready.get(e["team_id"], False)]
-
-    combined_key = "__".join(
-        re.sub(r"[^A-Za-z0-9._-]", "-", team_release_ids[e["team_id"]])
-        for e in sorted(required, key=lambda x: x["team_id"])
-    )[:120]
-
     pushed_dir = repo_root / "tmp" / "auto-push-dispatched"
     pushed_dir.mkdir(parents=True, exist_ok=True)
-    marker = pushed_dir / f"{combined_key}.pushed"
+    ready_cohorts: List[Dict[str, Any]] = []
+    waiting_cohorts: List[Dict[str, Any]] = []
+    seen_cohorts: set[tuple[str, ...]] = set()
 
-    if marker.exists():
-        log.append({"step": "coordinated_push", "status": "already_pushed", "marker": combined_key})
+    for team in release_teams:
+        primary_team_id = str(team.get("id") or "").strip()
+        cohort = release_cohort(teams_path, primary_team_id)
+        cohort_ids = tuple(str(member.get("id") or "").strip() for member in cohort if str(member.get("id") or "").strip())
+        if not cohort_ids or cohort_ids in seen_cohorts:
+            continue
+        seen_cohorts.add(cohort_ids)
+
+        team_release_ids: Dict[str, str] = {}
+        signed_teams: List[str] = []
+        waiting_teams: List[str] = []
+        missing_release_ids: List[str] = []
+
+        for member in cohort:
+            team_id = str(member.get("id") or "").strip()
+            pm_agent = (member.get("pm_agent") or "").strip()
+            release_id_file = active_dir / f"{team_id}.release_id"
+            if not release_id_file.exists():
+                missing_release_ids.append(team_id)
+                waiting_teams.append(team_id)
+                continue
+            rid = release_id_file.read_text(encoding="utf-8").strip()
+            if not rid:
+                missing_release_ids.append(team_id)
+                waiting_teams.append(team_id)
+                continue
+            team_release_ids[team_id] = rid
+            slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
+            signoff_file = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
+            if signoff_file.exists():
+                signed_teams.append(team_id)
+            else:
+                waiting_teams.append(team_id)
+
+        cohort_state = {
+            "primary_team_id": primary_team_id,
+            "cohort_team_ids": list(cohort_ids),
+            "team_releases": team_release_ids,
+            "signed_teams": signed_teams,
+            "waiting_teams": waiting_teams,
+            "missing_release_ids": missing_release_ids,
+            "teams": cohort,
+        }
+
+        if team_release_ids and not waiting_teams:
+            ready_cohorts.append(cohort_state)
+        else:
+            waiting_cohorts.append(cohort_state)
+
+    if not ready_cohorts:
+        log.append({
+            "step": "coordinated_push",
+            "status": "waiting",
+            "cohorts": waiting_cohorts,
+        })
         return
 
-    check_code_review_gate(team_release_ids, log, repo_root)
+    for cohort_state in ready_cohorts:
+        cohort = cohort_state["teams"]
+        team_release_ids = cohort_state["team_releases"]
+        signed_teams = cohort_state["signed_teams"]
+        waiting_teams = cohort_state["waiting_teams"]
+        combined_key = combined_release_marker_key(team_release_ids, cohort)
+        marker = pushed_dir / f"{combined_key}.pushed"
 
-    marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
-
-    canonical_release_id = sorted(team_release_ids.values())[0]
-    canonical_slug = re.sub(r"[^A-Za-z0-9._-]", "-", canonical_release_id)[:80]
-
-    write_release_notes(canonical_release_id, canonical_slug, required, repo_root)
-
-    rc, out = _run(
-        ["gh", "workflow", "run", "deploy.yml",
-         "--repo", "keithaumiller/forseti.life", "--ref", "main"],
-        timeout=60,
-    )
-    print(f"COORDINATED-PUSH: {combined_key} deploy rc={rc} (signed={signed_teams} waiting={waiting_teams})")
-
-    today = datetime.now(timezone.utc).strftime("%Y%m%d")
-    item_id = f"{today}-post-push-{canonical_slug}"
-    inbox_dir = repo_root / "sessions" / "pm-forseti" / "inbox" / item_id
-    outbox_file = repo_root / "sessions" / "pm-forseti" / "outbox" / f"{item_id}.md"
-    if not inbox_dir.exists() and not outbox_file.exists():
-        inbox_dir.mkdir(parents=True, exist_ok=True)
-        (inbox_dir / "roi.txt").write_text("85\n")
-        all_ids_text = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
-        (inbox_dir / "command.md").write_text(
-            f"# Post-push steps: coordinated release\n\n"
-            f"The coordinated release deploy was triggered automatically.\n\n"
-            f"## Releases shipped\n{all_ids_text}\n\n"
-            "## 1. Wait for deploy workflow to finish\n"
-            "```bash\ngh run list --repo keithaumiller/forseti.life --workflow deploy.yml --limit 3\n```\n\n"
-            "## 2. Import config on production\n"
-            "```bash\ncd /var/www/html/forseti && vendor/bin/drush config:import -y && vendor/bin/drush cr\n```\n\n"
-            "## 3. Gate R5 — post-release production QA\n"
-            "Trigger a production audit for each product (requires ALLOW_PROD_QA=1):\n"
-            "```bash\nALLOW_PROD_QA=1 bash scripts/site-full-audit.py forseti\n```\n"
-            "Record clean/unclean signal in your outbox.\n\n"
-            f"Canonical release id: `{canonical_release_id}`\n"
-        )
-
-    for entry in required:
-        team_id = entry["team_id"]
-        pm_agent = entry["pm_agent"]
-        rid = team_release_ids.get(team_id, "")
-        if not rid:
+        if marker.exists():
+            log.append({
+                "step": "coordinated_push",
+                "status": "already_pushed",
+                "marker": combined_key,
+                "team_releases": team_release_ids,
+            })
             continue
-        slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
-        signoff_path = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
-        if not signoff_path.exists():
-            signoff_path.parent.mkdir(parents=True, exist_ok=True)
-            signoff_path.write_text(
-                f"# Release Signoff: {rid}\n\n"
-                f"- Status: approved\n"
-                f"- Signed by: orchestrator (coordinated push {combined_key})\n"
-                f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n\n"
-                f"This release was shipped as part of a coordinated push.\n"
-            )
-            print(f"COORDINATED-PUSH: wrote signoff {rid} for {team_id}/{pm_agent}")
 
-    today_notif = datetime.now(timezone.utc).strftime("%Y%m%d")
-    push_notif_id = f"{today_notif}-push-triggered-{canonical_slug}"
-    push_notif_inbox = repo_root / "sessions" / "pm-forseti" / "inbox" / push_notif_id
-    push_notif_outbox = repo_root / "sessions" / "pm-forseti" / "outbox" / f"{push_notif_id}.md"
-    if not push_notif_inbox.exists() and not push_notif_outbox.exists():
-        push_notif_inbox.mkdir(parents=True, exist_ok=True)
-        (push_notif_inbox / "roi.txt").write_text("50\n")
-        releases_shipped = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
-        (push_notif_inbox / "README.md").write_text(
-            f"# Push Triggered: Coordinated Release\n\n"
-            f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n"
-            f"- Status: push triggered\n\n"
-            f"## Releases Shipped\n{releases_shipped}\n\n"
-            f"## Status\n"
-            f"- Signed teams: {', '.join(sorted(signed_teams))}\n"
-            f"- Waiting teams: {', '.join(sorted(waiting_teams))}\n"
-            f"- GitHub deploy workflow was triggered (rc={rc})\n\n"
-            f"See inbox item `{today_notif}-post-push-{canonical_slug}` for post-release steps.\n"
+        check_code_review_gate(team_release_ids, log, repo_root)
+        marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
+
+        canonical_release_id = sorted(team_release_ids.values())[0]
+        canonical_slug = re.sub(r"[^A-Za-z0-9._-]", "-", canonical_release_id)[:80]
+        write_release_notes(canonical_release_id, canonical_slug, cohort, repo_root)
+
+        rc, out = _run(
+            ["gh", "workflow", "run", "deploy.yml",
+             "--repo", "keithaumiller/forseti.life", "--ref", "main"],
+            timeout=60,
         )
-        print(f"COORDINATED-PUSH: notified pm-forseti that push was triggered for {canonical_slug}")
+        print(f"COHORT-PUSH: {combined_key} deploy rc={rc} (signed={signed_teams} waiting={waiting_teams})")
 
-    advance_rc, advance_out = _run(
-        ["bash", "scripts/post-coordinated-push.sh"],
-        timeout=300,
-    )
-    if advance_rc == 0:
-        print(f"COORDINATED-PUSH: post-coordinated-push completed for {combined_key}")
-    else:
-        print(f"COORDINATED-PUSH: post-coordinated-push rc={advance_rc} for {combined_key}")
+        operator_pm = (cohort[0].get("pm_agent") or "").strip()
+        if operator_pm:
+            today = datetime.now(timezone.utc).strftime("%Y%m%d")
+            item_id = f"{today}-post-push-{canonical_slug}"
+            inbox_dir = repo_root / "sessions" / operator_pm / "inbox" / item_id
+            outbox_file = repo_root / "sessions" / operator_pm / "outbox" / f"{item_id}.md"
+            if not inbox_dir.exists() and not outbox_file.exists():
+                inbox_dir.mkdir(parents=True, exist_ok=True)
+                (inbox_dir / "roi.txt").write_text("85\n")
+                all_ids_text = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
+                (inbox_dir / "command.md").write_text(
+                    f"# Post-push steps: release cohort\n\n"
+                    f"The release deploy was triggered automatically for this dependency cohort.\n\n"
+                    f"## Releases shipped\n{all_ids_text}\n\n"
+                    "## 1. Wait for deploy workflow to finish\n"
+                    "```bash\ngh run list --repo keithaumiller/forseti.life --workflow deploy.yml --limit 3\n```\n\n"
+                    "## 2. Complete product-specific post-push checks\n"
+                    "Run the appropriate config import / smoke checks for the sites in this cohort.\n\n"
+                    f"Canonical release id: `{canonical_release_id}`\n"
+                )
 
-    log.append({
-        "step": "coordinated_push",
-        "status": "pushed",
-        "marker": combined_key,
-        "team_releases": team_release_ids,
-        "signed_teams": signed_teams,
-        "waiting_teams": waiting_teams,
-        "deploy_rc": rc,
-        "post_push_advance_rc": advance_rc,
-    })
-    _emit_event("coordinated-push-done")
+            today_notif = datetime.now(timezone.utc).strftime("%Y%m%d")
+            push_notif_id = f"{today_notif}-push-triggered-{canonical_slug}"
+            push_notif_inbox = repo_root / "sessions" / operator_pm / "inbox" / push_notif_id
+            push_notif_outbox = repo_root / "sessions" / operator_pm / "outbox" / f"{push_notif_id}.md"
+            if not push_notif_inbox.exists() and not push_notif_outbox.exists():
+                push_notif_inbox.mkdir(parents=True, exist_ok=True)
+                (push_notif_inbox / "roi.txt").write_text("50\n")
+                releases_shipped = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
+                (push_notif_inbox / "README.md").write_text(
+                    f"# Push Triggered: Release Cohort\n\n"
+                    f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n"
+                    f"- Status: push triggered\n\n"
+                    f"## Releases Shipped\n{releases_shipped}\n\n"
+                    f"## Status\n"
+                    f"- Signed teams: {', '.join(sorted(signed_teams))}\n"
+                    f"- Waiting teams: {', '.join(sorted(waiting_teams)) or '(none)'}\n"
+                    f"- GitHub deploy workflow was triggered (rc={rc})\n\n"
+                    f"See inbox item `{today_notif}-post-push-{canonical_slug}` for post-release steps.\n"
+                )
+
+        advance_cmd = ["bash", "scripts/post-coordinated-push.sh", *sorted(team_release_ids.keys())]
+        advance_rc, advance_out = _run(advance_cmd, timeout=300)
+        if advance_rc == 0:
+            print(f"COHORT-PUSH: post-coordinated-push completed for {combined_key}")
+        else:
+            print(f"COHORT-PUSH: post-coordinated-push rc={advance_rc} for {combined_key}")
+
+        log.append({
+            "step": "coordinated_push",
+            "status": "pushed",
+            "marker": combined_key,
+            "team_releases": team_release_ids,
+            "cohort_team_ids": sorted(team_release_ids.keys()),
+            "signed_teams": signed_teams,
+            "waiting_teams": waiting_teams,
+            "deploy_rc": rc,
+            "post_push_advance_rc": advance_rc,
+        })
+        _emit_event("coordinated-push-done")

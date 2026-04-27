@@ -217,57 +217,76 @@ echo "SIGNED_OFF: ${pm_agent} ${release_id} -> ${out_file}"
 
 # After recording signoff, check if ALL coordinated PMs have now signed.
 # If yes, queue a push-ready inbox item for the release operator (pm-forseti).
-python3 - "$PRODUCT_TEAMS_JSON" "$release_id" "$slug" "$ROOT_DIR" "$push_ready_created_flag" <<'PY'
-import json
+python3 - "$PRODUCT_TEAMS_JSON" "$team_id" "$release_id" "$slug" "$ROOT_DIR" "$push_ready_created_flag" <<'PY'
 import sys
 from pathlib import Path
 
-cfg_path, release_id, slug, root, created_flag = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+cfg_path, signing_team_id, release_id, slug, root, created_flag = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6]
 root = Path(root)
 created_flag = Path(created_flag)
+sys.path.insert(0, str(root / 'scripts' / 'lib'))
+from release_cycle_helpers import release_cohort, slugify  # noqa: E402
 
-with open(cfg_path, 'r', encoding='utf-8') as fh:
-    data = json.load(fh)
-
-teams = [t for t in (data.get('teams') or []) if t.get('active') and t.get('coordinated_release_default')]
+teams = release_cohort(Path(cfg_path), signing_team_id)
 if len(teams) < 2:
     sys.exit(0)
 
+active_dir = root / 'tmp' / 'release-cycle-active'
+required = []
+for team in teams:
+    team_id = str(team.get('id') or '').strip()
+    pm_agent = str(team.get('pm_agent') or '').strip()
+    if not team_id or not pm_agent:
+        continue
+    rid_file = active_dir / f"{team_id}.release_id"
+    if not rid_file.exists():
+        print(f"INFO: release cohort not yet push-ready — missing active release_id for {team_id}")
+        sys.exit(0)
+    required_release_id = rid_file.read_text(encoding='utf-8').strip()
+    if not required_release_id:
+        print(f"INFO: release cohort not yet push-ready — blank active release_id for {team_id}")
+        sys.exit(0)
+    required.append((team, required_release_id, slugify(required_release_id, 80)))
+
 all_signed = all(
-    (root / 'sessions' / t['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{slug}.md").exists()
-    for t in teams
+    (root / 'sessions' / team['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{required_slug}.md").exists()
+    for team, _rid, required_slug in required
 )
 if not all_signed:
-    unsigned = [t['pm_agent'] for t in teams
-                if not (root / 'sessions' / t['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{slug}.md").exists()]
+    unsigned = [
+        team['pm_agent']
+        for team, _rid, required_slug in required
+        if not (root / 'sessions' / team['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{required_slug}.md").exists()
+    ]
     print(f"INFO: coordinated push not yet ready — unsigned: {', '.join(unsigned)}")
     sys.exit(0)
 
-# All signed — queue push-ready item for pm-forseti (release operator per DECISION_OWNERSHIP_MATRIX)
 import datetime
 ts = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 item_id = f"{ts}-push-ready-{slug[:40]}"
-inbox_dir = root / 'sessions' / 'pm-forseti' / 'inbox' / item_id
-outbox_file = root / 'sessions' / 'pm-forseti' / 'outbox' / f"{item_id}.md"
+operator_pm = next((str(team.get('pm_agent') or '').strip() for team in teams if str(team.get('id') or '').strip() == signing_team_id), '')
+if not operator_pm:
+    sys.exit(0)
+inbox_dir = root / 'sessions' / operator_pm / 'inbox' / item_id
+outbox_file = root / 'sessions' / operator_pm / 'outbox' / f"{item_id}.md"
 
 if inbox_dir.exists() or outbox_file.exists():
-    print(f"INFO: push-ready item already exists for pm-forseti ({item_id})")
+    print(f"INFO: push-ready item already exists for {operator_pm} ({item_id})")
     sys.exit(0)
 
-# Check if any push-ready item for this release already exists
-inbox_root = root / 'sessions' / 'pm-forseti' / 'inbox'
+inbox_root = root / 'sessions' / operator_pm / 'inbox'
 needle = f"-push-ready-{slug[:30]}"
 for p in (inbox_root.iterdir() if inbox_root.exists() else []):
     if p.is_dir() and needle in p.name:
-        print(f"INFO: push-ready item already queued for pm-forseti: {p.name}")
+        print(f"INFO: push-ready item already queued for {operator_pm}: {p.name}")
         sys.exit(0)
 
 inbox_dir.mkdir(parents=True, exist_ok=True)
 (inbox_dir / 'roi.txt').write_text('200\n', encoding='utf-8')
-signers = ', '.join(f"{t['pm_agent']} ({t['site']})" for t in teams)
+signers = ', '.join(f"{team['pm_agent']} ({team['site']})" for team in teams)
 cmd = f"""# Push ready: {release_id}
 
-All required PM signoffs recorded for coordinated release `{release_id}`.
+All required PM signoffs recorded for dependency-coupled release `{release_id}`.
 
 ## Signed off by
 {signers}
@@ -276,13 +295,12 @@ All required PM signoffs recorded for coordinated release `{release_id}`.
 As release operator, proceed with the official push:
 1. Verify: `bash scripts/release-signoff-status.sh {release_id}`
 2. Push per `runbooks/shipping-gates.md` Gate 4.
-3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh`
-   (Files each coordinated team's own release signoff so their cycle can advance.)
+3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh {' '.join(sorted(team['id'] for team in teams))}`
 4. Complete post-push steps (config import, smoke test, SLA report update).
 """
 (inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
 created_flag.write_text('created\n', encoding='utf-8')
-print(f"INFO: ALL PMs signed — queued push-ready item for pm-forseti: {item_id}")
+print(f"INFO: ALL PMs signed — queued push-ready item for {operator_pm}: {item_id}")
 PY
 
 # ── Board email notification ──────────────────────────────────────────────────

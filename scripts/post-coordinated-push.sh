@@ -17,6 +17,7 @@ ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 TEAMS_JSON="${ROOT_DIR}/org-chart/products/product-teams.json"
 RUNTIME_DIR="${ROOT_DIR}/tmp/release-cycle-active"
+TARGET_TEAM_IDS=("$@")
 
 echo "=== post-coordinated-push: running pre-push validation ==="
 
@@ -24,17 +25,22 @@ echo "=== post-coordinated-push: running pre-push validation ==="
 # advance sentinels are missing, we are in post-push recovery mode. In that
 # case do not block boundary repair on unrelated tracked changes.
 RECOVERY_COMBINED_KEY="$(
-python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" <<'PY'
+python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "${TARGET_TEAM_IDS[@]}" <<'PY'
 import sys
 from pathlib import Path
 
 teams_json = Path(sys.argv[1])
 runtime_dir = Path(sys.argv[2])
 root = Path(sys.argv[3])
+requested_ids = [value.strip() for value in sys.argv[4:] if value.strip()]
 sys.path.insert(0, str(root / "scripts" / "lib"))
-from release_cycle_helpers import combined_release_marker_key, coordinated_teams  # noqa: E402
+from release_cycle_helpers import combined_release_marker_key, release_enabled_team_map, release_enabled_teams  # noqa: E402
 
-coord_teams = coordinated_teams(teams_json)
+if requested_ids:
+    team_map = release_enabled_team_map(teams_json)
+    coord_teams = [team_map[team_id] for team_id in requested_ids if team_id in team_map]
+else:
+    coord_teams = release_enabled_teams(teams_json)
 team_release_ids = {}
 for team in coord_teams:
     rid_file = runtime_dir / f"{team['id']}.release_id"
@@ -94,7 +100,7 @@ echo "✅ Pre-push validation passed"
 echo "=== post-coordinated-push: advancing team release cycles ==="
 
 ADVANCE_STATE_FILE="$(mktemp)"
-python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "$ADVANCE_STATE_FILE" <<'PY'
+python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "$ADVANCE_STATE_FILE" "${TARGET_TEAM_IDS[@]}" <<'PY'
 import sys, subprocess
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,15 +111,21 @@ teams_json, runtime_dir, root, advance_state_file = (
     Path(sys.argv[3]),
     Path(sys.argv[4]),
 )
+requested_ids = [value.strip() for value in sys.argv[5:] if value.strip()]
 sys.path.insert(0, str(root / "scripts" / "lib"))
 from release_cycle_helpers import (  # noqa: E402
     archive_stale_pm_release_items,
     combined_release_marker_key,
-    coordinated_teams,
     next_release_id_after,
+    release_enabled_team_map,
+    release_enabled_teams,
 )
 
-coord_teams = coordinated_teams(teams_json)
+if requested_ids:
+    team_map = release_enabled_team_map(teams_json)
+    coord_teams = [team_map[team_id] for team_id in requested_ids if team_id in team_map]
+else:
+    coord_teams = release_enabled_teams(teams_json)
 
 team_release_ids = {}
 advanced_team_ids = set()

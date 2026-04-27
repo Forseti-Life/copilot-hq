@@ -20,6 +20,17 @@ def load_product_teams(config_path: Path) -> list[dict[str, Any]]:
     return list(data.get("teams") or [])
 
 
+def release_enabled_teams(config_path: Path) -> list[dict[str, Any]]:
+    return sorted(
+        [
+            team
+            for team in load_product_teams(config_path)
+            if team.get("active") and team.get("release_preflight_enabled")
+        ],
+        key=lambda team: str(team.get("id") or ""),
+    )
+
+
 def coordinated_teams(config_path: Path) -> list[dict[str, Any]]:
     return sorted(
         [
@@ -29,6 +40,47 @@ def coordinated_teams(config_path: Path) -> list[dict[str, Any]]:
         ],
         key=lambda team: str(team.get("id") or ""),
     )
+
+
+def release_enabled_team_map(config_path: Path) -> dict[str, dict[str, Any]]:
+    return {
+        str(team.get("id") or "").strip(): team
+        for team in release_enabled_teams(config_path)
+        if str(team.get("id") or "").strip()
+    }
+
+
+def explicit_release_dependencies(team: dict[str, Any]) -> list[str]:
+    values = team.get("release_dependencies")
+    if not isinstance(values, list):
+        return []
+    deps: list[str] = []
+    team_id = str(team.get("id") or "").strip()
+    for value in values:
+        dep = str(value or "").strip()
+        if not dep or dep == team_id or dep in deps:
+            continue
+        deps.append(dep)
+    return deps
+
+
+def release_cohort(config_path: Path, team_id: str) -> list[dict[str, Any]]:
+    team_map = release_enabled_team_map(config_path)
+    normalized_team_id = str(team_id or "").strip()
+    if not normalized_team_id or normalized_team_id not in team_map:
+        return []
+
+    primary = team_map[normalized_team_id]
+    cohort_ids = [normalized_team_id]
+    for dep in explicit_release_dependencies(primary):
+        if dep in team_map and dep not in cohort_ids:
+            cohort_ids.append(dep)
+
+    return [team_map[cohort_id] for cohort_id in sorted(cohort_ids)]
+
+
+def release_cohort_ids(config_path: Path, team_id: str) -> list[str]:
+    return [str(team.get("id") or "").strip() for team in release_cohort(config_path, team_id)]
 
 
 def lookup_active_team(config_path: Path, query: str) -> dict[str, Any]:
