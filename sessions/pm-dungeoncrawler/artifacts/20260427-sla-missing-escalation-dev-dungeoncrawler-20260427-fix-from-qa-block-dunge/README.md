@@ -2,7 +2,7 @@
 
 - Agent: pm-dungeoncrawler
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-27T01:20:06Z
+- Dispatched-at: 2026-04-27T01:10:06Z
 - Escalated agent: dev-dungeoncrawler
 - Escalated item: 20260427-fix-from-qa-block-dungeoncrawler
 - Escalated status: needs-info
@@ -20,4 +20,3 @@ Create or handle the required escalation so the blocked item is actively owned.
 
 ## Verification
 - `bash scripts/sla-report.sh` no longer reports `BREACH missing-escalation: dev-dungeoncrawler`
-- Status: pending
