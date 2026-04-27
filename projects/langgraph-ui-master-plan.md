@@ -56,17 +56,17 @@ Approach:
 | Create flow | Register a new graph/process flow | Flows | `New Process Flow` form | Supported | Draft flow creation works |
 | Open flow control panel | Enter a specific flow workspace | Flows | Flow row link / flow detail page | Supported | Also sets selected flow context |
 | Select active flow context | Scope lifecycle work to one flow | Flow Detail + nested flow tabs | Auto-selected via flow detail + user.data | Supported | Flow-scoped workspace is now the preferred path |
-| Edit flow metadata | Change label, owner, status, entrypoint, version | Flows / Flow Detail | No edit control yet | Missing | Add edit action and edit form |
-| Archive flow | Retire a flow without deleting it | Flows / Flow Detail | Status can only be set on create | Partial | Needs explicit archive/unarchive control |
-| Define state schema | Describe state model carried across nodes | Build | Stored as `state_schema_summary` on create | Partial | Capture exists, dedicated editor does not |
-| Add node | Define graph node set | Build | Stored as `nodes[]` on create | Partial | No node editor or per-node UI yet |
-| Edit node | Change node definitions | Build | None | Missing | Needs form/editor surface |
-| Connect routing / edges | Define graph transitions and conditionals | Build | Stored as `routing_rules[]` on create | Partial | No transition editor yet |
-| Bind tools | Define tools/resources available to the graph | Build | Stored as `tools[]` on create | Partial | No editing or validation UI yet |
-| Configure prompts / policy | Manage orchestration notes, prompt guardrails, policy | Build | Stored as `prompt_notes` on create | Partial | No editor/history surface yet |
-| Validate structure | Check graph completeness and shape | Test | Mapping table only | Missing | Needs concrete validator action/report |
+| Edit flow metadata | Change label, owner, status, entrypoint, version | Build | Nested `Flow Metadata` editor | Supported | Flow edits now live inside the flow workspace |
+| Archive flow | Retire a flow without deleting it | Build | Nested `Flow Metadata` editor via `status=archived` | Supported | Archive is currently handled through status changes |
+| Define state schema | Describe state model carried across nodes | Build | Nested `State Schema` editor | Supported | Editable inside the flow workspace |
+| Add node | Define graph node set | Build | Nested `Nodes` editor | Supported | Line-based editor for now |
+| Edit node | Change node definitions | Build | Nested `Nodes` editor | Supported | Rich per-node authoring still future work |
+| Connect routing / edges | Define graph transitions and conditionals | Build | Nested `Routing` editor | Supported | Rule-based editor for now |
+| Bind tools | Define tools/resources available to the graph | Build | Nested `Tools` editor | Supported | Checkbox-based binding editor |
+| Configure prompts / policy | Manage orchestration notes, prompt guardrails, policy | Build | Nested `Prompts & Policy` editor | Supported | Text-based editor for now |
+| Validate structure | Check graph completeness and shape | Test | Nested `Validate Structure` report | Supported | Validates saved flow contract against structural and runtime expectations |
 | Validate parity | Compare runtime against expected structure | Test | Current parity evidence page | Supported | Runtime parity evidence is already surfaced |
-| Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | No control yet | Missing | Requires checkpoint model and action |
+| Replay checkpoint | Re-run from checkpoint / prior state | Test / Run | Nested `Replay Checkpoints` inventory | Partial | Artifact inventory exists; replay/resume action is not wired yet |
 | Run now | Trigger manual execution | Run | No action yet | Missing | Run page is read-only today |
 | Pause run | Halt flow execution | Run | No action yet | Missing | Requires control artifact/action path |
 | Resume run | Resume paused execution | Run | No action yet | Missing | Same control path as pause |
@@ -90,17 +90,17 @@ Approach:
 | Flow registry entry | Top-level graph/process record | Drupal config `drupal_langgraph.process_flows` + built-ins | Flows registry, flow detail | Supported | Core registry is working |
 | Flow ID | Stable machine identifier | Config + route param | Flows, flow detail | Supported | Used for selection/context |
 | Flow label + description | Human-readable identity | Config | Flows, flow detail | Supported | Create-only for now |
-| Flow status | Draft/active/paused/archived lifecycle state | Config | Flows, flow detail | Partial | No update/archive control yet |
-| Owner | Responsible module/team/system | Config | Flows, flow detail | Partial | Create-only today |
-| Graph type | State/subgraph/supervisor/router type | Config | Flows, flow detail | Partial | Create-only today |
-| Default entrypoint | Main node/entry command | Config | Flows, flow detail | Partial | Create-only today |
+| Flow status | Draft/active/paused/archived lifecycle state | Config | Flows, flow detail, Build metadata editor | Supported | Editable from nested flow workspace |
+| Owner | Responsible module/team/system | Config | Flows, flow detail, Build metadata editor | Supported | Editable from nested flow workspace |
+| Graph type | State/subgraph/supervisor/router type | Config | Flows, flow detail, Build metadata editor | Supported | Editable from nested flow workspace |
+| Default entrypoint | Main node/entry command | Config | Flows, flow detail, Build metadata editor | Supported | Editable from nested flow workspace |
 | Primary section | Best-fit lifecycle section | Config | Flows, flow detail, current flow context | Supported | Used as descriptive metadata |
-| Version | Flow version marker | Config | Flows, flow detail | Partial | Not a full versioning system |
-| State schema summary | Description of carried state | Config | Flow detail | Partial | Needs Build editor and validation |
-| Nodes | Graph node set | Config array | Flow detail | Partial | Needs Build editor |
-| Routing rules | Graph edges/conditions | Config array | Flow detail | Partial | Needs Build editor |
-| Tools | Graph tool bindings/resources | Config array | Flow detail | Partial | Needs Build editor + validation |
-| Prompt notes | Prompt/policy/orchestration notes | Config | Flow detail | Partial | Needs Build editor/history |
+| Version | Flow version marker | Config | Flows, flow detail, Build metadata editor | Supported | Editable marker, not yet a full version history system |
+| State schema summary | Description of carried state | Config | Flow detail, Build state-schema editor | Supported | Now editable in the workspace |
+| Nodes | Graph node set | Config array | Flow detail, Build nodes editor | Supported | Now editable in the workspace |
+| Routing rules | Graph edges/conditions | Config array | Flow detail, Build routing editor | Supported | Now editable in the workspace |
+| Tools | Graph tool bindings/resources | Config array | Flow detail, Build tools editor | Supported | Now editable in the workspace |
+| Prompt notes | Prompt/policy/orchestration notes | Config | Flow detail, Build prompts editor | Supported | Now editable in the workspace |
 | Selected flow context | Current user-scoped flow | Drupal `user.data` | Current flow panel across sections | Supported | Working |
 | Tick stream | Execution timeline + step results | JSONL artifacts | Overview, Run, Observe | Supported | Artifact-backed |
 | Parity report | Runtime validation evidence | JSON artifact | Test | Supported | Working |
@@ -109,7 +109,7 @@ Approach:
 | Incidents/alerts | Error/blocker/anomaly summaries | Observe artifacts/services | Observe Alerts | Supported | Working |
 | Feature progress snapshot | LangGraph-owned work progress | Feature progress artifact | Observe Feature Progress | Supported | Working |
 | Org/release controls | Runtime enable/disable controls | Control artifacts | Overview, Admin | Supported | Read-only at present |
-| Checkpoints | Resume/replay state markers | Not yet modeled in Drupal | None | Missing | Required for replay UX |
+| Checkpoints | Resume/replay state markers | Runtime logs and checkpoint scripts | Test checkpoint inventory | Partial | Artifacts are visible; replay UX is not wired yet |
 | Execution commands | Run/pause/resume actions | Not yet modeled in Drupal | None | Missing | Required for true runtime control |
 | Version history | Version list, provenance, promotion state | Not yet modeled in Drupal | None | Missing | Required for full release management |
 
@@ -123,16 +123,16 @@ Approach:
 ### Flows
 - Done when users can create, open, edit, archive, and version flows from the
   registry and detail surfaces.
-- Current state: create/open and nested workspace entry are done; edit/archive/version are not.
+- Current state: create/open and edit/archive via the nested Build workspace are done; version history is not.
 
 ### Build
 - Done when users can author and update the graph contract:
   state schema, nodes, routing, tools, and prompt policy.
-- Current state: nested Build workspace exists with stubbed controls; authoring is incomplete.
+- Current state: nested Build workspace exists with live editors; richer graph authoring and validation are still incomplete.
 
 ### Test
 - Done when users can validate graph shape, parity, and replay/checkpoint paths.
-- Current state: nested Test workspace exists with parity evidence; structure validation and replay do not.
+- Current state: nested Test workspace exists with structure validation and parity evidence; replay is still partial.
 
 ### Run
 - Done when users can manually trigger, pause, resume, and inspect executions.
@@ -161,8 +161,8 @@ Approach:
 - [x] Add operator-focused overview dashboard
 - [x] Collapse legacy routes to canonical console routes
 - [x] Add nested flow workspace tabs and stub control pages
-- [ ] Add flow edit/archive actions
-- [ ] Add Build editors for schema, nodes, routing, tools, and prompt policy
+- [x] Add flow edit/archive actions
+- [x] Add Build editors for schema, nodes, routing, tools, and prompt policy
 - [ ] Add Test actions for structural validation and checkpoint replay
 - [ ] Add Run actions for manual execution and pause/resume
 - [ ] Add Release actions for version creation and promotion
