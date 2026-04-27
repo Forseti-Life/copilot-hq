@@ -1,13 +1,13 @@
 # CEO Session State — ceo-copilot-2
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-25 22:01 UTC
+> Last updated: 2026-04-27 02:40 UTC
 
 ---
 
 ## Currently Working On
 
-Completed the QA backlog cleanup and follow-through help pass: refreshed stale QA evidence, filled 17 previously-empty Forseti suites with executable `test_cases`, removed duplicate orchestrator-loop roots, clarified the `qa-open-source` needs-info policy, fixed the Dungeoncrawler route-audit false positives, cleared the Forseti tailoring-queue false alarm by removing legacy `job_hunter_*` queue crons plus making `ceo-system-health.sh` module-aware, and normalized the stale quarantine/SLA wrapper records that were falsely keeping CEO/release monitors noisy. The active CEO operational view is now clean: release-efficiency passes, SLA is clean, blockers are empty, and the remaining work is ordinary new seat work rather than residual backlog cleanup.
+Investigating the live Dungeoncrawler pipeline after a Board directive to ensure work continues to spawn and progress. Current release `20260412-dungeoncrawler-release-w` has five completed features but is missing a final QA Gate 2 APPROVE artifact, while next release `20260412-dungeoncrawler-release-x` has only `planned` backlog items and no active PM/dev queue. Immediate CEO action: dispatch QA to produce the final Gate 2 verdict for `release-w`, then dispatch PM to convert `release-x` backlog into ready/in-progress scoped work so the pipeline does not stall behind the current release.
 
 ---
 
@@ -15,10 +15,10 @@ Completed the QA backlog cleanup and follow-through help pass: refreshed stale Q
 
 | Site | Release ID | Status | Last Action |
 |---|---|---|---|
-| forseti | `20260412-forseti-release-q` | ✅ Ready for coordinated push (all co-signoffs present) | 2026-04-20T18:02:09+00:00 |
-| dungeoncrawler | `20260412-dungeoncrawler-release-s` | ✅ Ready for coordinated push (all co-signoffs present, post-dev 254.5h) | 2026-04-20T18:02:09+00:00 |
+| forseti | `20260412-forseti-release-u` | ⏳ Awaiting PM signoff after Gate 2 evidence | 2026-04-26T21:07:34+00:00 |
+| dungeoncrawler | `20260412-dungeoncrawler-release-w` | ⏳ Awaiting final QA Gate 2 verdict, then PM signoff | 2026-04-27T02:39:48+00:00 |
 
-Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler → `20260412-dungeoncrawler-release-t`
+Next releases queued: forseti → `20260412-forseti-release-v`, dungeoncrawler → `20260412-dungeoncrawler-release-x`
 
 ---
 
@@ -35,14 +35,14 @@ Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler �
 
 | Agent | Inbox | Status |
 |---|---|---|
-| ceo-copilot-2 | 5 | Phase 2 complete; Phase 3 housekeeping active |
-| pm-forseti | 9 | Grooming active; `release-q` ready to ship |
-| pm-dungeoncrawler | 4 | Grooming active; `release-s` ready to ship |
-| dev-forseti | 3 | 2 langgraph console features in progress |
-| dev-dungeoncrawler | 1 | Spells chapter 7 in progress |
-| qa-forseti | 6 | Suite activation active for langgraph features |
-| qa-dungeoncrawler | 1 | Unit test halfling ancestry |
-| Architect/infra | 18 | System analysis + infra grooming |
+| ceo-copilot-2 | 29 | Board/escalation queue heavy; Dungeoncrawler intervention active |
+| pm-forseti | 0 | No active inbox; release-u still waiting on PM signoff path |
+| pm-dungeoncrawler | 1 | Fresh CEO grooming follow-up queued for `release-x` |
+| dev-forseti | 0 | No active inbox |
+| dev-dungeoncrawler | 0 | No active inbox; waiting for QA/PM resolution on `release-w` |
+| qa-forseti | 0 | No active inbox |
+| qa-dungeoncrawler | 1 | Fresh CEO Gate 2 finalization item queued for `release-w` |
+| Architect/infra | 0 | Not part of this intervention |
 
 ---
 
@@ -50,18 +50,11 @@ Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler �
 
 | Item | Owner | Priority | Notes |
 |---|---|---|---|
-| Bestiary 3 implementation | dev-dungeoncrawler | P1 | Internal structured B3 inventory is confirmed; normalization is landed across read/write/template flows; seeded/internal rows now carry or hydrate core catalog fields; remaining work is richer shared-schema ingestion and import depth |
-| Chameleon Gnome heritage | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; action exposure is landed and regression-covered at the service layer, with active dev queue restored for remaining release validation |
-| Survival navigation actions | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; core handlers are surfaced and regression-covered, with active dev queue restored for remaining release validation |
-| Snare system | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; downtime crafting is surfaced and service coverage exists, with active dev queue restored for broader feature completion |
-| Spellcasting rules (Ch 7) | dev-dungeoncrawler | P1 | Retargeted to `20260412-dungeoncrawler-release-r`; encounter blocker rules are hardened, with active dev queue restored for broader spell-catalog completion |
-| Forseti open-source initiative | pm-open-source / dev-open-source | P1 | Release target is now the explicit `drupal-ai-conversation` publication candidate instead of `tbd`, and both PM and dev now have live inbox items aligned to that candidate |
-| Dungeoncrawler release-r grooming | pm-dungeoncrawler | P1 | Current queued PM task is `20260419-groom-20260412-dungeoncrawler-release-r`; PM also has B3 completion notification |
-| Forseti release-q grooming | pm-forseti | P1 | Current queued PM task is `20260419-groom-20260412-forseti-release-q` |
+| Dungeoncrawler release-w Gate 2 finalization | qa-dungeoncrawler | P1 | New CEO inbox item `20260427-gate2-finalize-20260412-dungeoncrawler-release-w` requires a final APPROVE or concrete BLOCK artifact so PM signoff can proceed |
+| Dungeoncrawler release-x grooming follow-up | pm-dungeoncrawler | P1 | New CEO inbox item `20260427-groom-20260412-dungeoncrawler-release-x-followup` requires at least one downstream executable slice so DC keeps spawning work |
+| Dungeoncrawler release-w PM signoff | pm-dungeoncrawler | P1 | Unblocked immediately after QA writes final Gate 2 verdict |
 | Auto-checkpoint remote divergence | CEO / dev-infra | P1 | Local `main` now tracks `origin/main`, but the remote has one divergent commit; future checkpoint pushes need a safe reconcile plan rather than blind force |
-| Residual historical subtree references | CEO / owning seats | P2 | Historical QA checklists and open-source export docs still mention `copilot-hq/` where they describe history or sanitized exports; live runtime instructions are now normalized |
-| Accountant billing access blocker | CEO / Board inputs | P1 | Only remaining active blocker: AWS Cost Explorer and GitHub org billing access are still missing for `accountant-forseti` |
-| Forseti scoreboard freshness | pm-forseti | P2 | Existing stale-scoreboard item remains in PM inbox |
+| Accountant billing access blocker | CEO / Board inputs | P1 | Only remaining Board-level access blocker: AWS Cost Explorer and GitHub org billing access are still missing for `accountant-forseti` |
 
 ---
 
@@ -89,25 +82,25 @@ Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler �
 
 ## Next Priority Actions (pick up here next session)
 
-1. Resolve the `origin/main` divergence before allowing unattended checkpoint pushes again.
-2. Unblock `accountant-forseti` with AWS/GitHub billing access or documented substitute data sources.
-3. Sweep remaining historical-only `copilot-hq/` references and decide which should stay as archival/export notes versus be normalized.
+1. Watch `qa-dungeoncrawler` for the final Gate 2 verdict on `20260412-dungeoncrawler-release-w`, then drive PM signoff immediately.
+2. Watch `pm-dungeoncrawler` for release-x grooming output and ensure at least one next-slice queue item exists behind release-w.
+3. Resolve the `origin/main` divergence before allowing unattended checkpoint pushes again.
+4. Unblock `accountant-forseti` with AWS/GitHub billing access or documented substitute data sources.
 
 ---
 
 ## Pipeline Health Snapshot
 
 ```text
-Orchestrator:        running (pid 3800021)
+Orchestrator:        running (pid 3922809)
 Agent exec:          not running
-Checkpoint:          running (pid 1361039)
-CEO inbox:           0
-pm-forseti inbox:    2
-pm-dungeoncrawler:   2
-ba-dungeoncrawler:   0
-dev-forseti:         0
-dev-infra:           0
-Release health:      current releases advanced to forseti release-p and dungeoncrawler release-q; Dungeoncrawler release-q now has B3 in progress while Forseti release-p remains empty
-System health:       merge health still failing; forseti scoreboard stale
-Key artifact:        sessions/pm-dungeoncrawler/artifacts/releases/20260412-dungeoncrawler-release-q/01-change-list.md
+Checkpoint:          running (pid 3763326)
+CEO inbox:           29
+pm-forseti inbox:    0
+pm-dungeoncrawler:   1
+qa-dungeoncrawler:   1
+dev-dungeoncrawler:  0
+Release health:      dungeoncrawler release-w blocked only on final QA Gate 2 artifact; next release-x queued but not yet actively spawned
+System health:       blocked seats remain in infra/forseti queues; Dungeoncrawler PM and QA queues successfully re-seeded by CEO
+Key artifact:        sessions/qa-dungeoncrawler/inbox/20260427-gate2-finalize-20260412-dungeoncrawler-release-w/README.md
 ```
