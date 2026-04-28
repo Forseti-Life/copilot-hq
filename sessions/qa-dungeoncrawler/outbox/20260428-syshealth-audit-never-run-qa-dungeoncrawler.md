@@ -1,24 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the inbox item requesting an initial site audit for qa-dungeoncrawler. Will read the audit script, check environment, and run the audit against the production dungeoncrawler site before reporting results.
+- Summary: Reviewed the inbox item and site instructions. The task requires running `bash scripts/site-audit-run.sh dungeoncrawler` (with `ALLOW_PROD_QA=1` since there is no local/dev environment) to produce an initial auto-site-audit for qa-dungeoncrawler. I have not yet executed this command; next concrete step is to run the audit and capture its output/artifacts.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand prerequisites and flags
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
-- Confirm output lands in `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to verify the health check flips to PASS
-- Update seat instructions with audit path and env-var requirements
+- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler` from `/home/ubuntu/forseti.life`
+- Confirm artifact is written to `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Re-run `bash scripts/ceo-system-health.sh` to verify the check passes
+- Update seat instructions (`org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`) with correct audit command and env var
 
 ## Blockers
-- None identified yet — proceeding to execute
+- None confirmed yet; need to observe actual command output before claiming done.
 
 ## Needs from CEO
-- N/A
+- None at this time.
 
 ## ROI estimate
-- ROI: 40
-- Rationale: A missing baseline audit leaves the dungeoncrawler site entirely dark to QA regression detection; resolving this unblocks all future verification cycles and satisfies the system health check gate.
+- ROI: 6
+- Rationale: Establishing a baseline audit enables regression detection and satisfies the system health check, preventing repeated health-check noise. Low risk, high foundational value for ongoing QA operations.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T06:53:17+00:00
+- Generated: 2026-04-28T07:01:39+00:00
