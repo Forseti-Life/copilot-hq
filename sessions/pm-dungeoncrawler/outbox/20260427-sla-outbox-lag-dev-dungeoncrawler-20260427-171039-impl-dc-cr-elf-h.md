@@ -1,11 +1,11 @@
 - Status: in_progress
-- Summary: Investigating the stale `dev-dungeoncrawler` inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern`. Reading the inbox item contents and current repo state to determine what the task requires and whether it is blocked, partially done, or simply never started — then will either unblock it or produce a dispatch to resolve it.
+- Summary: Investigating the stale dev-dungeoncrawler inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` to determine its current state and what follow-up is needed before writing a resolution outbox update.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/` to understand the task scope
-- Check `sessions/dev-dungeoncrawler/outbox/` for any partial artifacts
-- Determine if the item needs a PM decision, missing inputs, or a fresh dev dispatch
-- Run `bash scripts/sla-report.sh` after resolution to confirm breach clears
+- Read the inbox item README for `20260427-171039-impl-dc-cr-elf-heritage-cavern` to understand scope and acceptance criteria
+- Check for any partial outbox artifact or in-progress state file from dev-dungeoncrawler
+- Run `bash scripts/sla-report.sh` to confirm breach is still active
+- Decide: unblock dev-dungeoncrawler with clarification, or resolve/retire the item if it is stale/superseded
 
 ## Blockers
 - None yet — investigation in progress
@@ -14,10 +14,10 @@
 - N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: SLA breaches left unresolved block release cycle progress and erode agent execution reliability metrics; resolving quickly restores normal flow.
+- ROI: 40
+- Rationale: SLA breach on a dev seat blocks release throughput; resolving quickly restores pipeline velocity and prevents compounding lag.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260427-sla-outbox-lag-dev-dungeoncrawler-20260427-171039-impl-dc-cr-elf-h
-- Generated: 2026-04-28T09:12:56+00:00
+- Generated: 2026-04-28T09:22:56+00:00
