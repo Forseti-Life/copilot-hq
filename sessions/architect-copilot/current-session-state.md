@@ -93,6 +93,9 @@ reference graph with the intended delivery process used on forseti.life.
 - The code branch now proceeds through code review and security review while the
   test branch proceeds through test case review, and both approved branches
   converge on `QA Testing`.
+- Refined the QA failure loop so the remediation node is now
+  `Fix Code or Test Cases after QA Feedback`, with outbound arrows back to both
+  `Generate Code` and `Fix Test Cases after Review`.
 - Confirmed the live Forseti module path is a symlink from
   `sites/forseti/web/modules/custom/drupal_langgraph` to
   `/home/ubuntu/forseti.life/drupal-langgraph`, so the source edit landed in
