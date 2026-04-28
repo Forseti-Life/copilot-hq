@@ -1,22 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the stale dev-dungeoncrawler inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` to determine current state, blockers, and next action needed to unblock or resolve it.
+- Summary: Investigating the stale inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` for `dev-dungeoncrawler` to determine current state and whether it needs unblocking, reassignment, or closure.
 
 ## Next actions
-- Read the inbox item README and any artifacts under `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/` to understand scope and acceptance criteria.
-- Check `sessions/dev-dungeoncrawler/outbox/` for any partial or matching artifact.
-- Determine if the item is blocked, stale, or simply unstarted, then either unblock or escalate with specific ask.
+- Read `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/README.md` to understand the work item scope and any existing partial output.
+- Check `sessions/dev-dungeoncrawler/outbox/` for any matching artifact that the SLA script may have missed.
+- Run `bash scripts/sla-report.sh` to confirm current breach state.
+- Determine if dev-dungeoncrawler is blocked and, if so, provide unblocking context or escalate.
 
 ## Blockers
-- None yet — investigation underway.
+- None yet — investigation in progress.
 
 ## Needs from CEO
-- None at this time.
+- N/A at this stage.
 
 ## ROI estimate
 - ROI: 40
-- Rationale: SLA breach on a dev implementation item blocks the active release cycle for dungeoncrawler; resolving quickly restores throughput and prevents cascading delays.
+- Rationale: Unblocking a stale implementation item restores release momentum for the dungeoncrawler site; delay compounds if the item is a dependency for QA or release signoff.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260427-sla-outbox-lag-dev-dungeoncrawler-20260427-171039-impl-dc-cr-elf-h
-- Generated: 2026-04-28T04:40:33+00:00
+- Generated: 2026-04-28T04:50:41+00:00
