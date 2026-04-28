@@ -1,14 +1,14 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during agentic SDLC flow detail refinement
+> Last updated: 2026-04-28 during seat-owned agentic SDLC routing activation
 
 ---
 
 ## Currently Working On
 
-Refining the Drupal LangGraph flow detail page for `agentic_sdlc`,
-specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/flows/agentic_sdlc`.
+Activating seat-owned execution for the Drupal LangGraph `agentic_sdlc` flow,
+including diagram ownership labels and flow-aware seat handoff routing.
 
 ### Current state
 
@@ -144,6 +144,29 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
 - The `agentic_sdlc` flow detail page now shows an **Owning seat** column for
   each node, and the live flow override assigns explicit seats to all 14 nodes
   (BA, PM, Architect, Dev, Code Review, Security, and QA stages).
+- The Mermaid workflow diagram for `agentic_sdlc` now renders each node with
+  its owning seat inline (for example `Generate Code [dev-forseti]`), so the
+  visual graph matches the ownership table.
+- Added `scripts/route-flow-transitions.py` and wired it into
+  `scripts/route-gate-transitions.sh` so flow-managed inbox items can route
+  follow-on work from live Drupal flow metadata instead of relying only on
+  legacy pattern rules.
+- Flow routing now reads `Flow id`, `Flow run id`, `Flow node`, and
+  `- Flow outcome:` metadata, resolves the next node's `owner_seat`, and
+  creates the next inbox item for the owning seat.
+- Added flow-output guidance to `scripts/agent-exec-next.sh` so when a routed
+  item advertises `Available flow outcomes`, the agent is explicitly instructed
+  to emit exact `- Flow outcome:` lines in its outbox.
+- Merge routing now waits only for explicit approval-style convergence rather
+  than for every multi-incoming node; this preserves direct rejection loops back
+  to originators while correctly gating `Ready for QA`.
+- Validated end-to-end that:
+  - `Design Review` approved routes to both `Generate Code` and
+    `Write Test Cases`
+  - `Security Review` plus `Test Cases Review` approval unlocks
+    `Ready for QA`
+  - `Ready for QA` routes to `QA Testing`
+  - archived-item routing works through the real shell wrapper path
 
 ### Key decisions
 
@@ -166,13 +189,11 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
 
 ### Next actions
 
-1. Use the new per-node `owner_seat` metadata to drive real handoff routing
-   from flow transitions into seat inbox items.
-2. Decide whether the flow detail page should gain phase/lane summaries for the
+1. Decide whether the flow detail page should gain phase/lane summaries for the
    parallel code/test branches and the new QA-readiness merge.
-3. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-4. Resolve the current repo-side Drush bootstrap failure if live runtime
+3. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
 4. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.

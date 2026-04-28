@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder inbox item for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether prerequisites (code review findings routed, QA APPROVE) are satisfied before running `release-signoff.sh`.
+- Summary: Investigating the release signoff for `20260412-dungeoncrawler-release-y` before executing the signoff script. Need to verify release state, scoped features, QA gate status, and code-review findings are all clear per shipping gates policy before recording PM signoff.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check current gate state
-- Check QA artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` for APPROVE/BLOCK verdict
-- Check code-review outbox for any unrouted MEDIUM+ findings
-- If all gates clear: run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and report result
+- Read `runbooks/shipping-gates.md` to confirm pre-signoff checklist
+- Check QA verdict artifact for this release
+- Check code-review findings for this release
+- Check feature scope and status for this release
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and verify with `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet — investigating now
+- None yet — investigating
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly unblocks production delivery for dungeoncrawler. Signoff is a low-effort gate action with high downstream value.
+- Rationale: Release signoff is a blocking gate for shipping. Unblocking it directly enables production delivery for the dungeoncrawler site.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-28T16:23:13+00:00
+- Generated: 2026-04-28T16:33:17+00:00

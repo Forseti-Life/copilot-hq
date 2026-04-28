@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from subprocess import run
 from typing import Any
@@ -145,7 +146,7 @@ def next_sequence(run_dir: Path, node: str) -> int:
 
 def route_date_for_item(item_name: str) -> str:
     match = re.match(r"^([0-9]{8})", item_name)
-    return match.group(1) if match else "00000000"
+    return match.group(1) if match else datetime.utcnow().strftime("%Y%m%d")
 
 
 def create_inbox_item(target_agent: str, item_name: str, roi: int, command_content: str) -> None:
@@ -239,10 +240,11 @@ def record_merge_receipt(
 
 def merge_ready(flow: dict[str, Any], run_dir: Path, target_node: str) -> tuple[bool, list[str]]:
     incoming = incoming_transitions(flow, target_node)
-    if len(incoming) <= 1:
+    conditions = [item["condition"] for item in incoming if item["condition"]]
+    if len(incoming) <= 1 or len(conditions) != len(incoming) or len(set(conditions)) != 1:
         return True, []
     missing: list[str] = []
-    conditions: list[str] = []
+    observed_conditions: list[str] = []
     for item in incoming:
         source_node = item["from_node"]
         path = merge_receipt_path(run_dir, target_node, source_node)
@@ -256,8 +258,8 @@ def merge_ready(flow: dict[str, Any], run_dir: Path, target_node: str) -> tuple[
             continue
         condition = str(payload.get("condition", "")).strip()
         if condition:
-            conditions.append(condition)
-    return not missing, conditions
+            observed_conditions.append(condition)
+    return not missing, observed_conditions
 
 
 def clear_merge_receipts(run_dir: Path, target_node: str) -> None:
