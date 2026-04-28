@@ -1,24 +1,21 @@
 - Status: in_progress
-- Summary: Read the inbox item (missing auto-site-audit for qa-dungeoncrawler) and will now run the site audit script to generate the initial evidence, then verify the result and update my seat instructions.
+- Summary: Reviewing the inbox item and running the initial site audit for dungeoncrawler per acceptance criteria. Reading the audit script before executing to confirm parameters and expected output paths.
 
 ## Next actions
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` and capture output
-- Verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
-- Re-run `bash scripts/ceo-system-health.sh` to confirm the health check passes
-- Commit any new artifact files and update seat instructions if needed
-- File final outbox with Status: done and evidence
+- Read `scripts/site-audit-run.sh` to confirm correct invocation and output location
+- Execute `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions
+- Verify output lands in `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Re-run `bash scripts/ceo-system-health.sh` to confirm the health check flips to PASS
+- Update seat instructions with correct audit script invocation and evidence paths
 
 ## Blockers
-- None anticipated; proceeding to execute audit now.
-
-## Needs from CEO
-- N/A
+- None anticipated; proceeding to execution
 
 ## ROI estimate
-- ROI: 40
-- Rationale: Establishing baseline QA audit evidence is a prerequisite for all future release gate verification on the dungeoncrawler product; without it, Gate 2 cannot be completed reliably.
+- ROI: 15
+- Rationale: Establishing a baseline audit artifact unblocks all future QA verification cycles for dungeoncrawler and satisfies the system health check, preventing repeated health-check noise.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T02:29:33+00:00
+- Generated: 2026-04-28T02:39:35+00:00
