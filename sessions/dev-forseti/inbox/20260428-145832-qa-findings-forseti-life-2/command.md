@@ -27,3 +27,5 @@
 Deliverable:
 - Outbox update with Status + Summary and QA handoff notes.
 - For new features: create/update features/<feature_id>/02-implementation-notes.md.
+- Agent: dev-forseti
+- Status: pending

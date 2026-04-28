@@ -1,14 +1,14 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during agentic SDLC flow update
+> Last updated: 2026-04-28 during agentic SDLC flow detail refinement
 
 ---
 
 ## Currently Working On
 
-Maintaining the Drupal LangGraph flow catalog and aligning the Agentic SDLC
-reference graph with the intended delivery process used on forseti.life.
+Refining the Drupal LangGraph flow detail page for `agentic_sdlc`,
+specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/flows/agentic_sdlc`.
 
 ### Current state
 
@@ -87,7 +87,9 @@ reference graph with the intended delivery process used on forseti.life.
   - flow ID: `agentic_sdlc`
   - label: `Agentic SDLC`
   - source: external reference graph from `CodinjaoftheWorld/agentic-sdlc-langgraph`
-  - 17 top-level nodes and 17 detailed breakdown rows
+  - now 15 top-level nodes and 15 detailed breakdown rows after collapsing
+    code/security review remediation back into direct rejection lines to the
+    original code authoring step
 - Updated the built-in `agentic_sdlc` flow definition so design approval now
   fans out into parallel `Generate Code` and `Write Test Cases` branches.
 - The code branch now proceeds through code review and security review while the
@@ -113,6 +115,19 @@ reference graph with the intended delivery process used on forseti.life.
 - Flow owner help text/schema were updated so owner values are treated as seat
   IDs.
 - Drupal caches were rebuilt and the new org chart route was confirmed live.
+- Backfilled the built-in `agentic_sdlc` flow definition with explicit
+  `node_breakdown` entries for all 17 nodes so the flow detail page's
+  **Detailed Node Breakdown** section is populated again.
+- Found that the live page was using a saved custom `agentic_sdlc` override,
+  then synchronized that active Drupal config so its QA remediation node,
+  transitions, and breakdown rows now match the intended
+  `Fix Code or Test Cases after QA Feedback` model.
+- Removed the separate `Fix Code after Code Review` and
+  `Fix Code after Security Review` nodes from both the built-in definition and
+  the live Drupal override.
+- `Code Review` and `Security Review` are now approval gates with
+  `Not approved` edges that route directly back to `Generate Code`, matching the
+  intended “return to the originator” behavior.
 
 ### Key decisions
 
@@ -135,22 +150,13 @@ reference graph with the intended delivery process used on forseti.life.
 
 ### Next actions
 
-1. Resolve the current repo-side Drush bootstrap failure if live runtime
-   validation through Drupal services is needed from the workspace shell.
-2. Decide whether flow owner entry should become a constrained seat selector
-   instead of a freeform seat-ID field.
-3. Decide whether seat details should stay inline-only or graduate to dedicated
-   seat-detail routes once deeper per-seat views exist.
-4. Decide whether the seat registry table should mirror the same active/paused
-   clustering or filtering options now used in the diagram.
-5. Decide whether `consume_replies` should land as a subgraph inside the current
-   tick or whether its internal nodes should be promoted into the top-level tick
-   graph.
-6. Decide whether to retire or shrink `scripts/consume-forseti-replies.sh` now
-   that the LangGraph path owns the orchestration logic.
-7. Trace the second tick node (`dispatch_commands`) with the same level of
-   detail and compare where graph state stops and script logic takes over.
-8. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+1. Decide whether the flow detail page should gain phase/lane summaries for the
+   parallel code/test branches now that the per-node breakdown is restored.
+2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-9. Continue the next UX slice around richer node/routing/tool/prompt editing
-   surfaces once the org/ownership model is settled.
+3. Resolve the current repo-side Drush bootstrap failure if live runtime
+   validation through Drupal services is needed from the workspace shell.
+4. Decide whether flow owner entry should become a constrained seat selector
+   instead of a freeform seat-ID field.
+5. Trace the second tick node (`dispatch_commands`) with the same level of
+   detail and compare where graph state stops and script logic takes over.

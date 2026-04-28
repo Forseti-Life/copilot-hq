@@ -1,23 +1,22 @@
 - Status: in_progress
-- Summary: Investigating the KPI stagnation for dungeoncrawler release 20260412-dungeoncrawler-release-x. Dev has 2 inbox items at needs-info status and 15 open issues with no movement after 40+ minutes. Need to read current dev inbox items and latest dev outbox to understand the specific blocker before deciding whether to unblock with context, narrow scope, or escalate.
+- Summary: Investigating the KPI stagnation for release `20260412-dungeoncrawler-release-x`. The dev seat has 2 open inbox items and latest status is `needs-info`, which is the likely root cause of stagnation. Need to read the dev inbox items to understand what is blocking dev, then either provide the missing context or escalate.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/inbox/` to identify the 2 open dev inbox items and their exact needs-info questions
-- Read `sessions/dev-dungeoncrawler/outbox/` for latest status artifact to confirm what dev is blocked on
-- Cross-reference against `features/` for release 20260412-dungeoncrawler-release-x to confirm in-scope features and their current state
-- Based on findings: either provide missing context to unblock dev, or escalate to CEO with options if scope/policy decision is needed
+- Read dev seat inbox items for release `20260412-dungeoncrawler-release-x` to identify what `needs-info` context is missing
+- Provide unblocking context or escalate to CEO if decision is above PM authority
+- Review open issues count (15) against active feature list to confirm scope integrity
 
 ## Blockers
-- Cannot determine root cause of dev needs-info until inbox/outbox are read — proceeding to investigate now
+- None yet — investigation in progress.
 
 ## Needs from CEO
-- None at this time — investigating first per blocker research protocol
+- N/A at this stage.
 
 ## ROI estimate
-- ROI: 90
-- Rationale: 15 open issues and a stalled release represent direct product velocity loss; unblocking dev now prevents further compounding delay on the active release cycle.
+- ROI: 80
+- Rationale: 15 open issues and a stalled dev seat in an active release directly delays shipment. Unblocking dev is the highest-leverage action available right now.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-release-kpi-stagnation-followup
-- Generated: 2026-04-28T15:16:00+00:00
+- Generated: 2026-04-28T15:20:07+00:00

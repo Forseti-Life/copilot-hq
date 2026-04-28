@@ -28,3 +28,4 @@ Review the current QA evidence and either:
 
 ## Verification
 - `bash scripts/ceo-release-health.sh` should show `[dungeoncrawler] Gate 2 APPROVE` as PASS or a documented BLOCK outbox should exist
+- Status: pending
