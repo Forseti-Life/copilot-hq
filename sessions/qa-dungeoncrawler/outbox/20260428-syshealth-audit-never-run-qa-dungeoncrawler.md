@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the inbox item requesting an initial site audit for dungeoncrawler. Will read the audit script to understand its requirements, then attempt to run it, capturing output as evidence.
+- Summary: Investigating the inbox item for qa-dungeoncrawler. The task requires running `bash scripts/site-audit-run.sh dungeoncrawler` to produce the initial auto-site-audit artifact. Checking script contents and environment before executing to confirm safe execution against production.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to confirm env vars and prerequisites
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
-- Capture output and confirm artifact written to `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to verify the health check passes
+- Read `scripts/site-audit-run.sh` to confirm required env vars and `ALLOW_PROD_QA=1` flag
+- Execute the audit with `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler`
+- Confirm artifact written to `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Re-run `bash scripts/ceo-system-health.sh` to verify the health check flips to ✅ PASS
 - Update seat instructions if any new constraints are discovered
 
 ## Blockers
-- None yet — proceeding with investigation
+- None yet — investigating now.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 6
-- Rationale: Establishing a baseline audit artifact unblocks future QA verification cycles and satisfies the system health check, preventing repeated dispatch of this inbox item.
+- ROI: 40
+- Rationale: Unrun QA audit means zero visibility into production health for dungeoncrawler. Running the initial audit unblocks all future release-cycle Gate 2 verifications and system health checks.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T07:52:15+00:00
+- Generated: 2026-04-28T08:02:12+00:00
