@@ -530,6 +530,8 @@ dungeoncrawler_content.api.languages_catalog:
   defaults:
     _controller: '\Drupal\dungeoncrawler_content\Controller\LanguagesController::getLanguageCatalog'
   methods: [GET]
+  requirements:
+    _access: 'TRUE'
   options:
     _format: json
 
@@ -538,6 +540,8 @@ dungeoncrawler_content.api.languages_catalog_legacy:
   defaults:
     _controller: '\Drupal\dungeoncrawler_content\Controller\LanguagesController::getLanguageCatalog'
   methods: [GET]
+  requirements:
+    _access: 'TRUE'
   options:
     _format: json
 

@@ -84,6 +84,19 @@ class CharacterApiController extends ControllerBase {
 
     try {
       $character_id = $data['character_id'] ?? NULL;
+      $existing = NULL;
+      $existing_character_data = [];
+
+      if ($character_id) {
+        $existing = $this->characterManager->loadCharacter($character_id);
+        if (!$existing || $existing->uid != $this->currentUser()->id()) {
+          return new JsonResponse([
+            'success' => FALSE,
+            'error' => 'Character not found or access denied',
+          ], 403);
+        }
+        $existing_character_data = CharacterManager::getStoredCharacterData($existing);
+      }
 
       // Validate ancestry ID if provided.
       $ancestry_val = $data['ancestry'] ?? NULL;
@@ -144,10 +157,10 @@ class CharacterApiController extends ControllerBase {
         'inventory' => $data['inventory'] ?? [],
         'gold' => $data['gold'] ?? 15,
         'wizard_complete' => $data['wizard_complete'] ?? FALSE,
-        'languages' => [],
+        'languages' => $existing_character_data['languages'] ?? [],
       ];
 
-      $language_result = $this->languageService->processLanguages($character_data, $data);
+      $language_result = $this->languageService->processLanguages($character_data, $data, $existing_character_data['languages'] ?? []);
       if (!$language_result['success']) {
         return new JsonResponse([
           'success' => FALSE,
@@ -158,15 +171,6 @@ class CharacterApiController extends ControllerBase {
 
       // Update existing character or create new one
       if ($character_id) {
-        // Update existing draft
-        $existing = $this->characterManager->loadCharacter($character_id);
-        if (!$existing || $existing->uid != $this->currentUser()->id()) {
-          return new JsonResponse([
-            'success' => FALSE,
-            'error' => 'Character not found or access denied',
-          ], 403);
-        }
-
         $existing_heritage = CharacterManager::getStoredHeritage($existing);
         $requested_heritage = $character_data['heritage'] ?? $existing_heritage;
         if (

@@ -46,6 +46,7 @@
     // Background boosts
     REQUIRED_BG_BOOSTS: 2,
     REQUIRED_FREE_BOOSTS: 4,
+    ABILITY_KEYS: ['str', 'dex', 'con', 'int', 'wis', 'cha'],
     
     // Base values for calculations
     BASE_AC: 10,
@@ -155,6 +156,9 @@
     heritage: null,
     background: null,
     class: null,
+    languages: [],
+    backgroundBoosts: [],
+    freeBoosts: [],
     abilities: {
       str: CONSTANTS.DEFAULT_ABILITY_SCORE,
       dex: CONSTANTS.DEFAULT_ABILITY_SCORE,
@@ -172,6 +176,61 @@
     backstory: '',
     equipment: [],
     gold: CONSTANTS.STARTING_GOLD
+  };
+
+  const languageCatalog = [
+    { id: 'Common', name: 'Common', script: 'Common' },
+    { id: 'Elvish', name: 'Elvish', script: 'Elvish' },
+    { id: 'Dwarvish', name: 'Dwarvish', script: 'Dwarvish' },
+    { id: 'Gnomish', name: 'Gnomish', script: 'Gnomish' },
+    { id: 'Halfling', name: 'Halfling', script: 'Common' },
+    { id: 'Orcish', name: 'Orcish', script: 'Orcish' },
+    { id: 'Sylvan', name: 'Sylvan', script: 'Sylvan' },
+    { id: 'Undercommon', name: 'Undercommon', script: 'Undercommon' },
+    { id: 'Draconic', name: 'Draconic', script: 'Draconic' },
+    { id: 'Jotun', name: 'Jotun', script: 'Jotun' },
+    { id: 'Celestial', name: 'Celestial', script: 'Celestial' },
+    { id: 'Gnoll', name: 'Gnoll', script: 'Common' },
+    { id: 'Goblin', name: 'Goblin', script: 'Goblin' },
+    { id: 'Terran', name: 'Terran', script: 'Terran' },
+    { id: 'Amurrun', name: 'Amurrun', script: 'Amurrun' },
+    { id: 'Ysoki', name: 'Ysoki', script: 'Ysoki' },
+    { id: 'Tengu', name: 'Tengu', script: 'Tengu' }
+  ];
+
+  const languageAliases = {
+    common: 'Common',
+    elven: 'Elvish',
+    elvish: 'Elvish',
+    dwarven: 'Dwarvish',
+    dwarvish: 'Dwarvish',
+    gnomish: 'Gnomish',
+    halfling: 'Halfling',
+    orcish: 'Orcish',
+    sylvan: 'Sylvan',
+    undercommon: 'Undercommon',
+    draconic: 'Draconic',
+    jotun: 'Jotun',
+    celestial: 'Celestial',
+    gnoll: 'Gnoll',
+    goblin: 'Goblin',
+    terran: 'Terran',
+    amurrun: 'Amurrun',
+    ysoki: 'Ysoki',
+    tengu: 'Tengu'
+  };
+
+  const ancestryLanguageRules = {
+    human: { defaults: ['Common'], bonusLanguagePerInt: 1 },
+    elf: { defaults: ['Common', 'Elvish'], bonusLanguagePerInt: 1, bonusLanguagePool: ['Celestial', 'Draconic', 'Gnoll', 'Gnomish', 'Goblin', 'Orcish', 'Sylvan'] },
+    dwarf: { defaults: ['Common', 'Dwarvish'], bonusLanguagePerInt: 1, bonusLanguagePool: ['Gnomish', 'Goblin', 'Jotun', 'Orcish', 'Terran', 'Undercommon'] },
+    gnome: { defaults: ['Common', 'Gnomish', 'Sylvan'], bonusLanguagePerInt: 1, bonusLanguagePool: ['Draconic', 'Dwarvish', 'Elvish', 'Goblin', 'Jotun', 'Orcish'] },
+    goblin: { defaults: ['Common', 'Goblin'], bonusLanguagePerInt: 0 },
+    halfling: { defaults: ['Common', 'Halfling'], bonusLanguagePerInt: 0 },
+    catfolk: { defaults: ['Common', 'Amurrun'], bonusLanguagePerInt: 0 },
+    kobold: { defaults: ['Common', 'Draconic'], bonusLanguagePerInt: 0 },
+    ratfolk: { defaults: ['Common', 'Ysoki'], bonusLanguagePerInt: 0 },
+    tengu: { defaults: ['Common', 'Tengu'], bonusLanguagePerInt: 0 }
   };
 
   // Ancestry data
@@ -304,6 +363,161 @@
       traits: []
     }
   };
+
+  function normalizeLanguageId(languageId) {
+    if (!languageId) {
+      return null;
+    }
+    return languageAliases[String(languageId).trim().toLowerCase()] || null;
+  }
+
+  function getSelectedBoostValues(inputName) {
+    return $('input[name="' + inputName + '"]:checked').map(function() {
+      return $(this).val();
+    }).get();
+  }
+
+  function getAncestryLanguageRule(ancestryId) {
+    return ancestryLanguageRules[ancestryId] || { defaults: [], bonusLanguagePerInt: 0, bonusLanguagePool: [] };
+  }
+
+  function getDefaultLanguages(ancestryId) {
+    return (getAncestryLanguageRule(ancestryId).defaults || [])
+      .map(normalizeLanguageId)
+      .filter(Boolean);
+  }
+
+  function getBonusLanguageSlots() {
+    const ancestryRule = getAncestryLanguageRule(characterData.ancestry);
+    return Math.max(0, getAbilityModifier(characterData.abilities.int) * (ancestryRule.bonusLanguagePerInt || 0));
+  }
+
+  function getBonusLanguagePool(ancestryId) {
+    const ancestryRule = getAncestryLanguageRule(ancestryId);
+    const defaults = new Set(getDefaultLanguages(ancestryId));
+    const configuredPool = ancestryRule.bonusLanguagePool || [];
+    const pool = configuredPool.length > 0
+      ? configuredPool.map(normalizeLanguageId).filter(Boolean)
+      : languageCatalog.map(language => language.id);
+
+    return [...new Set(pool.filter(languageId => !defaults.has(languageId)))];
+  }
+
+  function renderCurrentAbilityScores() {
+    let html = '<ul class="trait-list">';
+    CONSTANTS.ABILITY_KEYS.forEach(function(ability) {
+      const score = characterData.abilities[ability];
+      const modifier = getAbilityModifier(score);
+      html += '<li><strong>' + ability.toUpperCase() + '</strong>: ' + score + ' (' + (modifier >= 0 ? '+' : '') + modifier + ')</li>';
+    });
+    html += '</ul>';
+    $('#currentAbilityScores').html(html);
+  }
+
+  function syncCharacterLanguages() {
+    const defaults = getDefaultLanguages(characterData.ancestry);
+    const bonusPool = getBonusLanguagePool(characterData.ancestry);
+    const maxSelections = getBonusLanguageSlots();
+    let selected = $('input[name="bonusLanguage"]:checked').map(function() {
+      return normalizeLanguageId($(this).val());
+    }).get().filter(function(languageId) {
+      return languageId && bonusPool.includes(languageId);
+    });
+
+    if (selected.length > maxSelections) {
+      selected = selected.slice(0, maxSelections);
+    }
+
+    characterData.languages = [...new Set(defaults.concat(selected))];
+    $('#languageCount').text(selected.length);
+    $('#languageSlots').text(maxSelections);
+    return { defaults, bonusPool, selected, maxSelections };
+  }
+
+  function renderLanguageSelection() {
+    const panel = $('#languageSelectionPanel');
+    if (!panel.length || !characterData.ancestry) {
+      panel.addClass('hidden');
+      return;
+    }
+
+    const defaults = getDefaultLanguages(characterData.ancestry);
+    const bonusPool = getBonusLanguagePool(characterData.ancestry);
+    const maxSelections = getBonusLanguageSlots();
+    const selectedSet = new Set(characterData.languages.filter(function(languageId) {
+      return !defaults.includes(languageId);
+    }));
+
+    $('#languageDefaults').html('<p><strong>Default languages:</strong> ' + (defaults.length ? defaults.join(', ') : 'None') + '</p>');
+
+    if (maxSelections === 0) {
+      $('#languageSelectionHelp').text('Your final Intelligence modifier does not grant bonus languages for this ancestry.');
+      $('#languageOptions').html('<p class="help-text">No bonus language selection is required.</p>');
+      panel.removeClass('hidden');
+      syncCharacterLanguages();
+      return;
+    }
+
+    let optionsHtml = '<p>Select ' + maxSelections + ' bonus language' + (maxSelections > 1 ? 's' : '') + '.</p>';
+    bonusPool.forEach(function(languageId) {
+      const entry = languageCatalog.find(function(language) {
+        return language.id === languageId;
+      });
+      const checked = selectedSet.has(languageId) ? ' checked' : '';
+      optionsHtml += '<label class="language-option"><input type="checkbox" name="bonusLanguage" value="' + languageId + '"' + checked + '> ';
+      optionsHtml += '<strong>' + languageId + '</strong>';
+      if (entry && entry.script) {
+        optionsHtml += ' <span class="help-text">(' + entry.script + ' script)</span>';
+      }
+      optionsHtml += '</label>';
+    });
+
+    $('#languageSelectionHelp').text('Bonus language choices are based on your final Intelligence modifier and ancestry.');
+    $('#languageOptions').html(optionsHtml);
+    panel.removeClass('hidden');
+    syncCharacterLanguages();
+  }
+
+  function recalculateAbilityScores() {
+    characterData.abilities = {
+      str: CONSTANTS.DEFAULT_ABILITY_SCORE,
+      dex: CONSTANTS.DEFAULT_ABILITY_SCORE,
+      con: CONSTANTS.DEFAULT_ABILITY_SCORE,
+      int: CONSTANTS.DEFAULT_ABILITY_SCORE,
+      wis: CONSTANTS.DEFAULT_ABILITY_SCORE,
+      cha: CONSTANTS.DEFAULT_ABILITY_SCORE
+    };
+
+    if (characterData.ancestry) {
+      const ancestry = ancestryData[characterData.ancestry];
+      if (ancestry) {
+        ancestry.boosts.forEach(function(boost) {
+          if (boost !== 'free') {
+            applyAbilityBoost(boost);
+          }
+        });
+        ancestry.flaws.forEach(function(flaw) {
+          applyAbilityFlaw(flaw);
+        });
+      }
+    }
+
+    characterData.backgroundBoosts.forEach(function(boost) {
+      applyAbilityBoost(boost);
+    });
+
+    if (characterData.class && classData[characterData.class]) {
+      applyAbilityBoost(classData[characterData.class].keyAbility);
+    }
+
+    characterData.freeBoosts.forEach(function(boost) {
+      applyAbilityBoost(boost);
+    });
+
+    renderCurrentAbilityScores();
+    renderLanguageSelection();
+    updatePreview();
+  }
 
   // Class data
   const classData = {
@@ -592,6 +806,10 @@
           showStepError('Please select exactly ' + CONSTANTS.REQUIRED_FREE_BOOSTS + ' free ability boosts.', 'step5');
           return false;
         }
+        if (getBonusLanguageSlots() > 0 && $('input[name="bonusLanguage"]:checked').length !== getBonusLanguageSlots()) {
+          showStepError('Please select exactly ' + getBonusLanguageSlots() + ' bonus language(s).', 'step5');
+          return false;
+        }
         return true;
       
       default:
@@ -611,17 +829,14 @@
         break;
       
       case 3:
-        // Save background ability boosts
-        $('input[name="bgBoost"]:checked').each(function() {
-          applyAbilityBoost($(this).val());
-        });
+        characterData.backgroundBoosts = getSelectedBoostValues('bgBoost');
+        recalculateAbilityScores();
         break;
       
       case 5:
-        // Apply free ability boosts
-        $('input[name="freeBoost"]:checked').each(function() {
-          applyAbilityBoost($(this).val());
-        });
+        characterData.freeBoosts = getSelectedBoostValues('freeBoost');
+        recalculateAbilityScores();
+        syncCharacterLanguages();
         break;
       
       case 6:
@@ -650,6 +865,7 @@
       heritage: characterData.heritage,
       background: characterData.background,
       class: characterData.class,
+      languages: characterData.languages,
       abilities: characterData.abilities,
       alignment: characterData.alignment,
       deity: characterData.deity,
@@ -787,31 +1003,13 @@
       return;
     }
 
-    // Reset ability scores
-    characterData.abilities = {
-      str: CONSTANTS.DEFAULT_ABILITY_SCORE,
-      dex: CONSTANTS.DEFAULT_ABILITY_SCORE,
-      con: CONSTANTS.DEFAULT_ABILITY_SCORE,
-      int: CONSTANTS.DEFAULT_ABILITY_SCORE,
-      wis: CONSTANTS.DEFAULT_ABILITY_SCORE,
-      cha: CONSTANTS.DEFAULT_ABILITY_SCORE
-    };
-
     characterData.ancestry = ancestryId;
+    characterData.heritage = null;
+    characterData.languages = [];
 
     // Highlight selected card
     $('.ancestry-card').removeClass('selected');
     $('.ancestry-card[data-ancestry="' + ancestryId + '"]').addClass('selected');
-
-    // Apply ancestry boosts and flaws
-    ancestry.boosts.forEach(boost => {
-      if (boost !== 'free') {
-        applyAbilityBoost(boost);
-      }
-    });
-    ancestry.flaws.forEach(flaw => {
-      applyAbilityFlaw(flaw);
-    });
 
     // Show details panel
     $('#ancestryDetails').removeClass('hidden');
@@ -820,7 +1018,7 @@
     // Enable next button
     $('#ancestryNextBtn').prop('disabled', false);
 
-    updatePreview();
+    recalculateAbilityScores();
   };
 
   /**
@@ -839,18 +1037,7 @@
     $('.background-card[data-background="' + backgroundId + '"]').addClass('selected');
 
     $('#backgroundBoosts').removeClass('hidden');
-
-    // Enable next when 2 boosts are selected
-    $('input[name="bgBoost"]').on('change', function() {
-      const checked = $('input[name="bgBoost"]:checked').length;
-      // Limit to 2 selections
-      if (checked > CONSTANTS.REQUIRED_BG_BOOSTS) {
-        $(this).prop('checked', false);
-      }
-      $('#backgroundNextBtn').prop('disabled', checked !== CONSTANTS.REQUIRED_BG_BOOSTS);
-    });
-
-    updatePreview();
+    recalculateAbilityScores();
   };
 
   /**
@@ -870,12 +1057,9 @@
     $('.class-card').removeClass('selected');
     $('.class-card[data-class="' + classId + '"]').addClass('selected');
 
-    // Apply class key ability boost
-    applyAbilityBoost(classInfo.keyAbility);
-
     $('#classNextBtn').prop('disabled', false);
 
-    updatePreview();
+    recalculateAbilityScores();
   };
 
   /**
@@ -1084,19 +1268,11 @@
       $(this).prop('checked', false);
       return;
     }
+    characterData.freeBoosts = getSelectedBoostValues('freeBoost');
     $('#boostCount').text(checked);
-    $('#abilitiesNextBtn').prop('disabled', checked !== CONSTANTS.REQUIRED_FREE_BOOSTS);
-
-    // Update preview with temporary boosts
-    const tempAbilities = {...characterData.abilities};
-    $('input[name="freeBoost"]:checked').each(function() {
-      const ability = $(this).val();
-      if (tempAbilities[ability] < CONSTANTS.MAX_ABILITY_SCORE) {
-        tempAbilities[ability] += CONSTANTS.ABILITY_BOOST_AMOUNT;
-      } else {
-        tempAbilities[ability] += CONSTANTS.ABILITY_BOOST_AT_18;
-      }
-    });
+    recalculateAbilityScores();
+    const requiredLanguagesSelected = getBonusLanguageSlots() === 0 || $('input[name="bonusLanguage"]:checked').length === getBonusLanguageSlots();
+    $('#abilitiesNextBtn').prop('disabled', checked !== CONSTANTS.REQUIRED_FREE_BOOSTS || !requiredLanguagesSelected);
   });
 
   /**
@@ -1116,6 +1292,7 @@
       heritage: characterData.heritage,
       background: characterData.background,
       class: characterData.class,
+      languages: characterData.languages,
       abilities: characterData.abilities,
       alignment: characterData.alignment,
       deity: characterData.deity,
@@ -1193,6 +1370,11 @@
     html += '</div>';
 
     html += '<div class="summary-section">';
+    html += '<h4>Languages</h4>';
+    html += '<p>' + (characterData.languages.length ? characterData.languages.join(', ') : 'None') + '</p>';
+    html += '</div>';
+
+    html += '<div class="summary-section">';
     html += '<h4>Equipment</h4>';
     if (characterData.equipment.length > 0) {
       html += '<ul>';
@@ -1218,6 +1400,8 @@
       showShopCategory('weapons');
       
       // Initialize current ability scores display
+      renderCurrentAbilityScores();
+      renderLanguageSelection();
       updatePreview();
       
       // Attach heritage selection handler (delegated event)
@@ -1227,6 +1411,28 @@
         const heritageId = $(this).data('heritage');
         characterData.heritage = heritageId;
         updatePreview();
+      });
+
+      $(document).on('change', 'input[name="bgBoost"]', function() {
+        const checked = $('input[name="bgBoost"]:checked').length;
+        if (checked > CONSTANTS.REQUIRED_BG_BOOSTS) {
+          $(this).prop('checked', false);
+          return;
+        }
+        characterData.backgroundBoosts = getSelectedBoostValues('bgBoost');
+        $('#backgroundNextBtn').prop('disabled', checked !== CONSTANTS.REQUIRED_BG_BOOSTS);
+        recalculateAbilityScores();
+      });
+
+      $(document).on('change', 'input[name="bonusLanguage"]', function() {
+        const maxSelections = getBonusLanguageSlots();
+        const checked = $('input[name="bonusLanguage"]:checked').length;
+        if (checked > maxSelections) {
+          $(this).prop('checked', false);
+        }
+        syncCharacterLanguages();
+        const requiredLanguagesSelected = maxSelections === 0 || $('input[name="bonusLanguage"]:checked').length === maxSelections;
+        $('#abilitiesNextBtn').prop('disabled', $('input[name="freeBoost"]:checked').length !== CONSTANTS.REQUIRED_FREE_BOOSTS || !requiredLanguagesSelected);
       });
     }
   };
