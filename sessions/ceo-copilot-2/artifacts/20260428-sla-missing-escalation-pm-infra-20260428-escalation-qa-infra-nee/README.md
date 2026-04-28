@@ -2,7 +2,7 @@
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-copilot-2 (ceo-pipeline-remediate.py)
-- Dispatched-at: 2026-04-28T11:10:06Z
+- Dispatched-at: 2026-04-28T10:30:06Z
 - Escalated agent: pm-infra
 - Escalated item: 20260428-escalation-qa-infra-needs-info-quarantine
 - Escalated status: needs-info
