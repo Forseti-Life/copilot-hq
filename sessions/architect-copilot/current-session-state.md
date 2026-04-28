@@ -1,15 +1,14 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during Drush root + bootstrap review
+> Last updated: 2026-04-28 during agentic SDLC flow update
 
 ---
 
 ## Currently Working On
 
-Stabilizing Drupal/Drush operator paths on the production host after confirming
-that repo-side hybrid checkouts and live Apache project roots diverged enough to
-break Drush bootstrap assumptions.
+Maintaining the Drupal LangGraph flow catalog and aligning the Agentic SDLC
+reference graph with the intended delivery process used on forseti.life.
 
 ### Current state
 
@@ -89,6 +88,21 @@ break Drush bootstrap assumptions.
   - label: `Agentic SDLC`
   - source: external reference graph from `CodinjaoftheWorld/agentic-sdlc-langgraph`
   - 17 top-level nodes and 17 detailed breakdown rows
+- Updated the built-in `agentic_sdlc` flow definition so design approval now
+  fans out into parallel `Generate Code` and `Write Test Cases` branches.
+- The code branch now proceeds through code review and security review while the
+  test branch proceeds through test case review, and both approved branches
+  converge on `QA Testing`.
+- Confirmed the live Forseti module path is a symlink from
+  `sites/forseti/web/modules/custom/drupal_langgraph` to
+  `/home/ubuntu/forseti.life/drupal-langgraph`, so the source edit landed in
+  the active module checkout.
+- PHP lint passed for
+  `drupal-langgraph/src/Service/ProcessFlowRegistryService.php`.
+- Repo-side Drush bootstrap from `/home/ubuntu/forseti.life/sites/forseti`
+  still terminates with `BootstrapManager::bootstrap(): ... EmptyBoot returned`,
+  so runtime validation through Drush remains an environment follow-up rather
+  than a code-path blocker for this flow metadata change.
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -112,23 +126,28 @@ break Drush bootstrap assumptions.
    drill-down depth.
 7. Tree diagrams need subtree-aware layout and reliable click geometry; naive
    depth-row placement was not good enough for the real seat graph.
+8. The Agentic SDLC reference flow should model test-case authoring as a
+   parallel stream that begins immediately after design approval rather than as
+   a post-security sequential step.
 
 ### Next actions
 
-1. Decide whether flow owner entry should become a constrained seat selector
+1. Resolve the current repo-side Drush bootstrap failure if live runtime
+   validation through Drupal services is needed from the workspace shell.
+2. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-2. Decide whether seat details should stay inline-only or graduate to dedicated
+3. Decide whether seat details should stay inline-only or graduate to dedicated
    seat-detail routes once deeper per-seat views exist.
-3. Decide whether the seat registry table should mirror the same active/paused
+4. Decide whether the seat registry table should mirror the same active/paused
    clustering or filtering options now used in the diagram.
-4. Decide whether `consume_replies` should land as a subgraph inside the current
+5. Decide whether `consume_replies` should land as a subgraph inside the current
    tick or whether its internal nodes should be promoted into the top-level tick
    graph.
-5. Decide whether to retire or shrink `scripts/consume-forseti-replies.sh` now
+6. Decide whether to retire or shrink `scripts/consume-forseti-replies.sh` now
    that the LangGraph path owns the orchestration logic.
-6. Trace the second tick node (`dispatch_commands`) with the same level of
+7. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
-7. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+8. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-8. Continue the next UX slice around richer node/routing/tool/prompt editing
+9. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.
