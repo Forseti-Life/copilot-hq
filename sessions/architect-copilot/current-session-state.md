@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during HQ orchestrator consume_replies subgraph implementation
+> Last updated: 2026-04-28 during HQ orchestrator consume_replies UI surfacing
 
 ---
 
@@ -56,6 +56,10 @@ first row stays readable without rewriting real reporting lines.
   - preserved top-level tick step parity while adding structured reply-ingestion
     telemetry (`pending_count`, `created_count`, `rerouted_count`, etc.)
   - added `orchestrator/tests/test_consume_replies_graph.py`
+- Updated the Drupal LangGraph flow model/UI so
+  `/admin/reports/drupal-langgraph/langgraph-console/flows/hq_orchestrator_tick`
+  now includes a **Detailed Node Breakdown** table for the internal
+  `consume_replies` subgraph steps.
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
