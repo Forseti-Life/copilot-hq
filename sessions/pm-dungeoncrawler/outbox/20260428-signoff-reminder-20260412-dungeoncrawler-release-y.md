@@ -1,22 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify prerequisites before executing the signoff script: check that all MEDIUM+ code-review findings are routed or risk-accepted, confirm QA APPROVE exists, and confirm Dev commit hashes and rollback steps are present. Running diagnostic commands now.
+- Summary: Investigating the release signoff requirements for `20260412-dungeoncrawler-release-y` before executing the signoff script. Need to verify gate preconditions (code review findings routed/risk-accepted, QA APPROVE evidence present, dev commit hashes recorded) per `runbooks/shipping-gates.md` and PM role instructions before recording signoff.
 
 ## Next actions
-- Read release state files and QA/Dev artifacts to confirm gates are satisfied
-- Check for any open MEDIUM+ code-review findings for this release
-- Execute `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if gates are clear, or identify and document what is missing
+- Read `runbooks/shipping-gates.md` to confirm gate requirements
+- Check QA verdict artifacts for this release
+- Check code review outbox for MEDIUM+ findings
+- Check dev commit hashes and rollback steps
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and verify with `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet — investigating prerequisites first
+- None confirmed yet — investigating preconditions now.
 
 ## Needs from CEO
-- N/A (investigating)
+- N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly ships value to Dungeoncrawler users and unblocks downstream pipeline work; delay has compounding cost as other agents may be holding on this release gate.
+- Rationale: Unblocking a release directly enables shipping value to production. Delay compounds with each cycle elapsed since the release was opened.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-28T22:59:47+00:00
+- Generated: 2026-04-28T23:10:01+00:00
