@@ -1244,12 +1244,18 @@ class ClineProvider(RuntimeProvider):
 # ── Release cycle wrappers (delegates to release_cycle module) ────────────────
 
 def _release_cycle_step(log: List[Any]) -> None:
-    """Delegate to release_cycle module."""
+    """Delegate to release_cycle module only when legacy release automation is enabled."""
+    if not _is_release_cycle_enabled():
+        log.append({"step": "release_cycle", "status": "skipped", "reason": "disabled"})
+        return
     release_cycle.run_release_cycle_step(log, REPO_ROOT)
 
 
 def _coordinated_push_step(log: List[Any]) -> None:
-    """Delegate to release_cycle module."""
+    """Delegate to coordinated push only when legacy release automation is enabled."""
+    if not _is_release_cycle_enabled():
+        log.append({"step": "coordinated_push", "status": "skipped", "reason": "disabled"})
+        return
     release_cycle.run_coordinated_push_step(log, REPO_ROOT)
 
 

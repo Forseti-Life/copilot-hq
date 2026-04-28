@@ -24,7 +24,8 @@ TIMESTAMP="$(date +%Y%m%d)"
 
 log() { echo "[route-gate] $*" >&2; }
 
-# Resolve the outbox file from the processed item name, or fall back to newest.
+# Resolve the outbox file from the processed item name, or fall back to newest
+# only when no explicit item name was provided.
 find_outbox_file() {
   local agent="$1" item="$2"
   local outbox_dir="sessions/${agent}/outbox"
@@ -34,8 +35,25 @@ find_outbox_file() {
     echo "${outbox_dir}/${item}.md"
     return 0
   fi
-  # Fall back to most recently modified .md file.
+  if [ -n "$item" ]; then
+    return 0
+  fi
+  # Fall back to most recently modified .md file only when no specific item was provided.
   ls -t "${outbox_dir}"/*.md 2>/dev/null | head -1
+}
+
+find_command_file() {
+  local agent="$1" item="$2"
+  [ -n "$item" ] || return 0
+  local inbox_cmd="sessions/${agent}/inbox/${item}/command.md"
+  if [ -f "$inbox_cmd" ]; then
+    echo "$inbox_cmd"
+    return 0
+  fi
+
+  local artifacts_dir="sessions/${agent}/artifacts"
+  [ -d "$artifacts_dir" ] || return 0
+  ls -td "${artifacts_dir}/${item}"*/command.md 2>/dev/null | head -1
 }
 
 # Look up team record from product-teams.json by field name + value.
@@ -114,6 +132,11 @@ OUTBOX_FILE="$(find_outbox_file "$AGENT" "$ITEM_NAME")" || true
 
 OUTBOX_CONTENT="$(cat "$OUTBOX_FILE" 2>/dev/null || true)"
 [ -n "$OUTBOX_CONTENT" ] || exit 0
+COMMAND_FILE="$(find_command_file "$AGENT" "$ITEM_NAME" || true)"
+FLOW_MANAGED=false
+if [ -n "$COMMAND_FILE" ] && [ -f "$COMMAND_FILE" ] && grep -qiE '^\-\s+Flow id:' "$COMMAND_FILE"; then
+  FLOW_MANAGED=true
+fi
 
 OUTBOX_BASE="$(basename "$OUTBOX_FILE" .md)"
 ROUTE_DATE="$(printf '%s' "$OUTBOX_BASE" | sed -n 's/^\([0-9]\{8\}\).*/\1/p')"
@@ -124,6 +147,9 @@ fi
 # ─── Flow-aware routing: uses explicit Flow id / Flow node / owner_seat metadata ───
 if [ -f "scripts/route-flow-transitions.py" ]; then
   python3 "scripts/route-flow-transitions.py" "$AGENT" "$ITEM_NAME" "$OUTBOX_FILE" 2>/dev/null || true
+fi
+if [ "$FLOW_MANAGED" = "true" ]; then
+  exit 0
 fi
 
 # ─── Pattern 1 & 2: QA seat gate signals ──────────────────────────────────────

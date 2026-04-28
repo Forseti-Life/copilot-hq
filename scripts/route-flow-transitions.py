@@ -47,6 +47,16 @@ def extract_roi(text: str, default: int = 20) -> int:
     return max(1, int(match.group(1)))
 
 
+def read_item_roi(item_dir: Path, default: int = 20) -> int:
+    path = item_dir / "roi.txt"
+    if not path.exists():
+        return default
+    try:
+        return max(1, int(path.read_text(encoding="utf-8").strip() or str(default)))
+    except (OSError, ValueError):
+        return default
+
+
 def extract_flow_outcomes(text: str) -> list[str]:
     outcomes: list[str] = []
     for raw in re.findall(r"^\-\s+Flow outcome:\s*(.+?)\s*$", text, re.MULTILINE | re.IGNORECASE):
@@ -530,7 +540,8 @@ def main() -> int:
         log(f"no matching flow outcome for {flow_id}/{current_node}; no handoff created")
         return 0
 
-    roi = extract_roi(outbox_text, 20)
+    source_item_roi = read_item_roi(command_path.parent, 20)
+    roi = max(source_item_roi, extract_roi(outbox_text, source_item_roi))
     route_date = route_date_for_item(item_name)
 
     for transition in transitions:

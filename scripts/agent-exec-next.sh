@@ -708,8 +708,10 @@ fi
 _throttle_copilot_api() {
   # Global rate-limit guard: enforces a minimum delay between Copilot API calls
   # across ALL concurrent agent executions (shared timestamp file).
-  # Override minimum delay via COPILOT_API_MIN_DELAY_SECONDS (default: 900).
-  local min_delay="${COPILOT_API_MIN_DELAY_SECONDS:-900}"
+  # Override minimum delay via COPILOT_API_MIN_DELAY_SECONDS (default: 30).
+  local min_delay="${COPILOT_API_MIN_DELAY_SECONDS:-30}"
+  local max_wait="${COPILOT_API_MAX_WAIT_SECONDS:-45}"
+  local lock_wait="${COPILOT_API_FLOCK_WAIT_SECONDS:-5}"
   local ts_file="$ROOT_DIR/tmp/.last-copilot-api-call"
   local cooldown_file="$ROOT_DIR/tmp/.copilot-api-rate-limit-until"
   mkdir -p "$ROOT_DIR/tmp"
@@ -719,7 +721,10 @@ _throttle_copilot_api() {
   (
     if command -v flock >/dev/null 2>&1; then
       exec 9>"$lock_file"
-      flock 9
+      if ! flock -w "$lock_wait" 9; then
+        echo "THROTTLE: skip wait after ${lock_wait}s acquiring Copilot throttle lock" >&2
+        exit 0
+      fi
     fi
 
     local now elapsed wait_for
@@ -730,6 +735,10 @@ _throttle_copilot_api() {
       cooldown_until="$(cat "$cooldown_file" 2>/dev/null || echo 0)"
       if [[ "$cooldown_until" =~ ^[0-9]+$ ]] && [ "$cooldown_until" -gt "$now" ]; then
         wait_for=$(( cooldown_until - now ))
+        if [ "$wait_for" -gt "$max_wait" ]; then
+          echo "THROTTLE: capping cooldown wait from ${wait_for}s to ${max_wait}s" >&2
+          wait_for="$max_wait"
+        fi
         echo "THROTTLE: waiting ${wait_for}s for Copilot rate-limit cooldown (until=${cooldown_until})" >&2
         sleep "$wait_for"
         now=$(date +%s)
@@ -742,6 +751,10 @@ _throttle_copilot_api() {
       elapsed=$(( now - last ))
       if [ "$elapsed" -lt "$min_delay" ]; then
         wait_for=$(( min_delay - elapsed ))
+        if [ "$wait_for" -gt "$max_wait" ]; then
+          echo "THROTTLE: capping inter-call wait from ${wait_for}s to ${max_wait}s" >&2
+          wait_for="$max_wait"
+        fi
         echo "THROTTLE: waiting ${wait_for}s before next Copilot API call (last=${last}, now=${now}, min_delay=${min_delay})" >&2
         sleep "$wait_for"
       fi
