@@ -139,6 +139,11 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
   - standardized review gate labels to `Approved` / `Changes requested`
 - The live Drupal override now renders `agentic_sdlc` as a 14-node flow with
   14 detailed breakdown rows and the new `Ready for QA` join in place.
+- Extended the Drupal LangGraph flow schema/UI to support per-node seat
+  ownership metadata via `owner_seat` on `node_breakdown` entries.
+- The `agentic_sdlc` flow detail page now shows an **Owning seat** column for
+  each node, and the live flow override assigns explicit seats to all 14 nodes
+  (BA, PM, Architect, Dev, Code Review, Security, and QA stages).
 
 ### Key decisions
 
@@ -161,11 +166,13 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
 
 ### Next actions
 
-1. Decide whether the flow detail page should gain phase/lane summaries for the
+1. Use the new per-node `owner_seat` metadata to drive real handoff routing
+   from flow transitions into seat inbox items.
+2. Decide whether the flow detail page should gain phase/lane summaries for the
    parallel code/test branches and the new QA-readiness merge.
-2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+3. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-3. Resolve the current repo-side Drush bootstrap failure if live runtime
+4. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
 4. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.

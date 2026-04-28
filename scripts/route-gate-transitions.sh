@@ -121,6 +121,11 @@ if ! [[ "$ROUTE_DATE" =~ ^[0-9]{8}$ ]]; then
   ROUTE_DATE="$TIMESTAMP"
 fi
 
+# ─── Flow-aware routing: uses explicit Flow id / Flow node / owner_seat metadata ───
+if [ -f "scripts/route-flow-transitions.py" ]; then
+  python3 "scripts/route-flow-transitions.py" "$AGENT" "$ITEM_NAME" "$OUTBOX_FILE" 2>/dev/null || true
+fi
+
 # ─── Pattern 1 & 2: QA seat gate signals ──────────────────────────────────────
 if [[ "$AGENT" == qa-* ]]; then
   TEAM_JSON="$(lookup_team_by_field "qa_agent" "$AGENT" || true)"

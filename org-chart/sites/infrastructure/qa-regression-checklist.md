@@ -124,3 +124,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260427-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260427-syshealth-merge-health-remediation.md)
 - [ ] 20260428-syshealth-merge-health-remediation — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260428-syshealth-merge-health-remediation.md)
 - [ ] 20260428-syshealth-security-probe-forseti — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260428-syshealth-security-probe-forseti.md)
+- [ ] 20260428-141000-dungeoncrawler-copilot-tracker-module-state-audit — targeted regression check (see dev outbox: sessions/dev-infra/outbox/20260428-141000-dungeoncrawler-copilot-tracker-module-state-audit.md)
