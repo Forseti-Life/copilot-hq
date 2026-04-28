@@ -105,7 +105,7 @@ Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` s
 ## Step 3 — Materialize accepted work
 
 If PM approves the request for delivery, the intake flow launches `agentic_sdlc`.
-Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming, but they are no longer created by `suggestion-triage.sh`.
+Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming after intake approval.
 
 ---
 
@@ -186,9 +186,8 @@ subprocess.run(["bash", "scripts/suggestion-intake.sh", site], check=False)
 
 | File | Purpose |
 |------|---------|
-| `scripts/suggestion-intake.sh` | Pull new suggestions → PM inbox |
-| `scripts/suggestion-triage.sh` | Record accept/defer/decline decision |
-| `templates/suggestion-triage.md` | Triage decision template |
+| `scripts/suggestion-intake.sh` | Pull new suggestions → intake flow entrypoint |
+| `scripts/route-flow-transitions.py` | Route intake handoffs and launch delivery |
 | `templates/feature-brief.md` | Feature brief template |
 | `templates/01-acceptance-criteria.md` | AC template |
 | `runbooks/release-cycle-process-flow.md` | Full release cycle (this feeds into Stage 0) |

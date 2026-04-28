@@ -315,8 +315,8 @@ Stage 0  (scope freeze)
   → 01-change-list.md                    ← items not groomed yet: deferred here
   QA preflight queued
      │
-Stage 3  Dev executes                    PM: suggestion-intake.sh
-         QA monitors                     PM: triage (accept/defer/decline)
+Stage 3  Dev executes                    system: suggestion-intake.sh
+         QA monitors                     intake: CEO/BA/PM flow handoffs
          (current release)               PM: write 01-acceptance-criteria.md
                                          PM→QA: pm-qa-handoff.sh
                                          QA: generate test cases → feature overlay
@@ -344,8 +344,8 @@ No grooming work ever blocks or delays an in-flight release.
 
 | Step | Artifact | Location |
 |------|----------|----------|
-| Suggestion intake | Batch inbox item | `sessions/pm-forseti/inbox/<date>-suggestion-intake/` |
-| Triage decision | Triage file | `sessions/pm-forseti/inbox/<date>-suggestion-intake/triage/NID-<n>-triage.md` |
+| Suggestion intake | CEO flow inbox item | `sessions/ceo-copilot-2/inbox/<date>-flow-feature_request_intake-.../` |
+| Intake decision trail | Flow outboxes | `sessions/<seat>/outbox/<item-id>.md` |
 | Feature brief | `feature.md` | `features/<feature-id>/feature.md` |
 | Acceptance criteria | `01-acceptance-criteria.md` | `features/<feature-id>/01-acceptance-criteria.md` |
 | Release scope | `01-change-list.md` | `sessions/pm-forseti/artifacts/release-candidates/<release-id>/01-change-list.md` |
@@ -365,8 +365,8 @@ No grooming work ever blocks or delays an in-flight release.
 | `runbooks/feature-intake.md` | Community suggestion intake detail |
 | `runbooks/release-cycle-process-flow.md` | Full 9-stage release cycle |
 | `runbooks/shipping-gates.md` | Release gate requirements |
-| `scripts/suggestion-intake.sh` | Pull community suggestions → PM inbox |
-| `scripts/suggestion-triage.sh` | Record PM triage decision |
+| `scripts/suggestion-intake.sh` | Pull community suggestions → intake flow entrypoint |
+| `scripts/route-flow-transitions.py` | Advance `feature_request_intake` and launch delivery |
 | `scripts/pm-qa-handoff.sh` | Formal PM→QA feature handoff |
 | `templates/suggestion-triage.md` | Triage decision form |
 | `templates/01-acceptance-criteria.md` | AC template (QA contract) |

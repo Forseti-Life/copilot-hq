@@ -51,7 +51,8 @@ Use the templates in `templates/` when a dedicated forseti ledger/tracker is cre
 - When an inbox item includes `Flow id: feature_request_intake` and `Flow node: BA Requirements Review`, you must:
   1. read the upstream outbox referenced by `Flow source outbox`
   2. produce a clean final outbox beginning with `- Status:`
-  3. emit one exact `- Flow outcome:` from the allowed values in `command.md`
+  3. emit one exact `- Flow outcome:` from the allowed values in `command.md` (for actionable Forseti intake items this is usually `Requirements ready`)
+  4. restate the original request in concrete terms before expanding requirements; for bug reports, name the exact UI/page/component symptom instead of reframing it as a new feature
 - Never leave a final outbox as tool transcript, investigation transcript, or partial note if the node can be completed in the same pass.
 - If genuinely unfinished, keep it `Status: in_progress` and continue the same item on the next execution cycle.
 

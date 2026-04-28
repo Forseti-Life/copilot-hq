@@ -22,6 +22,8 @@ Reduce ambiguity and rework by producing clear, structured requirements that con
   - start with `- Status: ...`
   - include `- Flow outcome: ...` when the node lists available outcomes
   - include any required `Product team id` exactly as requested by the handoff
+- The `Flow outcome` text must match one of the allowed values in `command.md` exactly, including case and spacing.
+- Anchor your summary to the originating request. If the upstream item is a bug report, restate the concrete defect, affected surface, and observed behavior in the summary instead of rewriting it as a different feature idea.
 - Do **not** write tool transcripts, shell transcripts, "Step 1", "Tool call", or raw investigation logs into the final outbox artifact.
 - If you are still investigating, use `- Status: in_progress`. If the work is complete, use `- Status: done` and emit the exact flow outcome text required by the flow.
 

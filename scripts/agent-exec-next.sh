@@ -455,6 +455,12 @@ fi
 invalid_outbox_reason() {
   local text="$1"
   local status_count
+  local expected_outcomes=""
+  local found_outcomes=""
+  local found_count=0
+  local expected_count=0
+  local raw_outcome=""
+  local matched=""
 
   status_count="$(printf '%s\n' "$text" | grep -ciE '^\- Status:' || true)"
   [[ "$status_count" =~ ^[0-9]+$ ]] || status_count=0
@@ -476,6 +482,49 @@ invalid_outbox_reason() {
   if printf '%s\n' "$text" | grep -qiE '\bcommitted\b' && ! printf '%s\n' "$text" | grep -qE '\b[0-9a-f]{7,40}\b'; then
     echo "response claims committed work without including a commit hash"
     return 0
+  fi
+
+  if [ -f "$inbox_item/command.md" ]; then
+    expected_outcomes="$(python3 - "$inbox_item/command.md" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8", errors="ignore")
+m = re.search(r"^\-\s+Available flow outcomes:\s*(.+?)\s*$", text, re.MULTILINE | re.IGNORECASE)
+if not m:
+    raise SystemExit(0)
+for part in [p.strip() for p in m.group(1).split("|")]:
+    if part:
+        print(part)
+PY
+)"
+    found_outcomes="$(printf '%s\n' "$text" | sed -n 's/^\- Flow outcome:[[:space:]]*//p')"
+    expected_count="$(printf '%s\n' "$expected_outcomes" | sed '/^$/d' | wc -l | tr -d ' ')"
+    found_count="$(printf '%s\n' "$found_outcomes" | sed '/^$/d' | wc -l | tr -d ' ')"
+    [[ "$expected_count" =~ ^[0-9]+$ ]] || expected_count=0
+    [[ "$found_count" =~ ^[0-9]+$ ]] || found_count=0
+    if [ "$expected_count" -gt 0 ] && [ "$found_count" -eq 0 ]; then
+      echo "response is missing a required exact Flow outcome line"
+      return 0
+    fi
+    if [ "$found_count" -gt 0 ]; then
+      while IFS= read -r raw_outcome; do
+        [ -n "$raw_outcome" ] || continue
+        matched=0
+        while IFS= read -r expected; do
+          [ -n "$expected" ] || continue
+          if [ "$raw_outcome" = "$expected" ]; then
+            matched=1
+            break
+          fi
+        done <<< "$expected_outcomes"
+        if [ "$matched" -ne 1 ]; then
+          echo "response uses a Flow outcome not listed exactly in command.md"
+          return 0
+        fi
+      done <<< "$found_outcomes"
+    fi
   fi
 
   return 1
