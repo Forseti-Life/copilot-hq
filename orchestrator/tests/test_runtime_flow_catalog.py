@@ -11,6 +11,9 @@ class TestRuntimeFlowCatalog(unittest.TestCase):
         flow = next(item for item in runtime_flow_catalog() if item["id"] == "hq_orchestrator_tick")
         self.assertEqual(flow["nodes"], HQ_ORCHESTRATOR_TICK_NODE_ORDER)
         self.assertEqual(flow["default_entrypoint"], "consume_replies")
+        self.assertEqual(len(flow["transitions"]), len(HQ_ORCHESTRATOR_TICK_NODE_ORDER) - 1)
+        self.assertEqual(flow["transitions"][0]["from_node"], "consume_replies")
+        self.assertEqual(flow["transitions"][-1]["to_node"], "publish")
         self.assertGreaterEqual(len(flow["node_breakdown"]), 1)
 
     def test_export_flow_catalog_script_outputs_json(self):
@@ -27,6 +30,7 @@ class TestRuntimeFlowCatalog(unittest.TestCase):
         self.assertIn("flows", payload)
         flow = next(item for item in payload["flows"] if item["id"] == "hq_orchestrator_tick")
         self.assertEqual(flow["nodes"], HQ_ORCHESTRATOR_TICK_NODE_ORDER)
+        self.assertEqual(len(flow["transitions"]), len(HQ_ORCHESTRATOR_TICK_NODE_ORDER) - 1)
 
 
 if __name__ == "__main__":
