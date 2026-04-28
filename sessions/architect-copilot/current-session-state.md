@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during Drupal LangGraph deprecated-CEO cleanup
+> Last updated: 2026-04-28 during HQ orchestrator consume_replies flow analysis
 
 ---
 
@@ -41,6 +41,10 @@ first row stays readable without rewriting real reporting lines.
 - Deprecated CEO stub seats (`ceo-copilot`, `ceo-copilot-3`) are now filtered
   out of the org-chart service entirely, so they no longer appear in the
   diagram, registry, or org summary counts.
+- Traced the first live `hq_orchestrator_tick` node (`consume_replies`) from
+  LangGraph entrypoint into `scripts/consume-forseti-replies.sh` and wrote a
+  detailed review artifact showing that the real state machine currently lives
+  in Bash + Drush PHP eval + inline Python rather than explicit LangGraph state.
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -73,5 +77,7 @@ first row stays readable without rewriting real reporting lines.
    seat-detail routes once deeper per-seat views exist.
 3. Decide whether the seat registry table should mirror the same active/paused
    clustering or filtering options now used in the diagram.
-4. Continue the next UX slice around richer node/routing/tool/prompt editing
+4. Trace the second tick node (`dispatch_commands`) with the same level of
+   detail and compare where graph state stops and script logic takes over.
+5. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.

@@ -1,3 +1,17 @@
+# Superior escalation (3x): dev-dungeoncrawler is needs-info
+
+- Agent: dev-dungeoncrawler
+- Item: 20260428-120533-qa-findings-dungeoncrawler-15
+- Status: needs-info
+- Supervisor: pm-dungeoncrawler
+- Superior: ceo-copilot-2
+- Outbox file: sessions/dev-dungeoncrawler/outbox/20260428-120533-qa-findings-dungeoncrawler-15.md
+- Created: 2026-04-28T12:36:23+00:00
+
+## Context
+This agent has produced 3 blocked/needs-info escalations in a row.
+
+## Full outbox (context)
 - Status: needs-info
 - Summary: QA audit identified 15 failures, all 404 responses from copilot_agent_tracker module routes (/admin/reports/copilot-agent-tracker/* paths). Investigation confirms routes are registered, controller exists with all methods defined, but HTTP requests return 404. This appears to be a module enablement or routing cache issue in production, not a dungeoncrawler code defect. Clarification needed: (1) are these routes expected to be enabled on dungeoncrawler production? (2) is this a pre-existing issue or a regression from release-x? (3) is this dungeoncrawler team responsibility or infrastructure/ops team responsibility?
 
