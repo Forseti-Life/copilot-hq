@@ -14,6 +14,31 @@ This runbook is the **single, master description** of the HQ release cycle and i
 - **Artifacts**: durable attachments / archived work items under `sessions/<agent_id>/artifacts/`.
 - **Release id**: a human-chosen identifier used across artifacts and signoffs (e.g. `20260224-coordinated-release`).
 
+## Flow artifact contract (authoritative)
+
+The release system is artifact-driven. Each stage must emit a canonical artifact that the next seat or script consumes.
+
+| Artifact | Canonical path / format | Produced by | Primary seat / role | Creation method | Consumed by / next handoff |
+|---|---|---|---|---|---|
+| Work item | `sessions/<seat>/inbox/<item-id>/command.md` + `roi.txt` | Upstream seat or automation script | Any | queue write / dispatch script | Assigned executor |
+| Execution status | `sessions/<seat>/outbox/<item-id>.md` | Executor | Any | seat work completion | Supervisor / downstream seat / audit trail |
+| Feature brief | `features/<feature-id>/feature.md` | PM / BA / flow handoffs | PM / BA | `feature_request_intake` outcome + manual authoring | AC, test planning, scope selection |
+| Problem statement | `features/<feature-id>/00-problem-statement.md` or linked intake artifact | PM / BA | PM / BA | manual authoring from template | AC authoring, PM scope decisions |
+| Acceptance criteria | `features/<feature-id>/01-acceptance-criteria.md` | PM | PM | authoring from template | Dev implementation + QA planning |
+| Implementation notes | `features/<feature-id>/02-implementation-notes.md` or linked dev artifact | Dev | Dev | authoring from template | QA verification + rollback review |
+| Test plan | `features/<feature-id>/03-test-plan.md` | QA | QA | authoring from template + suite manifest updates | Stage 0 eligibility + Gate 2 |
+| Verification evidence | `templates/04-verification-report.md`-shaped report + QA audit artifacts | QA | QA | QA runbooks / `site-audit-run.sh` | PM signoff + release candidate |
+| Release candidate | `sessions/<lead_pm>/artifacts/release-candidates/<release-id>/` | Lead PM | PM | template assembly | Coordinated signoff + ship |
+| PM signoff | `sessions/<pm-seat>/artifacts/release-signoffs/<release-id>.md` | `scripts/release-signoff.sh` | PM | signoff script after Gate 2 | release operator / `release-signoff-status.sh` |
+| Push-ready handoff | `sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md` | `scripts/release-signoff.sh` once the cohort is fully signed | Release operator (`pm-forseti` by default) | automatic queue item | official push + `post-coordinated-push.sh` |
+| Runtime release state | `tmp/release-cycle-active/<team>.release_id`, `.next_release_id`, `.started_at` | `release-cycle-start.sh` / `post-coordinated-push.sh` | System | script-owned state writes | prioritization, signoff checks, boundary advancement |
+| Post-release evidence | `sessions/qa-*/artifacts/auto-site-audit/<ts>/...` | QA scripts | QA | `site-audit-run.sh` | next-cycle remediation decisions |
+
+Rules:
+- The canonical handoff artifact must exist before the downstream seat starts work.
+- `sessions/` is the execution audit trail; `features/` is the groomed work-definition layer; release candidates and signoffs are the shipping gate layer.
+- Runtime state files describe which release is active; they are never advanced by PM signoff alone.
+
 ## Dual-release model (permanent operating mode)
 
 The org **always** has two releases defined simultaneously:
@@ -27,13 +52,14 @@ When the current release ships (Stage 7 complete), next becomes current, and a n
 `release-cycle-start.sh` requires both IDs: `<site> <current-release-id> <next-release-id>`.
 Both are tracked in `tmp/release-cycle-active/`.
 
-**The orchestrator manages this automatically.** The `release_cycle` step (runs every 5 min) starts
-missing cycles and keeps `next_release_id` aligned with the active release. **It does not advance
-`current release_id` on PM signoff alone.** Runtime advancement happens only after the coordinated push
-handoff completes via `scripts/post-coordinated-push.sh`. That handoff now immediately re-runs
-`release-cycle-start.sh` for the new current/next pair and runs `scripts/ceo-release-boundary-health.sh`
-so the next cycle is seeded without waiting for the periodic CEO loop.
-See `runbooks/orchestration.md` for the full trigger path.
+**The live system no longer uses a top-level LangGraph `release_cycle` node.** Release handling is now
+driven by canonical artifacts and scripts:
+
+1. `scripts/release-cycle-start.sh` seeds `current` + `next` release state and queues QA/PM startup work.
+2. `scripts/release-signoff.sh` records PM readiness and, once the required cohort is fully signed, creates the operator **push-ready** inbox item.
+3. `scripts/post-coordinated-push.sh` is the **only** command that advances `current -> next`, generates the successor `next`, and reseeds release startup artifacts.
+
+Health-check and KPI automation may dispatch supporting release items, but those dispatchers do not replace the canonical artifacts above. See `runbooks/orchestration.md` for the live control-plane path.
 
 ## Release handoff diagram (authoritative)
 
@@ -45,7 +71,7 @@ flowchart TD
   D --> E[PM runs release-signoff.sh for current release]
   E --> F[current release stays active<br/>status: signed_off_waiting_push]
   F --> G[pm-forseti verifies release-signoff-status.sh]
-  G --> H[Coordinated deploy / Gate 4 push]
+  G --> H[Official coordinated push]
   H --> I[post-coordinated-push.sh advances current -> next]
   I --> J[release-cycle-start.sh re-seeds new current + next]
   J --> K[CEO boundary health verifies no empty/stale handoff]
@@ -108,7 +134,7 @@ This section is intentionally explicit: if two things disagree, the SoT below wi
 - Release-cycle on/off switch: `/var/tmp/copilot-sessions-hq/release-cycle-control.json` (legacy fallback: `tmp/release-cycle-control.json`)
 - Control command: `scripts/release-cycle-control.sh`
 - Read-only gate check: `scripts/is-release-cycle-enabled.sh`
-- Pause effect: orchestrator skips `release_cycle`, coordinated-push release automation, and health-check release dispatchers while the rest of HQ remains enabled
+- Pause effect: orchestrator keeps running, but release-support dispatchers and coordinated-push follow-through automation are skipped while the rest of HQ remains enabled
 
 ### Seat configuration + scope
 
@@ -252,15 +278,13 @@ Normalization rule:
   - the product fix (Dev-owned)
   - and the prevention test (QA-owned): add/adjust automated coverage in `qa-suites/products/<product>/suite.json` so the escape becomes a non-regression PASS/FAIL check.
 
-1) Release cycle startup is **automated** — the orchestrator's `release_cycle` step starts cycles
-   without human intervention by calling `scripts/release-cycle-start.sh <team> <current-id> <next-id>`.
-   Release IDs are generated as `YYYYMMDD-<team>-release` (current) and `YYYYMMDD-<team>-release-next`.
-   To manually start or override a cycle:
+1) Release cycle startup is **script-owned** — seed or reseed the cycle with:
    ```bash
    scripts/release-cycle-start.sh <team_id> <current-release-id> <next-release-id>
    # Example:
    scripts/release-cycle-start.sh forseti 20260226-forseti-r1 20260226-forseti-r2
    ```
+   This writes the authoritative `tmp/release-cycle-active/` files and queues the QA preflight + PM grooming handoffs.
 2) PM selects scope from **groomed-only** backlog (`features/*/03-test-plan.md` must exist).
    Items missing any grooming artifact are automatically deferred to next cycle — do not negotiate.
 3) Record scope in `01-change-list.md`. This is the **scope freeze** — no net-new items after this.
@@ -324,13 +348,12 @@ Stage 0 is instant: scope selection from a fully-groomed ready list.
 1. **Audit the existing next-release backlog first**:
    - Scan for next-release features already in `planned`, `ready`, or `in_progress` that are missing `01-acceptance-criteria.md` or `03-test-plan.md`
    - Finish those backlog items before treating suggestion intake as complete
-2. **Pull community suggestions** (run once at the start of Stage 3):
+2. **Seed community suggestions into the intake flow** (run once at the start of Stage 3):
    ```bash
    ./scripts/suggestion-intake.sh forseti
    ```
-3. **Triage** each suggestion (accept/defer/decline/escalate) per `runbooks/feature-intake.md`
-  - Security/integrity/stability-risk suggestions must be `escalate`d for human board review (not accepted directly by PM)
-4. **Write or complete Acceptance Criteria** for each accepted or already-tracked backlog feature missing `features/<id>/01-acceptance-criteria.md`
+3. **Execute `feature_request_intake` handoffs** to review, match team, produce BA requirements, and reach PM scope decision
+4. **Write or complete Acceptance Criteria** for each approved or already-tracked backlog feature missing `features/<id>/01-acceptance-criteria.md`
 5. **Hand off to QA** for test generation (one per accepted/backlog feature that has AC but lacks `03-test-plan.md`):
    ```bash
    ./scripts/pm-qa-handoff.sh forseti <feature-id>
@@ -357,7 +380,7 @@ Handoff to Dev:
 - If suites fail, Dev fixes product code (or proposes suite fixes if the test is flawed).
 - QA updates suites as needed for new features and keeps `qa-suites/products/<product>/suite.json` current.
 - Automated QA→Dev work generation is release-cycle gated:
-  - It activates only when a release cycle is active (started via the orchestrator `release_cycle` step or manually via `scripts/release-cycle-start.sh`).
+  - It activates only when a release cycle is active (that is, `tmp/release-cycle-active/<team>.release_id` exists because `scripts/release-cycle-start.sh` seeded the cycle).
   - Automated Dev items are scoped to: **review QA results and fix failed tests**.
 
 Dev↔QA repair loop (State 2 cycle: until all tests PASS):
@@ -416,12 +439,14 @@ release remains the active runtime release until Stage 7 push/post-push complete
   - `scripts/release-signoff-status.sh <release-id>`
 - Artifact files (canonical):
   - `sessions/<pm-seat>/artifacts/release-signoffs/<slug>.md`
+- Operator handoff artifact when the coordinated cohort is ready:
+  - `sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md`
 
 ### Stage 7 — Ship
 
 **Owner:** Release operator (default `pm-forseti`)
 
-**Handoff:** the coordinated push happens only after gates are satisfied and signoffs exist.
+**Handoff:** the coordinated push happens only after gates are satisfied, signoffs exist, and the release operator consumes the **push-ready** inbox item.
 
 **Runtime advancement point:** after the coordinated deploy succeeds, run
 `scripts/post-coordinated-push.sh`. That is the only step that promotes:
@@ -432,6 +457,7 @@ release remains the active runtime release until Stage 7 push/post-push complete
 - Release coordinator runbook: `runbooks/coordinated-release.md`
 - Gates runbook: `runbooks/shipping-gates.md`
 - Final release notes: `sessions/<lead_pm>/artifacts/release-candidates/<...>/05-release-notes.md`
+- Operator trigger artifact: `sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md`
 
 #### Stage 7 — Close out community suggestions
 

@@ -2,6 +2,23 @@
 
 Master process flow (authoritative): `runbooks/release-cycle-process-flow.md`
 
+## Gate artifact map (authoritative)
+
+| Gate / boundary | Canonical artifacts | Producer | Consumer / next handoff |
+|---|---|---|---|
+| Gate 0 — Intake | `00-problem-statement.md`, `01-acceptance-criteria.md`, `06-risk-assessment.md`, intake `command.md` | PM / BA / requester lane | PM triage + grooming |
+| Gate 1 — Implementation ready | `02-implementation-notes.md` (or equivalent dev notes) | Dev | QA planning + PM release assembly |
+| Gate 1b — Code review dispatch | `agent-code-review` outbox, dev inbox finding items, PM risk-acceptance artifact | Code review seat + PM | Dev remediation or PM risk decision |
+| Gate 1c — Hotfix review | Hotfix code-review inbox/outbox pair | CEO / PM + code-review seat | PM follow-up routing |
+| Gate 2 — Verification | `03-test-plan.md`, QA verification report, audit artifacts, release `02-test-evidence.md` updates | QA | PM signoff flow |
+| Release readiness boundary | PM signoff artifacts + operator push-ready inbox item | `scripts/release-signoff.sh` | Release operator (`pm-forseti` by default) |
+| Gate 4 — Post-release verification | Production audit artifacts + post-release verification note | QA | Next release scoping / remediation decisions |
+
+Rules:
+- A gate is not complete until its canonical artifact exists in the path above.
+- The release operator consumes the push-ready inbox item; the push itself is a handoff boundary, not a substitute for the required artifacts.
+- Release state advancement happens only after `post-coordinated-push.sh`, never on signoff alone.
+
 ## Gate 0 — Intake (Any role)
 Required artifacts:
 - Problem Statement
@@ -167,6 +184,19 @@ Coordinated release rule (Forseti + Dungeoncrawler):
 	- `./scripts/release-signoff.sh dungeoncrawler <per-team-release-id>`
 	- This ensures improvement-round.sh detects the release at the correct time and avoids retroactive signoff artifacts being created later by workspace merges.
 - Cross-team PM signoff check (required): each coordinated PM seat must verify the OTHER team's release ID also has a signoff before the release operator pushes. Example: pm-forseti must confirm pm-dungeoncrawler signed `<dungeoncrawler-release-id>`, and vice versa. Verify with `./scripts/release-signoff-status.sh <partner-release-id>`. If missing, the push is blocked until the partner PM signs. (Added 2026-03-27 — GAP-FST-27-04: pm-forseti missed dungeoncrawler signoff in `20260326-dungeoncrawler-release-b` coordinated push.)
+
+### Push boundary handoff (between readiness and post-release verification)
+
+The official push is triggered by a **queue artifact**, not by a free-form PM decision:
+
+1. `scripts/release-signoff.sh <team> <release-id>` writes the PM signoff artifact.
+2. When all required coordinated PM signoffs exist, the same script creates:
+   - `sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md`
+3. The release operator consumes that inbox item and performs the official push.
+4. Immediately after a successful push, the operator runs:
+   - `bash scripts/post-coordinated-push.sh [team-id ...]`
+
+Only after step 4 may runtime release pointers advance and post-release QA artifacts begin.
 
 ## Gate 4 — Post-release verification (Tester, production)
 Required artifacts:

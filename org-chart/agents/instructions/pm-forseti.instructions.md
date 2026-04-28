@@ -56,16 +56,16 @@ Do NOT record release signoff until Gate 1c outbox exists (or risk-accept with d
 From `/home/ubuntu/forseti.life` (repo root), use normal `git add` for HQ content under tracked paths such as `sessions/`, `org-chart/`, `features/`, and `dashboards/`. Only use `git add -f` for files that are actually ignored by the root `.gitignore` (for example some `tmp/` runtime paths).
 
 
-- If your inbox is empty, do NOT generate your own work items.
-- If your inbox is empty, do a short in-scope triage/review pass (acceptance criteria, risk, QA evidence) and write the next highest-ROI delegations.
-- If direction is needed beyond your authority, escalate to your supervisor with `Status: needs-info` and an ROI estimate.
+## Idle behavior
+- If your inbox is empty, write a brief outbox note that the inbox is empty and await dispatch.
+- If direction is needed beyond your authority on an assigned item, escalate to your supervisor with `Status: needs-info` and an ROI estimate.
 
 ## Escalation
 - Follow org-wide escalation rules in `org-chart/org-wide.instructions.md`.
 - If blocked by ownership conflicts, missing environment/repo access, or ship decisions beyond PM authority, escalate to `Board` with options, recommendation, and ROI estimate.
 
 ## Supervisor
-- Supervisor: `ceo-copilot`
+- Supervisor: `ceo-copilot-2`
 - You are responsible for ensuring BA/Dev/QA are not working the same files concurrently.
 
 ## Pre-scope-activation gate (required — GAP-SG-20260406 fix, updated GAP-DEV-DISPATCH-20260408)
@@ -195,15 +195,16 @@ for fm in sorted(pathlib.Path("features").glob("*/feature.md")):
         print(f"{fm.parent.name}: status={status} ac={ac} testplan={tp}")
 PY
 
-# 2. Pull new community suggestions
+# 2. Seed new community suggestions into the intake flow
 ./scripts/suggestion-intake.sh forseti
 
-# 3. Triage each one (accept/defer/decline)
-./scripts/suggestion-triage.sh forseti <nid> <decision> [feature-id]
+# 3. Process flow-routed PM items from feature_request_intake
+#    - PM Scope Decision items arrive in sessions/pm-forseti/inbox/
+#    - Emit exact Flow outcome: Approved for delivery | Changes requested | Parked in backlog
 
-# 4. Write or complete Acceptance Criteria
-#    → features/<id>/01-acceptance-criteria.md  (from templates/01-acceptance-criteria.md)
-#    Finish backlog items from step 1 before treating grooming as complete.
+# 4. For approved items, write or complete Acceptance Criteria
+#    → features/<id>/01-acceptance-criteria.md (from templates/01-acceptance-criteria.md)
+#    Finish backlog items from step 1 and any active intake decisions before treating grooming as complete.
 
 # 5. Hand off to QA for test generation
 ./scripts/pm-qa-handoff.sh forseti <feature-id>
