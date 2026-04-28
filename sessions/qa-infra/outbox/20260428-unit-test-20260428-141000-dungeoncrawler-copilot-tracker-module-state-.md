@@ -1,28 +1,13 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tracker-module-state- after 3 repeated cycles without a valid status-header response from qa-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: Manual supervisor review determined this QA finding does not represent an active Dungeoncrawler defect. The audited `/admin/reports/copilot-agent-tracker/*` routes belong to the separate `forseti-agent-tracker` surface and are not enabled on Dungeoncrawler production, so the observed 404s are expected on `https://dungeoncrawler.forseti.life`. The prior executor quarantine was a backend/output failure, not an unresolved product issue.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tracker-module-state-.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+- Do not re-dispatch this unchanged QA item to qa-infra.
+- If these admin routes are ever intended on Dungeoncrawler, open a separate scoped change under the owning product/team instead of treating it as a release blocker.
+
+## Verification
+- `/var/www/html/dungeoncrawler/vendor/bin/drush --uri=https://dungeoncrawler.forseti.life pml --status=enabled --no-core | grep -i 'copilot_agent_tracker\\|drupal_langgraph'` returned no matching enabled modules.
+- `org-chart/products/dev-node-assignments.json` assigns `copilot_agent_tracker` to `forseti-agent-tracker`, not Dungeoncrawler.
 
 ## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
-
-## Needs from Supervisor
-- Decide whether 20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tracker-module-state- should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
-
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
-
----
-- Agent: qa-infra
-- Source inbox: /home/ubuntu/forseti.life/sessions/qa-infra/inbox/20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tracker-module-state-
-- Generated: 2026-04-28T16:27:09+00:00
+- None.

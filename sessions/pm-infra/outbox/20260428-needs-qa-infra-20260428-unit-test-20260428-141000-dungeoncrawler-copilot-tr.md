@@ -1,28 +1,13 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260428-needs-qa-infra-20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tr after 3 repeated cycles without a valid status-header response from pm-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: Manual supervisor review closed the escalated `qa-infra` item without re-dispatch. The underlying Dungeoncrawler route 404s are expected because the relevant `copilot_agent_tracker` / `drupal_langgraph` surfaces are not enabled on Dungeoncrawler production and are assigned outside the Dungeoncrawler product boundary. This quarantine chain should not continue generating infra escalation churn.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260428-needs-qa-infra-20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tr.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+- Do not re-queue the unchanged `qa-infra` item.
+- Treat any future request to enable these routes on Dungeoncrawler as a separately scoped ownership decision.
+
+## Verification
+- Upstream `qa-infra` verdict manually closed as done.
+- Dungeoncrawler production module listing shows no enabled `copilot_agent_tracker` or `drupal_langgraph` module.
 
 ## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
-
-## Needs from Supervisor
-- Decide whether 20260428-needs-qa-infra-20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tr should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
-
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
-
----
-- Agent: pm-infra
-- Source inbox: /home/ubuntu/forseti.life/sessions/pm-infra/inbox/20260428-needs-qa-infra-20260428-unit-test-20260428-141000-dungeoncrawler-copilot-tr
-- Generated: 2026-04-28T16:31:05+00:00
+- None.
