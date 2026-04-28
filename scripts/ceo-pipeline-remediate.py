@@ -430,6 +430,38 @@ def remediate_sla_breaches() -> int:
                     ],
                 )
             )
+        elif line.startswith("BREACH in-progress-age: "):
+            match = re.match(r"BREACH in-progress-age: (\S+) inbox=(\S+) age=(\d+)s status=(\S+)", line)
+            if not match:
+                continue
+            agent, item, age, status = match.groups()
+            age_seconds = int(age)
+            slug = f"{DATE_PREFIX}-sla-in-progress-age-{_slug(agent, 32)}-{_slug(item, 32)}"
+            title = f"SLA breach: aging in-progress item for {agent}"
+            body = (
+                f"Agent `{agent}` has inbox item `{item}` still marked `{status}` with no fresh progress "
+                f"for `{age_seconds}` seconds.\n\n"
+                "Review the current stage, correct malformed work if needed, or intervene so the item is actively advancing."
+            )
+            verification = (
+                f"`bash scripts/sla-report.sh` no longer reports "
+                f"`BREACH in-progress-age: {agent} inbox={item}`"
+            )
+            created += int(
+                _queue_sla_item(
+                    agent,
+                    slug,
+                    9,
+                    title,
+                    body,
+                    verification,
+                    metadata=[
+                        ("Escalated agent", agent),
+                        ("Escalated item", item),
+                        ("Escalated status", status),
+                    ],
+                )
+            )
     return created
 
 
