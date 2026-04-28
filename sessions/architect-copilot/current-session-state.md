@@ -128,6 +128,17 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
 - `Code Review` and `Security Review` are now approval gates with
   `Not approved` edges that route directly back to `Generate Code`, matching the
   intended “return to the originator” behavior.
+- Reworked `agentic_sdlc` again to tighten the approval semantics:
+  - added an explicit `Ready for QA` merge node
+  - removed `Fix Test Cases after Review`
+  - removed `Fix Code or Test Cases after QA Feedback`
+  - changed `Test Cases Review` rejection to route directly back to
+    `Write Test Cases`
+  - changed QA failure branches to route directly back to `Generate Code`
+    and/or `Write Test Cases`
+  - standardized review gate labels to `Approved` / `Changes requested`
+- The live Drupal override now renders `agentic_sdlc` as a 14-node flow with
+  14 detailed breakdown rows and the new `Ready for QA` join in place.
 
 ### Key decisions
 
@@ -151,7 +162,7 @@ specifically the overview at `/admin/reports/drupal-langgraph/langgraph-console/
 ### Next actions
 
 1. Decide whether the flow detail page should gain phase/lane summaries for the
-   parallel code/test branches now that the per-node breakdown is restored.
+   parallel code/test branches and the new QA-readiness merge.
 2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
 3. Resolve the current repo-side Drush bootstrap failure if live runtime

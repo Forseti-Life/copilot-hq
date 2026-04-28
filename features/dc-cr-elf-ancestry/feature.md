@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-y
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -15,7 +15,7 @@
 - Schema changes: no
 - Cross-site modules: none
 - Release readiness note: 2026-04-28 `dc-cr-languages` source implementation is complete, so elf ancestry is re-intaken for active release verification and fix-forward work.
-- Audit note: 2026-04-27 implementation audit found partial coverage only. Elf base ancestry stats, traits, and low-light vision are present in CharacterManager; language-slot behavior now exists in source, so the remaining question is release verification rather than missing dependency plumbing.
+- Audit note: 2026-04-28 normalized to done based on existing dev implementation evidence (`sessions/dev-dungeoncrawler/outbox/20260427-171039-impl-dc-cr-elf-ancestry.md`) and release-y Gate 2 approval normalization.
 - Created: 2026-04-06
 
 ## Goal
