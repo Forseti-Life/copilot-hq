@@ -548,6 +548,10 @@ def ceo_proxy_sessions(release_id: str, feature_ids: list[str],
 
     Matches on filename OR file content (to catch hardening/coverage sessions
     whose filenames use short keywords rather than full feature IDs).
+    
+    NOTE: Excludes escalations/decisions/triage work (CEO legitimately handles these).
+    Only counts actual implementation/execution work that should belong to dev/qa/pm.
+    
     Returns dict keyed by category: 'dev', 'qa', 'pm', 'other'.
     """
     ceo_outbox = ROOT / "sessions" / "ceo-copilot-2" / "outbox"
@@ -557,6 +561,9 @@ def ceo_proxy_sessions(release_id: str, feature_ids: list[str],
     dev_patterns = re.compile(r"impl|hardening|exposure|coverage|defect|fix")
     qa_patterns  = re.compile(r"preflight|gate2|qa-findings|unit-test|syshealth|audit")
     pm_patterns  = re.compile(r"signoff|scope.activate|groom|coordinated")
+    
+    # Exclude CEO escalation/decision/triage files (these are legitimate CEO functions)
+    exclusion_patterns = re.compile(r"(?:escalat|decision|rca|triage|investigat|needs-|sla-|analyze-|review-|audit-)")
 
     # Build keyword set: full feature IDs + short slugs (last segment after dc-cr- / feature-)
     keywords = set()
@@ -574,6 +581,10 @@ def ceo_proxy_sessions(release_id: str, feature_ids: list[str],
     for f in sorted(ceo_outbox.glob("*.md")):
         name = f.name.lower()
         if re.search(r"(?:^|-)needs-(?:pm|qa|dev|ba|architect|ceo-copilot-2)-", name):
+            continue
+        
+        # Skip escalation/decision/triage files (CEO legitimately handles these)
+        if exclusion_patterns.search(name):
             continue
 
         # Fast path: filename match
