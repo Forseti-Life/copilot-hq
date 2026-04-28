@@ -1,24 +1,25 @@
 - Status: in_progress
-- Summary: Investigating the stale inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` for `dev-dungeoncrawler` — reading the inbox folder contents and any existing outbox artifacts to determine current state before deciding whether to unblock, re-dispatch, or close.
+- Summary: Investigating the stale `dev-dungeoncrawler` inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` to determine current state, identify blockers, and either unblock the seat or resolve the item with evidence.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/` to understand the work item scope and acceptance criteria.
-- Check `sessions/dev-dungeoncrawler/outbox/` for any partial or misnamed artifact.
-- Check `sessions/dev-dungeoncrawler/artifacts/` for any implementation evidence.
-- Run `bash scripts/sla-report.sh` to confirm current breach status.
-- Based on findings: either unblock dev-dungeoncrawler with a concrete outbox update, re-seed the inbox item with missing context, or close as superseded if the work is already done.
+- Read the inbox item README at `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/` to understand scope and acceptance criteria
+- Check `sessions/dev-dungeoncrawler/outbox/` for any partial or misfiled artifact
+- Review the feature file referenced by the inbox item (`features/*/feature.md`) for context
+- Determine if this is a blocker (missing inputs, credentials, scope gap) or an execution gap (seat simply hasn't run)
+- Run `bash scripts/sla-report.sh` to confirm current breach status
+- Produce a follow-up action: either delegate a corrected inbox item with full inputs, or close the stale item with rationale
 
 ## Blockers
-- None yet — actively investigating.
+- None confirmed yet — investigation in progress.
 
 ## Needs from CEO
-- N/A at this stage.
+- None at this stage.
 
 ## ROI estimate
-- ROI: 40
-- Rationale: Unblocking a stale dev seat restores release throughput for dungeoncrawler; the breach is already flagged by the SLA pipeline so resolution is time-sensitive.
+- ROI: 80
+- Rationale: Unblocking a stale dev seat directly unblocks feature delivery for the active dungeoncrawler release cycle; SLA breach remediation is high-leverage relative to cost of investigation.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260427-sla-outbox-lag-dev-dungeoncrawler-20260427-171039-impl-dc-cr-elf-h
-- Generated: 2026-04-28T10:33:31+00:00
+- Generated: 2026-04-28T10:43:45+00:00
