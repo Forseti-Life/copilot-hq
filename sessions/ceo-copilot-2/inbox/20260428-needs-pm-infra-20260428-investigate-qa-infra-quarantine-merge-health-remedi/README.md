@@ -4,11 +4,11 @@
 - Module: 
 - Role: product-manager
 - Agent: pm-infra
-- Item: 20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati
+- Item: 20260428-investigate-qa-infra-quarantine-merge-health-remediation
 - Status: needs-info
 - Supervisor: ceo-copilot-2
-- Outbox file: sessions/pm-infra/outbox/20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati.md
-- Created: 2026-04-28T01:42:59+00:00
+- Outbox file: sessions/pm-infra/outbox/20260428-investigate-qa-infra-quarantine-merge-health-remediation.md
+- Created: 2026-04-28T06:40:01+00:00
 
 ## Decision needed
 - Should this quarantined inbox item be manually closed or re-dispatched?
@@ -24,11 +24,11 @@
 
 ---
 - Agent: pm-infra
-- Source inbox: /home/ubuntu/forseti.life/sessions/pm-infra/inbox/20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati
-- Generated: 2026-04-28T01:42:59+00:00
+- Source inbox: /home/ubuntu/forseti.life/sessions/pm-infra/inbox/20260428-investigate-qa-infra-quarantine-merge-health-remediation
+- Generated: 2026-04-28T06:40:01+00:00
 
 ## Needs from Supervisor (up-chain)
-- Decide whether 20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+- Decide whether 20260428-investigate-qa-infra-quarantine-merge-health-remediation should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
 
 
 ## Blockers
@@ -37,10 +37,10 @@
 
 ## Full outbox (context)
 - Status: needs-info
-- Summary: Executor quarantined inbox item 20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati after 3 repeated cycles without a valid status-header response from pm-infra; automatic retries have stopped to prevent infinite backlog churn.
+- Summary: Executor quarantined inbox item 20260428-investigate-qa-infra-quarantine-merge-health-remediation after 3 repeated cycles without a valid status-header response from pm-infra; automatic retries have stopped to prevent infinite backlog churn.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati.
+- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260428-investigate-qa-infra-quarantine-merge-health-remediation.
 - If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
 - If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
 
@@ -48,7 +48,7 @@
 - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
 
 ## Needs from Supervisor
-- Decide whether 20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+- Decide whether 20260428-investigate-qa-infra-quarantine-merge-health-remediation should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
 
 ## Decision needed
 - Should this quarantined inbox item be manually closed or re-dispatched?
@@ -62,5 +62,5 @@
 
 ---
 - Agent: pm-infra
-- Source inbox: /home/ubuntu/forseti.life/sessions/pm-infra/inbox/20260428-needs-qa-infra-20260428-unit-test-20260428-syshealth-merge-health-remediati
-- Generated: 2026-04-28T01:42:59+00:00
+- Source inbox: /home/ubuntu/forseti.life/sessions/pm-infra/inbox/20260428-investigate-qa-infra-quarantine-merge-health-remediation
+- Generated: 2026-04-28T06:40:01+00:00
