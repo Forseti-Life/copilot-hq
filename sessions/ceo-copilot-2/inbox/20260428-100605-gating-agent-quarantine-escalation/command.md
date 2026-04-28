@@ -1,6 +1,6 @@
 # Gating Agent Quarantine Escalation
 
-**Detected:** 2026-04-28T08:37:22.166458+00:00
+**Detected:** 2026-04-28T10:06:05.470703+00:00
 **Priority:** CRITICAL — release gates are bypassed when gating agents are quarantined
 
 ## Quarantined Gating Agents
@@ -21,5 +21,3 @@
 ```bash
 bash scripts/hq-blockers.sh
 ```
-- Agent: ceo-copilot-2
-- Status: pending
