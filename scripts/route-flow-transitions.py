@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from subprocess import run
@@ -13,6 +14,33 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 DRUSH_ROOT = Path("/var/www/html/forseti")
 PRODUCT_TEAMS_PATH = ROOT / "org-chart" / "products" / "product-teams.json"
+TRANSCRIPT_MARKERS = (
+    "tool call:",
+    "**tool call:**",
+    "**output:**",
+    "```bash",
+    "```python",
+    "## step 1:",
+    "## step 2:",
+    "## step 3:",
+)
+GENERIC_FLOW_WORDS = {
+    "status", "summary", "flow", "outcome", "requirements", "review", "request",
+    "product", "team", "source", "inbox", "outbox", "agent", "generated", "next",
+    "actions", "blockers", "owner", "seat", "node", "current", "details", "route",
+    "routed", "routing", "read", "writing", "before", "after", "feature", "work",
+    "scope", "user", "users", "goal", "goals", "context", "notes", "suggestion",
+    "community", "upstream", "downstream", "decision", "delivery",
+}
+STOPWORDS = {
+    "about", "after", "again", "against", "almost", "also", "always", "another",
+    "around", "because", "before", "being", "between", "both", "cannot", "could",
+    "details", "during", "each", "from", "have", "into", "just", "like", "make",
+    "many", "more", "most", "must", "need", "none", "only", "other", "over",
+    "same", "should", "some", "such", "than", "that", "their", "them", "then",
+    "there", "these", "they", "this", "those", "through", "under", "very", "what",
+    "when", "where", "which", "while", "with", "would", "your",
+}
 
 
 def log(message: str) -> None:
@@ -55,6 +83,151 @@ def read_item_roi(item_dir: Path, default: int = 20) -> int:
         return max(1, int(path.read_text(encoding="utf-8").strip() or str(default)))
     except (OSError, ValueError):
         return default
+
+
+def first_nonempty_line(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped:
+            return stripped
+    return ""
+
+
+def has_transcript_markers(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker in lowered for marker in TRANSCRIPT_MARKERS)
+
+
+def tokenize_keywords(text: str) -> list[str]:
+    tokens = re.findall(r"[a-z0-9][a-z0-9_-]{3,}", text.lower())
+    results: list[str] = []
+    for token in tokens:
+        if token.isdigit():
+            continue
+        if token in STOPWORDS or token in GENERIC_FLOW_WORDS:
+            continue
+        results.append(token)
+    return results
+
+
+def source_anchor_terms(text: str, limit: int = 8) -> list[str]:
+    counts = Counter(tokenize_keywords(text))
+    if not counts:
+        return []
+    return [token for token, _count in counts.most_common(limit)]
+
+
+def semantic_anchor_matches(source_text: str, target_text: str, limit: int = 8) -> tuple[list[str], list[str]]:
+    anchors = source_anchor_terms(source_text, limit=limit)
+    if not anchors:
+        return [], []
+    target_lower = target_text.lower()
+    matched = [
+        term for term in anchors
+        if re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", target_lower)
+    ]
+    return anchors, matched
+
+
+def validation_retry_sequence(run_dir: Path, node: str) -> int:
+    counters_dir = run_dir / "validation-retries"
+    counters_dir.mkdir(parents=True, exist_ok=True)
+    path = counters_dir / f"{slugify(node)}.txt"
+    current = 0
+    if path.exists():
+        try:
+            current = int(path.read_text(encoding="utf-8").strip() or "0")
+        except ValueError:
+            current = 0
+    current += 1
+    path.write_text(f"{current}\n", encoding="utf-8")
+    return current
+
+
+def load_command_source_context(command_meta: dict[str, str]) -> str:
+    parts: list[str] = []
+    source_outbox = command_meta.get("Flow source outbox", "").strip()
+    if source_outbox:
+        path = (ROOT / source_outbox).resolve() if not source_outbox.startswith("/") else Path(source_outbox)
+        try:
+            if path.exists():
+                parts.append(path.read_text(encoding="utf-8", errors="ignore"))
+        except OSError:
+            pass
+    for key in (
+        "Request summary",
+        "Suggestion title",
+        "Original user message",
+        "Flow incoming conditions",
+        "Product team label",
+    ):
+        value = command_meta.get(key, "").strip()
+        if value:
+            parts.append(value)
+    return "\n".join(part for part in parts if part.strip())
+
+
+def validate_flow_done_outbox(command_meta: dict[str, str], outbox_text: str) -> list[str]:
+    errors: list[str] = []
+    if first_nonempty_line(outbox_text)[:9].lower() != "- status:":
+        errors.append("final outbox must start with '- Status:' on the first non-empty line")
+    if has_transcript_markers(outbox_text):
+        errors.append("final outbox must not contain tool-call or transcript markers")
+
+    source_text = load_command_source_context(command_meta)
+    anchors, matched = semantic_anchor_matches(source_text, outbox_text)
+    if len(anchors) >= 4 and len(matched) < 2:
+        errors.append(
+            "final outbox appears semantically divergent from the upstream request "
+            f"(matched anchors: {', '.join(matched) if matched else 'none'}; "
+            f"expected anchors include: {', '.join(anchors[:5])})"
+        )
+    return errors
+
+
+def queue_validation_retry(
+    *,
+    run_dir: Path,
+    route_date: str,
+    flow_id: str,
+    run_id: str,
+    current_node: str,
+    owner_seat: str,
+    original_command: str,
+    source_roi: int,
+    outbox_file: Path,
+    errors: list[str],
+) -> None:
+    sequence = validation_retry_sequence(run_dir, current_node)
+    item_name = (
+        f"{route_date}-flow-{slugify(flow_id)}-{slugify(run_id)}-"
+        f"{slugify(current_node)}-validation-r{sequence}"
+    )[:180].rstrip("-")
+    error_lines = "\n".join(f"- {error}" for error in errors)
+    command_content = (
+        original_command.rstrip()
+        + "\n\n## Flow validation failure\n"
+        + "The previous outbox did not pass flow-validation and was not routed.\n"
+        + f"- Rejected outbox: {outbox_file}\n"
+        + f"- Validation retry: {sequence}\n"
+        + f"{error_lines}\n"
+        + "- Produce final outbox markdown only, preserving continuity with the upstream request.\n"
+    )
+    create_inbox_item(owner_seat, item_name, max(source_roi + 25, 100), command_content)
+    validation_dir = run_dir / "validation-failures"
+    validation_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "node": current_node,
+        "owner_seat": owner_seat,
+        "rejected_outbox": str(outbox_file),
+        "errors": errors,
+        "retry_item": item_name,
+        "created_at": datetime.utcnow().isoformat() + "Z",
+    }
+    (validation_dir / f"{slugify(current_node)}-r{sequence}.json").write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def extract_flow_outcomes(text: str) -> list[str]:
@@ -543,6 +716,22 @@ def main() -> int:
     source_item_roi = read_item_roi(command_path.parent, 20)
     roi = max(source_item_roi, extract_roi(outbox_text, source_item_roi))
     route_date = route_date_for_item(item_name)
+    validation_errors = validate_flow_done_outbox(command_meta, outbox_text)
+    if validation_errors:
+        queue_validation_retry(
+            run_dir=run_dir,
+            route_date=route_date,
+            flow_id=flow_id,
+            run_id=run_id,
+            current_node=current_node,
+            owner_seat=command_meta.get("Flow owner seat", "").strip() or agent_id,
+            original_command=command_path.read_text(encoding="utf-8", errors="ignore"),
+            source_roi=roi,
+            outbox_file=outbox_file,
+            errors=validation_errors,
+        )
+        log(f"validation failed for {flow_id}/{run_id}/{current_node}; retry queued")
+        return 0
 
     for transition in transitions:
         target_node = transition["to_node"]
