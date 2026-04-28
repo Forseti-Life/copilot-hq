@@ -419,10 +419,7 @@ grep -rn "<target-pattern>" sites/forseti/web/modules/custom/<module>/
 Always use:
 ```bash
 cd /var/www/html/forseti
-vendor/bin/drush <command>
-# OR from the git checkout:
-cd /home/ubuntu/forseti.life/sites/forseti
-vendor/bin/drush <command>
+vendor/bin/drush --uri=https://forseti.life <command>
 ```
 
 Symptom that you're hitting the wrong drush: `drush php:eval` errors reference `/var/www/html/drupal/vendor/...` in the stack trace. Switch to `vendor/bin/drush` immediately.
@@ -432,13 +429,13 @@ Symptom that you're hitting the wrong drush: `drush php:eval` errors reference `
 After any code change to the forseti.life Drupal instance, run these steps before handing off to QA:
 
 ```bash
-cd /home/ubuntu/forseti.life/sites/forseti
+cd /var/www/html/forseti
 
 # 1. Rebuild caches (catches stale service container, routing changes)
-vendor/bin/drush cr
+vendor/bin/drush --uri=https://forseti.life cr
 
 # 2. Check for PHP errors in watchdog (severity ≤ error)
-vendor/bin/drush watchdog:show --count=10 --severity=3 2>&1 | grep -v "Google Cloud\|Get job"
+vendor/bin/drush --uri=https://forseti.life watchdog:show --count=10 --severity=3 2>&1 | grep -v "Google Cloud\|Get job"
 
 # 3. Spot-check the fixed route(s) return expected HTTP status (anon)
 curl -s -o /dev/null -w "%{http_code}" https://forseti.life/<route>  # expect 403 for auth-only routes

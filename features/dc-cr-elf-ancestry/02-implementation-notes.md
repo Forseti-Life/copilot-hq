@@ -112,9 +112,9 @@ grep -A 1 "'Elf' =>" /home/ubuntu/forseti.life/sites/dungeoncrawler/web/modules/
 ### Check Elf seeding (post-install or update)
 
 ```bash
-cd /home/ubuntu/forseti.life/sites/dungeoncrawler
-drush cache:rebuild
-drush sqlq "SELECT title, body FROM node WHERE type='ancestry' AND title='Elf';"
+cd /var/www/html/dungeoncrawler
+./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life cache:rebuild
+./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life sqlq "SELECT title, body FROM node WHERE type='ancestry' AND title='Elf';"
 ```
 
 ### Verify Elf is available in character creation

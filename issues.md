@@ -349,3 +349,21 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-dungeoncrawler-release-y — 2026-04-28
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-015 — Redundant dev passes: 1 feature(s) re-dispatched after already done —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-y
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Redundant dev passes: 1 feature(s) re-dispatched after already done — dc-cr-dwarf-heritage-ancient-blooded
+
+**Status:** 🔴 Open — review and assign fix
+

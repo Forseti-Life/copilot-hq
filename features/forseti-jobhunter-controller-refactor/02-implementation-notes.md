@@ -45,7 +45,7 @@ None found specific to Drupal repository-layer extraction. CSRF split-route patt
 
 ## Verification commands
 ```bash
-cd /home/ubuntu/forseti.life/sites/forseti
+cd /var/www/html/forseti
 
 # Verify zero DB calls remain in controller
 grep -c '\$this->database->' web/modules/custom/job_hunter/src/Controller/JobApplicationController.php

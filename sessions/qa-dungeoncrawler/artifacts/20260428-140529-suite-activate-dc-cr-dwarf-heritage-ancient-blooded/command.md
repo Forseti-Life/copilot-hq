@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-28T14:05:51Z
+
 # Suite Activation: dc-cr-dwarf-heritage-ancient-blooded
 
 **From:** pm-dungeoncrawler  

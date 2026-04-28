@@ -72,7 +72,7 @@ grep -A8 "job_hunter.saved_search_save" /home/ubuntu/forseti.life/sites/forseti/
 grep -A8 "job_hunter.saved_search_delete" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml
 
 # DB table after hook_update_N runs
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush php:eval "var_dump(\Drupal::database()->schema()->tableExists('jobhunter_saved_searches'));"
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life php:eval "var_dump(\Drupal::database()->schema()->tableExists('jobhunter_saved_searches'));"
 
 # Anonymous access
 curl -o /dev/null -s -w "%{http_code}" https://forseti.life/jobhunter/googlejobssearch

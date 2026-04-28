@@ -59,7 +59,7 @@ Make the `profile-completeness.html.twig` widget functionally correct: compute c
 php -l /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/src/Service/ProfileCompletenessService.php
 
 # Drush cache rebuild (required after new service registration)
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush cr
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life cr
 
 # Anonymous access check
 curl -o /dev/null -s -w "%{http_code}" https://forseti.life/jobhunter/profile

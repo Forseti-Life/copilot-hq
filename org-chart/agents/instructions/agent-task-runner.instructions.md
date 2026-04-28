@@ -60,7 +60,7 @@ Canonical suites are in `qa-suites/products/<product>/suite.json`. Common run co
 ALLOW_PROD_QA=1 scripts/site-audit-run.sh forseti-life
 ```
 ```
-bash -c 'set -e; DRUSH=/usr/local/bin/drush; $DRUSH --uri=https://forseti.life jhtr:qa-users-ensure --roles=authenticated 2>/dev/null; QA_UID=$($DRUSH --uri=https://forseti.life user:information qa_tester_authenticated --format=json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(list(d.keys())[0])"); ULI=$($DRUSH --uri=https://forseti.life user:login --uid=$QA_UID --no-browser 2>/dev/null | tr -d "\n"); cd /home/ubuntu/forseti.life && ULI_URL=$ULI BASE_URL=https://forseti.life ARTIFACTS_DIR=sessions/qa-forseti/artifacts/jobhunter-e2e-latest node testing/jobhunter-workflow-step1-6-data-engineer.mjs'
+bash -c 'set -e; DRUSH=/var/www/html/forseti/vendor/bin/drush; $DRUSH --uri=https://forseti.life jhtr:qa-users-ensure --roles=authenticated 2>/dev/null; QA_UID=$($DRUSH --uri=https://forseti.life user:information qa_tester_authenticated --format=json 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(list(d.keys())[0])"); ULI=$($DRUSH --uri=https://forseti.life user:login --uid=$QA_UID --no-browser 2>/dev/null | tr -d "\n"); cd /home/ubuntu/forseti.life && ULI_URL=$ULI BASE_URL=https://forseti.life ARTIFACTS_DIR=sessions/qa-forseti/artifacts/jobhunter-e2e-latest node testing/jobhunter-workflow-step1-6-data-engineer.mjs'
 ```
 
 **dungeoncrawler** (run from HQ repo root):

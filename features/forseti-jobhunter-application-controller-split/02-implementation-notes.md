@@ -45,11 +45,11 @@ job_hunter.my_jobs:
 
 ### Verification after each batch
 ```bash
-cd /home/ubuntu/forseti.life/sites/forseti
-./vendor/bin/drush cr
+cd /var/www/html/forseti
+./vendor/bin/drush --uri=https://forseti.life cr
 php -l web/modules/custom/job_hunter/src/Controller/ApplicationSubmissionController.php
 php -l web/modules/custom/job_hunter/src/Controller/ApplicationActionController.php
-./vendor/bin/drush router:debug | grep job_hunter
+./vendor/bin/drush --uri=https://forseti.life router:debug | grep job_hunter
 ```
 
 ### File locations

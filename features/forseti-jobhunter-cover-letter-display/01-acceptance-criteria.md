@@ -78,5 +78,5 @@ curl -o /dev/null -s -w "%{http_code}" https://forseti.life/jobhunter/coverlette
 # Expected: 403
 
 # Drush route check
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush router:debug | grep cover_letter
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life router:debug | grep cover_letter
 ```

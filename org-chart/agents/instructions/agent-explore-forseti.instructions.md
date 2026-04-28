@@ -45,7 +45,9 @@ Include: steps, expected vs actual, screenshots/log hints if available.
   - Module: `dungeoncrawler_content` (routes include `/home`, `/world`, `/how-to-play`, `/about`, `/architecture`, `/credits`, `/hexmap`, `/ancestries`, `/dungeoncrawler/traits`, `/characters/create`, `/campaigns/{id}/characters`)
 - Login pages: `https://forseti.life/user/login` and `https://dungeoncrawler.forseti.life/user/login`
 - Playwright: NOT installed on this host (requires `npx playwright` install prompt; do not block on this)
-- drush: system-wide at `/usr/local/bin/drush` v13.6.0 (NOT vendor/bin/drush)
+- drush:
+  - Forseti: `/var/www/html/forseti/vendor/bin/drush --uri=https://forseti.life`
+  - Dungeoncrawler: `/var/www/html/dungeoncrawler/vendor/bin/drush --uri=https://dungeoncrawler.forseti.life`
 
 ### Reusable route-check script
 - Location: `sessions/agent-explore-forseti/artifacts/route-check/route-check.sh`

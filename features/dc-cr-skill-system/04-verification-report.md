@@ -69,8 +69,8 @@ Site audit 20260406-141228: 0 missing assets, 0 permission violations. No skill-
 ## Re-verification path
 
 ```bash
-cd /home/ubuntu/forseti.life/sites/dungeoncrawler
-./vendor/bin/drush ev "
+cd /var/www/html/dungeoncrawler
+./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life ev "
   \$c = new \Drupal\dungeoncrawler_content\Service\CharacterCalculator();
   print \$c->calculateProficiencyBonus('untrained', 5); // expect 0
   print \$c->calculateProficiencyBonus('trained', 5);   // expect 7
