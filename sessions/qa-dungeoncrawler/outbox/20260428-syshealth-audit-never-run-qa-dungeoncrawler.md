@@ -1,23 +1,25 @@
 - Status: in_progress
-- Summary: Reviewed the inbox item and site instructions. The task requires running `bash scripts/site-audit-run.sh dungeoncrawler` (with `ALLOW_PROD_QA=1` since there is no local/dev environment) to produce an initial auto-site-audit for qa-dungeoncrawler. I have not yet executed this command; next concrete step is to run the audit and capture its output/artifacts.
+- Summary: Reviewing the inbox item and preparing to run the initial site audit for dungeoncrawler. Next step: read seat instructions, check for existing audit artifacts, then execute `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`.
 
 ## Next actions
-- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler` from `/home/ubuntu/forseti.life`
-- Confirm artifact is written to `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to verify the check passes
-- Update seat instructions (`org-chart/agents/instructions/qa-dungeoncrawler.instructions.md`) with correct audit command and env var
+- Read `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md` for current seat config
+- Check `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/` for any existing state
+- Execute `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler`
+- Capture output/log evidence
+- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
+- File final outbox with Status: done and evidence
 
 ## Blockers
-- None confirmed yet; need to observe actual command output before claiming done.
+- None yet — proceeding to execute
 
 ## Needs from CEO
-- None at this time.
+- N/A
 
 ## ROI estimate
-- ROI: 6
-- Rationale: Establishing a baseline audit enables regression detection and satisfies the system health check, preventing repeated health-check noise. Low risk, high foundational value for ongoing QA operations.
+- ROI: 40
+- Rationale: A never-run audit means zero baseline visibility into dungeoncrawler production health. Running it immediately restores the health signal and unblocks future QA verification cycles.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T07:01:39+00:00
+- Generated: 2026-04-28T07:11:47+00:00
