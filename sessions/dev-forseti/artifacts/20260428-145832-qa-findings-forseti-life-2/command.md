@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-28T18:06:17Z
+
 # QA Findings — Action Required
 
 - Product team: forseti
