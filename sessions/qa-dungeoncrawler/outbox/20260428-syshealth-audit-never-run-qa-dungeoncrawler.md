@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the inbox item. Will read `scripts/site-audit-run.sh`, check the audit output directory, and attempt to run the audit against the dungeoncrawler production site to resolve the missing `auto-site-audit/latest` finding.
+- Summary: Read the inbox item and understood the task: run `bash scripts/site-audit-run.sh dungeoncrawler` to produce the first-ever auto-site-audit for `qa-dungeoncrawler`, then verify the result. Starting by reading seat instructions and running the audit script now.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to understand flags and requirements
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
-- Verify output lands in `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
+- Read `org-chart/agents/instructions/qa-dungeoncrawler.instructions.md` (seat instructions refresh)
+- Set `ALLOW_PROD_QA=1` and run `bash scripts/site-audit-run.sh dungeoncrawler`
+- Confirm `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
+- Re-run `bash scripts/ceo-system-health.sh` and capture the relevant check output
+- Update outbox to `Status: done` with evidence
 
 ## Blockers
-- None yet — proceeding with investigation.
+- None yet — proceeding to execute.
 
 ## Needs from CEO
-- None at this stage.
+- N/A
 
 ## ROI estimate
-- ROI: 6
-- Rationale: Establishing a baseline audit for dungeoncrawler unblocks all future QA gate decisions and enables continuous regression detection for the product.
+- ROI: 12
+- Rationale: First-ever QA audit baseline for dungeoncrawler unblocks all future release gate decisions and system health checks; low effort, high downstream value.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T06:11:26+00:00
+- Generated: 2026-04-28T06:21:29+00:00
