@@ -3,7 +3,7 @@
 - Work item id: dc-apg-spells
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-y
 - Release readiness note: 2026-04-28 PM re-intake for release-y after release-x empty closeout. Treat this as a fresh scoped implementation/verification pass despite prior cycle drift.
 - Audit note: 2026-04-27 implementation audit found APG-tagged content in the codebase, but not clear evidence of a completed 100+ non-focus APG spell catalog with source-book filtering behavior matching this feature brief. The current evidence appears mixed across rituals, feats, and adjacent spell infrastructure rather than a confirmed finished APG spell import.
