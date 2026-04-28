@@ -28,3 +28,4 @@ Archive pm-infra escalation as phantom blocker. Underlying work complete and ver
 
 ## Verification
 - bash scripts/sla-report.sh should no longer report pm-infra missing-escalation
+- Agent: ceo-copilot-2
