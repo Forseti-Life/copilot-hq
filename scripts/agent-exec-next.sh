@@ -447,6 +447,9 @@ PROMPT+="\n\n## ROI estimate\n- ROI: <integer 1-infinity>\n- Rationale: <1-3 sen
 
 if [ -f "$inbox_item/command.md" ] && grep -qiE '^\- Flow id:' "$inbox_item/command.md"; then
   PROMPT+="\n\nFlow-routing rule (required for flow-managed items): if command.md contains Flow metadata and lists 'Available flow outcomes', include one or more lines in your outbox immediately after '- Summary:' using this exact format:\n- Flow outcome: <exact condition label>\nUse the exact condition text from command.md. If more than one outgoing branch applies, repeat the line once per branch. If the current flow node has only one direct next step and no listed Available flow outcomes, omit Flow outcome lines."
+  if grep -qiE '^\- Product team selection required:\s*yes' "$inbox_item/command.md"; then
+    PROMPT+="\n\nProduct-team routing rule (required when command.md says product-team selection is required): include one line immediately after any Flow outcome lines using this exact format:\n- Product team id: <exact team id>\nUse one of the IDs listed in command.md under Available product teams so downstream BA/PM routing can resolve the correct owning seats."
+  fi
 fi
 
 invalid_outbox_reason() {

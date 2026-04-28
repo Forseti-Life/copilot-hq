@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 DRUSH_ROOT = Path("/var/www/html/forseti")
+PRODUCT_TEAMS_PATH = ROOT / "org-chart" / "products" / "product-teams.json"
 
 
 def log(message: str) -> None:
@@ -82,15 +83,71 @@ def load_flow(flow_id: str) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def node_owner_map(flow: dict[str, Any]) -> dict[str, str]:
-    mapping: dict[str, str] = {}
+def node_owner_map(flow: dict[str, Any]) -> dict[str, dict[str, str]]:
+    mapping: dict[str, dict[str, str]] = {}
     for item in flow.get("node_breakdown", []):
         if isinstance(item, dict):
             node = str(item.get("parent_node", "")).strip()
             owner = str(item.get("owner_seat", "")).strip()
-            if node and owner:
-                mapping[node] = owner
+            owner_binding = str(item.get("owner_binding", "")).strip()
+            if node and (owner or owner_binding):
+                mapping[node] = {"owner_seat": owner, "owner_binding": owner_binding}
     return mapping
+
+
+def load_product_teams() -> list[dict[str, Any]]:
+    if not PRODUCT_TEAMS_PATH.exists():
+        return []
+    try:
+        payload = json.loads(PRODUCT_TEAMS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    teams = payload.get("teams", [])
+    return [team for team in teams if isinstance(team, dict)]
+
+
+def resolve_product_team(team_hint: str, teams: list[dict[str, Any]]) -> dict[str, Any] | None:
+    team_hint = team_hint.strip().lower()
+    if not team_hint:
+        return None
+    for team in teams:
+        aliases = [str(alias).strip().lower() for alias in team.get("aliases", []) if str(alias).strip()]
+        candidates = {
+            str(team.get("id", "")).strip().lower(),
+            str(team.get("label", "")).strip().lower(),
+            *aliases,
+        }
+        if team_hint in candidates:
+            return team
+    return None
+
+
+def load_saved_product_team(run_dir: Path) -> dict[str, Any] | None:
+    path = run_dir / "product-team.json"
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def save_product_team(run_dir: Path, product_team: dict[str, Any]) -> None:
+    path = run_dir / "product-team.json"
+    path.write_text(json.dumps(product_team, indent=2) + "\n", encoding="utf-8")
+
+
+def resolve_owner(binding_details: dict[str, str], product_team: dict[str, Any] | None) -> tuple[str, str]:
+    owner_seat = binding_details.get("owner_seat", "").strip()
+    owner_binding = binding_details.get("owner_binding", "").strip()
+    if owner_seat:
+        return owner_seat, owner_binding
+    if owner_binding.startswith("product_team.") and product_team is not None:
+        key = owner_binding.split(".", 1)[1]
+        resolved = str(product_team.get(key, "")).strip()
+        return resolved, owner_binding
+    return "", owner_binding
 
 
 def outgoing_transitions(flow: dict[str, Any], node: str) -> list[dict[str, str]]:
@@ -180,11 +237,15 @@ def build_command(
     run_id: str,
     target_node: str,
     target_owner: str,
+    target_owner_binding: str,
     source_agent: str,
     source_node: str,
     source_outbox: Path,
     incoming_conditions: list[str],
     available_outcomes: list[str],
+    product_team: dict[str, Any] | None,
+    product_team_selection_required: bool,
+    available_product_teams: list[str],
 ) -> str:
     metadata = [
         f"- Flow id: {flow_id}",
@@ -194,6 +255,15 @@ def build_command(
         f"- Flow previous node: {source_node}",
         f"- Flow source outbox: {source_outbox}",
     ]
+    if target_owner_binding:
+        metadata.append(f"- Flow owner binding: {target_owner_binding}")
+    if product_team is not None:
+        metadata.append(f"- Product team id: {str(product_team.get('id', '')).strip()}")
+        metadata.append(f"- Product team label: {str(product_team.get('label', '')).strip()}")
+    if product_team_selection_required:
+        metadata.append("- Product team selection required: yes")
+        if available_product_teams:
+            metadata.append(f"- Available product teams: {' | '.join(available_product_teams)}")
     if incoming_conditions:
         metadata.append(f"- Flow incoming conditions: {' | '.join(incoming_conditions)}")
     if available_outcomes:
@@ -212,6 +282,7 @@ def build_command(
             f"2. Review the source outbox: `{source_outbox}` for the completed upstream context.",
             "3. If this node has branching outcomes, include one or more `- Flow outcome:` lines in your outbox using the exact allowed values listed above.",
             "4. If this node has only one direct next step, no Flow outcome line is required.",
+            "5. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.",
         ]
     ) + "\n"
 
@@ -294,6 +365,24 @@ def selected_transitions(outgoing: list[dict[str, str]], outcomes: list[str]) ->
     return selected
 
 
+def node_requires_product_team(
+    flow: dict[str, Any],
+    node: str,
+    owner_map: dict[str, dict[str, str]],
+    product_team: dict[str, Any] | None,
+) -> bool:
+    if product_team is not None:
+        return False
+    for transition in outgoing_transitions(flow, node):
+        target = transition["to_node"]
+        if target in {"", "END", "__end__"}:
+            continue
+        binding = owner_map.get(target, {}).get("owner_binding", "").strip()
+        if binding.startswith("product_team."):
+            return True
+    return False
+
+
 def main() -> int:
     if len(sys.argv) < 4:
         return 0
@@ -323,6 +412,17 @@ def main() -> int:
     run_dir = flow_runtime_dir(flow_id, run_id)
     run_dir.mkdir(parents=True, exist_ok=True)
 
+    teams = load_product_teams()
+    outbox_meta = parse_simple_metadata(outbox_text)
+    product_team_hint = outbox_meta.get("Product team id", "").strip() or command_meta.get("Product team id", "").strip()
+    product_team = resolve_product_team(product_team_hint, teams) if product_team_hint else None
+    if product_team is not None:
+        save_product_team(run_dir, product_team)
+    else:
+        product_team = load_saved_product_team(run_dir)
+        if product_team_hint:
+            log(f"unknown product team '{product_team_hint}' for {flow_id}/{run_id}")
+
     owner_map = node_owner_map(flow)
     outgoing = outgoing_transitions(flow, current_node)
     transitions = selected_transitions(outgoing, extract_flow_outcomes(outbox_text))
@@ -343,9 +443,12 @@ def main() -> int:
             log(f"flow {flow_id}/{run_id} completed at {current_node}")
             continue
 
-        target_owner = owner_map.get(target_node, "").strip()
+        target_owner, target_owner_binding = resolve_owner(owner_map.get(target_node, {}), product_team)
         if not target_owner:
-            log(f"skip target {target_node}: no owner_seat metadata")
+            if target_owner_binding:
+                log(f"skip target {target_node}: unresolved owner binding {target_owner_binding}")
+            else:
+                log(f"skip target {target_node}: no owner metadata")
             continue
 
         record_merge_receipt(
@@ -365,16 +468,21 @@ def main() -> int:
         item_name_out = routed_item_name(route_date, flow_id, run_id, target_node, sequence)
         next_outgoing = outgoing_transitions(flow, target_node)
         available_outcomes = [item["condition"] for item in next_outgoing if item["condition"]]
+        product_team_selection_required = node_requires_product_team(flow, target_node, owner_map, product_team)
         command_content = build_command(
             flow_id=flow_id,
             run_id=run_id,
             target_node=target_node,
             target_owner=target_owner,
+            target_owner_binding=target_owner_binding,
             source_agent=agent_id,
             source_node=current_node,
             source_outbox=outbox_file,
             incoming_conditions=incoming_conditions or ([transition["condition"]] if transition["condition"] else []),
             available_outcomes=available_outcomes,
+            product_team=product_team,
+            product_team_selection_required=product_team_selection_required,
+            available_product_teams=[str(team.get("id", "")).strip() for team in teams if str(team.get("id", "")).strip()],
         )
         create_inbox_item(target_owner, item_name_out, roi, command_content)
         clear_merge_receipts(run_dir, target_node)
