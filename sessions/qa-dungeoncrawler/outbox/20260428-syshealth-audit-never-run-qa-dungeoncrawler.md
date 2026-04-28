@@ -1,25 +1,24 @@
 - Status: in_progress
-- Summary: Reviewing the inbox item and running the initial site audit for dungeoncrawler to establish the first auto-site-audit/latest artifact. Will read the audit script before executing to confirm it is safe to run against production.
+- Summary: Reviewing the inbox item and running the initial audit for qa-dungeoncrawler. Reading the audit script and environment before executing to avoid unintended production impact.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to confirm flags and env var requirements
-- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler` and capture output
-- Verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
-- Re-run `bash scripts/ceo-system-health.sh` to confirm the check passes
-- Update seat instructions with confirmed audit path and env var
-- File final done outbox
+- Read `scripts/site-audit-run.sh` to understand flags and requirements
+- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions
+- Capture output, verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
+- Re-run `bash scripts/ceo-system-health.sh` to confirm the health check passes
+- Commit any new artifact files and update seat instructions if needed
 
 ## Blockers
-- None yet — proceeding to execute
+- None yet — executing now.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 6
-- Rationale: Establishing the baseline audit artifact unblocks all future QA verification and release-gate work for dungeoncrawler; low complexity, high leverage for ongoing QA reliability.
+- ROI: 40
+- Rationale: First-ever QA audit for dungeoncrawler establishes a baseline for all future release verification and health monitoring; without it, Gate 2 cannot be completed reliably.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T03:50:14+00:00
+- Generated: 2026-04-28T04:00:14+00:00
