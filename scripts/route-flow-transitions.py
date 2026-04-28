@@ -83,15 +83,20 @@ def load_flow(flow_id: str) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def node_owner_map(flow: dict[str, Any]) -> dict[str, dict[str, str]]:
+def node_detail_map(flow: dict[str, Any]) -> dict[str, dict[str, str]]:
     mapping: dict[str, dict[str, str]] = {}
     for item in flow.get("node_breakdown", []):
         if isinstance(item, dict):
             node = str(item.get("parent_node", "")).strip()
             owner = str(item.get("owner_seat", "")).strip()
             owner_binding = str(item.get("owner_binding", "")).strip()
-            if node and (owner or owner_binding):
-                mapping[node] = {"owner_seat": owner, "owner_binding": owner_binding}
+            handoff_flow_id = str(item.get("handoff_flow_id", "")).strip()
+            if node:
+                mapping[node] = {
+                    "owner_seat": owner,
+                    "owner_binding": owner_binding,
+                    "handoff_flow_id": handoff_flow_id,
+                }
     return mapping
 
 
@@ -287,6 +292,101 @@ def build_command(
     ) + "\n"
 
 
+def route_to_node(
+    *,
+    flow: dict[str, Any],
+    flow_id: str,
+    run_id: str,
+    route_date: str,
+    target_node: str,
+    source_agent: str,
+    source_node: str,
+    source_outbox: Path,
+    incoming_conditions: list[str],
+    product_team: dict[str, Any] | None,
+    teams: list[dict[str, Any]],
+    node_details: dict[str, dict[str, str]],
+    roi: int,
+    run_dir: Path,
+) -> bool:
+    target_owner, target_owner_binding = resolve_owner(node_details.get(target_node, {}), product_team)
+    if not target_owner:
+        if target_owner_binding:
+            log(f"skip target {target_node}: unresolved owner binding {target_owner_binding}")
+        else:
+            log(f"skip target {target_node}: no owner metadata")
+        return False
+
+    sequence = next_sequence(run_dir, target_node)
+    item_name_out = routed_item_name(route_date, flow_id, run_id, target_node, sequence)
+    next_outgoing = outgoing_transitions(flow, target_node)
+    available_outcomes = [item["condition"] for item in next_outgoing if item["condition"]]
+    product_team_selection_required = node_requires_product_team(flow, target_node, node_details, product_team)
+    command_content = build_command(
+        flow_id=flow_id,
+        run_id=run_id,
+        target_node=target_node,
+        target_owner=target_owner,
+        target_owner_binding=target_owner_binding,
+        source_agent=source_agent,
+        source_node=source_node,
+        source_outbox=source_outbox,
+        incoming_conditions=incoming_conditions,
+        available_outcomes=available_outcomes,
+        product_team=product_team,
+        product_team_selection_required=product_team_selection_required,
+        available_product_teams=[str(team.get("id", "")).strip() for team in teams if str(team.get("id", "")).strip()],
+    )
+    create_inbox_item(target_owner, item_name_out, roi, command_content)
+    return True
+
+
+def route_downstream_flow(
+    *,
+    handoff_flow_id: str,
+    run_id: str,
+    route_date: str,
+    source_agent: str,
+    source_node: str,
+    source_outbox: Path,
+    product_team: dict[str, Any] | None,
+    teams: list[dict[str, Any]],
+    roi: int,
+) -> bool:
+    downstream_flow = load_flow(handoff_flow_id)
+    if downstream_flow is None:
+        log(f"skip downstream launch for {handoff_flow_id}: flow lookup failed")
+        return False
+    entry_node = str(downstream_flow.get("default_entrypoint", "")).strip()
+    if not entry_node:
+        log(f"skip downstream launch for {handoff_flow_id}: missing default entrypoint")
+        return False
+    downstream_run_dir = flow_runtime_dir(handoff_flow_id, run_id)
+    downstream_run_dir.mkdir(parents=True, exist_ok=True)
+    if product_team is not None:
+        save_product_team(downstream_run_dir, product_team)
+    downstream_details = node_detail_map(downstream_flow)
+    routed = route_to_node(
+        flow=downstream_flow,
+        flow_id=handoff_flow_id,
+        run_id=run_id,
+        route_date=route_date,
+        target_node=entry_node,
+        source_agent=source_agent,
+        source_node=f"{source_node} ({handoff_flow_id} launch)",
+        source_outbox=source_outbox,
+        incoming_conditions=[],
+        product_team=product_team,
+        teams=teams,
+        node_details=downstream_details,
+        roi=roi,
+        run_dir=downstream_run_dir,
+    )
+    if routed:
+        log(f"launched downstream flow {handoff_flow_id}/{run_id} at {entry_node}")
+    return routed
+
+
 def merge_receipt_path(run_dir: Path, target_node: str, source_node: str) -> Path:
     return run_dir / "merge-receipts" / slugify(target_node) / f"{slugify(source_node)}.json"
 
@@ -368,7 +468,7 @@ def selected_transitions(outgoing: list[dict[str, str]], outcomes: list[str]) ->
 def node_requires_product_team(
     flow: dict[str, Any],
     node: str,
-    owner_map: dict[str, dict[str, str]],
+    node_details: dict[str, dict[str, str]],
     product_team: dict[str, Any] | None,
 ) -> bool:
     if product_team is not None:
@@ -377,7 +477,7 @@ def node_requires_product_team(
         target = transition["to_node"]
         if target in {"", "END", "__end__"}:
             continue
-        binding = owner_map.get(target, {}).get("owner_binding", "").strip()
+        binding = node_details.get(target, {}).get("owner_binding", "").strip()
         if binding.startswith("product_team."):
             return True
     return False
@@ -423,7 +523,7 @@ def main() -> int:
         if product_team_hint:
             log(f"unknown product team '{product_team_hint}' for {flow_id}/{run_id}")
 
-    owner_map = node_owner_map(flow)
+    node_details = node_detail_map(flow)
     outgoing = outgoing_transitions(flow, current_node)
     transitions = selected_transitions(outgoing, extract_flow_outcomes(outbox_text))
     if outgoing and not transitions:
@@ -440,15 +540,20 @@ def main() -> int:
                 json.dumps({"completed_from": current_node, "source_outbox": str(outbox_file)}, indent=2) + "\n",
                 encoding="utf-8",
             )
+            handoff_flow_id = node_details.get(current_node, {}).get("handoff_flow_id", "").strip()
+            if handoff_flow_id:
+                route_downstream_flow(
+                    handoff_flow_id=handoff_flow_id,
+                    run_id=run_id,
+                    route_date=route_date,
+                    source_agent=agent_id,
+                    source_node=current_node,
+                    source_outbox=outbox_file,
+                    product_team=product_team,
+                    teams=teams,
+                    roi=roi,
+                )
             log(f"flow {flow_id}/{run_id} completed at {current_node}")
-            continue
-
-        target_owner, target_owner_binding = resolve_owner(owner_map.get(target_node, {}), product_team)
-        if not target_owner:
-            if target_owner_binding:
-                log(f"skip target {target_node}: unresolved owner binding {target_owner_binding}")
-            else:
-                log(f"skip target {target_node}: no owner metadata")
             continue
 
         record_merge_receipt(
@@ -464,27 +569,22 @@ def main() -> int:
             log(f"waiting for merge prerequisites before routing {flow_id}/{run_id} -> {target_node}")
             continue
 
-        sequence = next_sequence(run_dir, target_node)
-        item_name_out = routed_item_name(route_date, flow_id, run_id, target_node, sequence)
-        next_outgoing = outgoing_transitions(flow, target_node)
-        available_outcomes = [item["condition"] for item in next_outgoing if item["condition"]]
-        product_team_selection_required = node_requires_product_team(flow, target_node, owner_map, product_team)
-        command_content = build_command(
+        route_to_node(
             flow_id=flow_id,
+            flow=flow,
             run_id=run_id,
+            route_date=route_date,
             target_node=target_node,
-            target_owner=target_owner,
-            target_owner_binding=target_owner_binding,
             source_agent=agent_id,
             source_node=current_node,
             source_outbox=outbox_file,
             incoming_conditions=incoming_conditions or ([transition["condition"]] if transition["condition"] else []),
-            available_outcomes=available_outcomes,
             product_team=product_team,
-            product_team_selection_required=product_team_selection_required,
-            available_product_teams=[str(team.get("id", "")).strip() for team in teams if str(team.get("id", "")).strip()],
+            teams=teams,
+            node_details=node_details,
+            roi=roi,
+            run_dir=run_dir,
         )
-        create_inbox_item(target_owner, item_name_out, roi, command_content)
         clear_merge_receipts(run_dir, target_node)
 
     return 0

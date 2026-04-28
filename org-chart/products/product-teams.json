@@ -219,6 +219,7 @@
       "qa_agent": "qa-forseti-agent-tracker",
       "dev_agent": "dev-forseti-agent-tracker",
       "pm_agent": "pm-forseti-agent-tracker",
+      "ba_agent": "ba-forseti-agent-tracker",
       "qa_suite_manifest": "qa-suites/products/forseti-agent-tracker/suite.json",
       "site_audit": {
         "enabled": false,
@@ -244,6 +245,7 @@
       "qa_agent": "qa-infra",
       "dev_agent": "dev-infra",
       "pm_agent": "pm-infra",
+      "ba_agent": "ba-infra",
       "qa_suite_manifest": "qa-suites/products/infrastructure/suite.json",
       "site_audit": {
         "enabled": false,

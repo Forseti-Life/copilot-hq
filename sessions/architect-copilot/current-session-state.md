@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during seat-owned agentic SDLC routing activation
+> Last updated: 2026-04-28 during intake-flow and dynamic team-routing activation
 
 ---
 
@@ -167,6 +167,53 @@ including diagram ownership labels and flow-aware seat handoff routing.
     `Ready for QA`
   - `Ready for QA` routes to `QA Testing`
   - archived-item routing works through the real shell wrapper path
+- Added a new built-in `feature_request_intake` flow to `drupal_langgraph` as
+  the front-door intake/triage graph ahead of `agentic_sdlc`.
+- The intake flow now models:
+  - request capture and intake review
+  - clarification loops for incomplete requests
+  - product-team selection
+  - BA requirements review and refinement
+  - PM scope decision
+  - delivery handoff packaging
+- Extended per-node ownership metadata with `owner_binding` so a flow node can
+  bind dynamically to seats like `product_team.ba_agent` and
+  `product_team.pm_agent` instead of only using fixed `owner_seat` values.
+- Updated the flow detail UI and Mermaid rendering so dynamic ownership appears
+  inline as selected-product-team BA/PM labels rather than blank or unknown
+  seats.
+- Extended `route-flow-transitions.py` so flow-managed routing now:
+  - reads and persists `Product team id`
+  - resolves product-team bindings from `org-chart/products/product-teams.json`
+  - propagates selected team metadata across downstream flow items
+  - routes BA and PM intake steps to the selected team's actual seats
+- Added executor prompt guidance so nodes that must choose a product team are
+  told to emit an exact `- Product team id:` line in their outbox.
+- Validated end-to-end that the new intake flow:
+  - appears in Drupal with 8 nodes and dynamic BA/PM ownership labels in the
+    diagram
+  - routes `Match Product Team` with `dungeoncrawler` to `ba-dungeoncrawler`
+  - routes BA approval to `pm-dungeoncrawler`
+  - routes PM delivery approval to the selected team's BA handoff node
+  - works both through direct router invocation and the real shell wrapper path
+- Extended the intake terminal handoff so `Prepare Delivery Handoff` now
+  auto-launches a downstream `agentic_sdlc` run instead of only ending with a
+  delivery-ready package.
+- Converted the product-team-owned nodes inside `agentic_sdlc` to dynamic
+  `owner_binding` values so BA, PM, Dev, and QA stages resolve from the selected
+  product team instead of staying hardcoded to Forseti seats.
+- Synced the live custom `agentic_sdlc` override in Drupal so the active flow
+  now reflects the same dynamic BA/Dev/QA ownership behavior shown in code.
+- Backfilled `org-chart/products/product-teams.json` with missing `ba_agent`
+  entries for `forseti-agent-tracker` and `infrastructure`, matching the actual
+  seats already present in `org-chart/agents/agents.yaml`.
+- Validated end-to-end that:
+  - `Prepare Delivery Handoff` launches `agentic_sdlc` at `User Requirements`
+    for the selected team's BA seat
+  - `Design Review` approved for `dungeoncrawler` routes to
+    `dev-dungeoncrawler` and `qa-dungeoncrawler`
+  - the live `agentic_sdlc` diagram now renders selected-product-team BA and Dev
+    labels inline
 
 ### Key decisions
 
@@ -197,5 +244,7 @@ including diagram ownership labels and flow-aware seat handoff routing.
    validation through Drupal services is needed from the workspace shell.
 4. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-5. Trace the second tick node (`dispatch_commands`) with the same level of
+5. Consider whether product-team security review should also bind dynamically
+   once `product-teams.json` carries per-team security seats consistently.
+6. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
