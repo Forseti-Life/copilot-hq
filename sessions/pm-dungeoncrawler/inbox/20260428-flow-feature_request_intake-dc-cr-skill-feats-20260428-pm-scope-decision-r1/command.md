@@ -20,3 +20,5 @@ This inbox item was routed automatically from `BA Requirements Review` after `ba
 3. If this node has branching outcomes, include one or more `- Flow outcome:` lines in your outbox using the exact allowed values listed above.
 4. If this node has only one direct next step, no Flow outcome line is required.
 5. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.
+- Agent: pm-dungeoncrawler
+- Status: pending
