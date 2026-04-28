@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during HQ orchestrator consume_replies UI surfacing
+> Last updated: 2026-04-28 during runtime-derived flow catalog wiring
 
 ---
 
@@ -60,6 +60,13 @@ first row stays readable without rewriting real reporting lines.
   `/admin/reports/drupal-langgraph/langgraph-console/flows/hq_orchestrator_tick`
   now includes a **Detailed Node Breakdown** table for the internal
   `consume_replies` subgraph steps.
+- Replaced the PHP-only description source for `hq_orchestrator_tick` with a
+  runtime-derived Python export path:
+  - added `orchestrator/runtime_graph/catalog.py`
+  - added `orchestrator/runtime_graph/export_flow_catalog.py`
+  - moved `consume_replies` step metadata next to the Python subgraph code
+  - taught `ProcessFlowRegistryService` to load runtime flow definitions from
+    the Python export, overriding the built-in PHP fallback when available
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat

@@ -11,6 +11,71 @@ from typing import Any, Dict, List, TypedDict
 from langgraph.graph import StateGraph  # type: ignore
 
 
+def consume_replies_step_catalog() -> List[Dict[str, str]]:
+    return [
+        {
+            "id": "resolve_runtime_context",
+            "purpose": "Resolve repo root, Forseti Drupal path, and Drush binary before reply ingestion starts.",
+            "state_effect": "Sets repo_root, forseti_site_dir, and drush_bin.",
+        },
+        {
+            "id": "load_configured_agents",
+            "purpose": "Load configured seat IDs from agents.yaml for target validation.",
+            "state_effect": "Sets configured_agents.",
+        },
+        {
+            "id": "resolve_active_ceo_agent",
+            "purpose": "Resolve the CEO fallback seat using env override, agents.yaml, and pause-state checks.",
+            "state_effect": "Sets active_ceo_agent and warnings when fallback occurs.",
+        },
+        {
+            "id": "check_reply_table",
+            "purpose": "Probe Drupal for the copilot_agent_tracker_replies table and branch to explicit no-op when absent.",
+            "state_effect": "Sets reply_table_exists and may short-circuit to summary.",
+        },
+        {
+            "id": "load_pending_replies",
+            "purpose": "Load up to 25 oldest unconsumed Drupal replies into structured subgraph state.",
+            "state_effect": "Sets pending_replies.",
+        },
+        {
+            "id": "filter_invalid_replies",
+            "purpose": "Drop rows with missing target/message and track skipped reply IDs explicitly.",
+            "state_effect": "Sets valid_replies, skipped_reply_ids, and warnings.",
+        },
+        {
+            "id": "resolve_target_agents",
+            "purpose": "Validate targets and reroute unknown seats to the active CEO seat.",
+            "state_effect": "Sets normalized_replies and reroute warnings.",
+        },
+        {
+            "id": "build_work_items",
+            "purpose": "Generate graph-visible HQ inbox items before filesystem persistence.",
+            "state_effect": "Sets work_items and created_item_ids.",
+        },
+        {
+            "id": "persist_work_items",
+            "purpose": "Write command.md and roi.txt into sessions/<agent>/inbox/<item-id>/ directories.",
+            "state_effect": "Sets consumed_reply_ids and persisted item list.",
+        },
+        {
+            "id": "acknowledge_consumed_replies",
+            "purpose": "Mark Drupal reply rows consumed and attach HQ item IDs after persistence succeeds.",
+            "state_effect": "Commits Drupal acknowledgment side effects or records errors.",
+        },
+        {
+            "id": "archive_resolved_ceo_items",
+            "purpose": "Move referenced CEO inbox items into resolved artifacts when in_reply_to targets exist.",
+            "state_effect": "Sets archived_source_items.",
+        },
+        {
+            "id": "summarize",
+            "purpose": "Emit structured top-level telemetry for the tick log instead of a shell-only return code.",
+            "state_effect": "Sets rc plus pending/created/rerouted/archived/warning/error counts.",
+        },
+    ]
+
+
 class PendingReply(TypedDict):
     id: int
     to_agent_id: str

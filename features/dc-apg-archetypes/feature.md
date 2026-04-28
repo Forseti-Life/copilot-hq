@@ -4,7 +4,8 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: in_progress
-- Release: 20260412-dungeoncrawler-release-x
+- Release: 20260412-dungeoncrawler-release-y
+- Release readiness note: 2026-04-28 PM re-intake for release-y after release-x empty closeout. Treat this as a fresh scoped implementation/verification pass despite prior cycle drift.
 - Audit note: 2026-04-27 implementation audit found only adjacent variant-rule support (for free archetype) and prerequisite dependencies, but did not find concrete APG archetype data, dedication-feat handling, or archetype feat-slot enforcement matching this feature brief.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

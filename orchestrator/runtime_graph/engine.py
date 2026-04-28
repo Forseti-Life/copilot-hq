@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Tuple
 
 from langgraph.graph import StateGraph  # type: ignore
+from orchestrator.runtime_graph.catalog import HQ_ORCHESTRATOR_TICK_NODE_ORDER
 from orchestrator.runtime_graph.consume_replies import run_consume_replies
 
 
@@ -135,10 +136,7 @@ def _write_tick_telemetry(state: Dict[str, Any]) -> None:
         pass
 
     # Build parity record with schema expected by DashboardController::langGraphParityHealth().
-    expected_steps = [
-        "consume_replies", "dispatch_commands", "release_cycle", "coordinated_push",
-        "pick_agents", "exec_agents", "health_check", "kpi_monitor", "publish",
-    ]
+    expected_steps = list(HQ_ORCHESTRATOR_TICK_NODE_ORDER)
     actual_steps = [entry.get("step") for entry in log_entries if "step" in entry]
     steps_match = actual_steps == expected_steps
 

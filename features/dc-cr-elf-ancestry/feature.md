@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: deferred
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -13,7 +13,7 @@
 - Category: game-mechanic
 - Schema changes: no
 - Cross-site modules: none
-- Release: 20260412-dungeoncrawler-release-x
+- Defer reason: 2026-04-28 release recovery decision: release-x is being closed as an empty release. This feature remains coupled to unresolved language-system verification and will be re-scoped in a later cycle once the dependent AC package is ready.
 - Audit note: 2026-04-27 implementation audit found partial coverage only. Elf base ancestry stats, traits, and low-light vision are present in CharacterManager, but the feature brief's Intelligence-scaled additional language behavior is not implemented and Elf does not expose the defined bonus-language pool/source metadata seen on fully wired ancestries like Dwarf.
 - Created: 2026-04-06
 
