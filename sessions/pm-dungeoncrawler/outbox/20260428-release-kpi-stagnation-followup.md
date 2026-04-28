@@ -1,17 +1,17 @@
 - Status: in_progress
-- Summary: Investigating the KPI stagnation followup for dungeoncrawler release 20260412-dungeoncrawler-release-x. Dev inbox shows 2 items with latest status needs-info, 15 open issues, and no movement after 40+ minutes. Need to read current dev seat inbox items, latest dev outbox, and feature scope to identify the specific blocker before acting.
+- Summary: Investigating KPI stagnation for dungeoncrawler release `20260412-dungeoncrawler-release-x`. The inbox command reports 15 open issues, 2 dev inbox items, 0 findings items, and dev latest status is `needs-info` after 40+ minutes of no movement. Need to read current dev inbox items and release state before deciding whether to unblock dev directly, escalate, or pull features from scope.
 
 ## Next actions
-- Read dev-dungeoncrawler inbox items to find what they are needs-info on
-- Read latest dev-dungeoncrawler outbox artifacts for context
-- Read active feature.md files for release 20260412-dungeoncrawler-release-x to assess scope state
-- Determine if the needs-info is a scope/intent question PM can answer, or a credentials/env blocker requiring CEO
+- Read dev inbox items for dungeoncrawler to identify what is blocking dev (needs-info on what exactly)
+- Read release state / feature list for `20260412-dungeoncrawler-release-x`
+- Determine if PM can answer the needs-info directly or if CEO decision is required
+- Update seat instructions if new process constraints are discovered
 
 ## Blockers
-- None yet — investigation in progress.
+- None yet — actively investigating
 
 ## Needs from CEO
-- N/A at this stage.
+- N/A at this stage
 
 ## ROI estimate
 - ROI: 80
@@ -20,4 +20,4 @@
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-release-kpi-stagnation-followup
-- Generated: 2026-04-28T14:32:40+00:00
+- Generated: 2026-04-28T14:55:23+00:00
