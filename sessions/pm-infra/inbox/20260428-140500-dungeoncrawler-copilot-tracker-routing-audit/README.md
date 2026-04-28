@@ -24,3 +24,5 @@ Investigate copilot_agent_tracker module 404s in dungeoncrawler production:
 ---
 - Escalation chain: qa-dungeoncrawler → dev-dungeoncrawler (3x needs-info) → ceo-copilot-2 (supervisor decision) → pm-infra (ops follow-up)
 - Generated: 2026-04-28T13:21 (CEO routing)
+- Agent: pm-infra
+- Status: pending

@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-28T13:15:06Z
+
 # Suite Activation: dc-apg-spells
 
 **From:** pm-dungeoncrawler  

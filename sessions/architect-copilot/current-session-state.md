@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during runtime-derived flow catalog wiring
+> Last updated: 2026-04-28 during Agentic SDLC flow import
 
 ---
 
@@ -67,6 +67,11 @@ first row stays readable without rewriting real reporting lines.
   - moved `consume_replies` step metadata next to the Python subgraph code
   - taught `ProcessFlowRegistryService` to load runtime flow definitions from
     the Python export, overriding the built-in PHP fallback when available
+- Imported a new custom process flow into the live Drupal LangGraph registry:
+  - flow ID: `agentic_sdlc`
+  - label: `Agentic SDLC`
+  - source: external reference graph from `CodinjaoftheWorld/agentic-sdlc-langgraph`
+  - 17 top-level nodes and 17 detailed breakdown rows
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -106,5 +111,7 @@ first row stays readable without rewriting real reporting lines.
    that the LangGraph path owns the orchestration logic.
 6. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
-7. Continue the next UX slice around richer node/routing/tool/prompt editing
+7. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+   translated into a local runtime-derived Python graph module.
+8. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.
