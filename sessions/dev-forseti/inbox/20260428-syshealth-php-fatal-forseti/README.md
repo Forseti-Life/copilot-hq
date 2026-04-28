@@ -23,3 +23,4 @@ Investigate and fix. Verify site returns HTTP 200 after fix.
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
+- Status: pending

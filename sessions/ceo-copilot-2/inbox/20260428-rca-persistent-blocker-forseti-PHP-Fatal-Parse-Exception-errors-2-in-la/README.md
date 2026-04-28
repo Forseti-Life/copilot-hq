@@ -1,11 +1,11 @@
-# Persistent blocker RCA: Drupal watchdog: 1 recent error(s)
+# Persistent blocker RCA: [forseti] PHP Fatal/Parse/Exception errors: 2 in last 24h (1 in last 30m)
 
 - Agent: ceo-copilot-2
 - Dispatched-by: ceo-ops-scheduler.py
-- Blocker: Drupal watchdog: 1 recent error(s)
+- Blocker: [forseti] PHP Fatal/Parse/Exception errors: 2 in last 24h (1 in last 30m)
 - Consecutive CEO cycles observed: 2
-- First seen: 2026-04-28T16:40:01.411543+00:00
-- Last seen: 2026-04-28T16:50:01.659673+00:00
+- First seen: 2026-04-28T17:10:01.496315+00:00
+- Last seen: 2026-04-28T17:20:01.790678+00:00
 
 ## Issue
 
