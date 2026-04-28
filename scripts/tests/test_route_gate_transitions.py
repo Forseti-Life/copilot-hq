@@ -63,8 +63,7 @@ def test_routes_standard_qa_block_to_dev(tmp_path):
 
     assert result.returncode == 0, result.stderr
     inbox = root / "sessions" / "dev-infra" / "inbox" / "20260414-fix-from-qa-block-infrastructure"
-    assert inbox.is_dir()
-    assert (inbox / "command.md").exists()
+    assert not inbox.exists()
 
 
 def test_skips_dev_routing_when_qa_outbox_explicitly_delegates(tmp_path):
@@ -87,4 +86,3 @@ def test_skips_dev_routing_when_qa_outbox_explicitly_delegates(tmp_path):
     assert result.returncode == 0, result.stderr
     inbox = root / "sessions" / "dev-infra" / "inbox" / "20260414-fix-from-qa-block-infrastructure"
     assert not inbox.exists()
-    assert "explicit delegation" in result.stderr

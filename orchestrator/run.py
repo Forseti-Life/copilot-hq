@@ -35,7 +35,7 @@ if str(REPO_ROOT) not in sys.path:
 from orchestrator.runtime_graph.engine import LangGraphDeps, run_tick as _run_langgraph_tick
 from orchestrator.release_prerequisites import ReleasePrerequisiteValidator
 from orchestrator.failure_analyzer import ExecutorFailureAnalyzer
-from orchestrator import release_cycle, health_and_audit, dispatch
+from orchestrator import health_and_audit, dispatch
 from orchestrator.dispatch import _org_enabled
 
 # Team IDs that have associated websites (used for agent->team mapping)
@@ -1244,19 +1244,13 @@ class ClineProvider(RuntimeProvider):
 # ── Release cycle wrappers (delegates to release_cycle module) ────────────────
 
 def _release_cycle_step(log: List[Any]) -> None:
-    """Delegate to release_cycle module only when legacy release automation is enabled."""
-    if not _is_release_cycle_enabled():
-        log.append({"step": "release_cycle", "status": "skipped", "reason": "disabled"})
-        return
-    release_cycle.run_release_cycle_step(log, REPO_ROOT)
+    """Retired legacy release-cycle step kept as a no-op for graph parity."""
+    log.append({"step": "release_cycle", "status": "retired", "reason": "legacy flow removed"})
 
 
 def _coordinated_push_step(log: List[Any]) -> None:
-    """Delegate to coordinated push only when legacy release automation is enabled."""
-    if not _is_release_cycle_enabled():
-        log.append({"step": "coordinated_push", "status": "skipped", "reason": "disabled"})
-        return
-    release_cycle.run_coordinated_push_step(log, REPO_ROOT)
+    """Retired legacy coordinated-push step kept as a no-op for graph parity."""
+    log.append({"step": "coordinated_push", "status": "retired", "reason": "legacy flow removed"})
 
 
 def _make_provider(name: str) -> RuntimeProvider:
