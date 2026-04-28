@@ -1,17 +1,34 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during Agentic SDLC flow import
+> Last updated: 2026-04-28 during Drush root + bootstrap review
 
 ---
 
 ## Currently Working On
 
-Refining the `drupal_langgraph` Org Chart UX after landing direct drill-in from
-diagram nodes into seat detail panels and then clustering the CEO layer so the
-first row stays readable without rewriting real reporting lines.
+Stabilizing Drupal/Drush operator paths on the production host after confirming
+that repo-side hybrid checkouts and live Apache project roots diverged enough to
+break Drush bootstrap assumptions.
 
 ### Current state
+
+- Forseti Drush is now standardized on the live Apache root:
+  `/var/www/html/forseti && vendor/bin/drush --uri=https://forseti.life`.
+- Updated Architect, dev-forseti, dev-dungeoncrawler, agent-task-runner, and
+  agent-explore-forseti instructions to stop teaching stale repo-side Drush
+  paths or global `/usr/local/bin/drush` usage.
+- Updated active Forseti/Dungeoncrawler feature docs, runbook snippets, and QA
+  suites so their Drush commands point at supported live roots with explicit
+  URIs.
+- Repaired live Dungeoncrawler Drush bootstrap by correcting
+  `/var/www/html/dungeoncrawler/vendor/composer/installed.php` so
+  `Composer\\InstalledVersions::getInstallPath('drupal/core')` resolves to
+  `web/core` instead of `vendor/drupal/core`, and added
+  `/var/www/html/dungeoncrawler/drush/drush.yml` with the live root/URI.
+- Verified both live roots bootstrap successfully via Drush:
+  - Forseti: `/var/www/html/forseti/web`
+  - Dungeoncrawler: `/var/www/html/dungeoncrawler/web`
 
 - Added a new top-level **Org Chart** admin page to `drupal_langgraph`.
 - Introduced an `OrgChartService` that reads:
