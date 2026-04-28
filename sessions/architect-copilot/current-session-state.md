@@ -1,7 +1,7 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during HQ orchestrator consume_replies flow analysis
+> Last updated: 2026-04-28 during HQ orchestrator consume_replies subgraph implementation
 
 ---
 
@@ -45,6 +45,17 @@ first row stays readable without rewriting real reporting lines.
   LangGraph entrypoint into `scripts/consume-forseti-replies.sh` and wrote a
   detailed review artifact showing that the real state machine currently lives
   in Bash + Drush PHP eval + inline Python rather than explicit LangGraph state.
+- Expanded that review into two planning artifacts:
+  - a LangGraph migration analysis for `consume_replies`
+  - a graph-ready process flow spec with proposed state object, nodes, edges,
+    adapter boundaries, and integration options
+- Landed the first implementation slice:
+  - added `orchestrator/runtime_graph/consume_replies.py`
+  - replaced the top-level shell-only `consume_replies` node with a Python
+    subgraph-backed summary in `engine.py`
+  - preserved top-level tick step parity while adding structured reply-ingestion
+    telemetry (`pending_count`, `created_count`, `rerouted_count`, etc.)
+  - added `orchestrator/tests/test_consume_replies_graph.py`
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -77,7 +88,12 @@ first row stays readable without rewriting real reporting lines.
    seat-detail routes once deeper per-seat views exist.
 3. Decide whether the seat registry table should mirror the same active/paused
    clustering or filtering options now used in the diagram.
-4. Trace the second tick node (`dispatch_commands`) with the same level of
+4. Decide whether `consume_replies` should land as a subgraph inside the current
+   tick or whether its internal nodes should be promoted into the top-level tick
+   graph.
+5. Decide whether to retire or shrink `scripts/consume-forseti-replies.sh` now
+   that the LangGraph path owns the orchestration logic.
+6. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
-5. Continue the next UX slice around richer node/routing/tool/prompt editing
+7. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.

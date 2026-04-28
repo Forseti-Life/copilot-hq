@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-heritage-arctic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: blocked
+- Status: deferred
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -13,9 +13,8 @@
 - Category: game-mechanic
 - Schema changes: no
 - Cross-site modules: none
-- Release: 20260412-dungeoncrawler-release-x
+- Defer reason: 2026-04-28 release recovery decision: remove nonessential blocked elf heritage variants from release-x so Gate 2 can focus on the core character work already in flight. Arctic Elf still lacks concrete cold-resistance implementation and will be reconsidered after elf ancestry stabilization.
 - Audit note: 2026-04-27 implementation audit found only a heritage definition with descriptive benefit text. No concrete implementation was found for half-level cold resistance or the environmental cold severity downgrade described in the feature brief.
-- Blocker note: 2026-04-27 CEO RCA: Feature is blocked on dc-cr-elf-ancestry (in_progress, pending PM scope decision). heritage-system is shipped. Waiting for elf-ancestry completion before dispatch to dev-dungeoncrawler.
 - Created: 2026-04-06
 
 ## Goal

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Tuple
 
 from langgraph.graph import StateGraph  # type: ignore
+from orchestrator.runtime_graph.consume_replies import run_consume_replies
 
 
 TickResult = Tuple[Dict[str, Any], int, int]
@@ -207,8 +208,16 @@ def run_tick(
     }
 
     def consume_replies(s: Dict[str, Any]) -> Dict[str, Any]:
-        rc, _ = deps.run_cmd(["bash", "scripts/consume-forseti-replies.sh"], timeout=300)
-        s["log"].append({"step": "consume_replies", "rc": rc})
+        summary = run_consume_replies(
+            repo_root=pathlib.Path(
+                os.environ.get(
+                    "COPILOT_HQ_ROOT",
+                    str(pathlib.Path(__file__).resolve().parent.parent.parent),
+                )
+            ),
+            run_cmd=deps.run_cmd,
+        )
+        s["log"].append({"step": "consume_replies", **summary})
         return s
 
     def dispatch_commands(s: Dict[str, Any]) -> Dict[str, Any]:
