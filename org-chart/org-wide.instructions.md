@@ -3,7 +3,7 @@
 These rules apply to every agent, regardless of role or website scope.
 
 ## Authority
-This file is owned by the `ceo-copilot` seat.
+This file is owned by the `ceo-copilot-2` seat.
 
 ## Owned file scope (source of truth)
 - org-chart/org-wide.instructions.md
@@ -41,6 +41,19 @@ When starting a new site/product, the CEO must ensure these exist before delegat
 ## Communication and accountability
 - **No silent blocking**: if you cannot proceed, explicitly mark `Status: blocked` or `Status: needs-info` and state exactly what you need.
 - **Write up-chain**: requests for clarification/resources must be written explicitly (not implied).
+
+## Flow-first operating model (required)
+- The default front door for new feature requests, community suggestions, and product-change requests is the `feature_request_intake` flow.
+- The default delivery flow for approved work is `agentic_sdlc`.
+- Flow-managed work items are identified by metadata in `command.md` such as:
+  - `Flow id`
+  - `Flow run id`
+  - `Flow node`
+  - `Flow owner seat`
+  - `Flow outcome`
+- If an inbox item is flow-managed, the owning seat must execute the responsibilities of the current flow node and emit any required `Flow outcome:` lines exactly as the flow specifies.
+- Do **not** bypass a flow-managed handoff by creating parallel legacy routing, PM-only triage, or ad hoc side-channel work items for the same decision.
+- Release gates and release-cycle runbooks remain authoritative for shipping governance, but they do **not** replace the intake and delivery flows for normal product work.
 
 ## Chain of command (required)
 - **Escalations follow the reporting chain** in `org-chart/org-chart.yaml`.
@@ -261,6 +274,10 @@ Directive (2026-04-06): **Improvement rounds are supervisor-dispatched only (IC 
 
 ## Process flow authority
 - Each role’s file in `org-chart/roles/*.instructions.md` contains the authoritative process flow for how that role selects the next work item, how it escalates, and what it does when idle.
+- Org-level routing authority for cross-role business work is:
+  - `feature_request_intake` for intake, clarification, team matching, BA review, and PM scope decision
+  - `agentic_sdlc` for approved delivery work
+- If a role/process file, seat instruction, or legacy script behavior appears to conflict with those flows, treat the flow definition and current router behavior as authoritative and escalate the documentation/script drift for correction.
 
 Then sections:
 - `## Next actions`

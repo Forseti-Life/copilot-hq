@@ -186,7 +186,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
       [
         'Website' => 'dungeoncrawler',
         'Priority' => 'P3',
-        'Roadmap' => 'XP systems',
+        'Category' => 'rule-system',
       ],
       'Feature Brief: XP Award System'
     );
@@ -196,7 +196,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $groups = $resolver->getFeatureBacklogGroups('dungeoncrawler');
 
     $this->assertCount(1, $groups);
-    $this->assertSame('XP systems', $groups[0]['title']);
+    $this->assertSame('Rule System', $groups[0]['title']);
     $this->assertSame(['queued' => 1, 'in_progress' => 0], $groups[0]['counts']);
     $this->assertSame('dc-cr-xp-award-system', $groups[0]['features'][0]['feature_id']);
     $this->assertSame('queued', $groups[0]['features'][0]['display_status']);

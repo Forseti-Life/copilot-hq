@@ -188,7 +188,7 @@ class RoadmapPipelineStatusResolver {
         continue;
       }
 
-      $roadmap_group = $this->extractFieldValue($contents, 'Roadmap', '');
+      $roadmap_group = $this->resolveBacklogGroupTitle($contents);
       if ($roadmap_group === '') {
         continue;
       }
@@ -434,6 +434,23 @@ class RoadmapPipelineStatusResolver {
     }
 
     return $fallback;
+  }
+
+  /**
+   * Resolves the roadmap backlog group title from feature metadata.
+   */
+  private function resolveBacklogGroupTitle(string $markdown): string {
+    $roadmap_group = $this->extractFieldValue($markdown, 'Roadmap', '');
+    if ($roadmap_group !== '') {
+      return $roadmap_group;
+    }
+
+    $category = $this->extractFieldValue($markdown, 'Category', '');
+    if ($category !== '') {
+      return ucwords(str_replace(['-', '_'], ' ', $category));
+    }
+
+    return '';
   }
 
   /**

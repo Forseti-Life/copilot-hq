@@ -1,7 +1,7 @@
 # Organizational Decision & Ownership Matrix
 
 ## Authority
-- This document is owned by the `ceo-copilot` seat.
+- This document is owned by the `ceo-copilot-2` seat.
 
 Purpose: define who is expected to resolve which issue types independently, and when escalation is required.
 
@@ -43,6 +43,8 @@ Use this with:
 |---|---|---|---|---|---|---|
 | Code defect in owned module | Dev | PM | QA | PM | Yes | Requires out-of-scope file edits or policy exception |
 | Failing QA check with known fix in owned module | Dev | PM | QA | PM | Yes | Same failure repeats without progress across cycles |
+| New feature request / community suggestion intake and team routing | CEO | CEO | BA, PM | Selected product team | Yes | Product ownership unclear after one clarification cycle or request spans multiple product teams |
+| Flow-managed handoff item in owned stage with clear flow metadata | Current owning seat | Current owning seat's supervisor | Upstream/downstream seats as needed | Affected team | Yes | Flow metadata is missing/invalid, no valid outcome matches the flow, or owner binding cannot be resolved |
 | Acceptance criteria ambiguity / product intent conflict | PM | PM | Dev, QA | PM | Yes | Tradeoff impacts scope, deadline, or risk posture |
 | Cross-module dependency or ownership boundary conflict | Owning PM + Owning Dev | PM (if unresolved) | Requesting PM, QA | Affected teams | No (if unresolved in one handoff) | No agreement after one passthrough cycle |
 | Security/privacy finding (authz, data exposure, secrets) | Dev | Security Analyst + PM | QA | Human owner (as needed) | Limited | Severity high/critical, unclear mitigation, or compliance impact |
@@ -56,11 +58,11 @@ Use this with:
 
 | Role | Expected to resolve independently | Must escalate |
 |---|---|---|
-| CEO | Queue orchestration, conflict triage, sequencing, escalation routing | Human-owner decision, risk acceptance outside policy, external access constraints |
-| PM | Scope clarifications, acceptance criteria updates, release readiness recommendation, triage prioritization | Cross-owner deadlocks, policy exceptions, repeated unclean-release pattern |
+| CEO | Queue orchestration, intake routing, product-team matching, conflict triage, escalation routing | Human-owner decision, risk acceptance outside policy, external access constraints |
+| PM | Scope clarifications, backlog disposition, acceptance criteria updates, release readiness recommendation, triage prioritization | Cross-owner deadlocks, policy exceptions, repeated unclean-release pattern |
 | Dev | Implementation in owned scope, tests, rollback notes, reproducible fix proposals | Out-of-scope ownership, missing env/access, unresolved product intent questions |
 | QA | Verification, PASS/BLOCK evidence, reproducible defect reports, regression signal | Scope/intent decisions, risk acceptance, repeated failed-fix loops per policy |
-| BA | Requirement decomposition, traceability, clarification packs | Conflicting business goals needing prioritization decision |
+| BA | Requirement decomposition, traceability, clarification packs, intake-stage requirements review | Conflicting business goals needing prioritization decision |
 | Security Analyst | Security triage, risk classification, mitigation recommendations | Risk acceptance or business tradeoff requiring PM/CEO/human owner |
 | Capability agents (`agent-explore`, `agent-code-review`, `agent-task-runner`) | Discovery, review, execution support artifacts | Any ownership decision or policy exception |
 
