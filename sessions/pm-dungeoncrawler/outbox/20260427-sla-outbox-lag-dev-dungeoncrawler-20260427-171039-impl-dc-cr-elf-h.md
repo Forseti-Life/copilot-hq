@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the stale inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` for `dev-dungeoncrawler` — reading the inbox item contents and current dev-dungeoncrawler outbox state to determine what is needed to unblock or resolve it.
+- Summary: Investigating the stale dev-dungeoncrawler inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` to determine its current state and what unblocking action is needed before writing the outbox update.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/` to understand the task scope and acceptance criteria
-- Check `sessions/dev-dungeoncrawler/outbox/` for any partial work or prior status
-- Determine if the item needs a delegation nudge, scope clarification, or direct PM action to unblock
-- Run `bash scripts/sla-report.sh` after resolution to confirm breach clears
+- Read the inbox item README for `20260427-171039-impl-dc-cr-elf-heritage-cavern` to understand scope and acceptance criteria
+- Check for any existing outbox artifact from dev-dungeoncrawler for this item
+- Determine root cause of lag (blocked, missing context, never started) and either unblock or escalate
+- Run `bash scripts/sla-report.sh` to confirm breach is still active
 
 ## Blockers
-- None yet — actively investigating
+- None yet — investigation in progress
 
 ## Needs from CEO
-- None at this stage
+- N/A at this stage
 
 ## ROI estimate
 - ROI: 80
-- Rationale: SLA breach on a dev implementation item risks stalling the dungeoncrawler release cycle; fast triage and unblocking keeps the pipeline moving and prevents compounding lag.
+- Rationale: SLA breach on an active dev item blocks release progress for dungeoncrawler; resolving quickly keeps the release cycle on track and prevents compounding delays.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260427-sla-outbox-lag-dev-dungeoncrawler-20260427-171039-impl-dc-cr-elf-h
-- Generated: 2026-04-28T01:21:07+00:00
+- Generated: 2026-04-28T01:35:25+00:00
