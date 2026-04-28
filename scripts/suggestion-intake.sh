@@ -219,11 +219,11 @@ if [ -z "${SUGGESTIONS_JSON//[$' \t\r\n\[\]']/}" ]; then
   fi
 fi
 
-COUNT="$(printf '%s' "$SUGGESTIONS_JSON" | python3 - <<'PY'
+COUNT="$(python3 - "$SUGGESTIONS_JSON" <<'PY'
 import json
 import sys
 
-raw = sys.stdin.read()
+raw = sys.argv[1]
 try:
     data = json.loads(raw)
 except json.JSONDecodeError as exc:
