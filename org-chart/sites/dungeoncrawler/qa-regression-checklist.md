@@ -413,3 +413,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260427-syshealth-php-fatal-dungeoncrawler — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260427-syshealth-php-fatal-dungeoncrawler.md)
 - [ ] 20260427-171039-impl-dc-cr-elf-ancestry — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260427-171039-impl-dc-cr-elf-ancestry.md)
 - [ ] 20260427-171039-impl-dc-cr-elf-heritage-cavern — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260427-171039-impl-dc-cr-elf-heritage-cavern.md)
+- [ ] 20260427-171039-impl-dc-home-suggestion-notice — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260427-171039-impl-dc-home-suggestion-notice.md)

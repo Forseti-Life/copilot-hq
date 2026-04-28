@@ -19,3 +19,4 @@ CEO action required: investigate, resolve or archive.
 
 ## Verification
 - Re-run: `bash scripts/ceo-system-health.sh` — relevant check should show ✅ PASS
+- Status: pending
