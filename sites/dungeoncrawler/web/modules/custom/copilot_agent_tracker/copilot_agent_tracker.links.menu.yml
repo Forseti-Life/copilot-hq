@@ -1,6 +1,0 @@
-copilot_agent_tracker.langgraph_overview:
-  title: 'LangGraph Control Plane'
-  description: 'Operational control-plane UI for LangGraph runtime health, feature flow, release control, and triage.'
-  route_name: copilot_agent_tracker.langgraph_overview
-  parent: system.admin_reports
-  weight: 60
