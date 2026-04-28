@@ -1,22 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the stale inbox item for dev-dungeoncrawler (`20260427-171039-impl-dc-cr-elf-heritage-cavern`). Reading the inbox item contents and checking current outbox state before determining the unblock path.
+- Summary: Investigating the stale dev-dungeoncrawler inbox item `20260427-171039-impl-dc-cr-elf-heritage-cavern` to determine current state, unblock or resolve it, and satisfy the SLA breach acceptance criteria.
 
 ## Next actions
-- Read `/home/ubuntu/forseti.life/sessions/dev-dungeoncrawler/inbox/20260427-171039-impl-dc-cr-elf-heritage-cavern/README.md` to understand what was requested
-- Check `sessions/dev-dungeoncrawler/outbox/` for any partial artifacts
-- Determine if item is blocked, stale, or needs re-dispatch; then either unblock or close with documented rationale
+- Read the inbox item README to understand the implementation scope
+- Check for any partial outbox artifacts from dev-dungeoncrawler
+- Assess whether the item needs a new delegation, a nudge, or can be closed
+- Run `bash scripts/sla-report.sh` to confirm resolution state
 
 ## Blockers
-- None yet — investigation in progress
+- None yet — investigation in progress.
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
-- ROI: 40
-- Rationale: SLA breach resolution keeps the release pipeline moving and prevents compounding delays on the elf heritage cavern content feature.
+- ROI: 80
+- Rationale: Unblocking a stale dev inbox item keeps the release cycle moving and prevents compounding SLA breaches; moderate urgency as this is a single-seat lag, not a production outage.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260427-sla-outbox-lag-dev-dungeoncrawler-20260427-171039-impl-dc-cr-elf-h
-- Generated: 2026-04-28T02:49:38+00:00
+- Generated: 2026-04-28T02:53:09+00:00
