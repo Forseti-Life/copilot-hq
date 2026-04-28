@@ -34,6 +34,11 @@ class RoadmapPipelineStatusResolver {
   private const BACKLOG_VISIBLE_STATUSES = ['ready', 'in_progress'];
 
   /**
+   * Pipeline statuses that should appear as queued once routed into PM intake.
+   */
+  private const INTAKE_QUEUE_STATUSES = ['pre-triage', 'planned', 'pending', 'deferred', 'backlog'];
+
+  /**
    * Absolute path to the HQ features directory.
    */
   private string $featuresPath;
@@ -49,6 +54,11 @@ class RoadmapPipelineStatusResolver {
   private string $pushStatePath;
 
   /**
+   * Absolute path to the PM inbox used for intake routing.
+   */
+  private string $pmInboxPath;
+
+  /**
    * Request-local cache of parsed feature statuses.
    *
    * @var array<string, string|null>
@@ -56,9 +66,16 @@ class RoadmapPipelineStatusResolver {
   private array $statusCache = [];
 
   /**
+   * Request-local cache of active PM inbox feature IDs.
+   *
+   * @var array<string, bool>|null
+   */
+  private ?array $pmInboxFeatureCache = NULL;
+
+  /**
    * Constructs the resolver.
    */
-  public function __construct(?string $features_path = NULL, ?string $release_state_path = NULL, ?string $push_state_path = NULL) {
+  public function __construct(?string $features_path = NULL, ?string $release_state_path = NULL, ?string $push_state_path = NULL, ?string $pm_inbox_path = NULL) {
     $this->featuresPath = rtrim(
       $features_path ?: Settings::get('dungeoncrawler_pipeline_features_path', '/home/ubuntu/forseti.life/features'),
       DIRECTORY_SEPARATOR
@@ -69,6 +86,10 @@ class RoadmapPipelineStatusResolver {
     );
     $this->pushStatePath = rtrim(
       $push_state_path ?: Settings::get('dungeoncrawler_pipeline_push_state_path', dirname($this->releaseStatePath) . '/auto-push-dispatched'),
+      DIRECTORY_SEPARATOR
+    );
+    $this->pmInboxPath = rtrim(
+      $pm_inbox_path ?: Settings::get('dungeoncrawler_pipeline_pm_inbox_path', '/home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox'),
       DIRECTORY_SEPARATOR
     );
   }
@@ -162,7 +183,8 @@ class RoadmapPipelineStatusResolver {
       }
 
       $status = mb_strtolower($this->extractFieldValue($contents, 'Status', ''));
-      if (!isset($visible_lookup[$status])) {
+      $queued_via_intake = $this->isQueuedViaIntake($feature_id, $status);
+      if (!isset($visible_lookup[$status]) && !$queued_via_intake) {
         continue;
       }
 
@@ -171,7 +193,7 @@ class RoadmapPipelineStatusResolver {
         continue;
       }
 
-      $display_status = $status === 'ready' ? 'queued' : 'in_progress';
+      $display_status = $status === 'in_progress' ? 'in_progress' : 'queued';
       $feature = [
         'feature_id' => $feature_id,
         'title' => $this->extractFeatureTitle($contents, $feature_id),
@@ -517,6 +539,69 @@ class RoadmapPipelineStatusResolver {
       if (str_contains($name, $release_id)) {
         return $path;
       }
+    }
+
+    return '';
+  }
+
+  /**
+   * Returns TRUE when a feature has been routed into the PM intake queue.
+   */
+  private function isQueuedViaIntake(string $feature_id, string $status): bool {
+    return in_array($status, self::INTAKE_QUEUE_STATUSES, TRUE)
+      && isset($this->activePmInboxFeatureIds()[$feature_id]);
+  }
+
+  /**
+   * Collects feature IDs with active PM inbox items.
+   *
+   * @return array<string, bool>
+   *   Feature IDs keyed to TRUE.
+   */
+  private function activePmInboxFeatureIds(): array {
+    if ($this->pmInboxFeatureCache !== NULL) {
+      return $this->pmInboxFeatureCache;
+    }
+
+    $this->pmInboxFeatureCache = [];
+    if (!is_dir($this->pmInboxPath)) {
+      return $this->pmInboxFeatureCache;
+    }
+
+    foreach (glob($this->pmInboxPath . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR) ?: [] as $path) {
+      $name = basename($path);
+      if ($name === '' || $name[0] === '.' || $name[0] === '_') {
+        continue;
+      }
+
+      $feature_id = $this->extractInboxFeatureId($path);
+      if ($feature_id !== '') {
+        $this->pmInboxFeatureCache[$feature_id] = TRUE;
+      }
+    }
+
+    return $this->pmInboxFeatureCache;
+  }
+
+  /**
+   * Extracts the primary feature ID from an inbox item.
+   */
+  private function extractInboxFeatureId(string $path): string {
+    $command_path = $path . DIRECTORY_SEPARATOR . 'command.md';
+    if (is_readable($command_path)) {
+      $contents = file_get_contents($command_path);
+      if (is_string($contents) && $contents !== '') {
+        if (preg_match('/^- Feature:\s*`?(dc-[a-z0-9-]+)`?$/mi', $contents, $matches)) {
+          return (string) $matches[1];
+        }
+        if (preg_match('/^- Flow run id:\s*(dc-[a-z0-9-]+)/mi', $contents, $matches)) {
+          return (string) $matches[1];
+        }
+      }
+    }
+
+    if (preg_match('/(dc-[a-z0-9-]+)/', basename($path), $matches)) {
+      return (string) $matches[1];
     }
 
     return '';

@@ -29,6 +29,11 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
   private string $pushStatePath;
 
   /**
+   * Temporary PM inbox directory.
+   */
+  private string $pmInboxPath;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -36,9 +41,11 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $this->featuresPath = sys_get_temp_dir() . '/dc-roadmap-pipeline-' . uniqid('', TRUE);
     $this->releaseStatePath = sys_get_temp_dir() . '/dc-roadmap-release-state-' . uniqid('', TRUE);
     $this->pushStatePath = sys_get_temp_dir() . '/dc-roadmap-push-state-' . uniqid('', TRUE);
+    $this->pmInboxPath = sys_get_temp_dir() . '/dc-roadmap-pm-inbox-' . uniqid('', TRUE);
     mkdir($this->featuresPath, 0777, TRUE);
     mkdir($this->releaseStatePath, 0777, TRUE);
     mkdir($this->pushStatePath, 0777, TRUE);
+    mkdir($this->pmInboxPath, 0777, TRUE);
   }
 
   /**
@@ -48,6 +55,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $this->deleteDirectory($this->featuresPath);
     $this->deleteDirectory($this->releaseStatePath);
     $this->deleteDirectory($this->pushStatePath);
+    $this->deleteDirectory($this->pmInboxPath);
     parent::tearDown();
   }
 
@@ -153,7 +161,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
       'Feature Brief: Deferred Feature'
     );
 
-    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath);
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
     $groups = $resolver->getFeatureBacklogGroups('dungeoncrawler');
 
     $this->assertCount(2, $groups);
@@ -166,6 +174,32 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $this->assertSame('GMG implementation', $groups[1]['title']);
     $this->assertSame(['queued' => 0, 'in_progress' => 1], $groups[1]['counts']);
     $this->assertSame('in_progress', $groups[1]['features'][0]['display_status']);
+  }
+
+  /**
+   * @covers ::getFeatureBacklogGroups
+   */
+  public function testDeferredFeatureWithActivePmInboxShowsAsQueuedBacklog(): void {
+    $this->writeFeature(
+      'dc-cr-xp-award-system',
+      'deferred',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P3',
+        'Roadmap' => 'XP systems',
+      ],
+      'Feature Brief: XP Award System'
+    );
+    $this->writeInboxItem('dc-cr-xp-award-system');
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
+    $groups = $resolver->getFeatureBacklogGroups('dungeoncrawler');
+
+    $this->assertCount(1, $groups);
+    $this->assertSame('XP systems', $groups[0]['title']);
+    $this->assertSame(['queued' => 1, 'in_progress' => 0], $groups[0]['counts']);
+    $this->assertSame('dc-cr-xp-award-system', $groups[0]['features'][0]['feature_id']);
+    $this->assertSame('queued', $groups[0]['features'][0]['display_status']);
   }
 
   /**
@@ -287,6 +321,15 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     }
 
     file_put_contents($dir . '/feature.md', implode("\n", $lines) . "\n");
+  }
+
+  /**
+   * Writes a minimal PM inbox item for a feature.
+   */
+  private function writeInboxItem(string $feature_id): void {
+    $dir = $this->pmInboxPath . '/20260428-backlog-intake-' . $feature_id;
+    mkdir($dir, 0777, TRUE);
+    file_put_contents($dir . '/command.md', "- Feature: `{$feature_id}`\n");
   }
 
   /**
