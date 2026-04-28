@@ -1,23 +1,25 @@
 - Status: in_progress
-- Summary: Reviewing the inbox item and running the initial audit script to establish a baseline for the dungeoncrawler site. Next step: execute `bash scripts/site-audit-run.sh dungeoncrawler` (with ALLOW_PROD_QA=1 per site instructions) and capture the output.
+- Summary: Investigating the inbox item requesting the first-ever site audit for qa-dungeoncrawler. Reading seat instructions and then executing the audit script to collect evidence before filing results.
 
 ## Next actions
-- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh dungeoncrawler` and record output
-- Verify artifact appears at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to confirm the health check passes
-- Update seat instructions file if any new env/path constraints are discovered
+- Read current seat instructions file
+- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1`
+- Record output and verify artifact landing path
+- Update seat instructions if stale
+- Re-run `bash scripts/ceo-system-health.sh` to confirm ✅ PASS
+- File final outbox update
 
 ## Blockers
-- None at this time — proceeding to execute the audit script.
+- None yet — proceeding with execution.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 6
-- Rationale: Establishing a baseline audit is low-effort foundational hygiene that unblocks future QA gate work and ensures the system health check is green. No release is currently blocked by this, but the absence of an audit baseline is a gap in QA coverage.
+- ROI: 30
+- Rationale: Establishing a baseline audit artifact unblocks future QA release-cycle verification for dungeoncrawler and satisfies the system health check, preventing repeated dispatch noise.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T02:59:48+00:00
+- Generated: 2026-04-28T03:09:45+00:00
