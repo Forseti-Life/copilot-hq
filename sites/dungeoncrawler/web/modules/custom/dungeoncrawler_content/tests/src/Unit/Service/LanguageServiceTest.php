@@ -3,7 +3,7 @@
 namespace Drupal\Tests\dungeoncrawler_content\Unit\Service;
 
 use Drupal\dungeoncrawler_content\Service\LanguageService;
-use Drupal\Tests\UnitTestCase;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Tests the language system service.
@@ -11,7 +11,7 @@ use Drupal\Tests\UnitTestCase;
  * @group dungeoncrawler_content
  * @group languages
  */
-class LanguageServiceTest extends UnitTestCase {
+class LanguageServiceTest extends TestCase {
 
   /**
    * The service under test.

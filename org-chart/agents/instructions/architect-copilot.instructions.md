@@ -92,9 +92,13 @@ Any `INTERRUPTED:` output means a task was started but never completed. Surface 
 
 ### Drush (forseti.life)
 ```bash
-cd /home/ubuntu/forseti.life/sites/forseti
-vendor/bin/drush <command>
+cd /var/www/html/forseti
+vendor/bin/drush --uri=https://forseti.life <command>
 ```
+
+Notes:
+- Do **not** rely on `/home/ubuntu/forseti.life/sites/forseti` for Drush. That repo-side path is a hybrid checkout used for source editing, but its Composer/docroot wiring is not the authoritative live Drupal root.
+- For Forseti, the stable Drush entrypoint is the live Apache project root at `/var/www/html/forseti`, where Composer metadata currently resolves `drupal/core` to `web/core` and Drush bootstraps successfully.
 
 ### GitHub push
 ```bash

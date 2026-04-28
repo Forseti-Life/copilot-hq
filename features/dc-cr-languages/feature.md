@@ -3,9 +3,10 @@
 - Work item id: dc-cr-languages
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: deferred
-- Defer reason: 2026-04-28 release recovery decision: release-x is being closed as an empty release. This feature still carries unresolved implementation/verification gaps in the language-selection flow and will be re-scoped in a later cycle once the full AC package is ready.
-- Audit note: 2026-04-27 implementation audit found only partial coverage. Base ancestry language lists and read-side consumers exist, but no character-creation language selection flow, no applied Intelligence-based bonus language selection, and feat effects still note pending additional language selections.
+- Status: done
+- Release: 20260412-dungeoncrawler-release-y
+- Implementation note: 2026-04-28 source implementation completed in the authoritative `sites/dungeoncrawler` tree. The feature now exposes a public language catalog endpoint, normalizes ancestry/default language data, validates and preserves `languages[]` in the character API, and adds character-creation bonus language selection tied to final Intelligence modifier.
+- Audit note: 2026-04-27 implementation audit found partial coverage. 2026-04-28 follow-up implementation closed the missing character-creation selection flow and language validation gaps in source; release verification still belongs to QA when this feature is next activated.
 - Priority: P2 (blocks dc-cr-elf-ancestry and dc-cr-elf-heritage-cavern; accepted for 20260407-dungeoncrawler-release-b)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
