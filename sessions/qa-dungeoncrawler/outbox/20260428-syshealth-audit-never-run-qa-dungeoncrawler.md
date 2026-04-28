@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Reviewing the inbox item and inspecting the audit script and environment before running it, to confirm the correct invocation and avoid unintended production impact.
+- Summary: Reading the site-audit-run.sh script and checking current environment state before executing the audit against the dungeoncrawler production site.
 
 ## Next actions
-- Read `scripts/site-audit-run.sh` to confirm flags and env var requirements
-- Run `bash scripts/site-audit-run.sh dungeoncrawler` with `ALLOW_PROD_QA=1` as required by site instructions
-- Capture output, confirm artifact written to `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Re-run `bash scripts/ceo-system-health.sh` to verify the health check now shows ✅ PASS
-- Update seat instructions if any new constraints are discovered
+- Read `scripts/site-audit-run.sh` to understand required env vars and flags
+- Set `ALLOW_PROD_QA=1` and run `bash scripts/site-audit-run.sh dungeoncrawler`
+- Capture output/log evidence and verify `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` is populated
+- Re-run `bash scripts/ceo-system-health.sh` to confirm the check flips to PASS
+- File final outbox with Status: done and evidence
 
 ## Blockers
-- None yet — proceeding to read the script before executing.
+- None yet — proceeding with script inspection and execution
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: A never-run audit leaves the product with zero baseline QA coverage visibility; resolving it unblocks release-gate automation and health reporting for dungeoncrawler.
+- Rationale: Unrun QA audit means zero visibility into dungeoncrawler production health; closing this gap provides a baseline for all future QA work on the site and satisfies a system health gate.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260428-syshealth-audit-never-run-qa-dungeoncrawler
-- Generated: 2026-04-28T05:00:43+00:00
+- Generated: 2026-04-28T05:05:22+00:00
