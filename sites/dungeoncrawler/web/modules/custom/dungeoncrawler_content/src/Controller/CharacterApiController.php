@@ -5,6 +5,7 @@ namespace Drupal\dungeoncrawler_content\Controller;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\dungeoncrawler_content\Service\CharacterManager;
+use Drupal\dungeoncrawler_content\Service\LanguageService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,16 +17,19 @@ class CharacterApiController extends ControllerBase {
 
   protected CharacterManager $characterManager;
   protected CsrfTokenGenerator $csrfToken;
+  protected LanguageService $languageService;
 
-  public function __construct(CharacterManager $character_manager, CsrfTokenGenerator $csrf_token) {
+  public function __construct(CharacterManager $character_manager, CsrfTokenGenerator $csrf_token, LanguageService $language_service) {
     $this->characterManager = $character_manager;
     $this->csrfToken = $csrf_token;
+    $this->languageService = $language_service;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('dungeoncrawler_content.character_manager'),
       $container->get('csrf_token'),
+      $container->get('dungeoncrawler_content.language_service'),
     );
   }
 
@@ -140,7 +144,17 @@ class CharacterApiController extends ControllerBase {
         'inventory' => $data['inventory'] ?? [],
         'gold' => $data['gold'] ?? 15,
         'wizard_complete' => $data['wizard_complete'] ?? FALSE,
+        'languages' => [],
       ];
+
+      $language_result = $this->languageService->processLanguages($character_data, $data);
+      if (!$language_result['success']) {
+        return new JsonResponse([
+          'success' => FALSE,
+          'error' => $language_result['error'],
+        ], 400);
+      }
+      $character_data['languages'] = $language_result['languages'];
 
       // Update existing character or create new one
       if ($character_id) {
@@ -289,6 +303,7 @@ class CharacterApiController extends ControllerBase {
         'ancestry' => $character->ancestry,
         'class' => $character->class,
         'status' => $character->status,
+        'languages' => $character_data['languages'] ?? [],
         'data' => $character_data,
       ],
     ]);

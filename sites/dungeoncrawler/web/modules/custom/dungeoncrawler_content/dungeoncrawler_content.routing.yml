@@ -522,6 +522,26 @@ dungeoncrawler_content.api.character_load:
     _format: json
 
 # ------------------------------------------------------------------------------
+# Languages API Endpoints
+# ------------------------------------------------------------------------------
+
+dungeoncrawler_content.api.languages_catalog:
+  path: '/languages'
+  defaults:
+    _controller: '\Drupal\dungeoncrawler_content\Controller\LanguagesController::getLanguageCatalog'
+  methods: [GET]
+  options:
+    _format: json
+
+dungeoncrawler_content.api.languages_catalog_legacy:
+  path: '/api/languages'
+  defaults:
+    _controller: '\Drupal\dungeoncrawler_content\Controller\LanguagesController::getLanguageCatalog'
+  methods: [GET]
+  options:
+    _format: json
+
+# ------------------------------------------------------------------------------
 # Ability Score API Endpoints (Pathbuilder-style real-time calculation)
 # ------------------------------------------------------------------------------
 

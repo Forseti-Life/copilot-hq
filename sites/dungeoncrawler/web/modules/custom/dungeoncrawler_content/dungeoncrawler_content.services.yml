@@ -698,3 +698,6 @@ services:
     class: Drupal\dungeoncrawler_content\Controller\SomController
     arguments:
       - '@dungeoncrawler_content.character_manager'
+
+  dungeoncrawler_content.language_service:
+    class: Drupal\dungeoncrawler_content\Service\LanguageService

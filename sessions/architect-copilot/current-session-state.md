@@ -1,15 +1,15 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during Drupal LangGraph org-chart drill-in refinement
+> Last updated: 2026-04-28 during Drupal LangGraph deprecated-CEO cleanup
 
 ---
 
 ## Currently Working On
 
 Refining the `drupal_langgraph` Org Chart UX after landing direct drill-in from
-diagram nodes into seat detail panels and separating branch expand/collapse into
-an in-node control for manager seats.
+diagram nodes into seat detail panels and then clustering the CEO layer so the
+first row stays readable without rewriting real reporting lines.
 
 ### Current state
 
@@ -25,6 +25,8 @@ an in-node control for manager seats.
   - subtree-aware parent/child layout instead of row-based placement
   - node click drill-in to matching seat detail panels
   - an in-node expand/collapse chip for subordinate branches
+  - synthetic CEO-level cluster nodes for product leads, shared capabilities,
+    executive extensions, and paused seats
   - seat registry and reporting relationships
   - ownership context from module/repository mappings
   - instruction-layer coverage per seat
@@ -33,6 +35,12 @@ an in-node control for manager seats.
   diagram so operators can see which section the chart selected.
 - Org Chart guidance and module README were updated to describe the new drill-in
   behavior.
+- The CEO layer now resolves to four grouped nodes in Drupal runtime settings
+  instead of a flat list of direct reports; capability and paused clusters are
+  collapsed by default.
+- Deprecated CEO stub seats (`ceo-copilot`, `ceo-copilot-3`) are now filtered
+  out of the org-chart service entirely, so they no longer appear in the
+  diagram, registry, or org summary counts.
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -63,5 +71,7 @@ an in-node control for manager seats.
    instead of a freeform seat-ID field.
 2. Decide whether seat details should stay inline-only or graduate to dedicated
    seat-detail routes once deeper per-seat views exist.
-3. Continue the next UX slice around richer node/routing/tool/prompt editing
+3. Decide whether the seat registry table should mirror the same active/paused
+   clustering or filtering options now used in the diagram.
+4. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.
