@@ -712,6 +712,7 @@ dead_letter_count=0
 # Walk all agent inboxes
 while IFS= read -r inbox_item; do
   [[ "$(basename "$inbox_item")" == _archived* ]] && continue
+  [[ "$(basename "$inbox_item")" == ".gitkeep" ]] && continue
   [[ -d "$inbox_item/_archived" ]] && continue
 
   # Skip items already marked done in command.md (Option A stamp).
