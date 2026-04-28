@@ -420,3 +420,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260428-120533-qa-findings-dungeoncrawler-15-retry-1777382409 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260428-120533-qa-findings-dungeoncrawler-15-retry-1777382409.md)
 - [ ] 20260428-131144-impl-dc-apg-spells — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260428-131144-impl-dc-apg-spells.md)
 - [ ] 20260428-131144-impl-dc-cr-economy — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260428-131144-impl-dc-cr-economy.md)
+- [ ] 20260428-120533-qa-findings-dungeoncrawler-15-retry-1777393042 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260428-120533-qa-findings-dungeoncrawler-15-retry-1777393042.md)
