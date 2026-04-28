@@ -1,15 +1,15 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-27 during Drupal LangGraph org-chart diagram refactor
+> Last updated: 2026-04-28 during Drupal LangGraph org-chart drill-in refinement
 
 ---
 
 ## Currently Working On
 
-Deepening the `drupal_langgraph` control plane so seat relationships,
-instruction layers, and flow ownership are visible as an actual hierarchy, not
-just tables.
+Refining the `drupal_langgraph` Org Chart UX after landing direct drill-in from
+diagram nodes into seat detail panels and separating branch expand/collapse into
+an in-node control for manager seats.
 
 ### Current state
 
@@ -23,11 +23,16 @@ just tables.
   - a refactored Chart.js hierarchy diagram with Board as the synthetic root
   - CEO on the second level by default
   - subtree-aware parent/child layout instead of row-based placement
-  - click-to-expand subordinate branches
+  - node click drill-in to matching seat detail panels
+  - an in-node expand/collapse chip for subordinate branches
   - seat registry and reporting relationships
   - ownership context from module/repository mappings
   - instruction-layer coverage per seat
   - flow-to-seat ownership mapping
+- Seat detail panels now gain a temporary highlight when opened from the
+  diagram so operators can see which section the chart selected.
+- Org Chart guidance and module README were updated to describe the new drill-in
+  behavior.
 - Built-in flow ownership was normalized to the real seat ID
   `ceo-copilot-2` instead of the generic `drupal_langgraph` label.
 - Flow registry/detail/current-flow surfaces now render owners as seat
@@ -54,9 +59,9 @@ just tables.
 
 ### Next actions
 
-1. Decide whether the next slice should add direct links from diagram nodes into
-   seat detail sections or dedicated seat-detail routes.
-2. Decide whether flow owner entry should become a constrained seat selector
+1. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
+2. Decide whether seat details should stay inline-only or graduate to dedicated
+   seat-detail routes once deeper per-seat views exist.
 3. Continue the next UX slice around richer node/routing/tool/prompt editing
    surfaces once the org/ownership model is settled.
