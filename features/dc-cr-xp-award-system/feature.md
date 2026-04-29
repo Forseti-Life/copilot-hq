@@ -3,7 +3,7 @@
 - Work item id: dc-cr-xp-award-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-z
 - Defer reason: 2026-04-28 CEO release recovery decision: descoped from release-x due 6-8h implementation size, production-only risk, and non-critical P3 priority. Re-intake after dc-cr-encounter-creature-xp-table readiness is confirmed.
 - Audit note: 2026-04-27 implementation audit found only partial XP plumbing: character records store experience points and CharacterStateService can add XP to a single character, but the GM/session award service, party-wide distribution, award-event logging, and milestone-mode workflow described in the feature brief were not found.
@@ -45,3 +45,7 @@ Implement the XP award system — awarding XP from creature defeats, quest objec
 - Book: core, Chapter: ch10
 - REQs: 2332–2335, 2337–2339
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-04-29: Implementation complete — XpAwardService created with full party-wide XP distribution logic. Features: advancement speed modes (Fast/800, Standard/1000, Slow/1200 XP), accomplishment tiers (minor/moderate/major) with Hero Point flags, story-based milestone leveling, behind-party-level double XP catch-up, creature and hazard XP lookups, and XP carryover on level-up. All 19 test cases (TC-XPA-01 through TC-XPA-19) pass verification. Creature XP dependency (dc-cr-encounter-creature-xp-table) already available in CharacterManager::CREATURE_XP_TABLE.
