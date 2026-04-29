@@ -1,24 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to read the shipping gates runbook, check current release state, verify all gates are satisfied (code review findings routed, QA APPROVED, dev commit hash + rollback present), and then run `release-signoff.sh` if clear — or report blockers if not.
+- Summary: Investigating the release signoff state for `20260412-dungeoncrawler-release-y` before executing or blocking. Reading release state, gates, and any open MEDIUM+ code-review findings to determine whether signoff is safe to run.
 
 ## Next actions
-- Read `runbooks/shipping-gates.md` and check release state files under `tmp/release-cycle-active/` and `features/` for dungeoncrawler
-- Check QA verdict artifact in `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` and any Gate 2 decision artifact for this release
-- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings that require routing or risk-acceptance before signoff
-- If all gates clear: run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and then `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
-- Record results in outbox
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check current gate status
+- Check for any unrouted MEDIUM+ code-review findings per Gate 1b policy
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
+- Archive this inbox item under `sessions/pm-dungeoncrawler/inbox/_archived/` after completion
 
 ## Blockers
-- None yet — investigation in progress.
+- None yet — investigation in progress
 
 ## Needs from CEO
-- N/A at this stage.
+- N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly restores delivery velocity for the dungeoncrawler product line; the signoff gate is the last step before code reaches production.
+- Rationale: Unblocking a stalled release directly enables shipping value to production. Signoff gate is a hard blocker on the release pipeline; resolving it is high leverage with low execution risk.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T00:20:24+00:00
+- Generated: 2026-04-29T00:30:23+00:00
