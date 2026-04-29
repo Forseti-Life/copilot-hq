@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether all prerequisites (code review findings routed, QA APPROVE artifact present) are satisfied before running the signoff script.
+- Summary: Investigating the active release state for `20260412-dungeoncrawler-release-y` before executing the signoff script — need to verify gates are satisfied (QA APPROVE present, no unrouted MEDIUM+ code-review findings) per shipping-gates runbook and PM mandatory checklist.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
-- Check QA APPROVE artifact exists in `sessions/qa-dungeoncrawler/artifacts/`
-- Check for any unrouted MEDIUM+ code-review findings
-- Run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if prerequisites are clear
+- Read `runbooks/shipping-gates.md` to confirm gate requirements
+- Check for QA APPROVE artifact for this release
+- Check for code-review findings (Gate 1b)
+- If gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and verify with `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
+- Update outbox with final status
 
 ## Blockers
-- None confirmed yet — investigating first
+- None yet — investigation in progress
 
 ## Needs from CEO
-- N/A at this stage
+- None at this time
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly ships value to players and unblocks the downstream pipeline; delay compounds with each orchestrator cycle.
+- Rationale: Unblocking a release signoff directly enables shipping, which is high-leverage. Delayed signoff holds up the entire release pipeline for dungeoncrawler.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T15:07:57+00:00
+- Generated: 2026-04-29T15:18:02+00:00
