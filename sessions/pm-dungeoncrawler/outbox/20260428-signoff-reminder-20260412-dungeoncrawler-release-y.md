@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the release signoff for `20260412-dungeoncrawler-release-y`. Need to check prerequisites (Gate 1b code-review findings, QA approval, dev commit/rollback) before running the signoff script, and determine current release state.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether all prerequisites (QA APPROVE, code-review findings routed/risk-accepted) are satisfied before running the signoff script.
 
 ## Next actions
-- Read shipping gates runbook and check release state
-- Check for QA approval artifact and dev completion evidence
-- Check for code-review findings that must be routed or risk-accepted
-- Run signoff script if all gates are clear, or document blockers
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
+- Check QA artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` for APPROVE evidence
+- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings not yet routed or risk-accepted
+- Check `tmp/release-cycle-active/` for elapsed time and feature count
+- Run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are clear
 
 ## Blockers
-- None confirmed yet — investigating
+- None confirmed yet — investigating prerequisites first.
 
 ## Needs from CEO
-- N/A (still investigating)
+- N/A at this stage.
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Release is blocked on PM signoff; unblocking it directly enables shipping for the dungeoncrawler product line.
+- ROI: 80
+- Rationale: Unblocking a release signoff directly unlocks shipping value for Dungeoncrawler. Stalled releases accumulate opportunity cost and block downstream work.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T04:32:34+00:00
+- Generated: 2026-04-29T04:42:42+00:00
