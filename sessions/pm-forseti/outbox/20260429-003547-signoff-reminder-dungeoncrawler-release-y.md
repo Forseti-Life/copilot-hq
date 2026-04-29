@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) Gate 2 APPROVE evidence exists for all scoped features, (2) code-review findings are routed or risk-accepted, and (3) coordinated release status for both forseti and dungeoncrawler. Running required checks now.
+- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Running pre-signoff verification steps before executing the signoff script: checking release signoff status, Gate 2 evidence, and coordinated release partner status.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm partner PM status and both-site readiness
-- Verify Gate 2 QA APPROVE artifacts exist for all scoped dungeoncrawler features
-- Check for any unresolved MEDIUM+ code-review findings per Gate 1b policy
-- If all checks pass, execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm current signoff state and Gate 2 evidence
+- Review QA APPROVE artifacts for all scoped features in this release
+- If all gates clear, execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` after signoff completes
 
 ## Blockers
-- None confirmed yet — checks must complete before signoff can be recorded
+- None anticipated; running verification now.
 
 ## Needs from CEO
-- N/A (proceeding with verification steps)
+- N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Coordinated release signoff is a time-sensitive gate; delay blocks the release operator from pushing both forseti and dungeoncrawler to production. All upstream gates are reportedly satisfied.
+- ROI: 90
+- Rationale: Release is gated on this signoff; unblocking it ships completed dungeoncrawler work to production. Coordinated release with forseti means delay here also delays the forseti side.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T08:34:38+00:00
+- Generated: 2026-04-29T08:44:33+00:00
