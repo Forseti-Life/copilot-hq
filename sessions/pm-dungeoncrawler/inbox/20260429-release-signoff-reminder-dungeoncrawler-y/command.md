@@ -21,3 +21,4 @@ If not ready, document blockers in release gate status and communicate ETA.
 ## Verification
 Run: `cat runbooks/shipping-gates.md | grep -A 20 "Gate 3"`
 Run: `cat tmp/release-gates/20260412-dungeoncrawler-release-y/status.md`
+- Status: pending
