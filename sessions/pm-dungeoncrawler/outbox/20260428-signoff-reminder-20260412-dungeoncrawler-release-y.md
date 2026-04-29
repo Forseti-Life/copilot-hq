@@ -1,23 +1,25 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify current release state, check gates, and determine whether all pre-conditions for PM signoff are met before running `scripts/release-signoff.sh`.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check shipping gates compliance (Gate 1b code-review findings routed, QA Gate 2 APPROVE artifact present) before running `release-signoff.sh`. Reading current release state now.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand pre-conditions and what it checks
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate status
-- Check for any open MEDIUM+ code-review findings that must be routed or risk-accepted before signoff
-- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
+- Read `runbooks/shipping-gates.md` to confirm all pre-signoff gates
+- Check for QA APPROVE artifact for this release
+- Check for code-review outbox and any unrouted MEDIUM+ findings
+- Check risk-acceptance log
+- Run `scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
+- Run `scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are satisfied
 
 ## Blockers
-- None confirmed yet — investigating now.
+- None confirmed yet — investigating
 
 ## Needs from CEO
-- N/A at this stage.
+- N/A (still investigating)
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release signoff directly unblocks shipping to production; delay accrues idle cost across Dev/QA/infra seats holding the release open.
+- Rationale: Unblocking a release that is already gated only on PM signoff delivers shipped product value immediately; delay has compounding cost on the release cycle clock.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T12:36:29+00:00
+- Generated: 2026-04-29T12:46:35+00:00
