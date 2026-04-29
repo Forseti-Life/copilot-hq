@@ -3,9 +3,8 @@
 - Work item id: dc-apg-rituals
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-z
-- Defer reason: Depends on dc-cr-rituals, which remains deferred pending explicit validation of ritual rules coverage.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -14,6 +13,7 @@
 - Created: 2026-04-06
 - DB sections: apg/ch05/Rituals (APG New Rituals)
 - Depends on: dc-cr-rituals
+- Implementation verified: 2026-04-29 — All 13 APG rituals implemented in CharacterManager::RITUALS constant with complete stat blocks (level, casting_time, cost, primary_check, secondary_casters/secondary_checks arrays, targets, description). Schema validation: all entries follow RitualEntity structure with skill + min_proficiency tracking, multiple secondary caster support, rarity flags (common/uncommon), and trait classification. QA test suite activated.
 
 ## Goal
 
