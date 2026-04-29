@@ -1,23 +1,25 @@
 - Status: in_progress
-- Summary: Reading source artifacts and current dc_requirements/PF2 import state to understand what structure already exists before defining the Drupal surface and routing downstream work.
+- Summary: Reading the current PF2/dc_requirements state, RoadmapController, and related files to understand what structure already exists before defining the Drupal navigation surface and routing downstream work.
 
 ## Next actions
-- Read `dc_requirements` PF2 entries and the three source artifacts listed in command.md
-- Identify what book/chapter/section/paragraph structure is already modeled
-- Check `features/` and `dashboards/PROJECTS.md` for any existing PF2 navigation feature entries
-- Then produce architecture recommendation, create downstream inbox items, and emit final outbox
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Controller/RoadmapController.php`
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Service/RoadmapPipelineStatusResolver.php`
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/templates/dungeoncrawler-roadmap.html.twig`
+- Search for `dc_requirements` references to find where PF2 rulebook data lives
+- Determine hierarchy depth (book → chapter → section → paragraph) already captured
+- Then: define target Drupal surface, write acceptance criteria, create downstream inbox items for BA/Dev/QA
 
 ## Blockers
-- None yet — research in progress
+- None yet — investigation in progress.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: PF2 rulebook navigation is a core content surface for Dungeoncrawler; structured browsing drives session utility and retention, making this high-leverage foundational work.
+- Rationale: Navigable rulebook content is a core user-facing feature for Dungeoncrawler; PF2 is the primary ruleset and making it browsable unlocks content discovery, linking, and downstream game-logic work. Blocking on this delays all content-layer features.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-intake-pf2-rulebook-navigation-drupal-module
-- Generated: 2026-04-29T19:19:55+00:00
+- Generated: 2026-04-29T19:29:46+00:00

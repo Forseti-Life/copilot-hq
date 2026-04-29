@@ -33,6 +33,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from orchestrator.runtime_graph.engine import LangGraphDeps, run_tick as _run_langgraph_tick
+from orchestrator import release_cycle
 from orchestrator.release_prerequisites import ReleasePrerequisiteValidator
 from orchestrator.failure_analyzer import ExecutorFailureAnalyzer
 from orchestrator import health_and_audit, dispatch
@@ -1244,13 +1245,13 @@ class ClineProvider(RuntimeProvider):
 # ── Release cycle wrappers (delegates to release_cycle module) ────────────────
 
 def _release_cycle_step(log: List[Any]) -> None:
-    """Retired legacy release-cycle step kept as a no-op for graph parity."""
-    log.append({"step": "release_cycle", "status": "retired", "reason": "legacy flow removed"})
+    """Delegate release-cycle processing to the canonical release_cycle module."""
+    release_cycle.run_release_cycle_step(log, REPO_ROOT)
 
 
 def _coordinated_push_step(log: List[Any]) -> None:
-    """Retired legacy coordinated-push step kept as a no-op for graph parity."""
-    log.append({"step": "coordinated_push", "status": "retired", "reason": "legacy flow removed"})
+    """Delegate coordinated-push processing to the canonical release_cycle module."""
+    release_cycle.run_coordinated_push_step(log, REPO_ROOT)
 
 
 def _make_provider(name: str) -> RuntimeProvider:
