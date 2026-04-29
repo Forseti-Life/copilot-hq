@@ -1,26 +1,25 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to read the current release state, check shipping-gates prerequisites (code-review findings, QA APPROVE evidence, dev commit/rollback), and determine whether it is safe to run `release-signoff.sh` or whether blockers must be resolved first.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify current release state, gate status, and whether all prerequisites (code review findings routed, QA APPROVE, dev commit+rollback) are satisfied before running `release-signoff.sh`. Checking release artifacts and gate evidence now.
 
 ## Next actions
-- Read `runbooks/shipping-gates.md` to confirm gate sequence
-- Check `tmp/release-cycle-active/` for release state and started_at
-- Check `sessions/qa-dungeoncrawler/artifacts/` for QA APPROVE verdict
-- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings not yet routed or risk-accepted
-- Check `sessions/dev-dungeoncrawler/outbox/` for dev commit hash + rollback steps
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current signoff state
-- If all gates are clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and record output
+- Read `scripts/release-signoff.sh` to understand what it checks and requires
+- Check `tmp/release-cycle-active/dungeoncrawler.*` for release state
+- Check QA artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Check for code-review outbox for this release
+- Check for dev completion artifact (commit hash + rollback steps)
+- Run signoff if all gates are satisfied; else escalate with specific blockers
 
 ## Blockers
-- None confirmed yet — investigating now.
+- None confirmed yet — investigation in progress
 
 ## Needs from CEO
-- None at this stage.
+- N/A (investigation phase)
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly ships product value and unblocks downstream QA/Dev cycles; delay compounds opportunity cost across the team.
+- Rationale: Unblocking a release directly ships product value and unblocks downstream agents. Stale release cycles increase coordination overhead.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T05:13:01+00:00
+- Generated: 2026-04-29T05:22:42+00:00
