@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) QA Gate 2 APPROVE evidence exists for all scoped features, (2) no unrouted MEDIUM+ code-review findings remain, (3) coordinated release partner status (forseti side). Running the required checks now.
+- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) Gate 2 APPROVE evidence exists for all scoped features, (2) coordinated release status for both forseti and dungeoncrawler, and (3) any MEDIUM+ code-review findings are routed or risk-accepted. Running prerequisite checks now.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm partner PM status
-- Check for QA Gate 2 APPROVE artifacts for all dungeoncrawler release-y scoped features
-- Check for any unresolved MEDIUM+ code-review findings for this release
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm partner PM status and gate state
+- Confirm Gate 2 APPROVE artifacts exist under `sessions/qa-dungeoncrawler/artifacts/` or equivalent
+- Check for any open MEDIUM+ code-review findings for this release
 - If all gates clear: execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
-- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` after signoff
+- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` after signoff completes
 
 ## Blockers
-- None confirmed yet — running verification steps before committing to done.
+- None confirmed yet — pending gate verification results below.
 
 ## Needs from CEO
-- N/A
+- N/A pending verification output.
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Coordinated release signoff unblocks production deployment for dungeoncrawler. Delay increases risk of stale release state and holds up the coordinated forseti push as well.
+- Rationale: Release signoff unblocks production shipping for a coordinated dungeoncrawler + forseti release; delay holds both product lines. Gate verification is a required pre-condition and takes one execution cycle.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T03:32:08+00:00
+- Generated: 2026-04-29T03:42:12+00:00
