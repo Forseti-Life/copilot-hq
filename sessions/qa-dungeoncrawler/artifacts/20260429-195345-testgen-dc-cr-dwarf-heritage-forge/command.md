@@ -1,4 +1,7 @@
-# Test Plan Design: dc-cr-dwarf-heritage-rock
+- Status: done
+- Completed: 2026-04-29T20:54:11Z
+
+# Test Plan Design: dc-cr-dwarf-heritage-forge
 
 **From:** pm-dungeoncrawler  
 **To:** qa-dungeoncrawler  
@@ -10,27 +13,27 @@ Design test cases for this feature and write the test plan spec.
 
 **This is NEXT-RELEASE grooming work.** Do NOT edit the live product manifest `qa-suites/products/dungeoncrawler/suite.json` yet.
 Instead, create a **feature-scoped suite overlay** at:
-`qa-suites/products/dungeoncrawler/features/dc-cr-dwarf-heritage-rock.json`
+`qa-suites/products/dungeoncrawler/features/dc-cr-dwarf-heritage-forge.json`
 
 That overlay is the runnable SoT for this feature during grooming. The live release manifest is compiled from selected overlays at Stage 0.
 
 ### Required outputs
 
-1. **Create** `features/dc-cr-dwarf-heritage-rock/03-test-plan.md` — the test spec:
+1. **Create** `features/dc-cr-dwarf-heritage-forge/03-test-plan.md` — the test spec:
    - List every test case derived from the AC
    - For each: test description, which suite it will live in, expected HTTP status or behavior, roles covered
    - Flag any AC items that cannot be expressed as automation (note to PM)
-2. **Create** `qa-suites/products/dungeoncrawler/features/dc-cr-dwarf-heritage-rock.json` from `templates/qa-feature-suite.json`:
+2. **Create** `qa-suites/products/dungeoncrawler/features/dc-cr-dwarf-heritage-forge.json` from `templates/qa-feature-suite.json`:
    - Declare at least one runnable suite entry for this feature
    - Include `owner_seat`, `source_path`, `env_requirements`, and `release_checkpoint`
-   - Point `test_plan` at `features/dc-cr-dwarf-heritage-rock/03-test-plan.md`
+   - Point `test_plan` at `features/dc-cr-dwarf-heritage-forge/03-test-plan.md`
    - Validate with:
      ```bash
-     python3 scripts/qa-suite-validate.py --product dungeoncrawler --feature-id dc-cr-dwarf-heritage-rock
+     python3 scripts/qa-suite-validate.py --product dungeoncrawler --feature-id dc-cr-dwarf-heritage-forge
      ```
 2. **Signal completion:**
     ```bash
-    ./scripts/qa-pm-testgen-complete.sh dungeoncrawler dc-cr-dwarf-heritage-rock "<brief summary>"
+    ./scripts/qa-pm-testgen-complete.sh dungeoncrawler dc-cr-dwarf-heritage-forge "<brief summary>"
    ```
    This marks the feature groomed/ready and notifies PM — do not skip this step.
 
@@ -55,16 +58,16 @@ See full process: `runbooks/intake-to-qa-handoff.md`
 
 ## Acceptance Criteria (attached below)
 
-# Acceptance Criteria — dc-cr-dwarf-heritage-rock
+# Acceptance Criteria — dc-cr-dwarf-heritage-forge
 
-- Feature: Dwarf Heritage — Rock Dwarf
+- Feature: Dwarf Heritage — Forge Dwarf
 - Release target: 20260412-dungeoncrawler-release-z
 - PM owner: pm-dungeoncrawler
 - Date groomed: 2026-04-29
 
 ## Scope
 
-Capture Rock Dwarf as a heritage contract for anti-displacement combat rules, including the defense bonus against Shove/Trip/knock-prone effects and the forced-movement reduction behavior.
+Define Forge Dwarf as a QA-ready heritage contract with level-scaling fire resistance and environmental heat mitigation so both combat damage and exploration hazards can be validated against the same rules.
 
 ## Dependency checkpoints
 
@@ -73,24 +76,24 @@ Capture Rock Dwarf as a heritage contract for anti-displacement combat rules, in
 
 ## Happy Path
 
-- [ ] `[NEW]` Rock Dwarf is selectable only for dwarf characters within the heritage system.
-- [ ] `[NEW]` The heritage grants a +2 circumstance bonus to the relevant Fortitude or Reflex DC / save checks against Shove, Trip, and knock-prone effects.
-- [ ] `[NEW]` Forced movement affecting the character is reduced by half when the pushed or pulled distance is 10 feet or more.
-- [ ] `[NEW]` The passive applies automatically during maneuver resolution without any manual toggle.
+- [ ] `[NEW]` Forge Dwarf is available only under the dwarf ancestry heritage list.
+- [ ] `[NEW]` Selecting Forge Dwarf grants fire resistance equal to half the character level, with a minimum of 1.
+- [ ] `[NEW]` Environmental heat effects are treated as one step less severe for a Forge Dwarf character.
+- [ ] `[NEW]` The fire-resistance value recalculates automatically when the character level changes.
 
 ## Edge Cases
 
-- [ ] `[NEW]` Voluntary movement is never halved by the heritage.
-- [ ] `[NEW]` Small forced movements below the threshold stay at their normal distance unless the movement engine already rounds them under existing rules.
-- [ ] `[NEW]` The bonus applies only to the targeted anti-displacement effects and not to unrelated Reflex or Fortitude saves.
+- [ ] `[NEW]` Level 1 characters still receive the minimum fire resistance of 1.
+- [ ] `[NEW]` Environmental heat downgrades follow the documented one-step ladder and do not skip multiple severity bands.
+- [ ] `[NEW]` Non-fire damage and non-heat environmental effects are unaffected by the heritage.
 
 ## Failure Modes
 
-- [ ] `[NEW]` Invalid ancestry/heritage combinations are rejected.
-- [ ] `[NEW]` Combat resolution falls back to the normal forced-movement rules if the action is not tagged as Shove, Trip, knock-prone, or forced movement.
+- [ ] `[NEW]` Selecting Forge Dwarf on a non-dwarf character returns a validation error.
+- [ ] `[NEW]` If an environmental hazard lacks a heat severity tag, the hazard resolves normally instead of crashing the encounter flow.
 
 ## Security acceptance criteria
 
-- Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment and combat-resolution handlers.
+- Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment, resistance, and hazard-resolution handlers.
 - Agent: qa-dungeoncrawler
 - Status: pending

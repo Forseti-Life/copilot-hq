@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T20:52:40Z
+
 # Test Plan Design: dc-cr-ancestry-feat-schedule
 
 **From:** pm-dungeoncrawler  

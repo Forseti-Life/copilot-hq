@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T20:53:30Z
+
 # Test Plan Design: dc-cr-dwarf-heritage-death-warden
 
 **From:** pm-dungeoncrawler  
