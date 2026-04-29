@@ -133,3 +133,5 @@ Define the Strong-Blooded dwarf heritage contract so poison resistance and poiso
 ## Security acceptance criteria
 
 - Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment and affliction-resolution handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

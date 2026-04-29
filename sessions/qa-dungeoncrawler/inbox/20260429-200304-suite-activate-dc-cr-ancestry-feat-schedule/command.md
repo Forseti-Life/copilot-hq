@@ -135,3 +135,5 @@ Define the ancestry-feat progression contract so character leveling grants ances
 - [ ] POST/PATCH ancestry-feat mutation routes require `_csrf_request_header_mode: TRUE`.
 - [ ] Server-side validation enforces ancestry, level, and prerequisite checks before persisting a feat choice.
 - [ ] QA verifies a user cannot mutate ancestry-feat slots belonging to another character.
+- Agent: qa-dungeoncrawler
+- Status: pending

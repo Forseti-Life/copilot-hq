@@ -95,3 +95,5 @@ Capture the XP-and-rewards backlog as a QA contract for encounter, hazard, and s
 - [ ] POST/PATCH XP award routes require `_csrf_request_header_mode: TRUE`.
 - [ ] Server-side validation confirms the target characters belong to the active campaign/session before XP is applied.
 - [ ] XP award logging records only the minimum campaign/session and character IDs required for traceability, with no unrelated PII.
+- Agent: qa-dungeoncrawler
+- Status: pending

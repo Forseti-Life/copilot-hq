@@ -132,3 +132,5 @@ Make Arctic Elf a QA-ready heritage contract with level-scaling cold resistance 
 ## Security acceptance criteria
 
 - Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment, resistance, and hazard-resolution handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

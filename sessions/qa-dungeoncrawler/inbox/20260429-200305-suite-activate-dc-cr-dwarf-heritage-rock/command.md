@@ -133,3 +133,5 @@ Capture Rock Dwarf as a heritage contract for anti-displacement combat rules, in
 ## Security acceptance criteria
 
 - Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment and combat-resolution handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

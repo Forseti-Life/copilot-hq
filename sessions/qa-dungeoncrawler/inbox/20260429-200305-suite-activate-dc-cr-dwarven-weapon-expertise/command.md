@@ -132,3 +132,5 @@ Turn Dwarven Weapon Expertise into a testable ancestry-feat contract for high-le
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and proficiency-calculation scope only; no new routes or input surfaces beyond existing feat assignment and character build handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

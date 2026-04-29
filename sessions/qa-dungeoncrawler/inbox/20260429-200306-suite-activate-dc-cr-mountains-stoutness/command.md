@@ -133,3 +133,5 @@ Turn Mountain's Stoutness into a QA-ready level-9 ancestry-feat contract for the
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and character-state math scope only; no new routes or input surfaces beyond existing feat assignment and dying-state handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

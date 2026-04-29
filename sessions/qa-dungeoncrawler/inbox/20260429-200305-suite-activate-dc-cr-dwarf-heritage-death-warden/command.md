@@ -133,3 +133,5 @@ Turn the Death Warden dwarf heritage into a testable contract covering heritage 
 ## Security acceptance criteria
 
 - Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment and combat-resolution handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

@@ -133,3 +133,5 @@ Turn Unburdened Iron into a QA-ready level-1 ancestry-feat contract for armor sp
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and movement-math scope only; no new routes or input surfaces beyond existing feat assignment and movement handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

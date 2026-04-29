@@ -132,3 +132,5 @@ Define Half-Elf heritage as a Human heritage overlay contract covering trait gra
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry heritage and feat-eligibility scope only; no new routes or input surfaces beyond existing heritage assignment and ancestry-feat handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

@@ -91,3 +91,5 @@ Define the general-feat backlog as a QA-ready contract for the level-based feat 
 ## Security acceptance criteria
 
 - Security AC exemption: feat-catalog and character-build scope only; no new routes or input surfaces beyond existing feat assignment handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

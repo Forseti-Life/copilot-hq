@@ -133,3 +133,5 @@ Define Dwarven Weapon Familiarity as a level-1 ancestry-feat contract covering t
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and proficiency-calculation scope only; no new routes or input surfaces beyond existing feat assignment and character build handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

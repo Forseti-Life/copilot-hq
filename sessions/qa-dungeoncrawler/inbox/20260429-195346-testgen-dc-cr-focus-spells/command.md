@@ -91,3 +91,5 @@ Capture the focus-spell subsystem as a handoff-ready contract covering focus poo
 ## Security acceptance criteria
 
 - Security AC exemption: spellcasting rules and character-state scope only; no new public routes expected beyond existing spellcasting and rest/action handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

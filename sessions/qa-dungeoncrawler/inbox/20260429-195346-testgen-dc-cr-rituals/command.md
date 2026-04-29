@@ -91,3 +91,5 @@ Define ritual magic as a separate QA-ready subsystem contract covering long cast
 ## Security acceptance criteria
 
 - Security AC exemption: spellcasting/rules-engine scope only; no new public routes expected beyond existing spellcasting, downtime, or session-action handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

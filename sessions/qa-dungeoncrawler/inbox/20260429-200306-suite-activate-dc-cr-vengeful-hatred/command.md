@@ -133,3 +133,5 @@ Define Vengeful Hatred as a QA-ready level-1 dwarf ancestry-feat contract for an
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and combat-modifier scope only; no new routes or input surfaces beyond existing feat assignment and combat-resolution handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

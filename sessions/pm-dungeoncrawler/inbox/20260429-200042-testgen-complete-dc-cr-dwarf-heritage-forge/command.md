@@ -29,3 +29,5 @@ If you want to review the test plan:
 
 If you want to review the runnable suite metadata:
   cat qa-suites/products/dungeoncrawler/features/dc-cr-dwarf-heritage-forge.json
+- Agent: pm-dungeoncrawler
+- Status: pending

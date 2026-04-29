@@ -92,3 +92,5 @@ Define Rock Runner as a level-1 dwarf ancestry-feat contract covering stone/eart
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and terrain-resolution scope only; no new routes or input surfaces beyond existing feat assignment and movement handlers.
+- Agent: qa-dungeoncrawler
+- Status: pending

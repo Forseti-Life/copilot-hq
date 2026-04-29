@@ -11,3 +11,5 @@
     1) Fix highest-impact failures first.
     2) For each fix, notify QA immediately with explicit handoff marker.
     3) Keep notes concise in outbox and include touched files/routes.
+- Agent: dev-dungeoncrawler
+- Status: pending

@@ -132,3 +132,5 @@ Capture the alchemical item backlog as a QA-ready contract covering bombs, elixi
 ## Security acceptance criteria
 
 - Security AC exemption: catalog/content and rules-data scope only; use existing item, inventory, and crafting surfaces without introducing new routes or novel input handling.
+- Agent: qa-dungeoncrawler
+- Status: pending

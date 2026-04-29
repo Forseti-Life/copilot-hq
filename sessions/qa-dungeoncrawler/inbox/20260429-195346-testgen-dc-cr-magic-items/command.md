@@ -91,3 +91,5 @@ Capture the magic-item backlog as a QA-ready contract covering the item catalog,
 ## Security acceptance criteria
 
 - Security AC exemption: catalog, inventory, and equipment-rule scope only; use existing item management surfaces without introducing new routes or novel input handling.
+- Agent: qa-dungeoncrawler
+- Status: pending

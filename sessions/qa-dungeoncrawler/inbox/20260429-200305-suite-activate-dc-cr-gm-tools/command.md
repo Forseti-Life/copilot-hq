@@ -135,3 +135,5 @@ Convert the GM tools backlog into a concrete QA contract for encounter budgeting
 - [ ] All GM prep POST/PATCH actions require `_csrf_request_header_mode: TRUE`.
 - [ ] Generated encounter, loot, and NPC prep data is scoped to the current campaign/session context with no cross-campaign leakage.
 - [ ] Logs and AI prompt payloads exclude unrelated player secrets/PII and record only minimum traceability identifiers.
+- Agent: qa-dungeoncrawler
+- Status: pending
