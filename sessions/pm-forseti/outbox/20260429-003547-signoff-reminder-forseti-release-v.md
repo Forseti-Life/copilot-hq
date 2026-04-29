@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for forseti release 20260412-forseti-release-v. Running the required pre-signoff verification steps: checking release-signoff-status, reviewing Gate 2 evidence, and confirming all MEDIUM+ code-review findings are routed or risk-accepted before executing the signoff script.
+- Summary: Received signoff-reminder for release 20260412-forseti-release-v. Running pre-signoff checks now: verifying release state, scoped features, Gate 2 evidence, and partner PM status before executing the signoff script.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-forseti-release-v` to confirm partner PM (dungeoncrawler) status and overall readiness
-- Review scoped features and confirm Gate 2 APPROVE evidence exists for each
-- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings not yet routed or risk-accepted
-- If all gates clear: execute `./scripts/release-signoff.sh forseti 20260412-forseti-release-v` and record the result
+- Run `./scripts/release-signoff-status.sh 20260412-forseti-release-v` to check partner PM status
+- Review scoped features and Gate 2 evidence for forseti
+- Execute `./scripts/release-signoff.sh forseti 20260412-forseti-release-v` if all checks pass
+- Archive this inbox item after signoff is confirmed
 
 ## Blockers
-- None identified yet — executing verification steps now.
+- None identified yet — proceeding with verification steps
 
 ## Needs from CEO
-- N/A (proceeding with verification per standard signoff protocol)
+- N/A
 
 ## ROI estimate
 - ROI: 90
-- Rationale: Coordinated release signoff is a hard blocker for shipping both forseti and dungeoncrawler; unblocking it immediately delivers value across both product lines and keeps the release operator unblocked.
+- Rationale: Coordinated release signoff is a shipping gate; delay blocks both forseti and dungeoncrawler from going to production.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-forseti-release-v
-- Generated: 2026-04-29T16:54:47+00:00
+- Generated: 2026-04-29T16:58:44+00:00

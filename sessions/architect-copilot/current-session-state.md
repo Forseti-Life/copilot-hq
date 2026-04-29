@@ -1,15 +1,15 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during flow-detail phase/lane summary work
+> Last updated: 2026-04-29 during Forseti menu conversation launcher repair
 
 ---
 
 ## Currently Working On
 
-Continuing the Drupal LangGraph flow-management work after landing derived
-phase/lane summaries for `agentic_sdlc`, with the next likely slice focused on
-deeper flow-detail UX or additional runtime-graph tracing.
+Repairing the Forseti main-menu conversation launcher so the Talk with Forseti
+link once again routes into AI conversation creation instead of dead-ending
+through the wrong access path.
 
 ### Current state
 
