@@ -430,3 +430,5 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260429-blocker-20260412-dungeoncrawler-release-z-dc-cr-xp-award-system — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-blocker-20260412-dungeoncrawler-release-z-dc-cr-xp-award-system.md)
 - [ ] 20260429-200304-impl-dc-cr-alchemical-items — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200304-impl-dc-cr-alchemical-items.md)
 - [ ] 20260429-200304-impl-dc-cr-ancestry-feat-schedule — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200304-impl-dc-cr-ancestry-feat-schedule.md)
+- [ ] 20260429-200305-impl-dc-cr-dwarf-heritage-death-warden — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-death-warden.md)
+- [ ] 20260429-200305-impl-dc-cr-dwarf-heritage-forge — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-forge.md)

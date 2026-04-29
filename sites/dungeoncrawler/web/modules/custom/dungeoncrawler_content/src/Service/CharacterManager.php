@@ -456,14 +456,19 @@ class CharacterManager {
       [
         'id' => 'rock',
         'name' => 'Rock Dwarf',
-        'benefit' => 'Your ancestors lived and worked among the rocks and boulders of the mountains, and you carry some of this hardiness in your bones. You gain a +1 circumstance bonus to your Fortitude DC against Shove and Trip attempts. You are also treated as one size larger when calculating your Bulk limit.',
+        'benefit' => 'Your ancestors lived and worked among the rocks and boulders of the mountains, and you carry some of this hardiness in your bones. You gain a +2 circumstance bonus to your Fortitude or Reflex DC against attempts to Shove or Trip you. This bonus also applies to saving throws against spells or effects that attempt to knock you prone. In addition, if any effect would force you to move 10 feet or more, you are moved only half the distance.',
         'special' => [
-          'fortitude_bonus' => [
+          'anti_displacement_dc_bonus' => [
+            'value' => 2,
             'type' => 'circumstance',
-            'value' => 1,
-            'condition' => 'Fortitude DC against Shove and Trip',
+            'applies_to' => ['shove_dc', 'trip_dc', 'knock_prone_save'],
+            'description' => '+2 to Fortitude or Reflex DC against Shove, Trip, and knock-prone effects',
           ],
-          'bulk_size_bonus' => 1,
+          'forced_movement_halved' => [
+            'threshold' => 10,
+            'effect' => 'Forced movement of 10+ feet is reduced to half distance (round down to nearest 5)',
+            'excludes' => ['voluntary_movement'],
+          ],
         ],
       ],
       [
