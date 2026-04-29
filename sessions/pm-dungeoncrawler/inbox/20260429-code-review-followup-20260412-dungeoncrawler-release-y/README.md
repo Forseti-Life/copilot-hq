@@ -20,3 +20,4 @@ Route each finding to Dev as a `cr-finding` inbox item or record a risk acceptan
 
 ## Verification
 - `python3 scripts/check-code-review-routing.py 20260412-dungeoncrawler-release-y` should report no unresolved findings
+- Status: pending
