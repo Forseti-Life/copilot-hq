@@ -44,6 +44,9 @@ Exit criteria:
 
 ## Gate 1b — Code Review Finding Dispatch (PM, required before Gate 2)
 
+Current automation note:
+- The release-cycle pre-ship code-review item queued by `scripts/release-cycle-start.sh` is currently a **legacy gate item**, not a flow-managed `agentic_sdlc` node. It does **not** carry `Flow id` / `Flow node` metadata, so `route-flow-transitions.py` will not auto-route its findings. PM/CEO automation must materialize the follow-up Dev inbox items or PM risk-acceptance artifacts explicitly.
+
 After each `agent-code-review` run for a release cycle, PM must:
 1. Read the code-review outbox for that release: `sessions/agent-code-review/outbox/<date>-code-review-<site>-<release-id>.md`
 2. For every finding rated **MEDIUM or higher**, create a dev-seat inbox item **within the same release cycle**:

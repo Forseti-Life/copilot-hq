@@ -362,21 +362,25 @@ def test_skips_signoff_reminder_when_artifact_exists(tmp_path):
 
 def test_queues_code_review_followup_instead_of_signoff_reminder(tmp_path):
     root = _make_root(tmp_path)
-    (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-impl-dc-feature-a.md").write_text(
-        "dc-feature-a implemented\n",
+    (root / "sessions" / "dev-forseti" / "outbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / "dev-forseti" / "outbox" / "20260413-impl-forseti-feature-a.md").write_text(
+        "forseti-feature-a implemented\n",
         encoding="utf-8",
     )
-    (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True, exist_ok=True)
-    (root / "sessions" / "qa-dungeoncrawler" / "outbox" / "20260414-gate2-approve-dc.md").write_text(
-        "APPROVE 20260412-dungeoncrawler-release-j\n", encoding="utf-8"
+    (root / "sessions" / "qa-forseti" / "outbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / "qa-forseti" / "outbox" / "20260414-gate2-approve-forseti.md").write_text(
+        "APPROVE 20260412-forseti-release-i\n", encoding="utf-8"
     )
+    (
+        root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260412-forseti-release-i.md"
+    ).write_text("signed\n", encoding="utf-8")
     (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
     (
         root
         / "sessions"
         / "agent-code-review"
         / "outbox"
-        / "20260428-code-review-dungeoncrawler-20260412-dungeoncrawler-release-j.md"
+        / "20260428-code-review-forseti.life-20260412-forseti-release-i.md"
     ).write_text(
         "- Status: done\n\n"
         "### HIGH\n\n"
@@ -392,5 +396,5 @@ def test_queues_code_review_followup_instead_of_signoff_reminder(tmp_path):
         for p in (root / "sessions" / "pm-dungeoncrawler" / "inbox").iterdir()
         if p.is_dir()
     ]
-    assert any("code-review-followup-20260412-dungeoncrawler-release-j" in n for n in pm_dc_items)
-    assert not any("signoff-reminder-20260412-dungeoncrawler-release-j" in n for n in pm_dc_items)
+    assert any("code-review-followup-20260412-forseti-release-i" in n for n in pm_dc_items)
+    assert not any("signoff-reminder-20260412-forseti-release-i" in n for n in pm_dc_items)

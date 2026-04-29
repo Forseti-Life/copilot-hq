@@ -236,6 +236,8 @@ def _unrouted_code_review_findings(release_id: str) -> list[dict[str, str]]:
     import sys
 
     lib_dir = ROOT / "scripts" / "lib"
+    if not lib_dir.exists():
+        lib_dir = Path(__file__).resolve().parent / "lib"
     if str(lib_dir) not in sys.path:
         sys.path.insert(0, str(lib_dir))
     try:

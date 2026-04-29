@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the release signoff blocker for `20260412-dungeoncrawler-release-y` by reading the signoff script, checking release state, and verifying prerequisites (Gate 1b code-review findings and QA Gate 2 approval) before executing the signoff command.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify current release state, check gates, and determine whether all pre-conditions for PM signoff are met before running `scripts/release-signoff.sh`.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand prerequisites and what it checks
-- Check `tmp/release-cycle-active/` for release state
-- Check for QA APPROVE artifact and any outstanding code-review findings
-- Execute signoff if all gates are clear, or surface blockers
+- Read `scripts/release-signoff.sh` to understand pre-conditions and what it checks
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate status
+- Check for any open MEDIUM+ code-review findings that must be routed or risk-accepted before signoff
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
 
 ## Blockers
-- None confirmed yet — investigating
+- None confirmed yet — investigating now.
 
 ## Needs from CEO
-- None yet
+- N/A at this stage.
 
 ## ROI estimate
-- ROI: 90
-- Rationale: A blocked release signoff is a direct delivery bottleneck; unblocking it restores the shipping pipeline for the dungeoncrawler site.
+- ROI: 80
+- Rationale: Unblocking a release signoff directly unblocks shipping to production; delay accrues idle cost across Dev/QA/infra seats holding the release open.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T12:26:13+00:00
+- Generated: 2026-04-29T12:36:29+00:00

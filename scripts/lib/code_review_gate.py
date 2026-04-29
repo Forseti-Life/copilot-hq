@@ -110,17 +110,23 @@ def _artifact_contains(path: Path, token: str) -> bool:
         return False
 
 
+def _is_generic_finding_id(finding_id: str) -> bool:
+    return bool(re.fullmatch(r"[CHML]-\d+", finding_id))
+
+
 def _finding_resolved(repo_root: Path, release_id: str, finding_id: str, team: dict[str, Any]) -> bool:
     pm_agent = str(team.get("pm_agent") or "").strip()
     dev_agent = str(team.get("dev_agent") or "").strip()
+    release_slug = re.sub(r"[^A-Za-z0-9._-]+", "-", release_id).strip("-")
+    generic_id = _is_generic_finding_id(finding_id)
 
     if pm_agent:
         risk_dir = repo_root / "sessions" / pm_agent / "artifacts" / "risk-acceptances"
         if risk_dir.exists():
             for path in risk_dir.rglob("*.md"):
-                if finding_id in path.name or (
-                    _artifact_contains(path, finding_id) and _artifact_contains(path, release_id)
-                ):
+                name_hit = finding_id in path.name and (not generic_id or release_slug in path.name)
+                text_hit = _artifact_contains(path, finding_id) and _artifact_contains(path, release_id)
+                if name_hit or text_hit:
                     return True
 
     if dev_agent:
@@ -129,9 +135,14 @@ def _finding_resolved(repo_root: Path, release_id: str, finding_id: str, team: d
             if not base.exists():
                 continue
             for path in base.rglob("*"):
-                if finding_id in path.name:
+                if finding_id in path.name and (not generic_id or release_slug in path.name):
                     return True
-                if path.is_file() and path.suffix == ".md" and _artifact_contains(path, finding_id):
+                if (
+                    path.is_file()
+                    and path.suffix == ".md"
+                    and _artifact_contains(path, finding_id)
+                    and (not generic_id or _artifact_contains(path, release_id))
+                ):
                     return True
 
     return False

@@ -145,6 +145,8 @@ def _unrouted_code_review_findings(release_id: str) -> List[Dict[str, str]]:
     import sys
 
     lib_dir = REPO_ROOT / "scripts" / "lib"
+    if not lib_dir.exists():
+        lib_dir = Path(__file__).resolve().parents[1] / "scripts" / "lib"
     if str(lib_dir) not in sys.path:
         sys.path.insert(0, str(lib_dir))
     try:
@@ -316,7 +318,7 @@ def _dispatch_proactive_awaiting_signoff() -> None:
             _queue_code_review_followup(pm_id, rid, unresolved)
             continue
 
-        item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"
+        item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"
         item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
         if item_dir.exists():
             continue
@@ -326,7 +328,7 @@ def _dispatch_proactive_awaiting_signoff() -> None:
             f"- Agent: {pm_id}\n"
             f"- Release: {rid}\n"
             f"- Status: pending\n"
-            f"- Created: {datetime.now(timezone.utc).isoformat()}\n\n"
+            f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
             f"## Action required\n"
             f"Your release cycle is ready for signoff. Review the release checklist and write your signoff artifact:\n"
             f"`sessions/{pm_id}/artifacts/release-signoffs/{slug}.md`\n\n"
