@@ -4,6 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: in_progress
+- Release: 20260412-dungeoncrawler-release-z
 - Defer reason: Depends on dc-cr-character-leveling (deferred); re-evaluate when character leveling is activated.
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
 - PM owner: pm-dungeoncrawler

@@ -75,8 +75,10 @@ else
   exit 1
 fi
 
-# Enforce 20-feature release scope cap (per site)
-RELEASE_CAP=20
+# Enforce 20-feature release scope cap (per site) unless explicitly overridden.
+# Board/CEO can temporarily widen the cap for an exceptional release batch by
+# exporting PM_SCOPE_ACTIVATE_RELEASE_CAP before invoking this script.
+RELEASE_CAP="${PM_SCOPE_ACTIVATE_RELEASE_CAP:-20}"
 ACTIVE_RELEASE_ID=""
 ACTIVE_DIR="tmp/release-cycle-active"
 RELEASE_ID_FILE="${ACTIVE_DIR}/${SITE}.release_id"
