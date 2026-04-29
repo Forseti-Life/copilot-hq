@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Reviewing the signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Will check release signoff status, verify Gate 2 APPROVE evidence, inspect feature scope, and run the signoff script if all checks pass.
+- Summary: Reviewing the signoff-reminder inbox item for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) release signoff status via the status script, (2) Gate 2 QA APPROVE artifacts exist for all scoped features, (3) code-review findings (MEDIUM+) are routed or risk-accepted, and (4) my seat instructions are current. Running checks now.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm current signoff state
-- Review scoped features and Gate 2 QA artifacts for dungeoncrawler release-y
-- If all gates satisfied, run `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
-- Archive this inbox item after signoff
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm partner PM status and release state
+- Verify Gate 2 QA APPROVE artifacts for all scoped dungeoncrawler features
+- Check for any unrouted MEDIUM+ code-review findings
+- Refresh seat instructions if stale
+- Execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates pass
 
 ## Blockers
-- None anticipated; proceeding with verification now.
+- None confirmed yet — running verification steps
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Unblocking a coordinated release is high-leverage; delay holds back both dungeoncrawler and forseti from shipping Gate 2-approved work to production.
+- ROI: 80
+- Rationale: Unblocking a coordinated release across forseti and dungeoncrawler is high leverage; delay holds both product lines. Signoff is the final gate before push.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T09:34:48+00:00
+- Generated: 2026-04-29T09:45:00+00:00
