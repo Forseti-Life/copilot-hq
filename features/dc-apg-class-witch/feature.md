@@ -3,8 +3,9 @@
 - Work item id: dc-apg-class-witch
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: deferred
-- Defer reason: Depends on dc-cr-focus-spells, which is still deferred pending explicit validation of spell rules coverage.
+- Status: done
+- Release: 20260412-dungeoncrawler-release-z
+- Implementation verified: Witch class fully implemented in CharacterManager.php with all patron themes, hexes, familiar system, and lesson feats. QA test suite activated.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
