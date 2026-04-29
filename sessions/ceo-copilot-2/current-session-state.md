@@ -32,13 +32,13 @@ Finished the root-cause work on PM signoff drift and then corrected the automati
 
 | Agent | Inbox | Status |
 |---|---|---|
-| ceo-copilot-2 | 1 | Signoff enforcement hardened; remaining work is PM follow-through |
-| pm-forseti | 2 | Only valid active signoff prompt is release-v artifact creation |
-| pm-dungeoncrawler | 43 | Stale release-y signoff reminders archived; active blocker is code-review follow-up |
-| dev-forseti | 1 | Follow-up queue present |
-| dev-dungeoncrawler | 1 | Needs code-review finding routing for release-y follow-through |
-| qa-forseti | 1 | Gate 2 evidence already exists for release-v |
-| qa-dungeoncrawler | 1 | Gate 2 evidence already exists for release-y |
+| ceo-copilot-2 | 0 | No active CEO inbox items; signoff enforcement fix is recorded in outbox/state |
+| pm-forseti | 1 | Valid active signoff prompt: create release-v artifact |
+| pm-dungeoncrawler | 40 | Active blocker is release-y code-review follow-up; stale signoff reminders archived |
+| dev-forseti | 0 | No active queue items |
+| dev-dungeoncrawler | 0 | Waiting on PM routing of release-y code-review finding |
+| qa-forseti | 0 | Gate 2 evidence already exists for release-v |
+| qa-dungeoncrawler | 0 | Gate 2 evidence already exists for release-y |
 
 ---
 
@@ -78,11 +78,11 @@ Finished the root-cause work on PM signoff drift and then corrected the automati
 ```text
 Orchestrator:        running (pids 1064043, 1069098)
 Checkpoint loops:    running (pids 339310, 728445)
-CEO inbox:           1
-pm-forseti inbox:    2
-pm-dungeoncrawler:   43
-dev-forseti inbox:   1
-dev-dungeoncrawler:  1
+CEO inbox:           0
+pm-forseti inbox:    1
+pm-dungeoncrawler:   40
+dev-forseti inbox:   0
+dev-dungeoncrawler:  0
 Release health:      release-v blocked on missing PM signoff artifact; release-y blocked on unresolved Gate 1b code-review follow-up and owner PM signoff
 System health:       executor failure backlog + merge-health warning remain from earlier system health check
 Key artifacts:       sessions/ceo-copilot-2/outbox/20260429-rca-persistent-blocker-pm-signoff-not-occurring.md ; sessions/ceo-copilot-2/outbox/20260429-rca-code-review-findings-not-progressed-through-langgraph.md ; sessions/ceo-copilot-2/outbox/20260429-signoff-enforcement-hardening.md
