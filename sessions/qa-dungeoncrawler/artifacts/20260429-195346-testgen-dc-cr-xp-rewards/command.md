@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:06:57Z
+
 # Test Plan Design: dc-cr-xp-rewards
 
 **From:** pm-dungeoncrawler  
