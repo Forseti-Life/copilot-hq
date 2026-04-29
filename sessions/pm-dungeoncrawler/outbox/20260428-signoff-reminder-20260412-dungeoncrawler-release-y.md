@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the release signoff state for `20260412-dungeoncrawler-release-y` before executing or blocking. Reading release state, gates, and any open MEDIUM+ code-review findings to determine whether signoff is safe to run.
+- Summary: Investigating the release signoff item for `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and any outstanding blockers (MEDIUM+ code-review findings, QA APPROVE artifact) before running the signoff script.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check current gate status
-- Check for any unrouted MEDIUM+ code-review findings per Gate 1b policy
-- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
-- Archive this inbox item under `sessions/pm-dungeoncrawler/inbox/_archived/` after completion
+- Read signoff gate pre-conditions: check QA verdict artifact, code-review findings, and gate status for this release
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current state
+- If all gates are satisfied, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Update outbox with result
 
 ## Blockers
-- None yet — investigation in progress
+- None confirmed yet — investigating now
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a stalled release directly enables shipping value to production. Signoff gate is a hard blocker on the release pipeline; resolving it is high leverage with low execution risk.
+- Rationale: Unblocking a release signoff directly unblocks shipping; stale signoff items hold up the entire release pipeline for this site.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T00:30:23+00:00
+- Generated: 2026-04-29T00:40:30+00:00
