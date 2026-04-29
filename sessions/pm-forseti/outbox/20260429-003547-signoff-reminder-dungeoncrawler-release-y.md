@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify release readiness: check Gate 2 APPROVE evidence for all scoped features, confirm coordinated-release partner (forseti) status, and review any MEDIUM+ code-review findings per Gate 1b policy. Running verification steps now.
+- Summary: Inbox item 20260429-003547-signoff-reminder-dungeoncrawler-release-y requests PM signoff on release 20260412-dungeoncrawler-release-y for the dungeoncrawler product. Before running the signoff script, I need to verify: (1) release-signoff-status output for this release ID, (2) Gate 2 QA APPROVE evidence exists for all scoped features, (3) no unrouted MEDIUM+ code-review findings remain, and (4) seat instructions are current. Investigating now.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check partner PM status
-- Enumerate scoped features for this release and confirm Gate 2 APPROVE artifacts exist for each
-- Check for any open MEDIUM+ code-review findings or unresolved risk-acceptances
-- If all gates clear: execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
-- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` and emit final done outbox
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check partner PM status and any pending gates
+- Check Gate 2 QA artifacts for dungeoncrawler-release-y scoped features
+- Review `sessions/agent-code-review/outbox/` for any unrouted MEDIUM+ findings for this release
+- Validate seat instructions are current (release-cycle instruction refresh)
+- If all gates clear, run `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet; verification in progress.
+- None confirmed yet; investigating gate status before executing signoff
 
 ## Needs from CEO
-- N/A
+- N/A (proceeding with verification)
 
 ## ROI estimate
-- ROI: 50
-- Rationale: Coordinated release unblock is high-leverage; holding the push delays both dungeoncrawler and forseti shipping. Signoff is a short, bounded action once gates are confirmed clear.
+- ROI: 80
+- Rationale: Blocking a coordinated release across two products (forseti + dungeoncrawler) is high-leverage; unblocking it ships value to both product lines and clears the release operator's queue.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T01:51:23+00:00
+- Generated: 2026-04-29T02:01:28+00:00
