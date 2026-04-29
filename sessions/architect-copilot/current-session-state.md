@@ -1,18 +1,50 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during Org Chart left-drawer layout work
+> Last updated: 2026-04-29 during Org Chart whole-page layout cleanup
 
 ---
 
 ## Currently Working On
 
-Refining the Drupal LangGraph Org Chart page so the hierarchy diagram sits in a
-left-side fold-out drawer instead of consuming the full page width above the
-detail surfaces.
+Refining the entire Drupal LangGraph Org Chart page layout to reduce dead space,
+improve alignment, and make the page more phone-friendly while keeping the new
+seat animation panels.
 
 ### Current state
 
+- Tightened the overall Org Chart page structure:
+  - grouped org summary, instruction model, flow ownership, and seat registry
+    into a responsive `insights` grid
+  - moved all seat detail panels into a dedicated stacked `seats` container
+  - converted those top org metadata surfaces into clearer card-like sections
+    instead of one long full-width column of open tables
+- Reduced wasted space and alignment drift:
+  - added consistent borders/backgrounds for org-chart sections and seat panels
+  - normalized detail summary spacing
+  - tightened table cell padding and row rhythm
+  - made the seat overview row padding/card treatment more consistent with the
+    rest of the page
+- Improved phone behavior:
+  - org insight cards now collapse to one column
+  - seat overview rows stack on narrow screens
+  - table surfaces remain scrollable instead of blowing out the layout
+  - chart drawer falls back to full-width on smaller screens
+- Added a new per-seat **Animation** panel to the Org Chart detail surfaces:
+  - each seat detail now renders a two-column overview row
+  - the left side keeps the seat summary table
+  - the right side now shows an animation card with:
+    - preview slot
+    - current seat status
+    - expected GIF asset path
+    - availability state
+- Animation assets now follow a clear public convention:
+  - `/sites/default/files/seat-status-gifs/<seat-id>.gif`
+  - if the GIF exists it is rendered inline
+  - if it does not exist the UI shows a `GIF pending` placeholder with the seat
+    ID and current status
+- Added seat-animation styling to the Org Chart page so the new panel sits next
+  to each seat summary on desktop and stacks cleanly on narrower screens.
 - Reworked the Drupal LangGraph **Org Chart** page layout:
   - introduced a two-column `drupal-langgraph-org-chart-layout`
   - moved the chart into a sticky left sidebar
@@ -300,27 +332,31 @@ detail surfaces.
 
 ### Next actions
 
-1. Decide whether the Org Chart drawer should default open on desktop or remain
+1. Decide whether the Org Chart’s table-heavy sections should evolve from
+   responsive tables into more compact field-list/card layouts for mobile.
+2. Decide what visual language the generated seat status GIFs should use now
+   that each seat has a dedicated asset slot and path convention.
+3. Decide whether the Org Chart drawer should default open on desktop or remain
    tucked closed by default now that the left-side fold-out pattern exists.
-2. Decide whether the drawer should gain a stronger “peek” mode (for example a
+4. Decide whether the drawer should gain a stronger “peek” mode (for example a
    mini-map or fixed-width preview) instead of the current compact rail state.
-3. If needed, follow up on the broader BrowserTestBase harness in this
+5. If needed, follow up on the broader BrowserTestBase harness in this
    environment (`Behat\\Mink\\Driver\\BrowserKitDriver` missing from the current
    test runtime), since the new navigation regression test file is in place but
    the local functional-test stack is incomplete.
-4. Decide whether the front page should also suppress the legacy `Home` item in
+6. Decide whether the front page should also suppress the legacy `Home` item in
    the footer quick-links list now that `/` is back on the intended custom home
    route.
-5. Decide whether the flow detail page should gain richer branch presentation
+7. Decide whether the flow detail page should gain richer branch presentation
    (for example, lane badges, join annotations, or branch health signals) now
    that the structural summaries are in place.
-6. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+8. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-7. Resolve the current repo-side Drush bootstrap failure if live runtime
+9. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
-8. Decide whether flow owner entry should become a constrained seat selector
+10. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-9. Consider whether product-team security review should also bind dynamically
+11. Consider whether product-team security review should also bind dynamically
    once `product-teams.json` carries per-team security seats consistently.
-10. Trace the second tick node (`dispatch_commands`) with the same level of
+12. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
