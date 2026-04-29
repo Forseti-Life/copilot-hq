@@ -1,24 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify current release state, check all shipping gates, and confirm whether Dev and QA have completed their required sign-offs before running PM signoff.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check shipping gate prerequisites (code review findings routed, QA APPROVE artifact present, dev commit + rollback documented) before running `release-signoff.sh`. Reading gate state now.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` and `scripts/release-signoff-status.sh` to understand gate requirements
-- Check current signoff state: `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
-- Verify Dev completion (commit hash + rollback steps) and QA APPROVE verdict exist
-- Review code-review findings for MEDIUM+ items (Gate 1b compliance)
-- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
+- Check for QA APPROVE artifact in `sessions/qa-dungeoncrawler/artifacts/`
+- Check for MEDIUM+ code-review findings that need routing or risk-acceptance
+- If all gates pass, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and record output
 
 ## Blockers
-- None yet — investigating first per blocker research protocol.
+- None confirmed yet — investigating gate state before proceeding
 
 ## Needs from CEO
-- N/A pending investigation results.
+- N/A at this stage
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Unblocking the release signoff directly unblocks shipping dungeoncrawler improvements to production. Stale blocked releases accumulate drift and increase merge risk.
+- ROI: 90
+- Rationale: Unblocking a stalled release directly unblocks dev/QA capacity and shipping cadence for dungeoncrawler. Fast resolution keeps the release cycle on schedule.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T05:42:47+00:00
+- Generated: 2026-04-29T05:53:00+00:00
