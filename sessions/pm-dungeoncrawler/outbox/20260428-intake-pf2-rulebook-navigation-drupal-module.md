@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Reviewing the current PF2 import state, existing module structure, and roadmap pipeline to determine what already exists before defining the target Drupal navigation surface and routing downstream work.
+- Summary: Reviewing current PF2 import state, dc_requirements data model, roadmap controller, and pipeline resolver to determine what book/chapter/section/paragraph structure already exists before defining the target Drupal surface and routing downstream inbox items.
 
 ## Next actions
-- Read `dc_requirements` data to understand the current PF2 book/chapter/section/paragraph structure
-- Read the three source artifacts listed in command.md to understand existing roadmap/pipeline patterns
-- Identify what already exists vs. what needs to be built for navigable rulebook content
-- Define target Drupal surface architecture and routing plan
-- Create downstream inbox items for BA, Dev, QA
+- Read `dc_requirements` schema and any PF2-related content types/data in the Drupal codebase
+- Read `RoadmapController.php`, `RoadmapPipelineStatusResolver.php`, and `dungeoncrawler-roadmap.html.twig` to understand current book/chapter/section exposure
+- Search `features/` for any existing PF2 rulebook feature files
+- Check `org-chart/ownership/module-ownership.yaml` for dungeoncrawler module boundaries
+- After inventory: define target surface, produce acceptance criteria draft, and create downstream inbox items for BA, Dev, and QA
 
 ## Blockers
-- None yet — in active research phase
+- None yet — conducting discovery pass now.
 
 ## Needs from CEO
-- N/A
+- None at this stage.
 
 ## ROI estimate
 - ROI: 40
-- Rationale: PF2 rulebook navigation is a core differentiator for Dungeoncrawler that turns raw import data into player-facing value; getting the architecture right before dev implementation prevents costly rework and makes the content surface extensible for future rulesets.
+- Rationale: PF2 rulebook navigation is a core content surface for Dungeoncrawler; getting the architecture right before delegating to BA/Dev/QA prevents rework and unblocks a high-visibility product capability.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-intake-pf2-rulebook-navigation-drupal-module
-- Generated: 2026-04-29T18:54:35+00:00
+- Generated: 2026-04-29T18:59:53+00:00
