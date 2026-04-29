@@ -133,9 +133,55 @@ def _release_enabled_team_map() -> Dict[str, Dict[str, Any]]:
         team_map[team_id] = {
             "id": team_id,
             "pm": (team.get("pm_agent") or "").strip(),
+            "dev": (team.get("dev_agent") or "").strip(),
             "deps": deps,
         }
     return team_map
+
+
+def _unrouted_code_review_findings(release_id: str) -> List[Dict[str, str]]:
+    if REPO_ROOT is None or not release_id:
+        return []
+    import sys
+
+    lib_dir = REPO_ROOT / "scripts" / "lib"
+    if str(lib_dir) not in sys.path:
+        sys.path.insert(0, str(lib_dir))
+    try:
+        from code_review_gate import unresolved_medium_plus_findings  # type: ignore
+    except Exception:
+        return []
+    return unresolved_medium_plus_findings(REPO_ROOT, release_id)
+
+
+def _queue_code_review_followup(pm_id: str, release_id: str, findings: List[Dict[str, str]]) -> None:
+    if REPO_ROOT is None or not pm_id or not findings:
+        return
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+    item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-code-review-followup-{slug}"
+    item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
+    if item_dir.exists():
+        return
+    item_dir.mkdir(parents=True, exist_ok=True)
+    findings_md = "\n".join(
+        f"- `{item['id']}` ({item['severity']}) from `{item['source_outbox']}`" for item in findings
+    )
+    (item_dir / "README.md").write_text(
+        f"# Code review follow-up required: {release_id}\n\n"
+        f"- Agent: {pm_id}\n"
+        f"- Release: {release_id}\n"
+        f"- Status: pending\n"
+        f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+        f"## Why this was queued\n"
+        f"MEDIUM+ code-review findings exist for `{release_id}` but no matching dev routing or "
+        f"risk-acceptance artifact was found, so Gate 1b is still open.\n\n"
+        f"## Findings needing action\n{findings_md}\n\n"
+        f"## Action required\n"
+        f"Route each finding to the owning dev seat as a `cr-finding` inbox item or record a "
+        f"risk acceptance in `sessions/{pm_id}/artifacts/risk-acceptances/`.\n",
+        encoding="utf-8",
+    )
+    (item_dir / "roi.txt").write_text("220\n", encoding="utf-8")
 
 
 # ── Dispatch functions ───────────────────────────────────────────────────────
@@ -263,6 +309,11 @@ def _dispatch_proactive_awaiting_signoff() -> None:
             continue
         signoff_path = REPO_ROOT / "sessions" / pm_id / "artifacts" / "release-signoffs" / f"{slug}.md"
         if signoff_path.exists():
+            continue
+
+        unresolved = _unrouted_code_review_findings(rid)
+        if unresolved:
+            _queue_code_review_followup(pm_id, rid, unresolved)
             continue
 
         item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"

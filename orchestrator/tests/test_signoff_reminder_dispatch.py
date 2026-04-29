@@ -29,6 +29,7 @@ class TestSignoffReminderDispatch(unittest.TestCase):
                 {
                     "id": "forseti",
                     "pm_agent": "pm-forseti",
+                    "dev_agent": "dev-forseti",
                     "active": True,
                     "release_preflight_enabled": True,
                     "release_dependencies": ["dungeoncrawler"],
@@ -36,6 +37,7 @@ class TestSignoffReminderDispatch(unittest.TestCase):
                 {
                     "id": "dungeoncrawler",
                     "pm_agent": "pm-dungeoncrawler",
+                    "dev_agent": "dev-dungeoncrawler",
                     "active": True,
                     "release_preflight_enabled": True,
                     "release_dependencies": [],
@@ -105,4 +107,32 @@ class TestSignoffReminderDispatch(unittest.TestCase):
             self.assertEqual(len(items), 1)
             self.assertEqual((reminder_dir / "README.md").read_text(encoding="utf-8"), "Existing reminder\n")
         finally:
+            td.cleanup()
+
+    def test_proactive_signoff_queues_code_review_followup_when_gate1b_open(self):
+        root, td = self._make_test_env()
+        old_proactive = dispatch._PROACTIVE_SIGNOFF_STATE
+        try:
+            (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
+            (
+                root
+                / "sessions"
+                / "agent-code-review"
+                / "outbox"
+                / "20260428-code-review-dungeoncrawler-dungeoncrawler-release.md"
+            ).write_text(
+                "- Status: done\n\n"
+                "### HIGH\n\n"
+                "**H-01 — Missing CSRF token validation**\n",
+                encoding="utf-8",
+            )
+            dispatch._PROACTIVE_SIGNOFF_STATE = root / "tmp" / "dispatch-state" / "proactive-signoff.timestamp"
+
+            dispatch._dispatch_proactive_awaiting_signoff()
+
+            pm_dc_inbox = root / "sessions" / "pm-dungeoncrawler" / "inbox"
+            self.assertTrue(any(p.name.endswith("code-review-followup-dungeoncrawler-release") for p in pm_dc_inbox.iterdir()))
+            self.assertFalse(any("awaiting-signoff-dungeoncrawler-release" in p.name for p in pm_dc_inbox.iterdir()))
+        finally:
+            dispatch._PROACTIVE_SIGNOFF_STATE = old_proactive
             td.cleanup()

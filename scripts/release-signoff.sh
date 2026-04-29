@@ -183,6 +183,14 @@ CERT
   fi
 fi
 
+# Gate 1b guard: do not allow PM signoff while MEDIUM+ code-review findings for
+# this release remain unrouted / unaccepted.
+if ! cr_gate_output="$(python3 scripts/check-code-review-routing.py "$release_id" 2>&1)"; then
+  echo "$cr_gate_output" >&2
+  echo "BLOCKED: PM signoff requires Gate 1b code-review follow-up before it can be issued." >&2
+  exit 1
+fi
+
 # Stale orchestrator artifact check: if an existing signoff was written by the orchestrator
 # (not a real PM), do not treat it as valid — fall through and overwrite after guard passes.
 is_stale_orchestrator=0

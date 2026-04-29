@@ -358,3 +358,39 @@ def test_skips_signoff_reminder_when_artifact_exists(tmp_path):
     assert not any("signoff-reminder" in n for n in pm_dc_items), (
         f"Unexpected signoff-reminder created when artifact exists: {pm_dc_items}"
     )
+
+
+def test_queues_code_review_followup_instead_of_signoff_reminder(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-impl-dc-feature-a.md").write_text(
+        "dc-feature-a implemented\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / "qa-dungeoncrawler" / "outbox" / "20260414-gate2-approve-dc.md").write_text(
+        "APPROVE 20260412-dungeoncrawler-release-j\n", encoding="utf-8"
+    )
+    (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
+    (
+        root
+        / "sessions"
+        / "agent-code-review"
+        / "outbox"
+        / "20260428-code-review-dungeoncrawler-20260412-dungeoncrawler-release-j.md"
+    ).write_text(
+        "- Status: done\n\n"
+        "### HIGH\n\n"
+        "**H-01 — Missing CSRF token validation**\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    pm_dc_items = [
+        p.name
+        for p in (root / "sessions" / "pm-dungeoncrawler" / "inbox").iterdir()
+        if p.is_dir()
+    ]
+    assert any("code-review-followup-20260412-dungeoncrawler-release-j" in n for n in pm_dc_items)
+    assert not any("signoff-reminder-20260412-dungeoncrawler-release-j" in n for n in pm_dc_items)

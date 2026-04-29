@@ -232,9 +232,46 @@ def _inbox_has_pending_signoff_reminder(agent: str, release_id: str) -> bool:
     return False
 
 
+def _unrouted_code_review_findings(release_id: str) -> list[dict[str, str]]:
+    import sys
+
+    lib_dir = ROOT / "scripts" / "lib"
+    if str(lib_dir) not in sys.path:
+        sys.path.insert(0, str(lib_dir))
+    try:
+        from code_review_gate import unresolved_medium_plus_findings  # type: ignore
+    except Exception:
+        return []
+    return unresolved_medium_plus_findings(ROOT, release_id)
+
+
+def _queue_code_review_followup(agent: str, release_id: str, findings: list[dict[str, str]]) -> bool:
+    findings_md = "\n".join(
+        f"- `{item['id']}` ({item['severity']}) from `{item['source_outbox']}`" for item in findings
+    )
+    return _write_item(
+        agent,
+        f"{DATE_PREFIX}-code-review-followup-{_slug(release_id)}",
+        220,
+        f"Code review follow-up: {release_id}",
+        (
+            f"Release `{release_id}` still has MEDIUM+ code-review findings with no matching dev "
+            f"routing or risk-acceptance artifact.\n\n"
+            f"Findings needing action:\n{findings_md}\n\n"
+            f"Route each finding to Dev as a `cr-finding` inbox item or record a risk acceptance "
+            f"in `sessions/{agent}/artifacts/risk-acceptances/` before signoff."
+        ),
+        f"`python3 scripts/check-code-review-routing.py {release_id}` should report no unresolved findings",
+    )
+
+
 def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cross_signoff: bool) -> bool:
     # Guard 1: artifact already written — signoff is done, no dispatch needed.
     if _has_signoff(agent, release_id):
+        return False
+    unresolved = _unrouted_code_review_findings(release_id)
+    if unresolved:
+        _queue_code_review_followup(agent, release_id, unresolved)
         return False
     # Guard 2: an existing signoff-reminder inbox item is already pending for this
     # release (possibly from a prior day's DATE_PREFIX — _write_item only dedups by
