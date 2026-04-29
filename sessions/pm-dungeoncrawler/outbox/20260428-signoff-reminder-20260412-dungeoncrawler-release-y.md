@@ -1,25 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to read the current release state, check Gate 1b (code-review findings) and Gate 2 (QA APPROVE evidence), and verify all MEDIUM+ findings are routed or risk-accepted before running the signoff script.
+- Summary: Investigating the release signoff state for `20260412-dungeoncrawler-release-y` before executing the signoff script. Need to verify gate prerequisites (Gate 1b code-review findings routed/risk-accepted, QA APPROVE artifact present) per `runbooks/shipping-gates.md` and PM role instructions before recording signoff.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand what it checks
-- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings tied to this release
-- Check `sessions/qa-dungeoncrawler/artifacts/` for QA APPROVE verdict
-- Check `tmp/release-cycle-active/` for release state
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate status
-- If all gates clear: run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and record output
+- Read `runbooks/shipping-gates.md` to confirm gate requirements
+- Check for QA APPROVE artifact for this release
+- Check for code-review findings and risk-acceptance records
+- If all gates are satisfied, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and verify with `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None yet — investigating now.
+- None confirmed yet — investigating
 
 ## Needs from CEO
-- N/A
+- N/A at this stage
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Release is blocked on PM signoff; unblocking it directly enables the deployment pipeline to proceed and delivers player-facing value.
+- Rationale: Unblocking a release signoff directly enables shipping value to production; delay compounds opportunity cost for all queued features.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T06:33:34+00:00
+- Generated: 2026-04-29T06:43:37+00:00
