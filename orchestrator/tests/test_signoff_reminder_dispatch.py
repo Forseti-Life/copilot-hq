@@ -109,6 +109,32 @@ class TestSignoffReminderDispatch(unittest.TestCase):
         finally:
             td.cleanup()
 
+    def test_dependency_reminder_includes_exact_signoff_command_and_proof(self):
+        root, td = self._make_test_env()
+        try:
+            (
+                root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "forseti-release.md"
+            ).write_text(
+                "# Signoff\n",
+                encoding="utf-8",
+            )
+
+            with patch("orchestrator.dispatch._now_ts", return_value=int(1e10)):
+                dispatch._dispatch_signoff_reminders()
+
+            reminder = next((root / "sessions" / "pm-dungeoncrawler" / "inbox").glob("*signoff-reminder*"))
+            readme = (reminder / "README.md").read_text(encoding="utf-8")
+            self.assertIn("- Required signoff release: dungeoncrawler-release", readme)
+            self.assertIn("bash scripts/release-signoff.sh dungeoncrawler dungeoncrawler-release", readme)
+            self.assertIn(
+                "`sessions/pm-dungeoncrawler/artifacts/release-signoffs/dungeoncrawler-release.md` exists",
+                readme,
+            )
+            self.assertIn("bash scripts/release-signoff-status.sh forseti-release", readme)
+            self.assertNotIn("Status: approved", readme)
+        finally:
+            td.cleanup()
+
     def test_proactive_signoff_queues_code_review_followup_when_gate1b_open(self):
         root, td = self._make_test_env()
         old_proactive = dispatch._PROACTIVE_SIGNOFF_STATE
@@ -133,6 +159,27 @@ class TestSignoffReminderDispatch(unittest.TestCase):
             pm_dc_inbox = root / "sessions" / "pm-dungeoncrawler" / "inbox"
             self.assertTrue(any(p.name.endswith("code-review-followup-dungeoncrawler-release") for p in pm_dc_inbox.iterdir()))
             self.assertFalse(any("awaiting-signoff-dungeoncrawler-release" in p.name for p in pm_dc_inbox.iterdir()))
+        finally:
+            dispatch._PROACTIVE_SIGNOFF_STATE = old_proactive
+            td.cleanup()
+
+    def test_awaiting_signoff_includes_exact_command_and_artifact_proof(self):
+        root, td = self._make_test_env()
+        old_proactive = dispatch._PROACTIVE_SIGNOFF_STATE
+        try:
+            dispatch._PROACTIVE_SIGNOFF_STATE = root / "tmp" / "dispatch-state" / "proactive-signoff.timestamp"
+
+            dispatch._dispatch_proactive_awaiting_signoff()
+
+            item = next((root / "sessions" / "pm-dungeoncrawler" / "inbox").glob("*awaiting-signoff*"))
+            readme = (item / "README.md").read_text(encoding="utf-8")
+            self.assertIn("bash scripts/release-signoff.sh dungeoncrawler dungeoncrawler-release", readme)
+            self.assertIn(
+                "`sessions/pm-dungeoncrawler/artifacts/release-signoffs/dungeoncrawler-release.md` exists",
+                readme,
+            )
+            self.assertIn("bash scripts/release-signoff-status.sh dungeoncrawler-release", readme)
+            self.assertNotIn("Status: approved", readme)
         finally:
             dispatch._PROACTIVE_SIGNOFF_STATE = old_proactive
             td.cleanup()

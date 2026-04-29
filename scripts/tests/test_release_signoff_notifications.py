@@ -15,6 +15,11 @@ def _write(path: Path, content: str) -> None:
 def _make_root(tmp_path: Path) -> Path:
     root = tmp_path / "hq"
     _write(
+        root / "scripts" / "check-code-review-routing.py",
+        "#!/usr/bin/env python3\nprint('OK: no unresolved findings')\n",
+    )
+    (root / "scripts" / "check-code-review-routing.py").chmod(0o755)
+    _write(
         root / "org-chart" / "products" / "product-teams.json",
         json.dumps(
             {

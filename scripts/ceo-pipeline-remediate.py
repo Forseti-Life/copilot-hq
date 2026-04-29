@@ -284,9 +284,11 @@ def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cr
     slug = _slug(release_id)
     title = f"Release signoff reminder: {release_id}"
     command = f"bash scripts/release-signoff.sh {target_team} {release_id}"
+    artifact_path = f"sessions/{agent}/artifacts/release-signoffs/{slug}.md"
     body = (
         f"Release `{release_id}` is blocked because your PM signoff is missing.\n\n"
-        f"Run:\n```bash\n{command}\n```\n"
+        f"Record the signoff in repo state by running:\n```bash\n{command}\n```\n"
+        f"The signoff artifact is the source of truth: `{artifact_path}` must exist before this can be marked done.\n"
     )
     if cross_signoff:
         body += "This is a coordinated cross-team co-sign requirement.\n"
@@ -298,7 +300,7 @@ def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cr
         9 if not cross_signoff else 8,
         title,
         body,
-        f"`{command}` then `bash scripts/release-signoff-status.sh {release_id}`",
+        f"`{command}`; verify `{artifact_path}` exists; then `bash scripts/release-signoff-status.sh {release_id}`",
     )
 
 

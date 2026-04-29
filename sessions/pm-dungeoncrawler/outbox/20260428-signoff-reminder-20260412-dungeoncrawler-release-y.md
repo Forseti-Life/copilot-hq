@@ -1,24 +1,26 @@
 - Status: in_progress
-- Summary: Investigating the release signoff for `20260412-dungeoncrawler-release-y` before executing — checking shipping gates compliance (code review findings routed, QA APPROVE evidence present) to ensure PM signoff is valid.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, code-review findings, and QA gate status before running `release-signoff.sh` to ensure all pre-signoff gates (Gate 1b MEDIUM+ findings routed/risk-accepted, QA APPROVE evidence present) are satisfied.
 
 ## Next actions
-- Read `runbooks/shipping-gates.md` to confirm all pre-signoff gates are satisfied
-- Check for QA APPROVE artifact for this release
-- Check for code-review findings and risk-acceptance records
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current state
-- Run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are clear
+- Read `scripts/release-signoff.sh` to understand what it checks
+- Check `scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` output
+- Check QA evidence at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Check for code-review outbox artifacts for this release
+- Check `tmp/release-cycle-active/` for release state
+- Check scoped features under `features/*/feature.md` for this release
+- Then run signoff if gates are clear, or document blockers if not
 
 ## Blockers
-- None yet — investigating
+- None confirmed yet — investigating first
 
 ## Needs from CEO
-- N/A
+- None at this stage
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release directly enables shipped product value; PM signoff is the final gate holding delivery.
+- Rationale: Unblocking a release signoff directly enables shipping to production; delay compounds with each orchestration cycle.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T16:38:44+00:00
+- Generated: 2026-04-29T16:48:36+00:00

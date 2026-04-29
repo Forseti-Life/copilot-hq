@@ -186,6 +186,40 @@ def _queue_code_review_followup(pm_id: str, release_id: str, findings: List[Dict
     (item_dir / "roi.txt").write_text("220\n", encoding="utf-8")
 
 
+def _has_pending_signoff_reminder(pm_id: str, release_id: str) -> bool:
+    if REPO_ROOT is None:
+        return False
+    inbox = REPO_ROOT / "sessions" / pm_id / "inbox"
+    if not inbox.exists():
+        return False
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+    for item_dir in inbox.iterdir():
+        if item_dir.is_dir() and "signoff-reminder" in item_dir.name and slug in item_dir.name:
+            return True
+    return False
+
+
+def _signoff_instruction_text(
+    *,
+    pm_id: str,
+    command: str,
+    artifact_path: str,
+    status_release_id: str,
+    extra_context: str,
+) -> str:
+    return (
+        "## Action required\n"
+        f"{extra_context}\n\n"
+        "Record the signoff in repo state by running:\n"
+        f"`{command}`\n\n"
+        "The signoff artifact is the source of truth; outbox prose is not a substitute.\n\n"
+        "## Acceptance criteria\n"
+        f"- `{artifact_path}` exists\n"
+        f"- `bash scripts/release-signoff-status.sh {status_release_id}` reflects your PM signoff\n"
+        "- All open blockers for your site are resolved or explicitly deferred\n"
+    )
+
+
 # ── Dispatch functions ───────────────────────────────────────────────────────
 
 def _dispatch_signoff_reminders() -> None:
@@ -224,19 +258,22 @@ def _dispatch_signoff_reminders() -> None:
 
         signed = []
         unsigned = []
+        primary_signoff = REPO_ROOT / "sessions" / team["pm"] / "artifacts" / "release-signoffs" / f"{slug}.md"
+        if primary_signoff.exists():
+            signed.append(team)
         for dep_id in dep_ids:
             dep_release_file = active_dir / f"{dep_id}.release_id"
             dep_release_id = dep_release_file.read_text(encoding="utf-8").strip() if dep_release_file.exists() else ""
             dep_team = team_map[dep_id]
             if not dep_release_id:
-                unsigned.append(dep_team)
+                unsigned.append((dep_team, dep_release_id))
                 continue
             dep_slug = re.sub(r"[^A-Za-z0-9._-]", "-", dep_release_id)[:80]
             dep_signoff = REPO_ROOT / "sessions" / dep_team["pm"] / "artifacts" / "release-signoffs" / f"{dep_slug}.md"
             if dep_signoff.exists():
                 signed.append(dep_team)
             else:
-                unsigned.append(dep_team)
+                unsigned.append((dep_team, dep_release_id))
 
         if not signed or not unsigned:
             continue  # nobody signed yet, or all signed — nothing to remind
@@ -248,28 +285,40 @@ def _dispatch_signoff_reminders() -> None:
             continue
 
         # Dispatch reminder to each unsigned PM
-        for t in unsigned:
+        for t, dep_release_id in unsigned:
             pm_id = t["pm"]
-            item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-signoff-reminder-{slug}"
+            if _has_pending_signoff_reminder(pm_id, rid):
+                continue
+            item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-signoff-reminder-{slug}"
             item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
             if item_dir.exists():
                 continue  # already dispatched this cycle
             item_dir.mkdir(parents=True, exist_ok=True)
             signed_names = ", ".join(s["pm"] for s in signed)
+            dep_slug = re.sub(r"[^A-Za-z0-9._-]", "-", dep_release_id)[:80] if dep_release_id else ""
+            command = f"bash scripts/release-signoff.sh {dep_id if (dep_id := t['id']) else team_id} {dep_release_id}".strip()
+            artifact_path = (
+                f"sessions/{pm_id}/artifacts/release-signoffs/{dep_slug}.md"
+                if dep_slug else
+                f"sessions/{pm_id}/artifacts/release-signoffs/<your-active-release-id>.md"
+            )
             (item_dir / "README.md").write_text(
                 f"# Dependency signoff reminder: {rid}\n\n"
                 f"- Agent: {pm_id}\n"
                 f"- Blocking release: {rid}\n"
+                f"- Required signoff release: {dep_release_id or 'unknown'}\n"
                 f"- Status: pending\n"
-                f"- Created: {datetime.now(timezone.utc).isoformat()}\n\n"
-                f"## Action required\n"
-                f"The following dependency PMs have already signed off for `{rid}`: {signed_names}.\n"
-                f"Your dependency release signoff is still required before `{team_id}` can ship.\n\n"
-                f"Review the release checklist and write your signoff artifact:\n"
-                f"`sessions/{pm_id}/artifacts/release-signoffs/<your-active-release-id>.md`\n\n"
-                f"## Acceptance criteria\n"
-                f"- File exists at the path above with `- Status: approved`\n"
-                f"- All open blockers for your site are resolved or explicitly deferred\n",
+                f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+                + _signoff_instruction_text(
+                    pm_id=pm_id,
+                    command=command,
+                    artifact_path=artifact_path,
+                    status_release_id=rid,
+                    extra_context=(
+                        f"The following dependency PMs have already signed off for `{rid}`: {signed_names}.\n"
+                        f"Your dependency release signoff `{dep_release_id or '<your-active-release-id>'}` is still required before `{team_id}` can ship."
+                    ),
+                ),
                 encoding="utf-8",
             )
             (item_dir / "roi.txt").write_text("500", encoding="utf-8")
@@ -323,18 +372,21 @@ def _dispatch_proactive_awaiting_signoff() -> None:
         if item_dir.exists():
             continue
         item_dir.mkdir(parents=True, exist_ok=True)
+        command = f"bash scripts/release-signoff.sh {team_id} {rid}"
+        artifact_path = f"sessions/{pm_id}/artifacts/release-signoffs/{slug}.md"
         (item_dir / "README.md").write_text(
             f"# Release ready for signoff: {rid}\n\n"
             f"- Agent: {pm_id}\n"
             f"- Release: {rid}\n"
             f"- Status: pending\n"
             f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
-            f"## Action required\n"
-            f"Your release cycle is ready for signoff. Review the release checklist and write your signoff artifact:\n"
-            f"`sessions/{pm_id}/artifacts/release-signoffs/{slug}.md`\n\n"
-            f"## Acceptance criteria\n"
-            f"- File exists at the path above with `- Status: approved`\n"
-            f"- All open blockers for your site are resolved or explicitly deferred\n",
+            + _signoff_instruction_text(
+                pm_id=pm_id,
+                command=command,
+                artifact_path=artifact_path,
+                status_release_id=rid,
+                extra_context="Your release cycle is ready for signoff.",
+            ),
             encoding="utf-8",
         )
         (item_dir / "roi.txt").write_text("60", encoding="utf-8")

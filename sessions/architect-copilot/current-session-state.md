@@ -1,17 +1,31 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-28 during intake-flow and dynamic team-routing activation
+> Last updated: 2026-04-29 during flow-detail phase/lane summary work
 
 ---
 
 ## Currently Working On
 
-Activating seat-owned execution for the Drupal LangGraph `agentic_sdlc` flow,
-including diagram ownership labels and flow-aware seat handoff routing.
+Continuing the Drupal LangGraph flow-management work after landing derived
+phase/lane summaries for `agentic_sdlc`, with the next likely slice focused on
+deeper flow-detail UX or additional runtime-graph tracing.
 
 ### Current state
 
+- The flow detail page in `drupal_langgraph` now derives:
+  - a **Phase Summary** table
+  - an **Execution Lanes** table
+  directly from the directed transition graph, so parallel branch/join patterns
+  are visible without adding new flow schema fields.
+- `agentic_sdlc` now renders the intended high-level breakdown:
+  - upstream path through `Design Review`
+  - parallel `Generate Code` and `Write Test Cases` branches
+  - post-merge validation beginning at `Ready for QA`
+- Lane summaries now show branch-specific owner coverage, for example:
+  - `Generate Code -> Code Review -> Security Review`
+  - `Write Test Cases -> Test Cases Review`
+- Module README now documents the derived phase/lane surfaces.
 - Forseti Drush is now standardized on the live Apache root:
   `/var/www/html/forseti && vendor/bin/drush --uri=https://forseti.life`.
 - Updated Architect, dev-forseti, dev-dungeoncrawler, agent-task-runner, and
@@ -236,8 +250,9 @@ including diagram ownership labels and flow-aware seat handoff routing.
 
 ### Next actions
 
-1. Decide whether the flow detail page should gain phase/lane summaries for the
-   parallel code/test branches and the new QA-readiness merge.
+1. Decide whether the flow detail page should gain richer branch presentation
+   (for example, lane badges, join annotations, or branch health signals) now
+   that the structural summaries are in place.
 2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
 3. Resolve the current repo-side Drush bootstrap failure if live runtime

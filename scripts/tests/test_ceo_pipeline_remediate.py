@@ -157,6 +157,16 @@ def test_queues_release_and_sla_followups(tmp_path):
     assert any("sla-outbox-lag-dev-dungeoncrawler-20260412-old" in name for name in pm_dc_items)
     assert not any("gate2-followup-20260412-forseti-release-i" in name for name in qa_forseti_items)
     assert any("gate2-followup-20260412-dungeoncrawler-release-j" in name for name in qa_dc_items)
+    reminder = next(
+        p
+        for p in (root / "sessions" / "pm-dungeoncrawler" / "inbox").iterdir()
+        if "signoff-reminder-20260412-forseti-release-i" in p.name
+    )
+    readme = (reminder / "README.md").read_text(encoding="utf-8")
+    assert "bash scripts/release-signoff.sh" in readme
+    assert "20260412-forseti-release-i" in readme
+    assert "`sessions/pm-dungeoncrawler/artifacts/release-signoffs/20260412-forseti-release-i.md`" in readme
+    assert "bash scripts/release-signoff-status.sh 20260412-forseti-release-i" in readme
 
 
 def test_skips_signoff_and_gate2_until_dev_outbox_exists(tmp_path):

@@ -588,6 +588,24 @@ This is idempotent — existing records (matched by req_hash) are skipped.
 ## Coordinated release (Forseti + Dungeoncrawler) — required gate
 When a release is coordinated across Forseti + Dungeoncrawler, you must record a PM signoff artifact for the agreed `release-id`.
 
+### Release signoff proof rule (required — added 2026-04-29)
+For any `awaiting-signoff`, `signoff-reminder`, `coordinated-signoff`, or release-close task, you may only write `- Status: done` after repo-state proof exists for the signoff itself.
+
+Required proof:
+```bash
+# 1. The signoff artifact must exist
+ls sessions/pm-dungeoncrawler/artifacts/release-signoffs/<release-id>.md
+
+# 2. The status script must reflect the new state
+bash scripts/release-signoff-status.sh <release-id>
+```
+
+Rules:
+- If the artifact file does not exist, do **not** say signoff was completed.
+- The signoff artifact is the source of truth; your outbox is only a summary of repo state.
+- For cross-team/coordinated signoff, do **not** guess the release ID from the blocking cohort name; use the exact release ID named in the inbox item or active release state file.
+- If Gate 1b still has unresolved MEDIUM+ code-review findings, route them or risk-accept them before trying to sign off.
+
 ### Release auto-close triggers (ship when ready — added 2026-04-05)
 **20 features is the MAXIMUM scope cap, not a target. Never wait to fill remaining scope slots.**
 
