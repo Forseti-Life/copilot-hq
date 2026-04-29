@@ -440,10 +440,17 @@ class CharacterManager {
       [
         'id' => 'forge',
         'name' => 'Forge Dwarf',
-        'benefit' => 'You have a remarkable adaptation to hot environments from your ancestors who lived and worked with fire. You can ignore the effects of environmental heat in non-extreme environments. Standard armor penalties do not apply to Fortitude saves vs. heat in non-extreme conditions.',
+        'benefit' => 'You have a remarkable adaptation to hot environments from ancestors who inhabited blazing deserts or volcanic chambers beneath the earth. This grants you fire resistance equal to half your level (minimum 1), and you treat environmental heat effects as if they were one step less extreme.',
         'special' => [
-          'heat_resistance_non_extreme' => TRUE,
-          'armor_heat_penalty_ignored' => TRUE,
+          'fire_resistance_half_level' => [
+            'damage_type' => 'fire',
+            'value_formula' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'heat_severity_downgrade_1_step' => [
+            'trigger' => 'environmental heat effect',
+            'effect' => 'Treat heat as one step less severe (incredible → extreme → severe → moderate → mild)',
+          ],
         ],
       ],
       [
