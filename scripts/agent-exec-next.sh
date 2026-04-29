@@ -142,6 +142,12 @@ if [ -f "$ROOT_DIR/scripts/lib/org-priority.sh" ]; then
   . "$ROOT_DIR/scripts/lib/org-priority.sh"
 fi
 
+# Active release priority helpers (current-release blockers get a dedicated lane).
+if [ -f "$ROOT_DIR/scripts/lib/release-priority.sh" ]; then
+  # shellcheck source=/dev/null
+  . "$ROOT_DIR/scripts/lib/release-priority.sh"
+fi
+
 roi_for_item_dir() {
   local item_dir="$1" item_name="$2"
   local roi_file="$item_dir/roi.txt"
@@ -181,13 +187,18 @@ roi_sorted_candidates() {
         [[ "$name" == _archived ]] && continue
         local dir="$inbox_dir/$name"
         local roi
+        local lane="1"
         roi="$(roi_for_item_dir "$dir" "$name")"
-        printf '%s\t%s\n' "$roi" "$name"
+        if declare -F release_priority__lane_for_item >/dev/null 2>&1; then
+          lane="$(release_priority__lane_for_item "$dir" "$name" || echo 1)"
+        fi
+        [[ "$lane" =~ ^[0-9]+$ ]] || lane=1
+        printf '%s\t%s\t%s\n' "$lane" "$roi" "$name"
       done \
-    | sort -t $'\t' -k1,1nr -k2,2
+    | sort -t $'\t' -k1,1n -k2,2nr -k3,3
 }
 
-mapfile -t candidates < <(roi_sorted_candidates "$INBOX_DIR" | awk -F'\t' '{print $2}' || true)
+mapfile -t candidates < <(roi_sorted_candidates "$INBOX_DIR" | awk -F'\t' '{print $3}' || true)
 for candidate in "${candidates[@]}"; do
   [ -n "$candidate" ] || continue
   inbox_item_candidate="$INBOX_DIR/$candidate"

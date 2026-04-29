@@ -13,6 +13,22 @@ through the wrong access path.
 
 ### Current state
 
+- Repaired the main-menu **Talk with Forseti** launcher on `forseti.life`:
+  - route path normalized from `/talk-with-forseti_content` to
+    `/talk-with-forseti`
+  - route access changed from login-only to public launcher access so the menu
+    item renders again for anonymous users
+  - anonymous launcher behavior now respects live registration policy:
+    - if self-registration is open, redirect to registration
+    - if registration is admin-only, redirect to login
+- Added `ai_conversation_update_8010()` so existing sites grant the
+  authenticated role the missing `use ai conversation` permission required by
+  `/node/{node}/chat`.
+- Applied the update hook live and confirmed authenticated browser sessions now
+  land on freshly created AI conversation chat URLs from the menu launcher.
+- Added launcher regression coverage to
+  `forseti_content/tests/src/Functional/NavigationMenuTest.php` for menu target,
+  anonymous auth redirect, and authenticated conversation creation.
 - The flow detail page in `drupal_langgraph` now derives:
   - a **Phase Summary** table
   - an **Execution Lanes** table
@@ -250,16 +266,20 @@ through the wrong access path.
 
 ### Next actions
 
-1. Decide whether the flow detail page should gain richer branch presentation
+1. If needed, follow up on the broader BrowserTestBase harness in this
+   environment (`Behat\\Mink\\Driver\\BrowserKitDriver` missing from the current
+   test runtime), since the new navigation regression test file is in place but
+   the local functional-test stack is incomplete.
+2. Decide whether the flow detail page should gain richer branch presentation
    (for example, lane badges, join annotations, or branch health signals) now
    that the structural summaries are in place.
-2. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+3. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-3. Resolve the current repo-side Drush bootstrap failure if live runtime
+4. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
-4. Decide whether flow owner entry should become a constrained seat selector
+5. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-5. Consider whether product-team security review should also bind dynamically
+6. Consider whether product-team security review should also bind dynamically
    once `product-teams.json` carries per-team security seats consistently.
-6. Trace the second tick node (`dispatch_commands`) with the same level of
+7. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
