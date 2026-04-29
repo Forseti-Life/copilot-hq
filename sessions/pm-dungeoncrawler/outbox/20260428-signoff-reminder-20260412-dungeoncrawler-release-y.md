@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and any outstanding MEDIUM+ code-review findings before running signoff.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether all pre-conditions (MEDIUM+ code review findings routed/risk-accepted, QA APPROVE, dev commit hashes) are satisfied before running `release-signoff.sh`.
 
 ## Next actions
-- Read release state files and gate artifacts to determine if all pre-signoff conditions are met
-- Check for code-review findings that must be routed or risk-accepted before signoff
-- Run `release-signoff-status.sh` to see current gate posture
-- If gates are clear, run `release-signoff.sh` and record output
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to read current gate state
+- Check QA artifacts at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/` for APPROVE evidence
+- Check for any outstanding code-review findings (Gate 1b)
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
+- Archive this inbox item under `sessions/pm-dungeoncrawler/inbox/_archived/` per Process Flow step 3a
 
 ## Blockers
-- None confirmed yet — investigating
+- None confirmed yet — investigating now.
 
 ## Needs from CEO
-- N/A
+- None at this stage.
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release directly enables shipping value to players; a stalled signoff blocks the entire delivery pipeline for Dungeoncrawler.
+- Rationale: Unblocking a release signoff directly unblocks shipping to production; delay has compounding cost across all scoped features.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T09:04:42+00:00
+- Generated: 2026-04-29T09:14:37+00:00
