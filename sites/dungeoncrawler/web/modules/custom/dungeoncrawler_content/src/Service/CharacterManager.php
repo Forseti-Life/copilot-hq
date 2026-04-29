@@ -9511,6 +9511,7 @@ the triggering spell. You then attempt to counteract the triggering spell.'],
     $ancestry_feat = ['slot_type' => 'ancestry_feat', 'label' => 'Ancestry Feat'];
 
     $universal = [
+      1  => ['feat_slots' => [$class_feat, $ancestry_feat], 'skill_increases' => 0, 'ability_boosts' => 0],
       2  => ['feat_slots' => [$class_feat, $skill_feat],  'skill_increases' => 0, 'ability_boosts' => 0],
       3  => ['feat_slots' => [$class_feat, $general_feat], 'skill_increases' => 1, 'ability_boosts' => 0],
       4  => ['feat_slots' => [$class_feat, $skill_feat],  'skill_increases' => 0, 'ability_boosts' => 0],

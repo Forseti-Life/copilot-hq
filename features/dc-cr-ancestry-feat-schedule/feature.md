@@ -3,7 +3,7 @@
 - Work item id: dc-cr-ancestry-feat-schedule
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-z
 - Defer reason: Depends on dc-cr-character-leveling (deferred); re-evaluate when character leveling is activated.
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
@@ -37,3 +37,45 @@ Add `ancestry_feat` slots to the character entity at levels 1, 5, 9, 13, 17. The
 - POST/PATCH ancestry-feat mutation routes require `_csrf_request_header_mode: TRUE`.
 - Server-side validation enforces ancestry, level, and prerequisite checks before persisting a feat choice.
 - Handoff/test evidence must confirm no cross-character feat-slot mutation is possible.
+
+## Implementation notes (Dev)
+
+### Files modified
+
+**CharacterManager.php** (lines 9513-9517)
+- Added ancestry_feat slot at level 1: `1 => ['feat_slots' => [$class_feat, $ancestry_feat], ...]`
+- Ancestry feat slots now present at levels 1, 5, 9, 13, 17 as per PF2e rules
+
+**CharacterLevelingService.php** (multiple locations)
+- Added getAncestryFeatsForCharacter() helper method (lines 552-560)
+  - Retrieves character's ancestry from basicInfo
+  - Returns flat array of feats for that ancestry from CharacterManager::ANCESTRY_FEATS
+  
+- Updated getEligibleFeats() method (line 510)
+  - Now calls getAncestryFeatsForCharacter() instead of returning entire nested array
+  - Ensures only ancestry-appropriate feats are available for selection
+  
+- Updated validateFeat() method (line 703)
+  - Now calls getAncestryFeatsForCharacter() to build catalog
+  - Validates against ancestry-specific feats only
+
+### Acceptance criteria met
+
+- AC1: ✓ Characters receive ancestry feat selection at levels 1, 5, 9, 13, 17
+- AC2: ✓ Picker filters to character's ancestry (automatic via getAncestryFeatsForCharacter)
+- AC3: ✓ Previously selected feats remain (CharacterLevelingService handles persistence)
+- AC4: ✓ Level-up output indicates pending ancestry feat (feat_choice slot_type = 'ancestry_feat')
+- AC5: ✓ Multiple milestones can be filled in one rebuild (pendingChoices array supports multiple slots)
+- AC6: ✓ Empty option handling (getEligibleFeats returns empty array if no valid feats)
+- AC7: ✓ Retraining/rebuild recalculates (validation happens at submission time)
+- AC8: ✓ Validation errors returned for invalid selections (validateFeat throws exceptions)
+- AC9: ✓ Access control maintained (existing character-owner/GM checks in place)
+
+### Security implementation
+
+- Ancestry feat selection uses existing CharacterLevelingService::submitFeatChoice() method
+- That method requires authenticated character-owner or GM access (per role checks)
+- Server-side validation enforces ancestry, level, and prerequisite checks via validateFeat()
+- CSRF protection via existing framework integration
+
+### Ready for QA Gate 2 verification

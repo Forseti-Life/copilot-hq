@@ -507,7 +507,7 @@ class CharacterLevelingService {
       'class_feat'    => CharacterManager::CLASS_FEATS[$class_name] ?? [],
       'skill_feat'    => CharacterManager::SKILL_FEATS,
       'general_feat'  => CharacterManager::GENERAL_FEATS,
-      'ancestry_feat' => CharacterManager::ANCESTRY_FEATS,
+      'ancestry_feat' => $this->getAncestryFeatsForCharacter($char_data),
       default         => [],
     };
 
@@ -546,6 +546,18 @@ class CharacterLevelingService {
       }
       return TRUE;
     }));
+  }
+
+  /**
+   * Get ancestry feats eligible for a character's ancestry.
+   *
+   * @param array $char_data  Character data array.
+   * @return array  Flat array of feats for the character's ancestry.
+   */
+  private function getAncestryFeatsForCharacter(array $char_data): array {
+    $ancestry = $char_data['basicInfo']['ancestry'] ?? 'Human';
+    $ancestry_feats = CharacterManager::ANCESTRY_FEATS[$ancestry] ?? [];
+    return is_array($ancestry_feats) ? $ancestry_feats : [];
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
@@ -688,7 +700,7 @@ class CharacterLevelingService {
       'class_feat'    => CharacterManager::CLASS_FEATS[$class_name] ?? [],
       'skill_feat'    => CharacterManager::SKILL_FEATS,
       'general_feat'  => CharacterManager::GENERAL_FEATS,
-      'ancestry_feat' => CharacterManager::ANCESTRY_FEATS,
+      'ancestry_feat' => $this->getAncestryFeatsForCharacter($char_data),
       default         => array_merge(
         CharacterManager::CLASS_FEATS[$class_name] ?? [],
         CharacterManager::SKILL_FEATS,
