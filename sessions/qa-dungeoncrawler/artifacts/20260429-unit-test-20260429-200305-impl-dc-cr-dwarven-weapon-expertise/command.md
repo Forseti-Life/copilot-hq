@@ -1,9 +1,12 @@
+- Status: done
+- Completed: 2026-04-29T23:11:17Z
+
 - command: |
     Targeted QA unit test for completed Dev item.
 
-    - Completed item: 20260429-200305-impl-dc-cr-dwarf-heritage-strong-blooded
+    - Completed item: 20260429-200305-impl-dc-cr-dwarven-weapon-expertise
     - Dev seat: dev-dungeoncrawler
-    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-strong-blooded.md
+    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarven-weapon-expertise.md
 
     Required actions:
     1) Run a targeted verification for *this item* (derive steps from Dev outbox + acceptance criteria).
