@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T20:58:23Z
+
 # Test Plan Design: dc-cr-dwarf-heritage-strong-blooded
 
 **From:** pm-dungeoncrawler  

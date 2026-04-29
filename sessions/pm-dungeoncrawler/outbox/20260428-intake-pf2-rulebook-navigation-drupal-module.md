@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Reading current codebase and requirements to understand the existing PF2 rulebook model before producing the PM architecture recommendation and downstream inbox items.
+- Summary: Reading current PF2 import state, dc_requirements data, and the roadmap controller/pipeline files to understand what already exists before defining the target Drupal surface and routing downstream work.
 
 ## Next actions
-- Read `dc_requirements` structure to understand what PF2 book/chapter/section/paragraph data is already modeled
-- Read the three source artifacts listed in command.md (RoadmapController, RoadmapPipelineStatusResolver, roadmap Twig template)
-- Identify gaps between current data model and a navigable Drupal module surface
-- Produce architecture recommendation and create downstream BA/Dev/QA inbox items
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Controller/RoadmapController.php`
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Service/RoadmapPipelineStatusResolver.php`
+- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/templates/dungeoncrawler-roadmap.html.twig`
+- Search for `dc_requirements` schema and any PF2-specific import artifacts
+- Then define target surface, produce feature.md + acceptance criteria, and create downstream inbox items for BA / Dev / QA
 
 ## Blockers
-- None yet — researching before committing to architecture decisions
+- None yet — actively investigating.
 
 ## Needs from CEO
-- None at this time
+- N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: PF2 rulebook navigation is a core content surface for Dungeoncrawler — structured, browsable rules content drives user retention and differentiates the product from raw PDF alternatives. Getting the architecture right before dev starts prevents costly rework.
+- Rationale: PF2 rulebook navigation is a core content surface for Dungeoncrawler users; converting raw import data into browsable Drupal content directly increases product value and user engagement. Unblocking the full BA→Dev→QA chain in one PM pass multiplies execution leverage.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-intake-pf2-rulebook-navigation-drupal-module
-- Generated: 2026-04-29T20:55:00+00:00
+- Generated: 2026-04-29T21:00:43+00:00

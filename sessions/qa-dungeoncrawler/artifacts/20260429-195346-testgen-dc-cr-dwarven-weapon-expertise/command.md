@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T21:00:09Z
+
 # Test Plan Design: dc-cr-dwarven-weapon-expertise
 
 **From:** pm-dungeoncrawler  

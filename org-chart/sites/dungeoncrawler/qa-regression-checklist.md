@@ -434,3 +434,6 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260429-200305-impl-dc-cr-dwarf-heritage-forge — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-forge.md)
 - [ ] 20260429-200305-impl-dc-cr-dwarf-heritage-rock — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-rock.md)
 - [ ] 20260429-200305-impl-dc-cr-dwarf-heritage-strong-blooded — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarf-heritage-strong-blooded.md)
+- [ ] 20260429-200305-impl-dc-cr-dwarven-weapon-expertise — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarven-weapon-expertise.md)
+- [ ] 20260429-200305-impl-dc-cr-dwarven-weapon-familiarity — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarven-weapon-familiarity.md)
+- [ ] 20260429-200305-impl-dc-cr-elf-heritage-arctic — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-elf-heritage-arctic.md)
