@@ -1,24 +1,23 @@
 - Status: in_progress
-- Summary: Reviewing the signoff-reminder inbox item for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) Gate 2 QA APPROVE evidence exists for all scoped features, (2) no unrouted MEDIUM+ code-review findings are outstanding, (3) the release-signoff-status script confirms partner PM (forseti) status, and (4) my seat instructions are current. Running verification steps now.
+- Summary: Received signoff-reminder for release 20260412-dungeoncrawler-release-y. Running required verification steps before executing the signoff script to confirm gate status, QA evidence, and coordinated release state.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check both-sides signoff state
-- Check QA artifacts for dungeoncrawler scoped features under `sessions/qa-dungeoncrawler/artifacts/` or equivalent
-- Check for any outstanding code-review findings for this release
-- Run `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are confirmed clear
-- Refresh seat instructions if stale items found
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check partner PM status and gate evidence
+- Review scoped features for dungeoncrawler release-y to confirm Gate 2 APPROVE artifacts exist
+- Execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all checks pass
+- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` after signoff
 
 ## Blockers
-- None confirmed yet; running checks before declaring clear
+- None identified yet — proceeding with verification
 
 ## Needs from CEO
-- N/A (proceeding with verification)
+- N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Release signoff unblocks production delivery for the dungeoncrawler product line; delay has direct user-facing impact and holds up the coordinated forseti+dungeoncrawler release window.
+- ROI: 85
+- Rationale: Release signoff unblocks production push for dungeoncrawler release-y; delay holds up a coordinated cross-site release and leaves completed QA-approved work unshipped.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T16:18:31+00:00
+- Generated: 2026-04-29T16:28:21+00:00
