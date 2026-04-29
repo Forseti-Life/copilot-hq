@@ -1,25 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, code-review findings, and QA verdict before running the signoff script — per the mandatory checklist and Gate 1b rules (all MEDIUM+ code-review findings must be routed or risk-accepted before signoff is recorded).
+- Summary: Investigating the current state of release `20260412-dungeoncrawler-release-y` before executing signoff. Need to verify gate status, code review findings, QA approval evidence, and any outstanding MEDIUM+ findings before running `release-signoff.sh`.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand preconditions and what it checks
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
-- Check for code-review outbox artifacts under `sessions/agent-code-review/outbox/` for this release
-- Check QA verdict artifacts for this release
-- Check scoped feature list and dev completion status
-- If all gates are green: run signoff and emit done outbox
+- Read `scripts/release-signoff.sh` and `runbooks/shipping-gates.md` to understand gate requirements
+- Check QA approval artifact for this release
+- Check for code review findings (MEDIUM+) and risk acceptances
+- Run `release-signoff-status.sh` to see current gate state
+- Execute signoff if all gates are satisfied
 
 ## Blockers
-- None confirmed yet — investigating first
+- None yet — investigating
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release directly enables shipping value to players; a stalled signoff blocks the entire release pipeline for dungeoncrawler.
+- Rationale: Unblocking a stalled release delivers queued product value immediately; signoff is the last gate before shipping.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T14:27:26+00:00
+- Generated: 2026-04-29T14:37:09+00:00
