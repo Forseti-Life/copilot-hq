@@ -474,7 +474,7 @@ class CharacterManager {
     ],
     'Elf' => [
       ['id' => 'arctic', 'name' => 'Arctic Elf', 'benefit' => 'Cold resistance'],
-      ['id' => 'cavern', 'name' => 'Cavern Elf', 'benefit' => 'Darkvision'],
+      ['id' => 'cavern', 'name' => 'Cavern Elf', 'benefit' => 'Darkvision', 'vision_override' => 'darkvision'],
       ['id' => 'seer', 'name' => 'Seer Elf', 'benefit' => 'Detect magic cantrip'],
       ['id' => 'woodland', 'name' => 'Woodland Elf', 'benefit' => 'Climb speed'],
     ],
