@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T21:51:40Z
+
 # Test Plan Design: dc-cr-unburdened-iron
 
 **From:** pm-dungeoncrawler  
