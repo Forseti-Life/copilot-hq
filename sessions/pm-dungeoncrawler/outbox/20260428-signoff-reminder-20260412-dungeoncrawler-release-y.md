@@ -1,25 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check shipping gates compliance (Gate 1b code-review findings routed, QA Gate 2 APPROVE artifact present) before running `release-signoff.sh`. Reading current release state now.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to verify gate status, code-review findings disposition, and QA APPROVE evidence before running `release-signoff.sh`. Reading current release state now.
 
 ## Next actions
-- Read `runbooks/shipping-gates.md` to confirm all pre-signoff gates
-- Check for QA APPROVE artifact for this release
-- Check for code-review outbox and any unrouted MEDIUM+ findings
-- Check risk-acceptance log
-- Run `scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
-- Run `scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are satisfied
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to read current gate state
+- Check for QA APPROVE artifact in `sessions/qa-dungeoncrawler/artifacts/`
+- Check for code-review outbox findings and confirm MEDIUM+ items are routed or risk-accepted
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet — investigating
+- None confirmed yet — proceeding with gate verification
 
 ## Needs from CEO
-- N/A (still investigating)
+- N/A
 
-## ROI estimate
-- ROI: 80
-- Rationale: Unblocking a release that is already gated only on PM signoff delivers shipped product value immediately; delay has compounding cost on the release cycle clock.
+---
+
+*(Continuing investigation — reading gate state and artifacts.)*
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T12:46:35+00:00
+- Generated: 2026-04-29T12:54:06+00:00
