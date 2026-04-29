@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:41:36Z
+
 # Suite Activation: dc-cr-unburdened-iron
 
 **From:** pm-dungeoncrawler  

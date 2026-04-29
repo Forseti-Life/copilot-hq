@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:32:37Z
+
 # Suite Activation: dc-cr-half-elf-heritage
 
 **From:** pm-dungeoncrawler  

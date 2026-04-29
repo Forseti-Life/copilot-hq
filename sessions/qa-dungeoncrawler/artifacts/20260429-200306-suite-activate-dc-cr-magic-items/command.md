@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:35:56Z
+
 # Suite Activation: dc-cr-magic-items
 
 **From:** pm-dungeoncrawler  

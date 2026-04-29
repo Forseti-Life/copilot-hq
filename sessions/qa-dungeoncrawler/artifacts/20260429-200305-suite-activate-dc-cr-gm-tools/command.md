@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:31:57Z
+
 # Suite Activation: dc-cr-gm-tools
 
 **From:** pm-dungeoncrawler  
