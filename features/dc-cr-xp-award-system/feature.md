@@ -3,7 +3,8 @@
 - Work item id: dc-cr-xp-award-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: deferred
+- Status: in_progress
+- Release: 20260412-dungeoncrawler-release-z
 - Defer reason: 2026-04-28 CEO release recovery decision: descoped from release-x due 6-8h implementation size, production-only risk, and non-critical P3 priority. Re-intake after dc-cr-encounter-creature-xp-table readiness is confirmed.
 - Audit note: 2026-04-27 implementation audit found only partial XP plumbing: character records store experience points and CharacterStateService can add XP to a single character, but the GM/session award service, party-wide distribution, award-event logging, and milestone-mode workflow described in the feature brief were not found.
 - Priority: P3

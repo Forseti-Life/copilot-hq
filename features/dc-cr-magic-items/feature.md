@@ -3,7 +3,7 @@
 - Work item id: dc-cr-magic-items
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: deferred
+- Status: planned
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-magic-ch11 (requirements covered in that feature's acceptance criteria)
 - Priority: P2

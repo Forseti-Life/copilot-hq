@@ -3,7 +3,8 @@
 - Work item id: dc-apg-rituals
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: deferred
+- Status: in_progress
+- Release: 20260412-dungeoncrawler-release-z
 - Defer reason: Depends on dc-cr-rituals, which remains deferred pending explicit validation of ritual rules coverage.
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
