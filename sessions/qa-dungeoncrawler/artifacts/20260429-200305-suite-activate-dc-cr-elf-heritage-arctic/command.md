@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:21:58Z
+
 # Suite Activation: dc-cr-elf-heritage-arctic
 
 **From:** pm-dungeoncrawler  

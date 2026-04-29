@@ -11,3 +11,5 @@
     Reference:
     - Original outbox: sessions/pm-dungeoncrawler/outbox/20260429-groom-20260412-dungeoncrawler-release-aa.md
     - If/when rewritten with Decision needed + Recommendation, escalation will be created automatically.
+- Agent: pm-dungeoncrawler
+- Status: pending

@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:31:18Z
+
 # Suite Activation: dc-cr-general-feats
 
 **From:** pm-dungeoncrawler  
