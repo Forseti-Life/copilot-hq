@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T21:18:32Z
+
 # Test Plan Design: dc-cr-half-elf-heritage
 
 **From:** pm-dungeoncrawler  

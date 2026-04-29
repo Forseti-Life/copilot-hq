@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Reading current PF2 data model, source files, and module structure to understand what already exists before defining the target surface and routing the downstream work.
+- Summary: Reviewing current PF2 import state, roadmap model, and existing module structure before defining the Drupal navigation surface and routing downstream work. Reading source artifacts and repo state now.
 
 ## Next actions
-- Read `dc_requirements` data and relevant source files to map current PF2 import state
-- Read RoadmapController, RoadmapPipelineStatusResolver, and the Twig template to understand current surface
-- Identify gaps between current state and a navigable book/chapter/section/paragraph surface
-- Define target Drupal architecture and produce downstream inbox items
+- Read `dc_requirements` schema and current PF2 data to understand what book/chapter/section/paragraph structure already exists
+- Read the three source artifacts listed in command.md
+- Read seat instructions and refresh if stale
+- Define target Drupal surface and routing recommendation
+- Create downstream inbox items for BA, Dev, QA
 
 ## Blockers
-- None yet — investigating first
+- None yet — in active investigation
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Navigable PF2 rulebook content is a core product differentiator for Dungeoncrawler; unblocking this pass enables BA, Dev, and QA to execute in parallel and moves a high-visibility feature toward release.
+- Rationale: PF2 rulebook navigation is a core content surface for Dungeoncrawler; converting raw import data into browsable Drupal content directly increases user value and platform credibility. Unblocking this now clears the path for BA/Dev/QA to execute in parallel.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-intake-pf2-rulebook-navigation-drupal-module
-- Generated: 2026-04-29T21:11:02+00:00
+- Generated: 2026-04-29T21:21:07+00:00
