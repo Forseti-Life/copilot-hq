@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether all prerequisites (MEDIUM+ code-review findings routed/risk-accepted, QA APPROVE artifact present) are satisfied before running `release-signoff.sh`.
+- Summary: Investigating release `20260412-dungeoncrawler-release-y` signoff readiness before executing `release-signoff.sh`. Need to verify gates are satisfied (QA APPROVE evidence, code review findings routed, dev commit hashes present) before signing off per org-wide PM policy.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand what it checks and requires
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
-- Check for QA APPROVE artifact and any outstanding code-review findings for this release
-- If all gates are green, run signoff and report result; if not, identify and document the specific blocker
+- Read `scripts/release-signoff.sh` to understand what checks it enforces
+- Check QA artifact at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
+- Check for code review outbox for this release
+- Check feature scope and dev completion status
+- If all gates clear, run signoff and report result
 
 ## Blockers
-- None confirmed yet — investigating now
+- None yet — actively investigating
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release signoff directly unblocks shipping for dungeoncrawler; stalled releases accumulate opportunity cost and block the next cycle from opening.
+- Rationale: Unblocking a stale release directly restores delivery velocity for the dungeoncrawler product line; signoff is a single gating step with no implementation risk.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-28T23:50:10+00:00
+- Generated: 2026-04-29T00:00:25+00:00
