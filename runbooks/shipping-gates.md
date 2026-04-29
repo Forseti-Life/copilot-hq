@@ -18,6 +18,7 @@ Rules:
 - A gate is not complete until its canonical artifact exists in the path above.
 - The release operator consumes the push-ready inbox item; the push itself is a handoff boundary, not a substitute for the required artifacts.
 - Release state advancement happens only after `post-coordinated-push.sh`, never on signoff alone.
+- **Signoff source-of-truth rule:** PM signoff is complete only when `sessions/<pm-seat>/artifacts/release-signoffs/<release-id>.md` exists. Narrative outboxes claiming the script was run do **not** count as signoff completion.
 
 ## Gate 0 — Intake (Any role)
 Required artifacts:
@@ -56,6 +57,7 @@ After each `agent-code-review` run for a release cycle, PM must:
 - No MEDIUM+ finding may be left unrouted (i.e., visible only in the code-review outbox).
 
 **Gate sequencing:** Gate 1b must complete before PM may record a release signoff (`scripts/release-signoff.sh`).
+- **Reminder/readiness rule:** CEO/PM seats must not dispatch or honor a signoff-ready/reminder state until this Gate 1b exit criteria is satisfied in repo state.
 
 **Lesson (2026-03-19):** In dungeoncrawler release-a, finding F-DC-A-1 (MEDIUM: CAST LIKE on LONGTEXT columns, `copilot_agent_tracker`) went untracked from Mar 9 to Mar 19 — triggering an unplanned extra QA cycle at Gate 2 (8 violations, commit `175b7c3b4`).
 
@@ -190,6 +192,7 @@ Coordinated release rule (Forseti + Dungeoncrawler):
 The official push is triggered by a **queue artifact**, not by a free-form PM decision:
 
 1. `scripts/release-signoff.sh <team> <release-id>` writes the PM signoff artifact.
+   - If the artifact file is absent after a claimed signoff, treat the release as unsigned regardless of any PM outbox prose.
 2. When all required coordinated PM signoffs exist, the same script creates:
    - `sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md`
 3. The release operator consumes that inbox item and performs the official push.

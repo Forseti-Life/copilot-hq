@@ -169,6 +169,24 @@ After dispatching a passthrough-request to pm-dungeoncrawler for a co-signoff:
 
 Reference: `knowledgebase/proposals/20260406-orchestrator-signoff-timeout.md`
 
+## Release signoff proof rule (required — added 2026-04-29)
+For any Gate 2 ready item, signoff-reminder item, or coordinated-release signoff task, you may only write `- Status: done` after repo-state proof exists for the signoff itself.
+
+Required proof:
+```bash
+# 1. The signoff artifact must exist
+ls sessions/pm-forseti/artifacts/release-signoffs/<release-id>.md
+
+# 2. The status script must reflect the new state
+bash scripts/release-signoff-status.sh <release-id>
+```
+
+Rules:
+- If the artifact file does not exist, do **not** say signoff was completed.
+- If you could not actually run the command in your execution context, leave the item `in_progress` or `blocked`; never rely on "the executor will run this on my behalf" and then mark `done`.
+- For cross-site/coordinated signoff, also verify Gate 1b is closed: every MEDIUM+ code-review finding for the release must be routed to Dev or explicitly risk-accepted before signoff is requested or recorded.
+- The signoff artifact is the source of truth; your outbox is only a summary of repo state, not a substitute for it.
+
 ## Start-of-Stage-3 checklist (next release grooming — runs in parallel with Dev execution)
 
 When the current release enters Stage 3 (Dev execution), PM begins grooming the NEXT release.

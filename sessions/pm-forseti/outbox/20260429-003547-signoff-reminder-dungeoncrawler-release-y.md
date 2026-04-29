@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify current release state, Gate 2 evidence, and partner signoff status. Running required checks now.
+- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify: (1) Gate 2 QA APPROVE evidence exists for all scoped features, (2) no MEDIUM+ code-review findings are unresolved or unaccepted, and (3) the coordinated release status (forseti partner signoff state). Running the required checks now.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check partner PM status and overall release readiness
-- Review Gate 2 APPROVE evidence for all scoped features
-- Check for any MEDIUM+ code-review findings that must be routed or risk-accepted before signoff
-- If all gates clear, execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check coordinated release state
+- Inspect scoped features for this release and confirm Gate 2 APPROVE artifacts exist
+- Check for any unresolved MEDIUM+ code-review findings in risk-acceptances or open dev inbox items
+- If all gates clear: execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Archive this inbox item under `sessions/pm-forseti/inbox/_archived/` after signoff
 
 ## Blockers
-- None confirmed yet — executing verification steps before signing off
+- None confirmed yet — checks in progress
 
 ## Needs from CEO
-- N/A
+- N/A (proceeding with verification steps)
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Releasing a production-ready dungeoncrawler build unblocks the coordinated release push and delivers scoped features to users. Delay has no upside once gates are clear.
+- ROI: 85
+- Rationale: Blocking a coordinated production release has direct revenue/community impact; unblocking it is high urgency but limited in scope complexity once gates are verified.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T12:06:01+00:00
+- Generated: 2026-04-29T12:16:16+00:00
