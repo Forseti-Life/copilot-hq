@@ -1,17 +1,32 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during Forseti homepage + footer restoration
+> Last updated: 2026-04-29 during Org Chart left-drawer layout work
 
 ---
 
 ## Currently Working On
 
-Restoring the intended Forseti front page and branded footer after they drifted
-back to default Drupal behavior/config.
+Refining the Drupal LangGraph Org Chart page so the hierarchy diagram sits in a
+left-side fold-out drawer instead of consuming the full page width above the
+detail surfaces.
 
 ### Current state
 
+- Reworked the Drupal LangGraph **Org Chart** page layout:
+  - introduced a two-column `drupal-langgraph-org-chart-layout`
+  - moved the chart into a sticky left sidebar
+  - wrapped the chart itself in a fold-out `<details>` drawer so the hierarchy
+    can stay tucked away until needed
+  - moved the org summary, instruction model, flow ownership, seat registry,
+    and seat detail panels into the right-side content column
+- Updated Org Chart styling to support the new drawer behavior:
+  - collapsed narrow rail state
+  - expanded left panel state
+  - responsive fallback back to single-column on smaller screens
+  - scrollable canvas area inside the drawer
+- Updated the org chart JS behavior so the canvas re-renders when the drawer is
+  opened or closed, preserving the existing click-to-drill-in seat behavior.
 - Restored the live Forseti front page setting:
   - added `forseti_content_update_9101()`
   - applied it live so `system.site:page.front` is now `/home`
@@ -285,23 +300,27 @@ back to default Drupal behavior/config.
 
 ### Next actions
 
-1. If needed, follow up on the broader BrowserTestBase harness in this
+1. Decide whether the Org Chart drawer should default open on desktop or remain
+   tucked closed by default now that the left-side fold-out pattern exists.
+2. Decide whether the drawer should gain a stronger “peek” mode (for example a
+   mini-map or fixed-width preview) instead of the current compact rail state.
+3. If needed, follow up on the broader BrowserTestBase harness in this
    environment (`Behat\\Mink\\Driver\\BrowserKitDriver` missing from the current
    test runtime), since the new navigation regression test file is in place but
    the local functional-test stack is incomplete.
-2. Decide whether the front page should also suppress the legacy `Home` item in
+4. Decide whether the front page should also suppress the legacy `Home` item in
    the footer quick-links list now that `/` is back on the intended custom home
    route.
-3. Decide whether the flow detail page should gain richer branch presentation
+5. Decide whether the flow detail page should gain richer branch presentation
    (for example, lane badges, join annotations, or branch health signals) now
    that the structural summaries are in place.
-4. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+6. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-5. Resolve the current repo-side Drush bootstrap failure if live runtime
+7. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
-6. Decide whether flow owner entry should become a constrained seat selector
+8. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-7. Consider whether product-team security review should also bind dynamically
+9. Consider whether product-team security review should also bind dynamically
    once `product-teams.json` carries per-team security seats consistently.
-8. Trace the second tick node (`dispatch_commands`) with the same level of
+10. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.
