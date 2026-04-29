@@ -1,23 +1,26 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to read the current release state, check gate status, and verify prerequisites (code review findings routed/risk-accepted, QA APPROVE artifact present) before running `release-signoff.sh`.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to read the current release state, check shipping-gates prerequisites (code-review findings, QA APPROVE evidence, dev commit/rollback), and determine whether it is safe to run `release-signoff.sh` or whether blockers must be resolved first.
 
 ## Next actions
-- Read release state and gate artifacts to confirm prerequisites are met
-- Check for any unrouted MEDIUM+ code-review findings
-- Check for QA APPROVE artifact for this release
-- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and capture output
+- Read `runbooks/shipping-gates.md` to confirm gate sequence
+- Check `tmp/release-cycle-active/` for release state and started_at
+- Check `sessions/qa-dungeoncrawler/artifacts/` for QA APPROVE verdict
+- Check `sessions/agent-code-review/outbox/` for any MEDIUM+ findings not yet routed or risk-accepted
+- Check `sessions/dev-dungeoncrawler/outbox/` for dev commit hash + rollback steps
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current signoff state
+- If all gates are clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and record output
 
 ## Blockers
-- None yet — investigating now
+- None confirmed yet — investigating now.
 
 ## Needs from CEO
-- N/A
+- None at this stage.
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release signoff directly enables shipping, which is high-leverage. Delay here holds the entire release.
+- Rationale: Unblocking a stalled release directly ships product value and unblocks downstream QA/Dev cycles; delay compounds opportunity cost across the team.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T05:01:58+00:00
+- Generated: 2026-04-29T05:13:01+00:00
