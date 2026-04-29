@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before executing the signoff script, I need to verify release readiness: check Gate 2 APPROVE evidence for all scoped features, confirm coordinated release status with forseti, and review any code-review findings that require routing or risk-acceptance per Gate 1b policy. Running prerequisite checks now.
+- Summary: Received signoff-reminder for dungeoncrawler release 20260412-dungeoncrawler-release-y. Before recording signoff, I need to verify Gate 2 APPROVE evidence, check the partner PM (forseti) signoff status, and confirm no unrouted MEDIUM+ code-review findings exist. Running the required verification steps now.
 
 ## Next actions
-- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to confirm partner PM status and overall release state
-- Verify Gate 2 QA APPROVE artifacts exist for all in-scope features
-- Check for any outstanding MEDIUM+ code-review findings that must be routed or risk-accepted before signoff
-- If all gates clear, execute `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Run `./scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to check partner signoff state
+- Inspect Gate 2 QA artifacts for all features scoped to this release
+- Check for any unrouted MEDIUM+ code-review findings per Gate 1b rule
+- If all gates clear: run `./scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
+- Archive this inbox item after signoff
 
 ## Blockers
-- None confirmed yet; running verification before committing signoff
+- None confirmed yet — verification in progress
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Unblocking a coordinated cross-site release directly delivers scoped user value to production and unblocks the release operator; delay has compounding cost across both dungeoncrawler and forseti streams.
+- ROI: 85
+- Rationale: Release signoff unblocks a coordinated production push across two product sites; delay here holds both forseti and dungeoncrawler from shipping. Moderate-high urgency, low execution risk once gates are confirmed clear.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260429-003547-signoff-reminder-dungeoncrawler-release-y
-- Generated: 2026-04-29T10:54:14+00:00
+- Generated: 2026-04-29T10:55:19+00:00
