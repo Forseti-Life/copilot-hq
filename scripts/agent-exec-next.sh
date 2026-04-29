@@ -462,6 +462,39 @@ if [ -f "$inbox_item/command.md" ] && grep -qiE '^\- Flow id:' "$inbox_item/comm
     PROMPT+="\n\nProduct-team routing rule (required when command.md says product-team selection is required): include one line immediately after any Flow outcome lines using this exact format:\n- Product team id: <exact team id>\nUse one of the IDs listed in command.md under Available product teams so downstream BA/PM routing can resolve the correct owning seats."
   fi
 fi
+PROMPT+="\n\nFinal-response self-check (required): your final text must contain exactly one '- Status:' line total, the first non-empty line must be '- Status:', and if flow outcomes are required you must include the exact '- Flow outcome:' line(s) from command.md immediately after '- Summary:'. If you wrote any planning prose before the final outbox, delete it before sending your final response."
+
+_extract_final_canonical_outbox() {
+  local text="$1"
+  local status_count last_status_line
+  local first_non_empty=""
+
+  status_count="$(printf '%s\n' "$text" | grep -ciE '^\- Status:' || true)"
+  [[ "$status_count" =~ ^[0-9]+$ ]] || status_count=0
+
+  if [ "$status_count" -eq 0 ]; then
+    printf '%s' "$text"
+    return 0
+  fi
+
+  if [ "$status_count" -eq 1 ]; then
+    first_non_empty="$(printf '%s\n' "$text" | awk 'NF { print; exit }')"
+    if printf '%s\n' "$first_non_empty" | grep -qE '^\- Status:'; then
+      printf '%s' "$text"
+      return 0
+    fi
+  fi
+
+  last_status_line="$(
+    printf '%s\n' "$text" | awk '/^\- Status:/ { line = NR } END { if (line) print line }'
+  )"
+  if [ -z "${last_status_line:-}" ]; then
+    printf '%s' "$text"
+    return 0
+  fi
+
+  printf '%s\n' "$text" | sed -n "${last_status_line},\$p"
+}
 
 invalid_outbox_reason() {
   local text="$1"
@@ -1022,6 +1055,7 @@ fi
 response="$(_recover_tool_written_outbox "$response")"
 # Normalize common formatting mistakes (e.g. "- **Status:** done", "Status: done").
 response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
+response="$(_extract_final_canonical_outbox "$response")"
 _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
 if [ -n "$_semantic_validation_error" ]; then
   echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
@@ -1047,6 +1081,7 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
         response="$(run_primary_backend "$PROMPT")"
         response="$(_recover_tool_written_outbox "$response")"
         response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
+        response="$(_extract_final_canonical_outbox "$response")"
         _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
         if [ -n "$_semantic_validation_error" ]; then
           echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
