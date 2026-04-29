@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, shipping gates status, and whether all prerequisites (QA APPROVE, Dev commit hash, code-review findings routed) are satisfied before running the signoff script.
+- Summary: Investigating the release signoff request for `20260412-dungeoncrawler-release-y`. Need to read current signoff state, check gate status, verify any MEDIUM+ code-review findings are routed or risk-accepted, and confirm QA APPROVE evidence exists before running the signoff script.
 
 ## Next actions
-- Read `scripts/release-signoff.sh` to understand what it checks and requires
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current gate state
-- Check for QA approval artifact and Dev completion evidence
-- Check for any MEDIUM+ code-review findings that need routing or risk-acceptance
-- If all gates are clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` and record output
+- Read current signoff status via `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y`
+- Check for QA APPROVE artifact in `sessions/qa-dungeoncrawler/artifacts/`
+- Check for code-review findings in `sessions/agent-code-review/outbox/` for this release
+- Run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates are satisfied
+- Archive this stale inbox item per role instructions (Process Flow step 3a) after signoff
 
 ## Blockers
-- None confirmed yet — investigating now
+- None confirmed yet — investigating now.
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Unblocking a stalled release directly enables shipping value to players; signoff is a gating step with no delivery until it clears.
+- ROI: 90
+- Rationale: Blocked release means no shipped value for dungeoncrawler until signoff is recorded; unblocking this is high-leverage and low-effort once gates are confirmed clear.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T08:44:32+00:00
+- Generated: 2026-04-29T08:54:26+00:00
