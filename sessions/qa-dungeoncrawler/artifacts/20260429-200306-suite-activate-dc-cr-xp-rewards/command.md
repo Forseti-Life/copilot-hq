@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T22:47:57Z
+
 # Suite Activation: dc-cr-xp-rewards
 
 **From:** pm-dungeoncrawler  

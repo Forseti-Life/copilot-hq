@@ -1,9 +1,12 @@
+- Status: done
+- Completed: 2026-04-29T22:50:23Z
+
 - command: |
     Targeted QA unit test for completed Dev item.
 
-    - Completed item: 20260429-200304-impl-dc-cr-alchemical-items
+    - Completed item: 20260429-200304-impl-dc-cr-ancestry-feat-schedule
     - Dev seat: dev-dungeoncrawler
-    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200304-impl-dc-cr-alchemical-items.md
+    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200304-impl-dc-cr-ancestry-feat-schedule.md
 
     Required actions:
     1) Run a targeted verification for *this item* (derive steps from Dev outbox + acceptance criteria).
