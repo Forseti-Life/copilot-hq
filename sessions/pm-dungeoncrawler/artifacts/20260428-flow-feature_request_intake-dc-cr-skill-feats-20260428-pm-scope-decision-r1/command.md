@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T18:06:34Z
+
 - Flow id: feature_request_intake
 - Flow run id: dc-cr-skill-feats-20260428
 - Flow node: PM Scope Decision
