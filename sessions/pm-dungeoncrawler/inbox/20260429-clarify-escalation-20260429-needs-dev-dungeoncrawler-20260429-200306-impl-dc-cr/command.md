@@ -11,3 +11,5 @@
     Reference:
     - Original outbox: sessions/pm-dungeoncrawler/outbox/20260429-needs-dev-dungeoncrawler-20260429-200306-impl-dc-cr-unburdened-iron.md
     - If/when rewritten with Decision needed + Recommendation, escalation will be created automatically.
+- Agent: pm-dungeoncrawler
+- Status: pending

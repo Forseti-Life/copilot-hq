@@ -40,3 +40,5 @@ Update the feature relationship in feature.md to clarify the split.
 - Unblocks dev after 3-cycle escalation
 - Prevents duplicate implementation attempts
 - Clarifies feature relationship for future developers
+- Agent: pm-dungeoncrawler
+- Status: pending

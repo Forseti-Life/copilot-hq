@@ -36,3 +36,5 @@ This follows the batch escalation on consolidated features (20260429-escalated-b
 - [ ] Clarify status of dc-cr-ancestry-feat-schedule (exists/missing/merged/optional)
 - [ ] Confirm scope for dc-cr-vengeful-hatred (independent or merged into parent)
 - [ ] Provide unblocking decision so dev can proceed
+- Agent: pm-dungeoncrawler
+- Status: pending
