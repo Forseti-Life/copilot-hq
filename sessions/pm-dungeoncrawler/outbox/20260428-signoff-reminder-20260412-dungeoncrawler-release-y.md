@@ -1,25 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the release signoff for `20260412-dungeoncrawler-release-y` before executing. Need to check release state, gate status, code-review findings, and QA evidence to ensure all pre-conditions are met per `runbooks/shipping-gates.md` before running the signoff script.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Need to check current release state, gate status, and whether all prerequisites (QA APPROVE, Dev commit hash, code-review findings routed/risk-accepted) are satisfied before running `release-signoff.sh`.
 
 ## Next actions
-- Read `runbooks/shipping-gates.md` to confirm pre-conditions
-- Check QA evidence at `sessions/qa-dungeoncrawler/artifacts/auto-site-audit/latest/`
-- Check code-review outbox for MEDIUM+ findings
-- Check risk-acceptances log
-- Run `release-signoff-status.sh` to see current gate state
-- Run `release-signoff.sh` if all gates are clear
+- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to read current gate state
+- Check for QA APPROVE artifact and Dev completion evidence
+- Check for `agent-code-review` outbox findings for this release
+- If all gates clear, run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet — investigating now.
+- None confirmed yet — investigating now
 
 ## Needs from CEO
-- N/A (proceeding with research)
+- N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release directly ships value to users; delay has compounding cost on the release cycle.
+- Rationale: Unblocking a stalled release directly restores delivery velocity for the Dungeoncrawler product line. Delay compounds with every cycle the release sits unsigned.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T11:45:47+00:00
+- Generated: 2026-04-29T11:56:13+00:00
