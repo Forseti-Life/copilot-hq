@@ -474,12 +474,23 @@ class CharacterManager {
       [
         'id' => 'strong-blooded',
         'name' => 'Strong-Blooded Dwarf',
-        'benefit' => 'Your blood runs hearty and strong, and you can shake off the effects of toxins. You gain a +1 status bonus to Fortitude saving throws against poisons. When you succeed at a Fortitude save against a poison, you treat it as a critical success and expunge the poison from your system.',
+        'benefit' => 'Your blood runs hearty and strong, and you can shake off the effects of toxins. You gain poison resistance equal to half your level (minimum 1), and each of your successful saving throws against a poison affliction reduces its stage by 2, or by 1 for a virulent poison. Each critical success against an ongoing poison reduces its stage by 3, or by 2 for a virulent poison.',
         'special' => [
-          'fortitude_poison_bonus' => ['type' => 'status', 'value' => 1, 'condition' => 'saving throws against poisons'],
-          'poison_save_upgrade' => [
-            'on_critical_success' => 'expunge poison',
-            'on_success' => 'reduce poison stage by 1',
+          'poison_resistance_half_level' => [
+            'damage_type' => 'poison',
+            'value_formula' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'poison_stage_reduction_bonus' => [
+            'on_success' => [
+              'standard_poison' => 'reduce stage by 2',
+              'virulent_poison' => 'reduce stage by 1',
+            ],
+            'on_critical_success' => [
+              'standard_poison' => 'reduce stage by 3',
+              'virulent_poison' => 'reduce stage by 2',
+            ],
+            'applies_to_poison_only' => TRUE,
           ],
         ],
       ],
