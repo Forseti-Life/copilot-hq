@@ -1,22 +1,24 @@
 - Status: in_progress
-- Summary: Investigating the release signoff state for `20260412-dungeoncrawler-release-y` before executing or blocking. Reading signoff scripts and current release state to determine whether all gates are satisfied.
+- Summary: Investigating the signoff-reminder for release `20260412-dungeoncrawler-release-y`. Reading current release state, gate status, and any outstanding MEDIUM+ code-review findings before executing the signoff script, as required by `runbooks/shipping-gates.md` Gate 1b policy.
 
 ## Next actions
-- Run `bash scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` to see current signoff state
-- Check gate completion (QA APPROVE, dev commit hash, code-review findings routed) before signing off
-- Execute `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y` if all gates pass
+- Read `runbooks/shipping-gates.md` to confirm all gate preconditions
+- Check `scripts/release-signoff-status.sh 20260412-dungeoncrawler-release-y` output
+- Check for any open code-review findings in `sessions/agent-code-review/outbox/`
+- Check QA approval artifact for this release
+- If all gates clear: run `bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-y`
 
 ## Blockers
-- None confirmed yet — investigating live state first
+- None confirmed yet — investigation in progress
 
 ## Needs from CEO
-- N/A
+- None at this time
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Unblocking a release signoff directly unblocks the production push for dungeoncrawler; stale signoff holds up the full delivery pipeline for this release cycle.
+- Rationale: Unblocking a release signoff directly advances the active release cycle to production; delay holds all scoped features from shipping.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-signoff-reminder-20260412-dungeoncrawler-release-y
-- Generated: 2026-04-29T10:55:38+00:00
+- Generated: 2026-04-29T11:05:39+00:00
