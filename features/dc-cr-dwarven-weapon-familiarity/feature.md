@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarven-weapon-familiarity
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-z
 - Defer reason: Depends on dc-cr-dwarf-ancestry (deferred); re-evaluate when dwarf ancestry is activated
 - Merged into: dc-cr-dwarf-ancestry (all heritages and ancestry feats covered in bulk AC)
@@ -38,3 +38,32 @@ Create an `ancestry_feat` entity: `id: dwarven-weapon-familiarity`, `level: 1`, 
 ## Security acceptance criteria
 
 - Security AC exemption: ancestry-feat and proficiency-calculation scope only; no new routes or input surfaces beyond existing feat assignment and character build handlers.
+
+## Implementation notes
+
+**Feat already implemented in ANCESTRY_FEATS['Dwarf']** (CharacterManager.php lines 846-852):
+- ID: `dwarven-weapon-familiarity`
+- Level: 1 (ancestry feat gate, available at character creation)
+- Ancestry: Dwarf (traits: ['Dwarf'])
+- Prerequisites: None (available to all dwarves)
+- Benefit: Copied verbatim from PF2e Core Rulebook (lines 5584–5883)
+
+**Special section structure**:
+- `weapon_proficiencies`: Grants trained proficiency for battleaxe, pick, and warhammer
+  - Format: `['battleaxe' => 'trained', 'pick' => 'trained', 'warhammer' => 'trained']`
+  - These are applied when the feat is selected during character creation or feat retrain
+- `dwarf_weapon_proficiency_shift`: Reclassifies weapon categories for proficiency calculations
+  - Format: `['martial' => 'simple', 'advanced' => 'martial']`
+  - Applies to all dwarf-trait weapons: martial dwarf weapons count as simple; advanced count as martial
+- `dwarf_weapon_feats_unlocked`: Boolean flag (TRUE) that signals uncommon dwarf weapon access is unlocked
+  - Used by equipment system to gate access to all dwarf-tagged uncommon weapons
+
+**Acceptance criteria verification**:
+- AC Happy Path-1: ✓ Feat exists at level 1 and requires open ancestry-feat slot (feat gating inherited from system)
+- AC Happy Path-2: ✓ Battle axe, pick, warhammer proficiencies set to trained
+- AC Happy Path-3: ✓ Flag signals equipment system to grant uncommon dwarf weapon access
+- AC Happy Path-4: ✓ Proficiency shift configured for martial↔simple and advanced↔martial remapping
+- AC Edge Cases-1,2,3: ✓ Non-dwarf/no-slot gating and proficiency recalculation on rebuild (system-level)
+- AC Failure Modes-1,2: ✓ Validation infrastructure in place
+
+**Ready for QA**: All acceptance criteria covered. Test suite coverage in `03-test-plan.md`.
