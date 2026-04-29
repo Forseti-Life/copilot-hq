@@ -437,3 +437,6 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260429-200305-impl-dc-cr-dwarven-weapon-expertise — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarven-weapon-expertise.md)
 - [ ] 20260429-200305-impl-dc-cr-dwarven-weapon-familiarity — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-dwarven-weapon-familiarity.md)
 - [ ] 20260429-200305-impl-dc-cr-elf-heritage-arctic — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-elf-heritage-arctic.md)
+- [ ] 20260429-200305-impl-dc-cr-half-elf-heritage — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200305-impl-dc-cr-half-elf-heritage.md)
+- [ ] 20260429-200306-impl-dc-cr-mountains-stoutness — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200306-impl-dc-cr-mountains-stoutness.md)
+- [ ] 20260429-200306-impl-dc-cr-rock-runner — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200306-impl-dc-cr-rock-runner.md)
