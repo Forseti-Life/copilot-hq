@@ -881,6 +881,18 @@ class CharacterManager {
           'damage_bonus' => ['type' => 'circumstance', 'value' => 1, 'per' => 'weapon_die', 'condition' => 'against selected target type'],
         ],
       ],
+      ['id' => 'dwarven-weapon-expertise', 'name' => 'Dwarven Weapon Expertise', 'level' => 13, 'traits' => ['Dwarf'], 'prerequisites' => 'Dwarven Weapon Familiarity',
+        'benefit' => 'Your dwarven affinity blends with your training, granting you great skill with dwarven weapons. Whenever you gain a class feature that grants you expert or greater proficiency in certain weapons, you also gain that proficiency for battle axes, picks, warhammers, and all dwarven weapons in which you are trained.',
+        'special' => [
+          'proficiency_propagation' => [
+            'trigger' => 'class_feature_expert_or_greater',
+            'propagate_to_weapons' => ['battleaxe', 'pick', 'warhammer'],
+            'propagate_to_dwarf_trained_set' => TRUE,
+            'prerequisite_check' => 'dwarven_weapon_familiarity',
+            'propagate_on_condition' => 'proficiency_rank_expert_or_higher',
+          ],
+        ],
+      ],
     ],
     'Elf' => [
       ['id' => 'ancestral-longevity', 'name' => 'Ancestral Longevity', 'level' => 1, 'traits' => ['Elf'], 'prerequisites' => '',
