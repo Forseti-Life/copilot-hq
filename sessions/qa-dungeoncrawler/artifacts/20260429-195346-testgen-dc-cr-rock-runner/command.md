@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-29T21:50:51Z
+
 # Test Plan Design: dc-cr-rock-runner
 
 **From:** pm-dungeoncrawler  
