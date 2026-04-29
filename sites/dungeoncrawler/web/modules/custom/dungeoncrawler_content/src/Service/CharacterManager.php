@@ -429,11 +429,11 @@ class CharacterManager {
       [
         'id' => 'death-warden',
         'name' => 'Death Warden Dwarf',
-        'benefit' => 'Your ancestors have long warded their families against the necromantic powers wielded by their enemies. If you roll a critical failure on a saving throw against a necromancy effect, you get a failure instead.',
+        'benefit' => 'Your ancestors have been tomb guardians for generations, and the power they cultivated to ward off necromancy has passed on to you. If you roll a success on a saving throw against a necromancy effect, you get a critical success instead.',
         'special' => [
-          'necromancy_crit_fail_upgrade' => [
-            'trigger' => 'critical failure on saving throw vs. necromancy',
-            'effect' => 'Treat the result as a failure instead of a critical failure.',
+          'necromancy_save_upgrade' => [
+            'trigger' => 'success on saving throw vs. necromancy',
+            'effect' => 'Treat the result as a critical success instead of a success.',
           ],
         ],
       ],
