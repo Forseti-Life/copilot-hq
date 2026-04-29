@@ -3,7 +3,7 @@
 - Work item id: dc-cr-languages
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-y
 - Implementation note: 2026-04-28 source implementation completed in the authoritative `sites/dungeoncrawler` tree. The feature now exposes a public language catalog endpoint, normalizes ancestry/default language data, validates and preserves `languages[]` in the character API, and adds character-creation bonus language selection tied to final Intelligence modifier.
 - Audit note: 2026-04-27 implementation audit found partial coverage. 2026-04-28 follow-up implementation closed the missing character-creation selection flow and language validation gaps in source; release verification still belongs to QA when this feature is next activated.

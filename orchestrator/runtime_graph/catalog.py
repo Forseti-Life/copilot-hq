@@ -8,6 +8,8 @@ from orchestrator.runtime_graph.consume_replies import consume_replies_step_cata
 HQ_ORCHESTRATOR_TICK_NODE_ORDER = [
     "consume_replies",
     "dispatch_commands",
+    "release_cycle",
+    "coordinated_push",
     "pick_agents",
     "exec_agents",
     "health_check",

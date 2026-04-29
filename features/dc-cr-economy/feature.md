@@ -4,7 +4,7 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-y
 - Release readiness note: 2026-04-28 PM re-intake for release-y after release-x empty closeout. Treat this as a fresh scoped implementation/verification pass despite prior cycle drift.
 - Audit note: 2026-04-28 normalized to done based on existing dev implementation evidence (`sessions/dev-dungeoncrawler/outbox/20260410-021500-implement-dc-cr-economy.md`) and release-y Gate 2 approval normalization.

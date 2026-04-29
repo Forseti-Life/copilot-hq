@@ -10,7 +10,6 @@ import unittest
 
 
 def _next_release_id_after(release_id: str, team_id: str, current_day: str) -> str:
-    suffixes = ["release", "release-next"] + [f"release-{chr(c)}" for c in range(ord("b"), ord("z") + 1)]
     date_part = current_day
     suffix = "release"
 
@@ -19,13 +18,27 @@ def _next_release_id_after(release_id: str, team_id: str, current_day: str) -> s
         date_part = match.group(1)
         suffix = match.group(2)
 
-    try:
-        idx = suffixes.index(suffix)
-    except ValueError:
-        idx = 0
+    if suffix == "release":
+        next_suffix = "release-next"
+    elif suffix == "release-next":
+        next_suffix = "release-b"
+    else:
+        label_match = re.fullmatch(r"release-([a-z]+)", suffix)
+        if not label_match:
+            next_suffix = "release-b"
+        else:
+            chars = list(label_match.group(1))
+            idx = len(chars) - 1
+            while idx >= 0 and chars[idx] == "z":
+                chars[idx] = "a"
+                idx -= 1
+            if idx < 0:
+                chars.insert(0, "a")
+            else:
+                chars[idx] = chr(ord(chars[idx]) + 1)
+            next_suffix = f"release-{''.join(chars)}"
 
-    next_idx = min(idx + 1, len(suffixes) - 1)
-    return f"{date_part}-{team_id}-{suffixes[next_idx]}"
+    return f"{date_part}-{team_id}-{next_suffix}"
 
 
 class TestReleaseCycleSequence(unittest.TestCase):
@@ -59,6 +72,12 @@ class TestReleaseCycleSequence(unittest.TestCase):
         self.assertEqual(
             _next_release_id_after("20260412-dungeoncrawler-release-e", "dungeoncrawler", "20260413"),
             "20260412-dungeoncrawler-release-f",
+        )
+
+    def test_release_z_advances_to_release_aa(self):
+        self.assertEqual(
+            _next_release_id_after("20260412-dungeoncrawler-release-z", "dungeoncrawler", "20260412"),
+            "20260412-dungeoncrawler-release-aa",
         )
 
 

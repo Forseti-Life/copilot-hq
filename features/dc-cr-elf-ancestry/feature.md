@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-y
 - Priority: P2
 - PM owner: pm-dungeoncrawler

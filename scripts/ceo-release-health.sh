@@ -187,40 +187,88 @@ PY
 
   # 2. Stale next_release_id check (next should not equal or precede current)
   if [ -n "$NEXT_RELEASE_ID" ]; then
+    NEED_NEXT_FIX=0
     if [ "$NEXT_RELEASE_ID" = "$RELEASE_ID" ]; then
       fail "[$TEAM] next_release_id == release_id ($RELEASE_ID) — definitely stale"
+      NEED_NEXT_FIX=1
     else
-      # Lexicographic compare: next should be "greater" (later release label)
-      LATER="$(printf '%s\n%s\n' "$RELEASE_ID" "$NEXT_RELEASE_ID" | sort | tail -1)"
-      if [ "$LATER" != "$NEXT_RELEASE_ID" ]; then
-        fail "[$TEAM] next_release_id ($NEXT_RELEASE_ID) sorts before release_id ($RELEASE_ID) — stale"
-        if [ "$FIX_MODE" = "1" ]; then
-          # Compute next: find the label suffix (release-X), increment past current
-          NEW_NEXT="$(python3 - "$RELEASE_ID" "$NEXT_RELEASE_ID" <<'PY'
-import sys, re
-cur, stale = sys.argv[1], sys.argv[2]
-# Extract prefix (date+team part) and suffix (release-X)
-m = re.match(r'^(.*-release-)([a-z]+)$', cur)
-if not m:
-    print('')
-    sys.exit(0)
-prefix, label = m.group(1), m.group(2)
-# cycle: a b c d e f ...
-alpha = 'abcdefghijklmnopqrstuvwxyz'
-idx = alpha.index(label) if label in alpha else -1
-new_label = alpha[(idx + 1) % len(alpha)] if idx >= 0 else 'd'
-print(prefix + new_label)
+      NEXT_IS_AHEAD="$(python3 - "$RELEASE_ID" "$NEXT_RELEASE_ID" "$TEAM" <<'PY'
+import re
+import sys
+
+current_release_id, next_release_id, team_id = sys.argv[1], sys.argv[2], sys.argv[3]
+
+def rank(release_id: str) -> int:
+    match = re.match(rf"^\d{{8}}-{re.escape(team_id)}-(.+)$", release_id or "")
+    suffix = match.group(1) if match else ""
+    if suffix == "release":
+        return 0
+    if suffix == "release-next":
+        return 1
+    label_match = re.fullmatch(r"release-([a-z]+)", suffix)
+    if not label_match:
+        return -1
+    value = 0
+    for ch in label_match.group(1):
+        value = (value * 26) + (ord(ch) - ord("a") + 1)
+    return 1 + value
+
+print("1" if rank(next_release_id) > rank(current_release_id) else "0")
 PY
 )"
-          if [ -n "$NEW_NEXT" ]; then
-            echo "$NEW_NEXT" > "$NEXT_ID_FILE"
-            info "FIX: next_release_id set to $NEW_NEXT"
-          fi
-        else
-          info "Run with --fix to auto-correct, or: echo '<correct-id>' > $NEXT_ID_FILE"
-        fi
+      if [ "$NEXT_IS_AHEAD" != "1" ]; then
+        fail "[$TEAM] next_release_id ($NEXT_RELEASE_ID) sorts before release_id ($RELEASE_ID) — stale"
+        NEED_NEXT_FIX=1
       else
         pass "[$TEAM] next_release_id ($NEXT_RELEASE_ID) is ahead of current — OK"
+      fi
+    fi
+
+    if [ "$NEED_NEXT_FIX" = "1" ]; then
+      if [ "$FIX_MODE" = "1" ]; then
+        NEW_NEXT="$(python3 - "$RELEASE_ID" "$TEAM" <<'PY'
+import re
+import sys
+
+release_id, team_id = sys.argv[1], sys.argv[2]
+match = re.match(rf"^(\d{{8}})-{re.escape(team_id)}-(.+)$", release_id or "")
+if not match:
+    print("")
+    raise SystemExit(0)
+
+date_part = match.group(1)
+suffix = match.group(2)
+
+if suffix == "release":
+    next_suffix = "release-next"
+elif suffix == "release-next":
+    next_suffix = "release-b"
+else:
+    label_match = re.fullmatch(r"release-([a-z]+)", suffix)
+    if not label_match:
+        next_suffix = "release-b"
+    else:
+        chars = list(label_match.group(1))
+        idx = len(chars) - 1
+        while idx >= 0 and chars[idx] == "z":
+            chars[idx] = "a"
+            idx -= 1
+        if idx < 0:
+            chars.insert(0, "a")
+        else:
+            chars[idx] = chr(ord(chars[idx]) + 1)
+        next_suffix = f"release-{''.join(chars)}"
+
+print(f"{date_part}-{team_id}-{next_suffix}")
+PY
+)"
+        if [ -n "$NEW_NEXT" ]; then
+          echo "$NEW_NEXT" > "$NEXT_ID_FILE"
+          info "FIX: next_release_id set to $NEW_NEXT"
+          NEXT_RELEASE_ID="$NEW_NEXT"
+        fi
+      else
+        info "Run with --fix to auto-correct, or: echo '<correct-id>' > $NEXT_ID_FILE"
       fi
     fi
   else

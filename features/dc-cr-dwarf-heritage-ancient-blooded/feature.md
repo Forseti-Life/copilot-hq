@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarf-heritage-ancient-blooded
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-y
 - Audit note: 2026-04-28 normalized to done based on existing dev implementation evidence (`sessions/dev-dungeoncrawler/outbox/20260320-impl-dc-cr-dwarf-heritage-ancient-blooded.md`, `sessions/dev-dungeoncrawler/outbox/20260425-qa-block-dc-cr-dwarf-heritage-ancient-blooded.md`) and release-y Gate 2 approval normalization.
 - Release readiness note: 2026-04-28 re-intaken after dwarf ancestry and heritage-system are already shipped, making this the next clean independent heritage candidate to move through release-y.

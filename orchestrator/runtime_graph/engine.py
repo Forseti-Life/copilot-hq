@@ -222,6 +222,36 @@ def run_tick(
         deps.dispatch_commands_step(s["log"])
         return s
 
+    def release_cycle(s: Dict[str, Any]) -> Dict[str, Any]:
+        release_signals = (
+            "release-signoff-created",
+            "release-cycle-advanced",
+            "gate2-approved",
+            "coordinated-push-done",
+        )
+        event_triggered = deps.has_events(*release_signals)
+        interval_elapsed = (deps.now_ts() - s["release_cycle_last_run"]) >= s["release_cycle_interval"]
+        should_run = event_triggered or interval_elapsed
+        s["_release_cycle_should_run"] = should_run
+        s["_release_cycle_trigger"] = "event" if event_triggered else "interval" if interval_elapsed else "skipped"
+
+        if event_triggered:
+            deps.consume_events(*release_signals)
+
+        if should_run:
+            deps.release_cycle_step(s["log"])
+            s["release_cycle_last_run"] = deps.now_ts()
+        else:
+            s["log"].append({"step": "release_cycle", "skipped": True})
+        return s
+
+    def coordinated_push(s: Dict[str, Any]) -> Dict[str, Any]:
+        if s.get("_release_cycle_should_run"):
+            deps.coordinated_push_step(s["log"])
+        else:
+            s["log"].append({"step": "coordinated_push", "skipped": True})
+        return s
+
     def pick_agents(s: Dict[str, Any]) -> Dict[str, Any]:
         all_agents = deps.prioritized_agents()
         # Only consider CEO for bonus slot if agent_cap > 0
@@ -421,6 +451,8 @@ def run_tick(
     graph = StateGraph(dict)
     graph.add_node("consume_replies", consume_replies)
     graph.add_node("dispatch_commands", dispatch_commands)
+    graph.add_node("release_cycle", release_cycle)
+    graph.add_node("coordinated_push", coordinated_push)
     graph.add_node("pick_agents", pick_agents)
     graph.add_node("exec_agents", exec_agents)
     graph.add_node("health_check", health_check)
@@ -428,7 +460,9 @@ def run_tick(
     graph.add_node("publish", publish)
     graph.set_entry_point("consume_replies")
     graph.add_edge("consume_replies", "dispatch_commands")
-    graph.add_edge("dispatch_commands", "pick_agents")
+    graph.add_edge("dispatch_commands", "release_cycle")
+    graph.add_edge("release_cycle", "coordinated_push")
+    graph.add_edge("coordinated_push", "pick_agents")
     graph.add_edge("pick_agents", "exec_agents")
     graph.add_edge("exec_agents", "health_check")
     graph.add_edge("health_check", "kpi_monitor")

@@ -1,14 +1,52 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during Org Chart tree-navigation replacement
+> Last updated: 2026-04-29 after Drupal fleet update audit
 
 ---
 
 ## Currently Working On
 
-Replacing the Org Chart’s primary visualization strategy with a collapsible tree
-navigator so the org hierarchy is actually usable on desktop and mobile.
+Auditing all live Drupal sites on this host to identify pending core/contrib
+updates and determine whether any sites need immediate maintenance.
+
+### Current state
+
+- Reviewed all live Drupal roots under `/var/www/html`:
+  - `angelicafeliciano`
+  - `dungeoncrawler`
+  - `forseti`
+  - `stlouisintegration`
+  - `theoryofconspiracies`
+  - `unicorninvesting`
+- Confirmed each site is currently on Drupal `11.3.7`.
+- Confirmed each site has Drupal core patch updates available to `11.3.8`:
+  - `drupal/core-recommended`
+  - `drupal/core-composer-scaffold`
+  - `drupal/core-project-message`
+  - `drupal/core-recipe-unpack`
+- Confirmed no Composer security advisories are currently reported for any of
+  the six sites.
+- Confirmed Drupal runtime bootstrap succeeds on all six sites.
+- Found one pending database update outside package updates:
+  - `stlouisintegration`: `ai_conversation` update `8010`
+- Found additional safe contrib/dev updates on selected sites:
+  - `forseti`: `drupal/recaptcha_v3 2.0.4 -> 2.0.5`,
+    `drupal/twig_tweak 3.4.1 -> 3.4.2`
+  - `forseti`, `stlouisintegration`: `drupal/coder 8.3.31 -> 9.0.0`
+
+## Key decisions made
+
+- Treat this pass as an audit only; no package or database updates were applied.
+- Classify the fleet as needing maintenance because every live site has at least
+  one pending core patch release.
+
+## Next actions
+
+1. Schedule/apply Drupal `11.3.8` core patch updates across all six sites.
+2. Apply `ai_conversation` update `8010` on `stlouisintegration`.
+3. Optionally bundle the Forseti contrib updates into the same maintenance
+   window if low-risk patching is desired.
 
 ### Current state
 
