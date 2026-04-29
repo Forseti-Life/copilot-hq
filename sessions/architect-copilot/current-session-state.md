@@ -1,18 +1,42 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during Org Chart whole-page layout cleanup
+> Last updated: 2026-04-29 during Org Chart tree-navigation replacement
 
 ---
 
 ## Currently Working On
 
-Refining the entire Drupal LangGraph Org Chart page layout to reduce dead space,
-improve alignment, and make the page more phone-friendly while keeping the new
-seat animation panels.
+Replacing the Org Chart’s primary visualization strategy with a collapsible tree
+navigator so the org hierarchy is actually usable on desktop and mobile.
 
 ### Current state
 
+- Replaced the Org Chart’s primary navigation surface:
+  - the left sidebar now renders a collapsible hierarchical tree
+  - each seat links directly to its detail panel
+  - CEO clusters and paused/group nodes still reflect the same underlying org
+    model as before
+- Demoted the old canvas graph to a secondary **Visual map (beta)** section
+  inside the sidebar instead of keeping it as the primary experience.
+- Updated the chart JS so the canvas only renders when that secondary visual-map
+  details panel is opened, rather than assuming the entire sidebar is a chart
+  drawer.
+- Updated Org Chart layout/CSS to support the new tree-first strategy:
+  - fixed-width readable left navigation column on desktop
+  - stacked single-column behavior on smaller screens
+  - nested branch styling, child counts, and direct seat links
+- Reworked the Org Chart drawer interaction so it behaves like a true fold-out:
+  - the left sidebar now stays a narrow fixed rail in the page grid
+  - the chart drawer itself expands as an overlay-sized panel instead of
+    shrinking the content column
+  - expanded width now grows to `min(64rem, calc(100vw - 3rem))`
+- Strengthened chart redraw behavior:
+  - added queued redraw handling
+  - redraw now runs on drawer toggle, drawer transition end, resize events, and
+    ResizeObserver notifications
+  - branch expand/collapse inside the chart now also re-queues render instead of
+    depending on immediate narrow-width draws
 - Tightened the overall Org Chart page structure:
   - grouped org summary, instruction model, flow ownership, and seat registry
     into a responsive `insights` grid
