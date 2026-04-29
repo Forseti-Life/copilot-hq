@@ -1,9 +1,9 @@
 - command: |
     Targeted QA unit test for completed Dev item.
 
-    - Completed item: 20260429-blocker-20260412-dungeoncrawler-release-z-dc-cr-xp-award-system
+    - Completed item: 20260429-200304-impl-dc-cr-alchemical-items
     - Dev seat: dev-dungeoncrawler
-    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-blocker-20260412-dungeoncrawler-release-z-dc-cr-xp-award-system.md
+    - Dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-200304-impl-dc-cr-alchemical-items.md
 
     Required actions:
     1) Run a targeted verification for *this item* (derive steps from Dev outbox + acceptance criteria).
