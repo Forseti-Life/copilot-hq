@@ -496,7 +496,21 @@ class CharacterManager {
       ],
     ],
     'Elf' => [
-      ['id' => 'arctic', 'name' => 'Arctic Elf', 'benefit' => 'Cold resistance'],
+      ['id' => 'arctic', 'name' => 'Arctic Elf', 'benefit' => 'You dwell deep in the frozen north and have gained incredible resilience against cold environments, granting you cold resistance equal to half your level (minimum 1). You treat environmental cold effects as if they were one step less extreme (incredible cold becomes extreme, extreme cold becomes severe, and so on).',
+        'special' => [
+          'cold_resistance' => [
+            'type' => 'half_level_min_1',
+            'value' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'environmental_cold_severity_downgrade' => [
+            'trigger' => 'environmental_cold_effect',
+            'severity_ladder' => ['incredible' => 'extreme', 'extreme' => 'severe', 'severe' => 'moderate', 'moderate' => 'mild'],
+            'downgrade_steps' => 1,
+            'applies_to_cold_only' => TRUE,
+          ],
+        ],
+      ],
       ['id' => 'cavern', 'name' => 'Cavern Elf', 'benefit' => 'Darkvision', 'vision_override' => 'darkvision'],
       ['id' => 'seer', 'name' => 'Seer Elf', 'benefit' => 'Detect magic cantrip'],
       ['id' => 'woodland', 'name' => 'Woodland Elf', 'benefit' => 'Climb speed'],

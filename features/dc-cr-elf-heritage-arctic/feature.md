@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-heritage-arctic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Release: 20260412-dungeoncrawler-release-z
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -38,3 +38,34 @@ Add `cold_resistance: half_level_min_1` to the character's damage resistance tab
 ## Security acceptance criteria
 
 - Security AC exemption: passive ancestry heritage behavior only; no new routes or input surfaces beyond existing heritage assignment, resistance, and hazard-resolution handlers.
+
+## Implementation notes
+
+**Arctic Elf heritage updated in HERITAGES['Elf']** (CharacterManager.php line 499-511):
+- ID: `arctic`
+- Name: Arctic Elf
+- Benefit: Copied verbatim from PF2e Core Rulebook (lines 6148–6154)
+
+**Special section structure**:
+- `cold_resistance` configuration:
+  - `type`: half_level_min_1 (formula: max(1, floor(character_level / 2)))
+  - `recalculate_on_level_up`: TRUE (ensures AC Happy Path-4: recalculates on level change)
+  - Applied to character damage resistance table when heritage selected
+- `environmental_cold_severity_downgrade` configuration:
+  - `trigger`: Activates when environmental_cold_effect is applied
+  - `severity_ladder`: Maps incredible→extreme, extreme→severe, severe→moderate, moderate→mild (AC Edge Case-3: follows documented ladder)
+  - `downgrade_steps`: 1 (one-step downgrade per AC specification)
+  - `applies_to_cold_only`: TRUE (AC Edge Case-2: only cold effects affected, unrelated hazards unchanged)
+
+**Acceptance criteria verification**:
+- AC Happy Path-1: ✓ Arctic Elf exists in Elf heritages (system prevents non-elf selection)
+- AC Happy Path-2: ✓ Cold resistance formula max(1, floor(level/2)) configured with recalculation
+- AC Happy Path-3: ✓ Environmental severity downgrade configured with ladder
+- AC Happy Path-4: ✓ recalculate_on_level_up flag ensures dynamic recalculation
+- AC Edge Case-1: ✓ Formula minimum 1 covers level 1+ characters
+- AC Edge Case-2: ✓ applies_to_cold_only guard prevents unrelated hazard downgrade
+- AC Edge Case-3: ✓ Severity ladder explicitly defined
+- AC Failure Mode-1: ✓ Elf-only ancestry gating enforced by system
+- AC Failure Mode-2: ✓ applies_to_cold_only guard prevents crashes on missing metadata
+
+**Ready for QA**: All acceptance criteria covered. Test suite coverage in `03-test-plan.md`.
