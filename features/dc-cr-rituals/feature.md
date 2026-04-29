@@ -3,7 +3,7 @@
 - Work item id: dc-cr-rituals
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-spells-ch07 (requirements covered in that feature's acceptance criteria)
 - Priority: P3
@@ -30,3 +30,7 @@ Content type: `ritual` with fields for spell level, cast time, primary check (sk
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- Security AC exemption: spellcasting/rules-engine scope only; no new public routes expected beyond existing spellcasting, downtime, or session-action handlers.

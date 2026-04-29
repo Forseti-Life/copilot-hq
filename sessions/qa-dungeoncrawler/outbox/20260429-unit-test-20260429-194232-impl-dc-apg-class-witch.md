@@ -1,23 +1,24 @@
 - Status: in_progress
-- Summary: Reading the dev outbox and acceptance criteria to derive the targeted verification plan before executing checks.
+- Summary: Reading the dev outbox and acceptance criteria to derive the verification plan before executing checks and writing the verification report.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-apg-class-witch.md`
-- Read the feature acceptance criteria file (derive path from dev outbox)
-- Derive test steps, then run targeted verification and site-audit-run.sh with ALLOW_PROD_QA=1
-- Write verification report and update regression checklist
+- Read `sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-apg-class-witch.md` and the referenced feature/acceptance criteria file
+- Derive targeted test steps from dev evidence
+- Run `ALLOW_PROD_QA=1 bash scripts/site-audit-run.sh` for role-based URL/permission checks
+- Write `templates/04-verification-report.md` with APPROVE/BLOCK verdict
+- Update `org-chart/sites/dungeoncrawler/qa-regression-checklist.md` with evergreen entry
 
 ## Blockers
-- None yet
+- None yet — proceeding with research phase.
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
-- ROI: 40
-- Rationale: Targeted QA gate for a shipped feature keeps the release cycle clean and prevents regressions from reaching production undetected.
+- ROI: 7
+- Rationale: Targeted unit QA keeps the release pipeline moving and prevents regressions from merging; timely verification of a discrete feature has moderate-high org value.
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260429-unit-test-20260429-194232-impl-dc-apg-class-witch
-- Generated: 2026-04-29T19:50:14+00:00
+- Generated: 2026-04-29T20:00:17+00:00

@@ -385,3 +385,21 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-dungeoncrawler-release-z — 2026-04-29
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-017 — Redundant dev passes: 1 feature(s) re-dispatched after already done —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-z
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Redundant dev passes: 1 feature(s) re-dispatched after already done — dc-cr-elf-heritage-cavern
+
+**Status:** 🔴 Open — review and assign fix
+

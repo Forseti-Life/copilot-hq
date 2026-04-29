@@ -3,7 +3,7 @@
 - Work item id: dc-cr-ancestry-feat-schedule
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: Depends on dc-cr-character-leveling (deferred); re-evaluate when character leveling is activated.
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
 - PM owner: pm-dungeoncrawler
@@ -29,3 +29,10 @@ Add `ancestry_feat` slots to the character entity at levels 1, 5, 9, 13, 17. The
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- All ancestry-feat selection writes require authenticated character-owner or GM access.
+- POST/PATCH ancestry-feat mutation routes require `_csrf_request_header_mode: TRUE`.
+- Server-side validation enforces ancestry, level, and prerequisite checks before persisting a feat choice.
+- Handoff/test evidence must confirm no cross-character feat-slot mutation is possible.

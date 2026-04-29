@@ -3,7 +3,7 @@
 - Work item id: dc-cr-half-elf-heritage
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -32,3 +32,7 @@ Model Half-Elf as a Human heritage record, not a separate ancestry. The heritage
 
 - [ ] Aligns with democratized community game experience
 - [ ] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- Security AC exemption: ancestry heritage and feat-eligibility scope only; no new routes or input surfaces beyond existing heritage assignment and ancestry-feat handlers.

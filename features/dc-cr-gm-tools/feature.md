@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gm-tools
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-gmg-running-guide (requirements covered in that feature's acceptance criteria)
 - Priority: P2
@@ -30,3 +30,10 @@ Encounter budget table: XP budget per threat level by party size/level. Creature
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- GM-only prep or generation routes require authenticated GM/admin access and must not be exposed to anonymous or standard player roles.
+- All GM prep POST/PATCH actions require `_csrf_request_header_mode: TRUE`.
+- Generated encounter, loot, and NPC prep data is scoped to the current campaign/session context and must not leak hidden prep data across campaigns.
+- Logs and AI prompt payloads exclude unrelated player secrets/PII and record only the minimum IDs needed for traceability.

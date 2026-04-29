@@ -3,7 +3,7 @@
 - Work item id: dc-cr-vengeful-hatred
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: Depends on dc-cr-dwarf-ancestry (deferred); re-evaluate when dwarf ancestry is activated
 - Merged into: dc-cr-dwarf-ancestry (all heritages and ancestry feats covered in bulk AC)
 - Priority: P3
@@ -34,3 +34,7 @@ Create an `ancestry_feat` entity: `id: vengeful-hatred`, `level: 1`, `ancestry: 
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- Security AC exemption: ancestry-feat and combat-modifier scope only; no new routes or input surfaces beyond existing feat assignment and combat-resolution handlers.

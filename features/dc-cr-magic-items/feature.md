@@ -3,7 +3,7 @@
 - Work item id: dc-cr-magic-items
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-magic-ch11 (requirements covered in that feature's acceptance criteria)
 - Priority: P2
@@ -30,3 +30,7 @@ Content type: `magic_item` extending `equipment_item` with fields for item level
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- Security AC exemption: catalog, inventory, and equipment-rule scope only; use existing item management surfaces without introducing new routes or novel input handling.

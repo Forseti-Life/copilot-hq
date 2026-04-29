@@ -3,7 +3,7 @@
 - Work item id: dc-cr-xp-rewards
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-xp-award-system (requirements covered in that feature's acceptance criteria)
 - Priority: P1
@@ -31,3 +31,10 @@ Character entity field: `xp` (integer). Session reward API: GM awards XP to part
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Security acceptance criteria
+
+- XP award writes require authenticated GM/system access; players can read progress but cannot mint XP for themselves.
+- POST/PATCH XP award routes require `_csrf_request_header_mode: TRUE`.
+- Server-side validation confirms the target characters belong to the active campaign/session before XP is applied.
+- XP award logging records only the minimum campaign/session and character IDs required for traceability, with no unrelated PII.
