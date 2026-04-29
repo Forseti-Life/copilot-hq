@@ -1,18 +1,37 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-29 during Forseti menu conversation launcher repair
+> Last updated: 2026-04-29 during Forseti homepage + footer restoration
 
 ---
 
 ## Currently Working On
 
-Repairing the Forseti main-menu conversation launcher so the Talk with Forseti
-link once again routes into AI conversation creation instead of dead-ending
-through the wrong access path.
+Restoring the intended Forseti front page and branded footer after they drifted
+back to default Drupal behavior/config.
 
 ### Current state
 
+- Restored the live Forseti front page setting:
+  - added `forseti_content_update_9101()`
+  - applied it live so `system.site:page.front` is now `/home`
+  - confirmed `/` now resolves to `forseti_content.home`
+    (`ForsetiHomeController::content`) again instead of the default frontpage
+    view.
+- Restored the branded footer:
+  - replaced the live `forseti_footer` block with the custom
+    `forseti_footer_menu` plugin
+  - updated the theme optional footer block config so future installs use the
+    branded footer block instead of a bare `system_menu_block:footer`
+  - updated the footer block template to use `/talk-with-forseti`
+  - confirmed the public homepage now renders the branded footer markup and
+    working talk/contact links again.
+- Found and corrected a root-cause drift in module lifecycle wiring:
+  - `forseti_content.install` had misnamed install/uninstall hook prefixes
+    (`forseti_*` instead of `forseti_content_*`)
+  - corrected the install/uninstall hook names for future installs while
+    keeping old misnamed update hooks untouched so unrelated historical config
+    changes are not replayed unexpectedly.
 - Repaired the main-menu **Talk with Forseti** launcher on `forseti.life`:
   - route path normalized from `/talk-with-forseti_content` to
     `/talk-with-forseti`
@@ -270,16 +289,19 @@ through the wrong access path.
    environment (`Behat\\Mink\\Driver\\BrowserKitDriver` missing from the current
    test runtime), since the new navigation regression test file is in place but
    the local functional-test stack is incomplete.
-2. Decide whether the flow detail page should gain richer branch presentation
+2. Decide whether the front page should also suppress the legacy `Home` item in
+   the footer quick-links list now that `/` is back on the intended custom home
+   route.
+3. Decide whether the flow detail page should gain richer branch presentation
    (for example, lane badges, join annotations, or branch health signals) now
    that the structural summaries are in place.
-3. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
+4. Decide whether `agentic_sdlc` should remain a reference/custom flow or be
    translated into a local runtime-derived Python graph module.
-4. Resolve the current repo-side Drush bootstrap failure if live runtime
+5. Resolve the current repo-side Drush bootstrap failure if live runtime
    validation through Drupal services is needed from the workspace shell.
-5. Decide whether flow owner entry should become a constrained seat selector
+6. Decide whether flow owner entry should become a constrained seat selector
    instead of a freeform seat-ID field.
-6. Consider whether product-team security review should also bind dynamically
+7. Consider whether product-team security review should also bind dynamically
    once `product-teams.json` carries per-team security seats consistently.
-7. Trace the second tick node (`dispatch_commands`) with the same level of
+8. Trace the second tick node (`dispatch_commands`) with the same level of
    detail and compare where graph state stops and script logic takes over.

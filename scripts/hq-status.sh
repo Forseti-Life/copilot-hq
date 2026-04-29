@@ -8,6 +8,10 @@ cd "$ROOT_DIR"
 source "./scripts/lib/agents.sh"
 # shellcheck source=lib/merge-health.sh
 source "./scripts/lib/merge-health.sh"
+# shellcheck source=lib/org-priority.sh
+[ -f "./scripts/lib/org-priority.sh" ] && source "./scripts/lib/org-priority.sh"
+# shellcheck source=lib/release-priority.sh
+[ -f "./scripts/lib/release-priority.sh" ] && source "./scripts/lib/release-priority.sh"
 
 now_iso() { date -Iseconds; }
 
@@ -98,7 +102,29 @@ agent_next_inbox() {
     return
   fi
   local next
-  next=$(find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null | sed 's|.*/||' | sort | head -n 1 || true)
+  next=$(
+    find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null \
+      | while IFS= read -r item_dir; do
+          local name roi bonus lane
+          name="$(basename "$item_dir")"
+          roi="$(head -n 1 "$item_dir/roi.txt" 2>/dev/null | tr -d '\r' | tr -cd '0-9' || true)"
+          [[ "$roi" =~ ^[0-9]+$ ]] || roi=1
+          bonus=0
+          if declare -F org_priority_bonus_for_item >/dev/null 2>&1; then
+            bonus="$(org_priority_bonus_for_item "$item_dir" "$name" "$roi" || echo 0)"
+          fi
+          [[ "$bonus" =~ ^[0-9]+$ ]] || bonus=0
+          lane=1
+          if declare -F release_priority__lane_for_item >/dev/null 2>&1; then
+            lane="$(release_priority__lane_for_item "$item_dir" "$name" || echo 1)"
+          fi
+          [[ "$lane" =~ ^[0-9]+$ ]] || lane=1
+          printf '%s\t%s\t%s\n' "$lane" "$((roi + bonus))" "$name"
+        done \
+      | sort -t $'\t' -k1,1n -k2,2nr -k3,3 \
+      | head -n 1 \
+      | awk -F'\t' '{print $3}' || true
+  )
   echo "${next:--}"
 }
 
