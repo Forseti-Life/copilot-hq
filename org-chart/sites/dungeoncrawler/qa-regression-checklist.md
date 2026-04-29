@@ -426,3 +426,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260429-194232-impl-dc-apg-class-witch — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-apg-class-witch.md)
 - [ ] 20260429-194232-impl-dc-cr-elf-heritage-cavern — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-cr-elf-heritage-cavern.md)
 - [ ] 20260429-194232-impl-dc-apg-rituals — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-apg-rituals.md)
+- [ ] 20260429-194232-impl-dc-home-suggestion-notice — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260429-194232-impl-dc-home-suggestion-notice.md)
