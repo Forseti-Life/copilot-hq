@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:05:37Z
+
 # Grooming Complete: dc-cr-dwarf-heritage-forge
 
 **From:** qa-dungeoncrawler  

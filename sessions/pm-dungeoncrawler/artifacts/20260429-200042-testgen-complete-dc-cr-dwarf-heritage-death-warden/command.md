@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:05:08Z
+
 # Grooming Complete: dc-cr-dwarf-heritage-death-warden
 
 **From:** qa-dungeoncrawler  

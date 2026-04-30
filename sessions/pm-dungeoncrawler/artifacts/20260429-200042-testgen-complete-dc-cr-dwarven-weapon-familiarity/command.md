@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:07:37Z
+
 # Grooming Complete: dc-cr-dwarven-weapon-familiarity
 
 **From:** qa-dungeoncrawler  

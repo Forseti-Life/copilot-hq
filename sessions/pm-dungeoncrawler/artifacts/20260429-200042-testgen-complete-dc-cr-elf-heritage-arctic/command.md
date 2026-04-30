@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:08:07Z
+
 # Grooming Complete: dc-cr-elf-heritage-arctic
 
 **From:** qa-dungeoncrawler  

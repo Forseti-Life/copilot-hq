@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:04:11Z
+
 # Grooming Complete: dc-cr-alchemical-items
 
 **From:** qa-dungeoncrawler  

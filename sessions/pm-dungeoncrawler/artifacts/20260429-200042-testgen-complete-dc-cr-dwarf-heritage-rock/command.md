@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:06:08Z
+
 # Grooming Complete: dc-cr-dwarf-heritage-rock
 
 **From:** qa-dungeoncrawler  

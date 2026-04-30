@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:06:39Z
+
 # Grooming Complete: dc-cr-dwarf-heritage-strong-blooded
 
 **From:** qa-dungeoncrawler  

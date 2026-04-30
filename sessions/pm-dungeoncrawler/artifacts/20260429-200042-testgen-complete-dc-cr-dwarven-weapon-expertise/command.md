@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:07:09Z
+
 # Grooming Complete: dc-cr-dwarven-weapon-expertise
 
 **From:** qa-dungeoncrawler  

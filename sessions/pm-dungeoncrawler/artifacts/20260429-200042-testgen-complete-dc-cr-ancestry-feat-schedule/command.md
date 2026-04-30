@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T11:04:40Z
+
 # Grooming Complete: dc-cr-ancestry-feat-schedule
 
 **From:** qa-dungeoncrawler  
