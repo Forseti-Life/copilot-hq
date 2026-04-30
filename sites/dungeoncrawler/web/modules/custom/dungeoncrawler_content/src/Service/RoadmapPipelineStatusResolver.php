@@ -287,7 +287,9 @@ class RoadmapPipelineStatusResolver {
       }
 
       $release = $this->extractFieldValue($contents, 'Release', '');
-      if ($release !== $active_release && $release !== $next_release) {
+      $matches_active_release = $active_release !== '' && $release === $active_release;
+      $matches_next_release = $next_release !== '' && $release === $next_release;
+      if (!$matches_active_release && !$matches_next_release) {
         continue;
       }
 
@@ -302,10 +304,10 @@ class RoadmapPipelineStatusResolver {
         'release' => $release,
       ];
 
-      if ($release === $active_release) {
+      if ($matches_active_release) {
         $snapshot['active_features'][] = $feature;
       }
-      elseif ($release === $next_release) {
+      elseif ($matches_next_release) {
         $snapshot['next_features'][] = $feature;
       }
     }

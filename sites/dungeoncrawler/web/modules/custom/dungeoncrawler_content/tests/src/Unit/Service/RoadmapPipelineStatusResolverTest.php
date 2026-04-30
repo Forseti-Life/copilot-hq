@@ -279,6 +279,41 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotDoesNotTreatUnassignedFeaturesAsActiveRelease(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-aa\n");
+
+    $this->writeFeature(
+      'dc-cr-skill-feats',
+      'deferred',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+      ],
+      'Feature Brief: Skill Feats'
+    );
+    $this->writeFeature(
+      'dc-cr-focus-spells',
+      'ready',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+        'Release' => '20260412-dungeoncrawler-release-aa',
+      ],
+      'Feature Brief: Focus Spells'
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('', $snapshot['active_release']);
+    $this->assertCount(0, $snapshot['active_features']);
+    $this->assertCount(1, $snapshot['next_features']);
+    $this->assertSame('dc-cr-focus-spells', $snapshot['next_features'][0]['feature_id']);
+  }
+
+  /**
    * @covers ::getPipelineStatus
    * @dataProvider pathTraversalProvider
    */
