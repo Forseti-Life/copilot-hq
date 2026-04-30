@@ -97,6 +97,7 @@ The `feature_request_intake` flow now owns review and routing:
 3. PM executes:
    - `PM Scope Decision`
 4. If PM approves, the flow launches `agentic_sdlc`
+5. If delivery later discovers a scope ambiguity (for example a feature that should be held, deferred, or consolidated into a parent slice), the active `agentic_sdlc` run must branch to `PM Scope Rebaseline` using the exact flow outcome `Scope decision required`
 
 Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` so the router can advance the next node.
 
@@ -106,6 +107,18 @@ Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` s
 
 If PM approves the request for delivery, the intake flow launches `agentic_sdlc`.
 Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming after intake approval.
+
+Inside `agentic_sdlc`, scope correction is a first-class flow action:
+
+- Dev or QA may emit `- Flow outcome: Scope decision required` when delivery hits a real scope/ownership ambiguity.
+- PM then executes `PM Scope Rebaseline`.
+- PM must choose one of the flow outcomes:
+  - `Resume implementation`
+  - `Resume test design`
+  - `Re-scope requirements`
+  - `Hold / defer / consolidate`
+
+Do **not** treat hold/defer/consolidate as ad hoc inbox churn outside the flow when the work already lives inside `agentic_sdlc`.
 
 ---
 

@@ -1,22 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the stagnation for release 20260412-dungeoncrawler-release-x. The dev seat has 2 inbox items at needs-info status with no movement after 40 minutes. Reading dev inbox items and current release state to identify exactly what is blocking dev before issuing an unblock directive.
+- Summary: Investigating the stagnation state for release `20260412-dungeoncrawler-release-x`: reading current dev inbox items, open issues, and release state before deciding on unblock actions.
 
 ## Next actions
-- Read `sessions/dev-dungeoncrawler/inbox/` to find the 2 open dev items and their needs-info blockers
-- Read release state at `tmp/release-cycle-active/` and any open feature.md files scoped to this release
-- Issue targeted unblock: provide missing context or escalate to CEO if scope/intent decision is needed
+- Read dev-dungeoncrawler inbox to find the 2 items at `needs-info` status and determine what each is blocked on
+- Check `tmp/release-cycle-active/` for release start time and elapsed context
+- Check `features/` for open issue count and scope state
+- Decide: provide missing context to unblock dev, or escalate
 
 ## Blockers
-- None yet — investigating before declaring a blocker
+- None yet — actively investigating.
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Active release is stalled with 15 open issues and dev blocked at needs-info — every cycle of inaction delays the release and risks the 24-hour auto-close trigger firing without a clean close.
+- ROI: 85
+- Rationale: 15 open issues with dev stalled at needs-info for 40+ minutes is a direct release throughput blocker; unblocking dev now recovers the release cycle.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-release-kpi-stagnation-followup
-- Generated: 2026-04-30T10:47:33+00:00
+- Generated: 2026-04-30T10:55:05+00:00
