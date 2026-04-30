@@ -1,10 +1,13 @@
+- Status: done
+- Completed: 2026-04-30T06:52:07Z
+
 - Agent: pm-dungeoncrawler
 - Status: pending
 - Priority: P1
-- Feature: `dc-cr-xp-award-system`
-- Source feature brief: `features/dc-cr-xp-award-system/feature.md`
+- Feature: `dc-cr-vengeful-hatred`
+- Source feature brief: `features/dc-cr-vengeful-hatred/feature.md`
 
-Backlog intake triage for `dc-cr-xp-award-system`.
+Backlog intake triage for `dc-cr-vengeful-hatred`.
 
 Required action:
 1. Review the feature brief and current dependency/release context.
