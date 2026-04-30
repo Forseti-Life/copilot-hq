@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Reviewing current PF2 import state, dc_requirements structure, roadmap controller/service, and existing module layout before defining the target Drupal surface and routing plan. Next concrete step: read the source artifacts listed in command.md plus dc_requirements schema to understand what book/chapter/section/paragraph data already exists.
+- Summary: Reading source artifacts and current PF2 data model to understand what exists before defining the target Drupal surface and routing plan.
 
 ## Next actions
-- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Controller/RoadmapController.php`
-- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Service/RoadmapPipelineStatusResolver.php`
-- Read `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/templates/dungeoncrawler-roadmap.html.twig`
-- Locate and read dc_requirements schema/data files to understand current PF2 book/chapter/section/paragraph coverage
-- Then define target surface, routing plan, and downstream inbox items
+- Read `dc_requirements` data model and current PF2 import state
+- Read `RoadmapController.php`, `RoadmapPipelineStatusResolver.php`, and the Twig template to understand current rendering surface
+- Check `features/` and `sessions/pm-dungeoncrawler/artifacts/` for prior scope decisions
+- Check `org-chart/ownership/module-ownership.yaml` for module ownership
+- Then: produce architecture recommendation, routing plan, and downstream inbox items
 
 ## Blockers
-- None yet — proceeding with research pass now.
+- None yet — reading source state first per troubleshooting protocol.
 
 ## Needs from CEO
-- N/A at this stage.
+- N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Navigable PF2 rulebook content is a high-value player-facing surface that directly advances the Dungeoncrawler product's core content mission; unblocking this work enables BA, Dev, and QA to execute in parallel.
+- Rationale: PF2 rulebook navigation is a core content discovery surface for Dungeoncrawler; making it navigable by book/chapter/section/paragraph is a high-leverage user-facing capability that unlocks downstream search, linking, and GM tooling work.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-intake-pf2-rulebook-navigation-drupal-module
-- Generated: 2026-04-30T03:24:05+00:00
+- Generated: 2026-04-30T03:34:05+00:00
