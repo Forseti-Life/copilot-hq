@@ -1,10 +1,10 @@
 - Status: in_progress
-- Summary: Beginning pre-ship code review for forseti.life release 20260412-forseti-release-w. Reading seat instructions, identifying the release feature set and changed files, then running the checklist.
+- Summary: Beginning pre-ship code review for forseti.life release 20260412-forseti-release-w. Reading seat instructions and identifying the release commits/changed files to scope the review.
 
 ## Next actions
-- Read `org-chart/agents/instructions/agent-code-review.instructions.md`
-- Identify commits/features scoped to release `20260412-forseti-release-w`
-- Enumerate changed files and run the code-review checklist (CSRF, authz bypass, schema hook pairing, stale private duplicates, hardcoded paths)
+- Read `org-chart/agents/instructions/agent-code-review.instructions.md` for the checklist
+- Identify commits in release 20260412-forseti-release-w via git log
+- Run review against all changed files for the five focus areas
 
 ## Blockers
 - None yet
@@ -13,10 +13,10 @@
 - N/A
 
 ## ROI estimate
-- ROI: 90
-- Rationale: Pre-ship security review directly gates release go/no-go; catching a CSRF or authz bypass before production has high leverage at low cost.
+- ROI: 80
+- Rationale: Pre-ship security review catches CSRF/authz issues before production; high leverage for a low-cost gate check.
 
 ---
 - Agent: agent-code-review
 - Source inbox: /home/ubuntu/forseti.life/sessions/agent-code-review/inbox/20260429-code-review-forseti.life-20260412-forseti-release-w
-- Generated: 2026-04-30T02:43:57+00:00
+- Generated: 2026-04-30T02:54:01+00:00
