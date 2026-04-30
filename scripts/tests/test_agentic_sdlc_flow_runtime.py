@@ -85,3 +85,31 @@ def test_load_flow_falls_back_when_live_registry_is_missing_required_transitions
     outgoing = module.outgoing_transitions(flow, "Generate Code")
 
     assert {"from_node": "Generate Code", "to_node": "PM Scope Rebaseline", "kind": "conditional", "condition": "Scope decision required"} in outgoing
+
+
+def test_build_command_hardcodes_allowed_statuses_and_write_test_case_artifacts():
+    module = _load_route_flow_module()
+
+    command = module.build_command(
+        flow_id="agentic_sdlc",
+        run_id="dc-cr-unburdened-iron",
+        target_node="Write Test Cases",
+        target_owner="qa-dungeoncrawler",
+        target_owner_binding="product_team.qa_agent",
+        source_agent="pm-dungeoncrawler",
+        source_node="PM Scope Rebaseline",
+        source_outbox=Path("sessions/pm-dungeoncrawler/outbox/example.md"),
+        incoming_conditions=["Resume test design"],
+        available_outcomes=["Scope decision required"],
+        product_team={"id": "dungeoncrawler", "site": "dungeoncrawler", "label": "Dungeoncrawler"},
+        product_team_selection_required=False,
+        available_product_teams=["dungeoncrawler"],
+        direct_route_available=True,
+    )
+
+    assert "## Accepted status values" in command
+    assert "`done | in_progress | blocked | needs-info`" in command
+    assert "## Required outbox template" in command
+    assert "## Required artifacts" in command
+    assert "sessions/qa-dungeoncrawler/artifacts/dc-cr-unburdened-iron-test-plan.md" in command
+    assert "qa-suites/products/dungeoncrawler/features/dc-cr-unburdened-iron.json" in command

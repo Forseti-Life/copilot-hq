@@ -117,6 +117,7 @@ STOPWORDS = {
     "there", "these", "they", "this", "those", "through", "under", "very", "what",
     "when", "where", "which", "while", "with", "would", "your",
 }
+ACCEPTED_STATUS_VALUES = "done | in_progress | blocked | needs-info"
 
 
 def log(message: str) -> None:
@@ -450,6 +451,25 @@ def resolve_owner(binding_details: dict[str, str], product_team: dict[str, Any] 
     return "", owner_binding
 
 
+def node_required_artifacts(
+    *,
+    flow_id: str,
+    target_node: str,
+    run_id: str,
+    product_team: dict[str, Any] | None,
+    target_owner: str,
+) -> list[str]:
+    if flow_id == "agentic_sdlc" and target_node == "Write Test Cases" and product_team is not None:
+        site = str(product_team.get("site") or product_team.get("id") or "").strip()
+        if site:
+            return [
+                f"Write or update `sessions/{target_owner}/artifacts/{run_id}-test-plan.md` with the concrete test plan for this feature.",
+                f"Write or update `qa-suites/products/{site}/features/{run_id}.json` with the feature-level suite overlay or equivalent QA coverage metadata.",
+                "Reference the exact artifact path(s) you changed in your `- Summary:` or `## Next actions` section.",
+            ]
+    return []
+
+
 def outgoing_transitions(flow: dict[str, Any], node: str) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
     for item in flow.get("transitions", []):
@@ -572,6 +592,14 @@ def build_command(
     if direct_route_available:
         metadata.append("- Flow direct route available: yes")
 
+    required_artifacts = node_required_artifacts(
+        flow_id=flow_id,
+        target_node=target_node,
+        run_id=run_id,
+        product_team=product_team,
+        target_owner=target_owner,
+    )
+
     return "\n".join(
         metadata
         + [
@@ -587,7 +615,34 @@ def build_command(
             "4. If this node has only one direct next step, no Flow outcome line is required.",
             "5. If the work is complete but needs a graph-defined branch (for example scope rebaseline, QA failure, or requested changes), keep `- Status: done` and use the matching `- Flow outcome:` line instead of escalating through a legacy `needs-*` artifact.",
             "6. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.",
+            "",
+            "## Accepted status values",
+            f"- The only accepted `- Status:` values are: `{ACCEPTED_STATUS_VALUES}`",
+            "- Use `- Status: done` when this node is complete, even if you also need a graph branch via `- Flow outcome:`.",
+            "- Use `- Status: in_progress` only when you are actively continuing the same inbox item and it should remain queued.",
+            "- Use `- Status: blocked` or `- Status: needs-info` only when you truly cannot proceed and must escalate.",
+            "",
+            "## Required outbox template",
+            "```md",
+            f"- Status: {ACCEPTED_STATUS_VALUES}",
+            "- Summary: <one paragraph>",
+            "",
+            "## Next actions",
+            "- <next action>",
+            "",
+            "## Blockers",
+            "- <explicit blocker or `None`>",
+            "",
+            "## Needs from Supervisor",
+            "- <specific need, or `None` when status is done/in_progress>",
+            "```",
         ]
+        + (
+            ["", "## Required artifacts"]
+            + [f"- {line}" for line in required_artifacts]
+            if required_artifacts
+            else []
+        )
     ) + "\n"
 
 
