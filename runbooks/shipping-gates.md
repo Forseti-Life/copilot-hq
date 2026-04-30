@@ -45,8 +45,11 @@ Exit criteria:
 ## Gate 1b — Code Review Finding Dispatch (PM, required before Gate 2)
 
 Current automation note:
-- The release-cycle pre-ship code-review item queued by `scripts/release-cycle-start.sh` is currently a **legacy gate item**, not a flow-managed `agentic_sdlc` node. It does **not** carry `Flow id` / `Flow node` metadata, so `route-flow-transitions.py` will not auto-route its findings. PM/CEO automation must materialize the follow-up Dev inbox items or PM risk-acceptance artifacts explicitly.
-- The LangGraph registry/UI now includes `release_shipping_flow` as the first-class target representation of this release path. Until release-cycle startup and routing emit flow-managed release items, the scripts and repo-state guards in this runbook remain the live enforcement path.
+- The release-cycle pre-ship code-review item is now emitted as a flow-managed `release_shipping_flow` **Release Code Review** step.
+- PM follow-up for unresolved MEDIUM+ findings is now emitted as a flow-managed `release_shipping_flow` **PM Code Review Triage** step.
+- The operator push-ready item is now emitted as a flow-managed `release_shipping_flow` **Coordinated Push** step.
+- The LangGraph registry/UI now includes `release_shipping_flow` as the first-class release representation.
+- Gate 2, PM signoff, coordinated push, and release advancement are still enforced by scripts and repo-state guards; those back-half steps have not yet been fully migrated to flow-managed execution.
 
 After each `agent-code-review` run for a release cycle, PM must:
 1. Read the code-review outbox for that release: `sessions/agent-code-review/outbox/<date>-code-review-<site>-<release-id>.md`

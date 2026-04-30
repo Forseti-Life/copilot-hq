@@ -161,7 +161,17 @@ flowchart TD
   G --> H[Advance Release Boundary]
 ```
 
-**Important truth-in-labeling note:** this LangGraph flow is the new first-class representation and target operating model. The live automation remains partly script-driven until the release-cycle scripts and dispatchers are fully migrated to use flow-managed release items directly.
+**Important truth-in-labeling note:** this LangGraph flow is now **partially live**:
+
+- `scripts/release-cycle-start.sh` now seeds release flow runtime context and emits a flow-managed `Release Code Review` item
+- release Gate 1b follow-up now emits a flow-managed `PM Code Review Triage` item
+
+The live automation is still partly script-driven after that point:
+
+- Gate 2 evidence is still proven by QA artifacts / outbox / `02-test-evidence.md`
+- PM signoff is still enforced by `scripts/release-signoff.sh`
+- the operator push-ready item is now emitted as a flow-managed `Coordinated Push` step
+- release advancement still executes via `post-coordinated-push.sh`, with the remaining closeout path still partly script-driven
 
 ## Release cycle principles (policy)
 

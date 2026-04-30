@@ -52,9 +52,11 @@ except TeamLookupError as exc:
 
 print(
     f"{str(team.get('id') or '').strip()}\t"
+    f"{str(team.get('label') or '').strip()}\t"
     f"{str(team.get('site') or '').strip()}\t"
     f"{str(team.get('qa_agent') or '').strip()}\t"
-    f"{str(team.get('pm_agent') or '').strip()}"
+    f"{str(team.get('pm_agent') or '').strip()}\t"
+    f"{str(team.get('dev_agent') or '').strip()}"
 )
 PY
   2>&1)"; then
@@ -62,7 +64,7 @@ PY
   exit 2
 fi
 
-IFS=$'\t' read -r team_id site qa_agent pm_agent <<<"$lookup_result"
+IFS=$'\t' read -r team_id team_label site qa_agent pm_agent dev_agent <<<"$lookup_result"
 
 today="$(date +%Y%m%d)"
 slug="$(echo "$release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | cut -c1-60)"
@@ -119,6 +121,21 @@ mkdir -p tmp/release-cycle-active 2>/dev/null || true
 printf '%s\n' "$release_id"      > "tmp/release-cycle-active/${team_id}.release_id"
 printf '%s\n' "$next_release_id" > "tmp/release-cycle-active/${team_id}.next_release_id"
 printf '%s\n' "$(date -Iseconds)" > "tmp/release-cycle-active/${team_id}.started_at"
+
+# Seed release flow runtime context so downstream flow-managed release items can
+# resolve dynamic PM / Dev / QA ownership using the existing flow router.
+flow_run_dir="tmp/flow-runs/release_shipping_flow/$(printf '%s' "$release_id" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-')"
+mkdir -p "$flow_run_dir" 2>/dev/null || true
+cat >"$flow_run_dir/product-team.json" <<JSON
+{
+  "id": "${team_id}",
+  "label": "${team_label}",
+  "site": "${site}",
+  "pm_agent": "${pm_agent}",
+  "qa_agent": "${qa_agent}",
+  "dev_agent": "${dev_agent}"
+}
+JSON
 
 # GAP-AGE-PREFLIGHT-01: suppress preflight when no features are activated for this release.
 # Count features with Status: in_progress AND Release: <release_id> — if zero, skip dispatch.
@@ -300,17 +317,32 @@ else
   printf '%s\n' "10" >"$cr_inbox_dir/roi.txt" 2>/dev/null || true
 
   cat >"$cr_inbox_dir/command.md" <<MD
-- Agent: agent-code-review
-- Status: pending
-- command: |
-    Pre-ship code review for ${site} release ${release_id}.
-    Review all commits in this release cycle against the code-review checklist in
-    \`org-chart/agents/instructions/agent-code-review.instructions.md\`.
-    Focus on: CSRF protection on new POST routes, authorization bypass risks,
-    schema hook pairing (hook_schema + hook_update_N both present), stale
-    private duplicates of canonical data, and hardcoded paths.
-    Produce: one finding per issue, severity (CRITICAL/HIGH/MEDIUM/LOW),
-    file path, and recommended fix pattern.
+- Flow id: release_shipping_flow
+- Flow run id: ${release_id}
+- Flow node: Release Code Review
+- Flow owner seat: agent-code-review
+- Flow previous node: Seed Release Cycle
+- Product team id: ${team_id}
+- Product team label: ${team_label}
+- Available flow outcomes: MEDIUM+ findings present | No MEDIUM+ findings
+
+# Flow handoff: release_shipping_flow / Release Code Review
+
+Treat \`scripts/release-cycle-start.sh\` as the system-owned completion of \`Seed Release Cycle\`.
+Your task is to execute the first routed release gate step for the active release below.
+
+- Site: ${site}
+- Product team: ${team_id}
+- Release id: ${release_id}
+
+## Required action
+1. Perform the pre-ship release code review for \`${release_id}\`.
+2. Review all commits in this release cycle against \`org-chart/agents/instructions/agent-code-review.instructions.md\`.
+3. Focus on: CSRF protection on new POST routes, authorization bypass risks, schema hook pairing, stale private duplicates of canonical data, and hardcoded paths.
+4. Produce one finding per issue with severity (CRITICAL/HIGH/MEDIUM/LOW), file path, and recommended fix pattern.
+5. Include exactly one \`- Flow outcome:\` line in your outbox:
+   - \`- Flow outcome: MEDIUM+ findings present\` when any MEDIUM/HIGH/CRITICAL findings require PM triage
+   - \`- Flow outcome: No MEDIUM+ findings\` when Gate 1b is clear for QA verification
 MD
 
   echo "QUEUED: agent-code-review ${cr_item_id} (current release: ${release_id})"

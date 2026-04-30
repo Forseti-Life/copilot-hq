@@ -132,8 +132,11 @@ def _release_enabled_team_map() -> Dict[str, Dict[str, Any]]:
                 deps.append(dep_id)
         team_map[team_id] = {
             "id": team_id,
+            "label": (team.get("label") or "").strip(),
+            "site": (team.get("site") or "").strip(),
             "pm": (team.get("pm_agent") or "").strip(),
             "dev": (team.get("dev_agent") or "").strip(),
+            "qa": (team.get("qa_agent") or "").strip(),
             "deps": deps,
         }
     return team_map
@@ -156,8 +159,11 @@ def _unrouted_code_review_findings(release_id: str) -> List[Dict[str, str]]:
     return unresolved_medium_plus_findings(REPO_ROOT, release_id)
 
 
-def _queue_code_review_followup(pm_id: str, release_id: str, findings: List[Dict[str, str]]) -> None:
-    if REPO_ROOT is None or not pm_id or not findings:
+def _queue_code_review_followup(team: Dict[str, Any], release_id: str, findings: List[Dict[str, str]]) -> None:
+    pm_id = str(team.get("pm") or "").strip()
+    team_id = str(team.get("id") or "").strip()
+    team_label = str(team.get("label") or team_id).strip()
+    if REPO_ROOT is None or not pm_id or not team_id or not findings:
         return
     slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
     item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-code-review-followup-{slug}"
@@ -165,22 +171,32 @@ def _queue_code_review_followup(pm_id: str, release_id: str, findings: List[Dict
     if item_dir.exists():
         return
     item_dir.mkdir(parents=True, exist_ok=True)
+    source_outbox = str(findings[0].get("source_outbox") or "").strip()
     findings_md = "\n".join(
         f"- `{item['id']}` ({item['severity']}) from `{item['source_outbox']}`" for item in findings
     )
-    (item_dir / "README.md").write_text(
-        f"# Code review follow-up required: {release_id}\n\n"
-        f"- Agent: {pm_id}\n"
-        f"- Release: {release_id}\n"
-        f"- Status: pending\n"
-        f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
-        f"## Why this was queued\n"
+    (item_dir / "command.md").write_text(
+        f"- Flow id: release_shipping_flow\n"
+        f"- Flow run id: {release_id}\n"
+        f"- Flow node: PM Code Review Triage\n"
+        f"- Flow owner seat: {pm_id}\n"
+        f"- Flow previous node: Release Code Review\n"
+        + (f"- Flow source outbox: {source_outbox}\n" if source_outbox else "")
+        + f"- Product team id: {team_id}\n"
+        f"- Product team label: {team_label}\n"
+        f"- Available flow outcomes: Route fixes to Dev | Risk accepted / all findings resolved\n\n"
+        f"# Flow handoff: release_shipping_flow / PM Code Review Triage\n\n"
         f"MEDIUM+ code-review findings exist for `{release_id}` but no matching dev routing or "
         f"risk-acceptance artifact was found, so Gate 1b is still open.\n\n"
         f"## Findings needing action\n{findings_md}\n\n"
-        f"## Action required\n"
-        f"Route each finding to the owning dev seat as a `cr-finding` inbox item or record a "
-        f"risk acceptance in `sessions/{pm_id}/artifacts/risk-acceptances/`.\n",
+        f"## Required action\n"
+        f"1. Read the release code-review outbox for the findings above.\n"
+        f"2. For each MEDIUM+ finding, either:\n"
+        f"   - route a fix to the owning dev seat as a `cr-finding` inbox item, or\n"
+        f"   - record a risk acceptance in `sessions/{pm_id}/artifacts/risk-acceptances/`.\n"
+        f"3. Include one or more exact `- Flow outcome:` lines in your outbox:\n"
+        f"   - `- Flow outcome: Route fixes to Dev`\n"
+        f"   - `- Flow outcome: Risk accepted / all findings resolved`\n",
         encoding="utf-8",
     )
     (item_dir / "roi.txt").write_text("220\n", encoding="utf-8")
@@ -364,7 +380,7 @@ def _dispatch_proactive_awaiting_signoff() -> None:
 
         unresolved = _unrouted_code_review_findings(rid)
         if unresolved:
-            _queue_code_review_followup(pm_id, rid, unresolved)
+            _queue_code_review_followup(team, rid, unresolved)
             continue
 
         item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"

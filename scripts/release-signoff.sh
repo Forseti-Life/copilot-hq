@@ -315,6 +315,15 @@ inbox_dir.mkdir(parents=True, exist_ok=True)
 (inbox_dir / 'roi.txt').write_text('200\n', encoding='utf-8')
 signers = ', '.join(f"{team['pm_agent']} ({team['site']})" for team in teams)
 cmd = f"""# Push ready: {release_id}
+- Flow id: release_shipping_flow
+- Flow run id: {release_id}
+- Flow node: Coordinated Push
+- Flow owner seat: {operator_pm}
+- Flow previous node: PM Signoff Readiness Check
+- Product team id: {signing_team_id}
+- Product team label: {primary.get('label', signing_team_id)}
+
+# Flow handoff: release_shipping_flow / Coordinated Push
 
 All required PM signoffs recorded for dependency-coupled release `{release_id}`.
 
@@ -327,6 +336,8 @@ As release operator, proceed with the official push:
 2. Push per `runbooks/shipping-gates.md` Gate 4.
 3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh {' '.join(sorted(team['id'] for team in teams))}`
 4. Complete post-push steps (config import, smoke test, SLA report update).
+
+This flow node has a single direct next step. No `- Flow outcome:` line is required in your outbox.
 """
 (inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
 created_flag.write_text('created\n', encoding='utf-8')
