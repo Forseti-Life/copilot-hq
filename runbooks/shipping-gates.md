@@ -49,6 +49,7 @@ Current automation note:
 - PM follow-up for unresolved MEDIUM+ findings is now emitted as a flow-managed `release_shipping_flow` **PM Code Review Triage** step.
 - The operator push-ready item is now emitted as a flow-managed `release_shipping_flow` **Coordinated Push** step.
 - The LangGraph registry/UI now includes `release_shipping_flow` as the first-class release representation.
+- Alignment rule: `release_shipping_flow` is the release-only validation/signoff wrapper. If Gate 1b or Gate 2 discovers delivery work, that work returns to `agentic_sdlc`; release does not own a separate long-lived remediation loop.
 - Gate 2, PM signoff, coordinated push, and release advancement are still enforced by scripts and repo-state guards; those back-half steps have not yet been fully migrated to flow-managed execution.
 
 After each `agent-code-review` run for a release cycle, PM must:

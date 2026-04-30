@@ -185,6 +185,14 @@ PY
   echo "  Release ID:  $RELEASE_ID"
   echo "  Next ID:     ${NEXT_RELEASE_ID:-<not set>}"
 
+  RELEASE_FLOW_RUNTIME="tmp/flow-runs/release_shipping_flow/$(printf '%s' "$RELEASE_ID" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9._-' '-')/product-team.json"
+  if [ -f "$RELEASE_FLOW_RUNTIME" ]; then
+    pass "[$TEAM] release_shipping_flow runtime seeded"
+  else
+    warn "[$TEAM] release_shipping_flow runtime missing for $RELEASE_ID"
+    info "Expected: $RELEASE_FLOW_RUNTIME"
+  fi
+
   # 2. Stale next_release_id check (next should not equal or precede current)
   if [ -n "$NEXT_RELEASE_ID" ]; then
     NEED_NEXT_FIX=0

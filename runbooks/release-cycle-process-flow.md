@@ -142,16 +142,20 @@ flowchart TD
 
 ### 3. New target flow (first-class LangGraph representation)
 
-The target-state graph is now registered in the LangGraph registry/UI as `release_shipping_flow` and represents the release gate path directly:
+The target-state graph is now registered in the LangGraph registry/UI as `release_shipping_flow`, but it is now aligned as a **thin release wrapper around `agentic_sdlc`**:
+
+- `agentic_sdlc` owns implementation, QA/test authoring, QA remediation, and PM scope rebaseline.
+- `release_shipping_flow` owns only release-scoped validation and signoff gates before push.
 
 ```mermaid
 flowchart TD
   A[Seed Release Cycle] --> B[Release Code Review]
   B -->|MEDIUM+ findings present| C[PM Code Review Triage]
-  B -->|No MEDIUM+ findings| E[QA Verification]
-  C -->|Route fixes to Dev| D[Dev Finding Remediation]
+  B -->|No MEDIUM+ findings| E[Release QA Verification]
+  C -->|Route fixes to Dev| D[SDLC Delivery]
   C -->|Risk accepted / all findings resolved| E
   D --> E
+  D -->|Scope decision required| C
   E -->|APPROVE| F[PM Signoff Readiness Check]
   E -->|BLOCK - code changes required| D
   E -->|BLOCK - scope or risk decision required| C
@@ -160,6 +164,8 @@ flowchart TD
   F -->|Ready for signoff and push| G[Coordinated Push]
   G --> H[Advance Release Boundary]
 ```
+
+**Alignment rule:** if release validation discovers delivery defects or scope ambiguity, release must hand the work back into the SDLC lane. Dev work, test re-authoring, and QA remediation do **not** live as standalone release-owned loops.
 
 **Important truth-in-labeling note:** this LangGraph flow is now **partially live**:
 
