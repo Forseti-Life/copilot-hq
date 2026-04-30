@@ -25,10 +25,12 @@ echo "=== Required files ==="
 for f in \
   "org-chart/products/product-teams.json" \
   "scripts/release-cycle-start.sh" \
+  "scripts/pm-scope-activate.sh" \
   "scripts/backfill-release-shipping-flow-runtime.sh" \
   "scripts/release-signoff.sh" \
   "scripts/release-signoff-status.sh" \
   "scripts/route-flow-transitions.py" \
+  "scripts/agent-exec-next.sh" \
   "scripts/verify-hq-runtime.sh" \
   "orchestrator/run.py" \
   "drupal-langgraph/src/Service/ProcessFlowRegistryService.php"
@@ -61,6 +63,26 @@ if grep -q "Flow node: Coordinated Push" "scripts/release-signoff.sh" 2>/dev/nul
   echo "present: flow-managed Coordinated Push handoff"
 else
   echo "MISSING: flow-managed Coordinated Push handoff"
+fi
+if grep -q "tmp/flow-runs/agentic_sdlc/" "scripts/pm-scope-activate.sh" 2>/dev/null; then
+  echo "present: flow-managed agentic_sdlc runtime seeding"
+else
+  echo "MISSING: flow-managed agentic_sdlc runtime seeding"
+fi
+if grep -q "Flow node: Generate Code" "scripts/pm-scope-activate.sh" 2>/dev/null; then
+  echo "present: flow-managed Generate Code activation handoff"
+else
+  echo "MISSING: flow-managed Generate Code activation handoff"
+fi
+if grep -q "Flow node: Test Cases Review" "scripts/pm-scope-activate.sh" 2>/dev/null; then
+  echo "present: flow-managed Test Cases Review activation handoff"
+else
+  echo "MISSING: flow-managed Test Cases Review activation handoff"
+fi
+if grep -q "Flow-managed SDLC items rely on route-flow-transitions" "scripts/agent-exec-next.sh" 2>/dev/null; then
+  echo "present: legacy QA dispatch suppression for flow-managed SDLC items"
+else
+  echo "MISSING: legacy QA dispatch suppression for flow-managed SDLC items"
 fi
 
 echo

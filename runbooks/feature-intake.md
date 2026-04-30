@@ -108,6 +108,8 @@ Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` s
 If PM approves the request for delivery, the intake flow launches `agentic_sdlc`.
 Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming after intake approval.
 
+For release-stage scoped work, `pm-scope-activate.sh` now seeds the same `agentic_sdlc` runtime directly for the active feature by writing flow-managed `Generate Code` and `Test Cases Review` inbox items plus `tmp/flow-runs/agentic_sdlc/<feature-id>/product-team.json`. That keeps late release activation on the same LangGraph contract as intake-launched work instead of falling back to legacy ad hoc Dev/QA handoffs.
+
 Inside `agentic_sdlc`, scope correction is a first-class flow action:
 
 - Dev or QA may emit `- Flow outcome: Scope decision required` when delivery hits a real scope/ownership ambiguity.

@@ -458,6 +458,7 @@ PROMPT+="\n\n## ROI estimate\n- ROI: <integer 1-infinity>\n- Rationale: <1-3 sen
 
 if [ -f "$inbox_item/command.md" ] && grep -qiE '^\- Flow id:' "$inbox_item/command.md"; then
   PROMPT+="\n\nFlow-routing rule (required for flow-managed items): if command.md contains Flow metadata and lists 'Available flow outcomes', include one or more lines in your outbox immediately after '- Summary:' using this exact format:\n- Flow outcome: <exact condition label>\nUse the exact condition text from command.md. If more than one outgoing branch applies, repeat the line once per branch. If the current flow node has only one direct next step and no listed Available flow outcomes, omit Flow outcome lines."
+  PROMPT+="\n\nFlow-branch completion rule (required for flow-managed items): if the work is complete but the graph needs a branch decision (for example scope rebaseline, QA failure, or requested changes), keep '- Status: done' and use the matching exact '- Flow outcome:' line instead of escalating through a legacy blocked/needs-info response."
   if grep -qiE '^\- Product team selection required:\s*yes' "$inbox_item/command.md"; then
     PROMPT+="\n\nProduct-team routing rule (required when command.md says product-team selection is required): include one line immediately after any Flow outcome lines using this exact format:\n- Product team id: <exact team id>\nUse one of the IDs listed in command.md under Available product teams so downstream BA/PM routing can resolve the correct owning seats."
   fi
@@ -505,6 +506,7 @@ invalid_outbox_reason() {
   local expected_count=0
   local raw_outcome=""
   local matched=""
+  local direct_route_available=0
 
   status_count="$(printf '%s\n' "$text" | grep -ciE '^\- Status:' || true)"
   [[ "$status_count" =~ ^[0-9]+$ ]] || status_count=0
@@ -529,6 +531,9 @@ invalid_outbox_reason() {
   fi
 
   if [ -f "$inbox_item/command.md" ]; then
+    if grep -qiE '^\- Flow direct route available:\s*yes' "$inbox_item/command.md"; then
+      direct_route_available=1
+    fi
     expected_outcomes="$(python3 - "$inbox_item/command.md" <<'PY'
 import re
 import sys
@@ -548,7 +553,7 @@ PY
     found_count="$(printf '%s\n' "$found_outcomes" | sed '/^$/d' | wc -l | tr -d ' ')"
     [[ "$expected_count" =~ ^[0-9]+$ ]] || expected_count=0
     [[ "$found_count" =~ ^[0-9]+$ ]] || found_count=0
-    if [ "$expected_count" -gt 0 ] && [ "$found_count" -eq 0 ]; then
+    if [ "$expected_count" -gt 0 ] && [ "$found_count" -eq 0 ] && [ "$direct_route_available" -ne 1 ]; then
       echo "response is missing a required exact Flow outcome line"
       return 0
     fi
@@ -1488,8 +1493,10 @@ queue_qa_full_regression_if_last_fix() {
 MD
 }
 
-# Dev -> QA handoff: when Dev completes, request targeted QA and add to regression list.
-if [ "$status" = "done" ] && [[ "$AGENT_ID" == dev-* ]]; then
+# Dev -> QA handoff: when Dev completes, request targeted QA and add to regression
+# list for legacy work items. Flow-managed SDLC items rely on route-flow-transitions
+# to advance through Code Review / Security Review / Ready for QA instead.
+if [ "$status" = "done" ] && [[ "$AGENT_ID" == dev-* ]] && ! { [ -f "$inbox_item/command.md" ] && grep -qiE '^\- Flow id:' "$inbox_item/command.md"; }; then
   notify_qa_unit_test_on_done "$next" "$out_file"
   queue_qa_full_regression_if_last_fix "$next" "$out_file"
 fi

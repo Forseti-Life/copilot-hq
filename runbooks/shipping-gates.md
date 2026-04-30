@@ -121,6 +121,8 @@ Clean-audit auto-approval rule:
 3. **Block Stage-0 scope selection**: PM may NOT run `pm-scope-activate.sh` for any feature without `03-test-plan.md` present. Stage-0 activation is hard-blocked — no negotiation (already required by process flow, but must be explicitly enforced at escalation).
 4. **Escalate to Board** only if intervention triggers 3+ consecutive times for the same site in a single release cycle (indicates a structural resourcing problem, not a sequencing problem).
 
+`pm-scope-activate.sh` now seeds flow-managed `agentic_sdlc` handoffs for the activated feature (`Generate Code` for Dev and `Test Cases Review` for QA). From that point on, scope ambiguities and QA failure loops should stay inside LangGraph via exact `Flow outcome:` lines instead of spawning legacy ad hoc `needs-*` artifacts.
+
 **PM responsibility (required):**
 - At every groom cycle where testgen items are pending: record the count of pending/completed in the outbox.
 - If the threshold above is reached, PM acts immediately on steps 1–3 above and documents the intervention in the outbox.

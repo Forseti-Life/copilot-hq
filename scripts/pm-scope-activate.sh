@@ -39,12 +39,54 @@ FEATURE_DIR="features/${FEATURE_ID}"
 FEATURE_BRIEF="${FEATURE_DIR}/feature.md"
 AC_FILE="${FEATURE_DIR}/01-acceptance-criteria.md"
 TEST_PLAN="${FEATURE_DIR}/03-test-plan.md"
+PRODUCT_TEAMS_JSON="org-chart/products/product-teams.json"
 QA_AGENT="qa-${SITE}"
 QA_INBOX="sessions/${QA_AGENT}/inbox"
-DEV_AGENT="$(grep -im1 "^- Dev owner:" "$FEATURE_BRIEF" | sed 's/.*Dev owner:[[:space:]]*//' | tr -d '\r' || true)"
-DEV_AGENT="${DEV_AGENT:-dev-${SITE}}"
+FEATURE_DEV_OWNER="$(grep -im1 "^- Dev owner:" "$FEATURE_BRIEF" | sed 's/.*Dev owner:[[:space:]]*//' | tr -d '\r' || true)"
+DEV_AGENT="${FEATURE_DEV_OWNER:-dev-${SITE}}"
 DEV_INBOX="sessions/${DEV_AGENT}/inbox"
+PM_AGENT="pm-${SITE}"
+TEAM_ID="${SITE}"
+TEAM_LABEL="${SITE}"
 DATE_TAG="$(date +%Y%m%d-%H%M%S)"
+ITEM_DIR=""
+
+if [ -f "$PRODUCT_TEAMS_JSON" ]; then
+  TEAM_LOOKUP="$(python3 - "$PRODUCT_TEAMS_JSON" "$SITE" <<'PY'
+import json
+import sys
+
+path, site = sys.argv[1], sys.argv[2].strip().lower()
+with open(path, 'r', encoding='utf-8') as fh:
+    data = json.load(fh)
+
+for team in data.get("teams", []):
+    team_id = str(team.get("id") or "").strip()
+    team_site = str(team.get("site") or "").strip()
+    aliases = [str(alias).strip().lower() for alias in team.get("aliases", []) if str(alias).strip()]
+    candidates = {team_id.lower(), team_site.lower(), *aliases}
+    if site not in candidates:
+        continue
+    print("\t".join([
+        team_id or site,
+        str(team.get("label") or team_id or site).strip(),
+        str(team.get("pm_agent") or f"pm-{site}").strip(),
+        str(team.get("qa_agent") or f"qa-{site}").strip(),
+        str(team.get("dev_agent") or f"dev-{site}").strip(),
+    ]))
+    break
+PY
+  )"
+  if [ -n "${TEAM_LOOKUP:-}" ]; then
+    IFS=$'\t' read -r TEAM_ID TEAM_LABEL PM_AGENT QA_AGENT REGISTRY_DEV_AGENT <<<"$TEAM_LOOKUP"
+    QA_INBOX="sessions/${QA_AGENT}/inbox"
+    if [ -z "${FEATURE_DEV_OWNER:-}" ] && [ -n "${REGISTRY_DEV_AGENT:-}" ]; then
+      DEV_AGENT="${REGISTRY_DEV_AGENT}"
+      DEV_INBOX="sessions/${DEV_AGENT}/inbox"
+    fi
+  fi
+fi
+
 ITEM_DIR="${QA_INBOX}/${DATE_TAG}-suite-activate-${FEATURE_ID}"
 
 # Validate groomed gate
@@ -170,6 +212,19 @@ if [ -z "$SEC_EXEMPTION" ]; then
   fi
 fi
 
+FLOW_RUN_DIR="tmp/flow-runs/agentic_sdlc/${FEATURE_ID}"
+mkdir -p "$FLOW_RUN_DIR" 2>/dev/null || true
+cat >"$FLOW_RUN_DIR/product-team.json" <<JSON
+{
+  "id": "${TEAM_ID}",
+  "label": "${TEAM_LABEL}",
+  "site": "${SITE}",
+  "pm_agent": "${PM_AGENT}",
+  "qa_agent": "${QA_AGENT}",
+  "dev_agent": "${DEV_AGENT}"
+}
+JSON
+
 echo "[pm-scope-activate] Activating: $FEATURE_ID for site: $SITE"
 echo "[pm-scope-activate] All grooming artifacts present ✓"
 
@@ -195,6 +250,31 @@ DEV_ITEM_DIR="${DEV_INBOX}/${DATE_TAG}-${DEV_ITEM_KIND}-${FEATURE_ID}"
 mkdir -p "$DEV_ITEM_DIR"
 echo "$DEV_ITEM_ROI" > "$DEV_ITEM_DIR/roi.txt"
 
+cat > "$DEV_ITEM_DIR/command.md" <<EOF
+- Flow id: agentic_sdlc
+- Flow run id: ${FEATURE_ID}
+- Flow node: Generate Code
+- Flow owner seat: ${DEV_AGENT}
+- Flow previous node: PM Scope Decision
+- Product team id: ${TEAM_ID}
+- Product team label: ${TEAM_LABEL}
+- Release id: ${ACTIVE_RELEASE_ID}
+- Feature id: ${FEATURE_ID}
+- Available flow outcomes: Scope decision required
+- Flow direct route available: yes
+
+# Flow handoff: agentic_sdlc / Generate Code
+
+This feature has been activated into release \`${ACTIVE_RELEASE_ID}\` and now enters the implementation lane of the SDLC flow.
+
+## Required action
+1. Review \`features/${FEATURE_ID}/feature.md\`, \`features/${FEATURE_ID}/01-acceptance-criteria.md\`, and \`features/${FEATURE_ID}/03-test-plan.md\`.
+2. Complete the Dev responsibilities for \`Generate Code\` as \`${DEV_AGENT}\`.
+3. If implementation is ready for the normal review path, finish with \`- Status: done\` and no \`- Flow outcome:\` line.
+4. If implementation cannot continue until PM re-baselines scope (hold/defer/consolidate/split), finish with \`- Status: done\` and \`- Flow outcome: Scope decision required\`.
+5. Include commit hashes or concrete repo-state evidence for any implementation you claim complete.
+EOF
+
 cat > "$DEV_ITEM_DIR/README.md" <<EOF
 # ${DEV_ITEM_TITLE}
 
@@ -208,6 +288,8 @@ cat > "$DEV_ITEM_DIR/README.md" <<EOF
 ## Context
 
 ${DEV_CONTEXT}
+
+- Flow-managed SDLC run: \`agentic_sdlc / ${FEATURE_ID}\`
 
 ## Action required
 1. Review feature brief: \`features/${FEATURE_ID}/feature.md\`
@@ -233,15 +315,20 @@ echo "7" > "$ITEM_DIR/roi.txt"
 TEST_PLAN_CONTENT="$(cat "$TEST_PLAN")"
 
 cat > "$ITEM_DIR/command.md" <<EOF
-# Suite Activation: ${FEATURE_ID}
+- Flow id: agentic_sdlc
+- Flow run id: ${FEATURE_ID}
+- Flow node: Test Cases Review
+- Flow owner seat: ${QA_AGENT}
+- Flow previous node: PM Scope Decision
+- Product team id: ${TEAM_ID}
+- Product team label: ${TEAM_LABEL}
+- Release id: ${ACTIVE_RELEASE_ID}
+- Feature id: ${FEATURE_ID}
+- Available flow outcomes: Approved | Changes requested
 
-**From:** pm-${SITE}  
-**To:** qa-${SITE}  
-**Date:** $(date -Iseconds)  
+# Flow handoff: agentic_sdlc / Test Cases Review
 
-## Task
-
-This feature has been selected into the current release scope. Activate its test plan into the live QA suite.
+This feature has been selected into the current release scope. Activate its test plan into the live QA suite and confirm the release-ready verification coverage for the SDLC test branch.
 
 **Now** is when you add tests to \`suite.json\` and \`qa-permissions.json\`.
 EOF
@@ -278,7 +365,7 @@ cat >> "$ITEM_DIR/command.md" <<EOF
    }
    \`\`\`
 
-2. **Add permission rules to** \`org-chart/sites/${SITE}.life/qa-permissions.json\`  
+2. **Add permission rules to** \`org-chart/sites/${SITE}/qa-permissions.json\`  
    For any new routes/ACL expectations.  
    **CRITICAL: tag every new rule with \`"feature_id": "${FEATURE_ID}"\`**  
    Example:
@@ -298,6 +385,8 @@ cat >> "$ITEM_DIR/command.md" <<EOF
    \`\`\`
 
 4. **Write outbox** confirming: how many entries added, feature_id tagged on each, suite validated, any gaps flagged.
+   - If the test branch is ready to proceed, finish with \`- Status: done\` and \`- Flow outcome: Approved\`.
+   - If QA finds the test branch incomplete or needing revision before release validation, finish with \`- Status: done\` and \`- Flow outcome: Changes requested\`.
 
 ### Test plan (written during grooming)
 

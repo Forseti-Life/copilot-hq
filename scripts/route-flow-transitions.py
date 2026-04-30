@@ -434,6 +434,7 @@ def build_command(
     product_team: dict[str, Any] | None,
     product_team_selection_required: bool,
     available_product_teams: list[str],
+    direct_route_available: bool,
 ) -> str:
     metadata = [
         f"- Flow id: {flow_id}",
@@ -456,6 +457,8 @@ def build_command(
         metadata.append(f"- Flow incoming conditions: {' | '.join(incoming_conditions)}")
     if available_outcomes:
         metadata.append(f"- Available flow outcomes: {' | '.join(available_outcomes)}")
+    if direct_route_available:
+        metadata.append("- Flow direct route available: yes")
 
     return "\n".join(
         metadata
@@ -470,7 +473,8 @@ def build_command(
             f"2. Review the source outbox: `{source_outbox}` for the completed upstream context.",
             "3. If this node has branching outcomes, include one or more `- Flow outcome:` lines in your outbox using the exact allowed values listed above.",
             "4. If this node has only one direct next step, no Flow outcome line is required.",
-            "5. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.",
+            "5. If the work is complete but needs a graph-defined branch (for example scope rebaseline, QA failure, or requested changes), keep `- Status: done` and use the matching `- Flow outcome:` line instead of escalating through a legacy `needs-*` artifact.",
+            "6. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.",
         ]
     ) + "\n"
 
@@ -504,6 +508,7 @@ def route_to_node(
     item_name_out = routed_item_name(route_date, flow_id, run_id, target_node, sequence)
     next_outgoing = outgoing_transitions(flow, target_node)
     available_outcomes = [item["condition"] for item in next_outgoing if item["condition"]]
+    direct_route_available = any(item["condition"] == "" for item in next_outgoing)
     product_team_selection_required = node_requires_product_team(flow, target_node, node_details, product_team)
     command_content = build_command(
         flow_id=flow_id,
@@ -519,6 +524,7 @@ def route_to_node(
         product_team=product_team,
         product_team_selection_required=product_team_selection_required,
         available_product_teams=[str(team.get("id", "")).strip() for team in teams if str(team.get("id", "")).strip()],
+        direct_route_available=direct_route_available,
     )
     create_inbox_item(target_owner, item_name_out, roi, command_content)
     return True
@@ -637,15 +643,16 @@ def routed_item_name(route_date: str, flow_id: str, run_id: str, node: str, sequ
 def selected_transitions(outgoing: list[dict[str, str]], outcomes: list[str]) -> list[dict[str, str]]:
     if not outgoing:
         return []
-    if len(outgoing) == 1 and outgoing[0]["condition"] == "":
-        return outgoing
-    if not outcomes:
-        return []
-    selected: list[dict[str, str]] = []
-    for transition in outgoing:
-        if transition["condition"] in outcomes:
-            selected.append(transition)
-    return selected
+    direct = [transition for transition in outgoing if transition["condition"] == ""]
+    if outcomes:
+        selected: list[dict[str, str]] = []
+        for transition in outgoing:
+            if transition["condition"] in outcomes:
+                selected.append(transition)
+        return selected
+    if direct:
+        return direct
+    return []
 
 
 def node_requires_product_team(
