@@ -32,3 +32,10 @@ def test_pm_scope_rebaseline_has_explicit_exit_paths():
     assert "['from_node' => 'PM Scope Rebaseline', 'to_node' => 'Write Test Cases', 'kind' => 'conditional', 'condition' => 'Resume test design']" in source
     assert "['from_node' => 'PM Scope Rebaseline', 'to_node' => 'Revise User Stories', 'kind' => 'conditional', 'condition' => 'Re-scope requirements']" in source
     assert "['from_node' => 'PM Scope Rebaseline', 'to_node' => 'END', 'kind' => 'conditional', 'condition' => 'Hold / defer / consolidate']" in source
+
+
+def test_agentic_sdlc_is_documented_as_release_delivery_subprocess():
+    source = REGISTRY.read_text(encoding="utf-8")
+
+    assert "When delivery is release-scoped, this flow is the delivery subprocess inside release_shipping_flow." in source
+    assert "release_shipping_flow remains focused on release-only validation and push readiness." in source
