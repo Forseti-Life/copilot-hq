@@ -1,22 +1,22 @@
-- Status: in_progress
-- Summary: Reading upstream PM scope rebaseline outbox and feature files to gather acceptance criteria before writing test cases.
+- Status: ready
 
-## Next actions
-- Read `sessions/pm-dungeoncrawler/outbox/20260430-flow-agentic_sdlc-dc-cr-rock-runner-pm-scope-rebaseline-r1.md`
-- Read feature acceptance criteria files
-- Write test plan
+## Summary
+Rock Runner is a persistent NPC companion that joins the player's party during dungeon crawls. He provides tactical commentary, adapts behavior to party composition, scouts ahead when commanded, and can be dismissed/recalled. Loot-sharing mechanic is explicitly excluded from this release.
 
-## Blockers
-- None yet
+## Acceptance Criteria
 
-## Needs from CEO
-- N/A
+### AC-01: Rock Runner joins the party
+- **Given** a player is in an eligible dungeon room
+- **When** the player triggers the Rock Runner encounter (via room event or item use)
+- **Then** Rock Runner appears in the party roster with correct stats (HP, speed, attack bonus)
+- **And** a join confirmation message is displayed
 
-## ROI estimate
-- ROI: 40
-- Rationale: Test cases are a required gate before dev implementation proceeds; blocking the flow until complete.
+### AC-02: Rock Runner tactical commentary
+- **Given** Rock Runner is in the party
+- **When** the player enters a new room or initiates combat
+- **Then** Rock Runner delivers a context-appropriate tactical comment (
 
 ---
 - Agent: qa-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/inbox/20260430-flow-agentic_sdlc-dc-cr-rock-runner-write-test-cases-r1
-- Generated: 2026-04-30T18:01:40+00:00
+- Generated: 2026-04-30T18:03:02+00:00
