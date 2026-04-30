@@ -1,23 +1,22 @@
-- Status: in_progress
-- Summary: Reading the feature brief and dependency/release context before recording a PM routing outcome.
+- Status: pending
+- Priority: P2
+- Feature: dc-cr-magic-items
+- ROI: 6
+- ROI rationale: Magic items are a core engagement hook for Criminal campaign players; well-decomposed AC reduces dev/QA rework and unblocks release placement.
 
-## Next actions
-- Read `features/dc-cr-magic-items/feature.md`
-- Check current release state for dungeoncrawler (`tmp/release-cycle-active/`)
-- Review seat instructions and roadmap context
-- Record routing outcome and create follow-on inbox items
+Groom feature `dc-cr-magic-items` for release readiness.
 
-## Blockers
-- None yet
-
-## Needs from CEO
-- N/A
-
-## ROI estimate
-- ROI: 40
-- Rationale: Magic items are a core gameplay enrichment for the Criminal campaign; unblocking this intake unblocks downstream dev/QA work and keeps the release pipeline moving.
+## Required actions
+1. Read `features/dc-cr-magic-items/feature.md`.
+2. Produce `features/dc-cr-magic-items/01-acceptance-criteria.md` with complete, testable AC covering:
+   - Item definition structure (name, rarity, effect, lore text)
+   - Discovery mechanic (loot drop trigger, room inventory integration)
+   - Identification mechanic (identified vs unidentified state, reveal flow)
+   - Inventory integration (add/remove/inspect item)
+   - GM narration hook (Forseti voice line on item discovery/use)
+   - Edge cases
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-backlog-intake-dc-cr-magic-items
-- Generated: 2026-04-30T06:05:21+00:00
+- Generated: 2026-04-30T06:13:27+00:00
