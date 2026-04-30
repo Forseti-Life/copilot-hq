@@ -170,6 +170,9 @@ def _make_hq(tmp: Path, *,
     # PM inbox/outbox dirs
     (root / "sessions" / pm_agent_id / "inbox").mkdir(parents=True, exist_ok=True)
     (root / "sessions" / pm_agent_id / "outbox").mkdir(parents=True, exist_ok=True)
+    # QA inbox/outbox dirs
+    (root / "sessions" / f"qa-{team_id}" / "inbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / f"qa-{team_id}" / "outbox").mkdir(parents=True, exist_ok=True)
     # Dev outbox (optional)
     dev_outbox = root / "sessions" / dev_agent_id / "outbox"
     dev_outbox.mkdir(parents=True, exist_ok=True)
@@ -262,3 +265,28 @@ class TestGate2DevDoneGuard:
         assert "Gate2-ready suppressed" in out, (
             f"Expected guard to fire for Website: forseti; got:\n{out}"
         )
+
+    def test_open_issues_queue_release_scoped_gate2_verdict_item(self, tmp_path):
+        """Failing active-release audits must queue a QA release-level Gate 2 verdict item."""
+        root = _make_hq(tmp_path, has_dev_outbox=False)
+        _load_dispatch_python(root, open_issue_total_override=3)
+        qa_inbox = root / "sessions" / "qa-forseti" / "inbox"
+        verdict_items = [p for p in qa_inbox.iterdir() if "gate2-verdict" in p.name]
+        assert len(verdict_items) == 1, f"Expected 1 gate2-verdict item; got {verdict_items}"
+        command = (verdict_items[0] / "command.md").read_text(encoding="utf-8")
+        assert "20260408-forseti-release-b" in command
+        assert "gate2-block-20260408-forseti-release-b.md" in command
+        assert "gate2-approve-20260408-forseti-release-b.md" in command
+
+    def test_existing_release_verdict_suppresses_duplicate_queue(self, tmp_path):
+        """A recorded release-level Gate 2 verdict should suppress duplicate QA verdict items."""
+        root = _make_hq(tmp_path, has_dev_outbox=False)
+        qa_outbox = root / "sessions" / "qa-forseti" / "outbox"
+        (qa_outbox / "20260408-gate2-block-20260408-forseti-release-b.md").write_text(
+            "# Gate 2\n\n20260408-forseti-release-b — BLOCK\n",
+            encoding="utf-8",
+        )
+        _load_dispatch_python(root, open_issue_total_override=2)
+        qa_inbox = root / "sessions" / "qa-forseti" / "inbox"
+        verdict_items = [p for p in qa_inbox.iterdir() if "gate2-verdict" in p.name]
+        assert verdict_items == [], f"Expected no duplicate gate2-verdict item; got {verdict_items}"

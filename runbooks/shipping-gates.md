@@ -110,6 +110,16 @@ Clean-audit auto-approval rule:
 - CEO backstop: the scheduled 2-hour CEO cycle (`scripts/ceo-ops-once.sh`, installed by `scripts/install-crons.sh`) re-runs the same remediation and queues a CEO root-cause review item if the backstop had to intervene.
 - Purpose: a clean audit is sufficient Gate 2 evidence; duplicate or stale suite-activate churn must not keep PM signoff blocked.
 
+Failing-audit release verdict dispatch rule:
+- When an active-release audit is **not** clean, `scripts/site-audit-run.sh` must queue a release-scoped QA inbox item for the owning QA seat in addition to any dev findings items.
+- That QA item exists solely to produce one canonical release verdict artifact with the exact release ID and explicit `APPROVE` or `BLOCK`.
+- Feature-level QA outboxes, targeted retest notes, and PM prose do **not** satisfy release Gate 2 unless the release-scoped verdict artifact exists in `sessions/qa-<team>/outbox/`.
+- If the latest clean audit is later achieved, the clean-audit backstop may still materialize the canonical APPROVE automatically.
+
+Repo-state truth rule for handoffs:
+- Any outbox claim of the form `Created: <path>` only counts when that path exists in repo state after execution.
+- Executor and supervisor reviews must treat non-existent claimed paths the same way as missing signoff artifacts: the work is **not done** until the file or folder is actually present.
+
 ### Release-critical QA testgen backlog intervention rule (PM-owned, added 2026-03-22)
 
 **Trigger (hard threshold):** If a QA testgen backlog for a release-bound grooming pool reaches **2 consecutive groom/improvement cycles with 0 test plans delivered**, PM must intervene directly in the same cycle.

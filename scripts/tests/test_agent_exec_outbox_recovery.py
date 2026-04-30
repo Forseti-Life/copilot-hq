@@ -135,3 +135,58 @@ def test_invalid_outbox_reason_rejects_planning_transcript_leakage(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert "planning or tool-transcript text" in result.stdout
+
+
+def test_invalid_outbox_reason_rejects_missing_created_path_claim(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    script = (
+        "set -euo pipefail\n"
+        f'ROOT_DIR="{tmp_path}"\n'
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Summary: Claimed a cross-team handoff.\n"
+        "\n"
+        "Created: `sessions/dev-forseti-agent-tracker/inbox/20260430-disable-agent-tracker-routes-on-dungeoncrawler/command.md`\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "created path that does not exist" in result.stdout
+
+
+def test_invalid_outbox_reason_accepts_existing_created_path_claim(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    created_file = tmp_path / "sessions" / "dev-forseti-agent-tracker" / "inbox" / "ticket" / "command.md"
+    created_file.parent.mkdir(parents=True)
+    created_file.write_text("# command\n", encoding="utf-8")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    script = (
+        "set -euo pipefail\n"
+        f'ROOT_DIR="{tmp_path}"\n'
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Summary: Cross-team handoff created and verified.\n"
+        "\n"
+        "Created: `sessions/dev-forseti-agent-tracker/inbox/ticket/command.md`\n"
+        "EOF\n"
+        ")\n"
+        "if invalid_outbox_reason \"$response\"; then\n"
+        "  exit 1\n"
+        "fi\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""

@@ -546,6 +546,23 @@ invalid_outbox_reason() {
     return 0
   fi
 
+  local created_claim=""
+  local created_claims=""
+  local created_root=""
+  created_claims="$(printf '%s\n' "$text" | sed -nE 's/^[[:space:]*-]*Created:[[:space:]]*`?([^`]+)`?[[:space:]]*$/\1/p')"
+  if [ -n "$created_claims" ]; then
+    created_root="${ROOT_DIR:-$(pwd)}"
+    while IFS= read -r created_claim; do
+      [ -n "$created_claim" ] || continue
+      created_claim="${created_claim#./}"
+      if [ -e "$created_claim" ] || [ -e "${created_root%/}/$created_claim" ]; then
+        continue
+      fi
+      echo "response claims a created path that does not exist in repo state"
+      return 0
+    done <<< "$created_claims"
+  fi
+
   if [ -f "$inbox_item/command.md" ]; then
     if grep -qiE '^\- Flow direct route available:\s*yes' "$inbox_item/command.md"; then
       direct_route_available=1
