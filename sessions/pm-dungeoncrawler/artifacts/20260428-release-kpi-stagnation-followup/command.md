@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T10:57:55Z
+
 # Command
 
 - created_at: 2026-04-28T12:46:09+00:00

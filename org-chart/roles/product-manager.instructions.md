@@ -148,6 +148,20 @@ When starting work:
 - Authority: `runbooks/shipping-gates.md` Gate 1b (authoritative rule + lesson learned).
 - **Do not record release signoff** (`scripts/release-signoff.sh`) until all MEDIUM+ findings are routed or risk-accepted.
 
+1d) Execute delivery-time scope rebaseline (required for flow-managed SDLC ambiguity)
+- When a flow-managed `agentic_sdlc` item reaches `PM Scope Rebaseline`, PM owns the decision.
+- Use this node when Dev or QA discovers a real delivery-time scope ambiguity such as:
+  - feature should be held from the current release,
+  - feature should be deferred to a later slice,
+  - requirements belong inside a consolidated parent feature,
+  - or the work must be split before implementation can continue safely.
+- Resolve the node with one exact `Flow outcome:`:
+  - `Resume implementation`
+  - `Resume test design`
+  - `Re-scope requirements`
+  - `Hold / defer / consolidate`
+- Do **not** handle this through ad hoc prose when the work item is already flow-managed; the LangGraph outcome is the source of truth.
+
 2) Produce PM artifacts (always)
 - Produce release-coordination artifacts when needed (release window, dependency notes, and cross-stream sequencing).
 - If blocked on details, still write the best-available draft and ask specific questions (needs-info).

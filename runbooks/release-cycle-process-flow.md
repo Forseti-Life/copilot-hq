@@ -362,6 +362,8 @@ Stage 0 is instant: scope selection from a fully-groomed ready list.
 
 When all three artifacts exist for a feature (`feature.md` + `01-acceptance-criteria.md` + `03-test-plan.md`), it is **groomed and ready** — it enters the candidate pool for the next Stage 0 scope selection.
 
+**Delivery-time scope correction rule:** once a feature is already inside the flow-managed delivery lane (`agentic_sdlc`), hold/defer/consolidate decisions must route through the LangGraph node `PM Scope Rebaseline` using exact `Flow outcome:` lines such as `Scope decision required` and `Hold / defer / consolidate`. Do not manage in-flight scope corrections as ad hoc side-channel process outside the active flow.
+
 **Key rule:** grooming work for the next release runs entirely in parallel and is completely independent
 of the current release execution. PM escalations, AC questions, and QA test-generation back-and-forth
 for *next* release items must not create inbox items for Dev seats working the *current* release.
