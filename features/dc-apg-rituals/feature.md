@@ -3,7 +3,7 @@
 - Work item id: dc-apg-rituals
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-z
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

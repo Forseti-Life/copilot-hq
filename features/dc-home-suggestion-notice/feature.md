@@ -3,7 +3,7 @@
 - Work item id: dc-home-suggestion-notice
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content (home page / front page block)
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-z
 - Defer reason: 2026-04-28 release recovery decision: live homepage verification failed and the notice is not currently rendering on production. Deferred out of release-x to prevent a low-risk community UI item from blocking the remaining release gate.
 - Audit note: 2026-04-27 implementation audit did not find the requested suggestion-feedback notice on the live https://dungeoncrawler.forseti.life/ homepage, and no matching front-page code/config evidence was found in the site module/theme paths reviewed. This remains scoped work, not a metadata-only cleanup.
