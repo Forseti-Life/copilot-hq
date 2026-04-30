@@ -22,3 +22,5 @@ This inbox item was routed automatically from `PM Scope Rebaseline` after `pm-du
 4. If this node has only one direct next step, no Flow outcome line is required.
 5. If the work is complete but needs a graph-defined branch (for example scope rebaseline, QA failure, or requested changes), keep `- Status: done` and use the matching `- Flow outcome:` line instead of escalating through a legacy `needs-*` artifact.
 6. If product-team selection is required for this node, include `- Product team id: <team-id>` using one of the listed product-team IDs.
+- Agent: qa-dungeoncrawler
+- Status: pending

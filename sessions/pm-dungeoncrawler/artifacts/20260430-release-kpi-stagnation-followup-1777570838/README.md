@@ -2,7 +2,7 @@
 
 - PM: pm-dungeoncrawler
 - Work item: dungeoncrawler
-- Topic: release-handoff-full-investigation
+- Topic: release-kpi-stagnation-followup
 
 ## What to do
 1. Fill in the three artifacts in this folder.
