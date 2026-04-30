@@ -84,6 +84,85 @@ flowchart TD
 **Rule:** PM signoff means **ready to push**. Only `post-coordinated-push.sh` may move the runtime
 pointer to the next release.
 
+## LangGraph comparison: previous flow, fixed flow, target flow
+
+This section is the authoritative comparison for the question:
+
+- what the release flow was previously,
+- what changed to fix it,
+- what the new first-class flow should be.
+
+### 1. Previous flow (before the fix)
+
+The failure was not inside `agentic_sdlc`. Release Gate 1b lived outside flow-managed LangGraph routing:
+
+```mermaid
+flowchart TD
+  A[release-cycle-start.sh] --> B[Legacy release code-review inbox item]
+  B --> C[agent-code-review outbox written]
+  C --> D{Did PM manually route MEDIUM+ findings?}
+  D -- Yes --> E[Dev fixes or PM risk acceptance]
+  D -- No --> F[Findings remain stranded in outbox]
+  E --> G[QA Gate 2]
+  F --> H[Signoff/reminder automation could still prompt PM]
+  G --> I[PM signoff]
+  H --> I
+```
+
+**Why it broke:** the release code-review item had no `Flow id` / `Flow node`, so `route-flow-transitions.py` could not create the PM/Dev follow-up handoff automatically.
+
+### 2. Fixed current flow (live guarded process)
+
+The current system still uses script-owned release automation, but it now enforces Gate 1b before signoff:
+
+```mermaid
+flowchart TD
+  A[release-cycle-start.sh] --> B[Legacy release code-review inbox item]
+  B --> C[agent-code-review outbox]
+  C --> D{MEDIUM+ findings unresolved?}
+  D -- Yes --> E[check-code-review-routing.py blocks]
+  E --> F[orchestrator/dispatch.py queues code-review-followup]
+  F --> G[PM routes findings to Dev or records risk acceptance]
+  G --> H[QA Verification / Gate 2]
+  D -- No --> H
+  H --> I{QA APPROVE exists?}
+  I -- Yes --> J[release-signoff.sh]
+  I -- No --> H
+  J --> K[Coordinated push]
+  K --> L[post-coordinated-push.sh advances current -> next]
+```
+
+**Fixes that changed the behavior:**
+
+- `scripts/lib/code_review_gate.py`
+- `scripts/check-code-review-routing.py`
+- `scripts/release-signoff.sh`
+- `orchestrator/dispatch.py`
+- `scripts/ceo-pipeline-remediate.py`
+
+### 3. New target flow (first-class LangGraph representation)
+
+The target-state graph is now registered in the LangGraph registry/UI as `release_shipping_flow` and represents the release gate path directly:
+
+```mermaid
+flowchart TD
+  A[Seed Release Cycle] --> B[Release Code Review]
+  B -->|MEDIUM+ findings present| C[PM Code Review Triage]
+  B -->|No MEDIUM+ findings| E[QA Verification]
+  C -->|Route fixes to Dev| D[Dev Finding Remediation]
+  C -->|Risk accepted / all findings resolved| E
+  D --> E
+  E -->|APPROVE| F[PM Signoff Readiness Check]
+  E -->|BLOCK - code changes required| D
+  E -->|BLOCK - scope or risk decision required| C
+  F -->|Gate 1b incomplete| C
+  F -->|Gate 2 incomplete| E
+  F -->|Ready for signoff and push| G[Coordinated Push]
+  G --> H[Advance Release Boundary]
+```
+
+**Important truth-in-labeling note:** this LangGraph flow is the new first-class representation and target operating model. The live automation remains partly script-driven until the release-cycle scripts and dispatchers are fully migrated to use flow-managed release items directly.
+
 ## Release cycle principles (policy)
 
 - A release cycle is **not daily**. It lasts as long (or short) as needed to ship a stable product.

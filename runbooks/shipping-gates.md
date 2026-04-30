@@ -46,6 +46,7 @@ Exit criteria:
 
 Current automation note:
 - The release-cycle pre-ship code-review item queued by `scripts/release-cycle-start.sh` is currently a **legacy gate item**, not a flow-managed `agentic_sdlc` node. It does **not** carry `Flow id` / `Flow node` metadata, so `route-flow-transitions.py` will not auto-route its findings. PM/CEO automation must materialize the follow-up Dev inbox items or PM risk-acceptance artifacts explicitly.
+- The LangGraph registry/UI now includes `release_shipping_flow` as the first-class target representation of this release path. Until release-cycle startup and routing emit flow-managed release items, the scripts and repo-state guards in this runbook remain the live enforcement path.
 
 After each `agent-code-review` run for a release cycle, PM must:
 1. Read the code-review outbox for that release: `sessions/agent-code-review/outbox/<date>-code-review-<site>-<release-id>.md`
