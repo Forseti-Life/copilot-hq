@@ -895,6 +895,15 @@ class CharacterManager {
           'damage_bonus' => ['type' => 'circumstance', 'value' => 1, 'per' => 'weapon_die', 'condition' => 'against selected target type'],
         ],
       ],
+      ['id' => 'mountains-stoutness', 'name' => "Mountain's Stoutness", 'level' => 9, 'traits' => ['Dwarf'], 'prerequisites' => '',
+        'benefit' => "Increase your maximum Hit Points by your level. When you have the dying condition, the DC of your recovery checks is equal to 9 + your dying value (instead of 10 + your dying value). If you also have the Toughness feat, the Hit Points gained from it and this feat are cumulative, and the DC of your recovery checks is equal to 6 + your dying value.",
+        'special' => [
+          'max_hp_bonus' => 'current_level',
+          'recovery_dc_adjustment' => -1,
+          'recovery_dc_adjustment_with_toughness' => -4,
+          'toughness_combo_eligible' => TRUE,
+        ],
+      ],
       ['id' => 'dwarven-weapon-expertise', 'name' => 'Dwarven Weapon Expertise', 'level' => 13, 'traits' => ['Dwarf'], 'prerequisites' => 'Dwarven Weapon Familiarity',
         'benefit' => 'Your dwarven affinity blends with your training, granting you great skill with dwarven weapons. Whenever you gain a class feature that grants you expert or greater proficiency in certain weapons, you also gain that proficiency for battle axes, picks, warhammers, and all dwarven weapons in which you are trained.',
         'special' => [

@@ -1240,6 +1240,18 @@ class FeatEffectManager {
           $effects['applied_feats'][] = $feat_id;
           break;
 
+        case 'mountains-stoutness':
+          $current_level = (int) ($character_data['level'] ?? 1);
+          $effects['derived_adjustments']['max_hp_bonus'] = ($effects['derived_adjustments']['max_hp_bonus'] ?? 0) + $current_level;
+          $effects['derived_adjustments']['flags']['mountains_stoutness_active'] = TRUE;
+          // Recovery DC reduction: -1 base, -4 if Toughness also present (=6 + dying instead of 10 + dying)
+          $has_toughness = isset($applied_feats['toughness']);
+          $recovery_dc_adj = $has_toughness ? -4 : -1;
+          $effects['derived_adjustments']['recovery_check_dc_adjustment'] = ($effects['derived_adjustments']['recovery_check_dc_adjustment'] ?? 0) + $recovery_dc_adj;
+          $effects['notes'][] = "Mountain's Stoutness: +{$current_level} max HP; Recovery DC becomes " . (9 + ($has_toughness ? -3 : 0)) . " + dying_value.";
+          $effects['applied_feats'][] = $feat_id;
+          break;
+
         case 'photosynthetic-recovery':
           $this->addLongRestLimitedAction(
             $effects,
