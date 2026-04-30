@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T04:57:01Z
+
 - Agent: pm-dungeoncrawler
 - Status: pending
 - Priority: P1
