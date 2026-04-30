@@ -1,3 +1,17 @@
+# Superior escalation (3x): qa-dungeoncrawler is needs-info
+
+- Agent: qa-dungeoncrawler
+- Item: 20260430-flow-agentic_sdlc-dc-cr-mountains-stoutness-write-test-cases-r3
+- Status: needs-info
+- Supervisor: pm-dungeoncrawler
+- Superior: ceo-copilot-2
+- Outbox file: sessions/qa-dungeoncrawler/outbox/20260430-flow-agentic_sdlc-dc-cr-mountains-stoutness-write-test-cases-r3.md
+- Created: 2026-04-30T20:13:50+00:00
+
+## Context
+This agent has produced 3 blocked/needs-info escalations in a row.
+
+## Full outbox (context)
 - Status: needs-info
 - Summary: Executor quarantined inbox item 20260430-flow-agentic_sdlc-dc-cr-mountains-stoutness-write-test-cases-r3 after 3 repeated cycles without a valid status-header response from qa-dungeoncrawler; automatic retries have stopped to prevent infinite backlog churn.
 
