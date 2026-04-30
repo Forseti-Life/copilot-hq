@@ -88,3 +88,50 @@ def test_recovered_outbox_passes_semantic_validation_without_transcript_noise(tm
     assert result.returncode == 0, result.stderr
     assert result.stdout.startswith("- Status: done\n")
     assert "Let me do the actual work now." not in result.stdout
+
+
+def test_invalid_outbox_reason_rejects_noncanonical_status(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    script = (
+        "set -euo pipefail\n"
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: ready\n"
+        "- Summary: Not a canonical executor status.\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "invalid status value" in result.stdout
+
+
+def test_invalid_outbox_reason_rejects_planning_transcript_leakage(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    script = (
+        "set -euo pipefail\n"
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Summary: Final summary.\n"
+        "\n"
+        "---\n"
+        "*I need to actually read the files and write the artifact before claiming done. Let me do that properly.*\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "planning or tool-transcript text" in result.stdout

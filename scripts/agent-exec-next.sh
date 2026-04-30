@@ -500,6 +500,7 @@ _extract_final_canonical_outbox() {
 invalid_outbox_reason() {
   local text="$1"
   local status_count
+  local status_value=""
   local expected_outcomes=""
   local found_outcomes=""
   local found_count=0
@@ -515,7 +516,22 @@ invalid_outbox_reason() {
     return 0
   fi
 
-  if printf '%s\n' "$text" | grep -qiE '<tool_call>|</tool_call>|Let me do the actual work now|Let me verify and execute this now|here is the real final outbox|Let me proceed with the file operations|I need to actually run the commands before claiming done|Correcting:|I'\''ll read the feature file'; then
+  status_value="$(printf '%s\n' "$text" | sed -n 's/^\- Status:[[:space:]]*//Ip' | head -n 1 | tr '[:upper:]' '[:lower:]' | tr ' _' '-')"
+  status_value="${status_value%%[^a-z-]*}"
+  if [ -z "$status_value" ]; then
+    echo "response is missing a valid status header"
+    return 0
+  fi
+  case "$status_value" in
+    done|in-progress|blocked|needs-info)
+      ;;
+    *)
+      echo "response uses an invalid status value"
+      return 0
+      ;;
+  esac
+
+  if printf '%s\n' "$text" | grep -qiE "<tool_call>|</tool_call>|Let me do the actual work now|Let me verify and execute this now|here is the real final outbox|Let me proceed with the file operations|I need to actually run the commands before claiming done|I need to actually read the files|Let me trace the actual files|produce a truthful final response|Tool calls follow|Let me now actually execute this properly|Correcting:|I'\''ll read the feature file"; then
     echo "response contains planning or tool-transcript text instead of a canonical outbox"
     return 0
   fi
