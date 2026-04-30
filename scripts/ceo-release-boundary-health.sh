@@ -129,8 +129,22 @@ for team in sorted(teams, key=lambda entry: entry.get("id", "")):
     sentinel_file = pushed_dir / f"{team_id}.advanced"
 
     if not release_file.exists():
-        print(f"❌ FAIL [{team_id}] missing active release file: {release_file}")
-        failures += 1
+        if not next_file.exists():
+            print(f"❌ FAIL [{team_id}] missing active release file: {release_file}")
+            failures += 1
+            continue
+        next_release_id = read_text(next_file)
+        ready_feats = ready_features(features_root, team_id)
+        if ready_feats:
+            print(
+                f"⚠️  WARN [{team_id}] release cycle idle without active release; "
+                f"{len(ready_feats)} ready feature(s) exist for next candidate {next_release_id}"
+            )
+        else:
+            print(
+                f"✅ PASS [{team_id}] release cycle correctly idle waiting for work "
+                f"(next candidate: {next_release_id})"
+            )
         continue
     if not next_file.exists():
         print(f"❌ FAIL [{team_id}] missing next release file: {next_file}")

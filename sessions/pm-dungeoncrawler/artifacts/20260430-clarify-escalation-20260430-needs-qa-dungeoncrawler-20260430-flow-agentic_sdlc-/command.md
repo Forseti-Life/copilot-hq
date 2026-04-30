@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-04-30T20:43:18Z
+
 - command: |
     Clarify escalation quality (required):
 

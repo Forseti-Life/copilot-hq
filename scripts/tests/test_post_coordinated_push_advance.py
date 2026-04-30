@@ -20,6 +20,7 @@ _TEAMS_JSON = {
     "teams": [
         {
             "id": "forseti",
+            "label": "Forseti",
             "pm_agent": "pm-forseti",
             "qa_agent": "qa-forseti",
             "dev_agent": "dev-forseti",
@@ -31,6 +32,7 @@ _TEAMS_JSON = {
         },
         {
             "id": "dungeoncrawler",
+            "label": "Dungeoncrawler",
             "pm_agent": "pm-dungeoncrawler",
             "qa_agent": "qa-dungeoncrawler",
             "dev_agent": "dev-dungeoncrawler",
@@ -44,7 +46,7 @@ _TEAMS_JSON = {
 }
 
 
-def _make_root(tmp: Path, *, signoffs_done: bool = True) -> Path:
+def _make_root(tmp: Path, *, signoffs_done: bool = True, include_ready_backlog: bool = True) -> Path:
     """Build minimal HQ directory structure in tmp for post-coordinated-push.sh."""
     root = tmp / "hq"
 
@@ -70,6 +72,30 @@ def _make_root(tmp: Path, *, signoffs_done: bool = True) -> Path:
             signoff_dir = root / "sessions" / f"pm-{team_id}" / "artifacts" / "release-signoffs"
             signoff_dir.mkdir(parents=True)
             (signoff_dir / f"{current}.md").write_text("## Release Signoff\n")
+
+    features = root / "features"
+    features.mkdir(parents=True)
+    if include_ready_backlog:
+        websites = {
+            "forseti": "forseti.life",
+            "dungeoncrawler": "dungeoncrawler.forseti.life",
+        }
+        for team_id, website in websites.items():
+            feat_dir = features / f"{team_id}-ready-backlog"
+            feat_dir.mkdir(parents=True)
+            (feat_dir / "feature.md").write_text(
+                textwrap.dedent(
+                    f"""\
+                    # Feature Brief
+
+                    - Work item id: {team_id}-ready-backlog
+                    - Website: {website}
+                    - Status: ready
+                    - Release:
+                    """
+                ),
+                encoding="utf-8",
+            )
 
     # scripts/ symlink so the script can find release-signoff.sh via path discovery.
     # We mock release-signoff.sh with a no-op stub that always exits 0.
@@ -272,7 +298,6 @@ class TestReleaseIdAdvancement:
         """A freshly advanced empty release should get a PM scope-activate item right away."""
         root = _make_root(tmp_path)
         features = root / "features"
-        features.mkdir()
         today = datetime.now(timezone.utc).strftime("%Y%m%d")
         for team_id, website in (
             ("forseti", "forseti.life"),
@@ -303,6 +328,27 @@ class TestReleaseIdAdvancement:
             pm_inbox = root / "sessions" / f"pm-{team_id}" / "inbox"
             items = list(pm_inbox.glob(f"*-scope-activate-{today}-{team_id}-release-c"))
             assert len(items) == 1, f"{team_id}: expected one scope-activate item, got {items}"
+
+    def test_no_ready_backlog_keeps_cycle_idle_after_push(self, tmp_path):
+        """If the next release has no scoped or ready work, do not start it after push."""
+        root = _make_root(tmp_path, include_ready_backlog=False)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+        result = _run(root)
+        assert result.returncode == 0, result.stderr
+
+        active = root / "tmp" / "release-cycle-active"
+        for team_id in ("forseti", "dungeoncrawler"):
+            assert not (active / f"{team_id}.release_id").exists(), (
+                f"{team_id}: expected no active release when backlog is empty"
+            )
+            assert (active / f"{team_id}.next_release_id").read_text().strip() == (
+                f"{today}-{team_id}-release-c"
+            )
+            assert not (active / f"{team_id}.started_at").exists(), (
+                f"{team_id}: expected started_at cleared while idle"
+            )
+            assert f"WAIT {team_id}: no actionable work for {today}-{team_id}-release-c" in result.stdout
 
     def test_archives_stale_pm_release_bound_items_on_advance(self, tmp_path):
         """Release advancement should archive obsolete PM release-bound items for old/current transitions."""

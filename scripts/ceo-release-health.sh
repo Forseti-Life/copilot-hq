@@ -150,7 +150,44 @@ while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT; do
   NEXT_ID_FILE="$ACTIVE_DIR/${TEAM}.next_release_id"
 
   if [ ! -f "$RELEASE_ID_FILE" ]; then
-    fail "[$TEAM] $RELEASE_ID_FILE not found — release cycle not started"
+    NEXT_RELEASE_ID="$(cat "$NEXT_ID_FILE" 2>/dev/null | tr -d '[:space:]' || echo '')"
+    if [ -n "$NEXT_RELEASE_ID" ]; then
+      READY_BACKLOG_COUNT="$(python3 - "$TEAM" <<'PY'
+import pathlib
+import re
+import sys
+
+team = sys.argv[1].strip().lower()
+count = 0
+for fm in pathlib.Path("features").glob("*/feature.md"):
+    try:
+        text = fm.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        continue
+    website = re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+    status = re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+    release = re.search(r"^-\s+Release:\s*(.*)$", text, re.MULTILINE | re.IGNORECASE)
+    website_text = website.group(1).strip().lower() if website else ""
+    status_text = status.group(1).strip().lower() if status else ""
+    release_text = release.group(1).strip() if release else ""
+    if team not in website_text:
+        continue
+    if status_text not in {"ready", "done"}:
+        continue
+    if release_text:
+        continue
+    count += 1
+print(count)
+PY
+)"
+      if [ "${READY_BACKLOG_COUNT:-0}" -gt 0 ]; then
+        warn "[$TEAM] release cycle idle without active release; ${READY_BACKLOG_COUNT} ready feature(s) exist for next candidate ${NEXT_RELEASE_ID}"
+      else
+        pass "[$TEAM] release cycle idle waiting for work (next candidate: ${NEXT_RELEASE_ID})"
+      fi
+    else
+      fail "[$TEAM] $RELEASE_ID_FILE not found — release cycle not started"
+    fi
     continue
   fi
 

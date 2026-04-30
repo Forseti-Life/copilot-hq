@@ -12,7 +12,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from orchestrator.release_prerequisites import ReleasePrerequisiteValidator
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "lib"))
-from release_cycle_helpers import combined_release_marker_key, release_cohort, release_enabled_teams  # type: ignore
+from release_cycle_helpers import (  # type: ignore
+    combined_release_marker_key,
+    next_release_id_after,
+    release_cohort,
+    release_enabled_teams,
+    summarize_release_work,
+)
 
 
 def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
@@ -292,35 +298,7 @@ def ensure_parallel_release_coverage(
 
 def _next_release_id_after(release_id: str, team_id: str, current_day: str) -> str:
     """Generate the next monotonic release ID in the sequence."""
-    date_part = current_day
-    suffix = "release"
-
-    match = re.match(rf"^(\d{{8}})-{re.escape(team_id)}-(.+)$", release_id or "")
-    if match:
-        date_part = match.group(1)
-        suffix = match.group(2)
-
-    if suffix == "release":
-        next_suffix = "release-next"
-    elif suffix == "release-next":
-        next_suffix = "release-b"
-    else:
-        label_match = re.fullmatch(r"release-([a-z]+)", suffix)
-        if not label_match:
-            next_suffix = "release-b"
-        else:
-            chars = list(label_match.group(1))
-            idx = len(chars) - 1
-            while idx >= 0 and chars[idx] == "z":
-                chars[idx] = "a"
-                idx -= 1
-            if idx < 0:
-                chars.insert(0, "a")
-            else:
-                chars[idx] = chr(ord(chars[idx]) + 1)
-            next_suffix = f"release-{''.join(chars)}"
-
-    return f"{date_part}-{team_id}-{next_suffix}"
+    return next_release_id_after(release_id, team_id, current_day)
 
 
 def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
@@ -366,6 +344,7 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
 
         release_id_file = active_dir / f"{team_id}.release_id"
         next_release_id_file = active_dir / f"{team_id}.next_release_id"
+        started_at_file = active_dir / f"{team_id}.started_at"
 
         current_release = release_id_file.read_text().strip() if release_id_file.exists() else ""
         next_release = next_release_id_file.read_text().strip() if next_release_id_file.exists() else ""
@@ -378,8 +357,24 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
             cycle_signed_off = signoff_file.exists()
 
         if not current_release:
-            new_current = f"{today}-{team_id}-release"
-            new_next = f"{today}-{team_id}-release-next"
+            new_current = next_release or f"{today}-{team_id}-release"
+            new_next = _next_release_id_after(new_current, team_id, today)
+            work_summary = summarize_release_work(repo_root, team, new_current)
+            if not work_summary["has_actionable_work"]:
+                next_release_id_file.write_text(new_current + "\n", encoding="utf-8")
+                if started_at_file.exists():
+                    started_at_file.unlink()
+                results.append(
+                    {
+                        "team": team_id,
+                        "action": "idle_waiting_for_work",
+                        "current": "",
+                        "next": new_current,
+                        "scoped_count": work_summary["scoped_count"],
+                        "ready_backlog_count": work_summary["ready_backlog_count"],
+                    }
+                )
+                continue
             action = "start"
 
             rc, out = _run(

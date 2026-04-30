@@ -119,6 +119,7 @@ from release_cycle_helpers import (  # noqa: E402
     next_release_id_after,
     release_enabled_team_map,
     release_enabled_teams,
+    summarize_release_work,
 )
 
 if requested_ids:
@@ -207,6 +208,8 @@ if team_release_ids:
         team_id = team['id']
         current_rid = (runtime_dir / f"{team_id}.release_id").read_text(encoding='utf-8').strip()
         next_rid_file = runtime_dir / f"{team_id}.next_release_id"
+        release_rid_file = runtime_dir / f"{team_id}.release_id"
+        started_at_file = runtime_dir / f"{team_id}.started_at"
         if not next_rid_file.exists():
             print(f"WARN {team_id}: no next_release_id file — skipping release_id advancement")
             continue
@@ -241,10 +244,21 @@ if team_release_ids:
                 print(f"SKIP {team_id}: release_id already advanced to {sentinel_val}")
                 seed_handoff(team_id, current_rid, new_current)
                 continue
+        work_summary = summarize_release_work(root, team, new_current)
+        if not work_summary["has_actionable_work"]:
+            if release_rid_file.exists():
+                release_rid_file.unlink()
+            if started_at_file.exists():
+                started_at_file.unlink()
+            print(
+                f"WAIT {team_id}: no actionable work for {new_current}; "
+                f"idling release cycle until backlog is ready"
+            )
+            continue
         new_next = next_release_id_after(new_current, team_id, today)
-        (runtime_dir / f"{team_id}.release_id").write_text(new_current + "\n", encoding='utf-8')
-        (runtime_dir / f"{team_id}.next_release_id").write_text(new_next + "\n", encoding='utf-8')
-        (runtime_dir / f"{team_id}.started_at").write_text(
+        release_rid_file.write_text(new_current + "\n", encoding='utf-8')
+        next_rid_file.write_text(new_next + "\n", encoding='utf-8')
+        started_at_file.write_text(
             datetime.now(timezone.utc).isoformat() + "\n", encoding='utf-8'
         )
         pair_advance_sentinel.write_text(new_current + "\n", encoding='utf-8')

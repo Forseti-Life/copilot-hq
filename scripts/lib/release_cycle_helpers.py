@@ -157,6 +157,77 @@ def next_release_id_after(release_id: str, team_id: str, current_day: str) -> st
     return f"{date_part}-{team_id}-{next_suffix}"
 
 
+def _team_site_tokens(team: dict[str, Any]) -> set[str]:
+    tokens: set[str] = set()
+    team_id = str(team.get("id") or "").strip().lower()
+    site = str(team.get("site") or "").strip().lower()
+    if team_id:
+        tokens.add(team_id)
+    if site:
+        tokens.add(site)
+        if site.endswith(".life"):
+            tokens.add(site[: -len(".life")])
+    for alias in team.get("aliases") or []:
+        alias_text = str(alias or "").strip().lower()
+        if alias_text:
+            tokens.add(alias_text)
+    return {token for token in tokens if token}
+
+
+def summarize_release_work(
+    root: Path, team: dict[str, Any], release_id: str
+) -> dict[str, Any]:
+    """Summarize whether a team has actionable work for a release.
+
+    Actionable work means either:
+    1. The candidate/current release already has scoped work (`in_progress` or `done`).
+    2. The site has groomed backlog that can be scoped immediately (`ready` or `done`)
+       and is either unassigned or already tagged to the candidate release.
+    """
+    features_root = root / "features"
+    if not features_root.exists():
+        return {
+            "scoped_count": 0,
+            "ready_backlog_count": 0,
+            "ready_feature_ids": [],
+            "has_actionable_work": False,
+        }
+
+    tokens = _team_site_tokens(team)
+    scoped_count = 0
+    ready_feature_ids: list[str] = []
+
+    for feature_md in sorted(features_root.glob("*/feature.md")):
+        try:
+            text = feature_md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+
+        website_match = re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+        status_match = re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+        release_match = re.search(r"^-\s+Release:\s*(.*)$", text, re.MULTILINE | re.IGNORECASE)
+
+        website = (website_match.group(1).strip().lower() if website_match else "")
+        status = (status_match.group(1).strip().lower() if status_match else "")
+        feature_release = (release_match.group(1).strip() if release_match else "")
+
+        if not website or not any(token in website for token in tokens):
+            continue
+
+        if status in {"in_progress", "done"} and release_id and feature_release == release_id:
+            scoped_count += 1
+
+        if status in {"ready", "done"} and (not feature_release or feature_release == release_id):
+            ready_feature_ids.append(feature_md.parent.name)
+
+    return {
+        "scoped_count": scoped_count,
+        "ready_backlog_count": len(ready_feature_ids),
+        "ready_feature_ids": ready_feature_ids,
+        "has_actionable_work": bool(scoped_count or ready_feature_ids),
+    }
+
+
 def has_groom_item(root: Path, pm_agent: str, next_release_id: str) -> bool:
     slug = slugify(next_release_id)
     inbox = root / "sessions" / pm_agent / "inbox"
