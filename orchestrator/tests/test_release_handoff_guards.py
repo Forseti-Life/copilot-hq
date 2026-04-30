@@ -134,6 +134,57 @@ class TestPMScopeActivateDevHandoff(unittest.TestCase):
             self.assertIn("- Status: done", updated)
             self.assertIn("- Release: 20990101-dungeoncrawler-release-b", updated)
 
+    def test_scope_activate_requeues_already_scoped_in_progress_feature_without_scope_cap_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "scripts").mkdir(parents=True)
+            shutil.copy2(SCOPE_ACTIVATE, tmp / "scripts" / "pm-scope-activate.sh")
+            (tmp / "features").mkdir()
+            (tmp / "sessions").mkdir()
+            (tmp / "tmp" / "release-cycle-active").mkdir(parents=True)
+            active_release = "20990101-dungeoncrawler-release-z"
+            (tmp / "tmp" / "release-cycle-active" / "dungeoncrawler.release_id").write_text(
+                f"{active_release}\n", encoding="utf-8"
+            )
+
+            for i in range(20):
+                status = "in_progress"
+                feature_id = f"dc-release-feature-{i}"
+                _write_feature(
+                    tmp / "features",
+                    feature_id,
+                    "dungeoncrawler",
+                    active_release,
+                    status,
+                    "dev-dungeoncrawler",
+                )
+
+            result = subprocess.run(
+                ["bash", "scripts/pm-scope-activate.sh", "dungeoncrawler", "dc-release-feature-0"],
+                cwd=tmp,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+            dev_items = list((tmp / "sessions" / "dev-dungeoncrawler" / "inbox").glob("*-impl-dc-release-feature-0"))
+            qa_items = list((tmp / "sessions" / "qa-dungeoncrawler" / "inbox").glob("*-suite-activate-dc-release-feature-0"))
+            self.assertEqual(len(dev_items), 1)
+            self.assertEqual(len(qa_items), 1)
+            self.assertIn(
+                "legacy requeue of an already-scoped release item",
+                (dev_items[0] / "command.md").read_text(encoding="utf-8"),
+            )
+            self.assertIn(
+                "legacy requeue of an already-scoped release item",
+                (qa_items[0] / "command.md").read_text(encoding="utf-8"),
+            )
+
+            updated = (tmp / "features" / "dc-release-feature-0" / "feature.md").read_text(encoding="utf-8")
+            self.assertIn("- Status: in_progress", updated)
+            self.assertIn(f"- Release: {active_release}", updated)
+
 
 class TestScopeActivateNudgeGuard(unittest.TestCase):
     def test_ready_release_tags_do_not_count_as_activated_scope(self):

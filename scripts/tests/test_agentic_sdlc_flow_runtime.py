@@ -27,6 +27,7 @@ def test_pm_scope_activate_seeds_agentic_sdlc_runtime_and_flow_managed_handoffs(
     assert "- Flow direct route available: yes" in source
     assert "- Available flow outcomes: Approved | Changes requested" in source
     assert 'org-chart/sites/${SITE}/qa-permissions.json' in source
+    assert "already-scoped 'in_progress' item for the active release" in source
 
 
 def test_agent_exec_next_skips_legacy_dev_to_qa_handoff_for_flow_managed_items():

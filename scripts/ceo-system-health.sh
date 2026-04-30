@@ -560,29 +560,62 @@ echo "  Feature Velocity  (shipped features per recent release)"
 echo "$SEP"
 
 for site in forseti dungeoncrawler; do
-  feature_dir="features/$site"
-  [ -d "$feature_dir" ] || continue
+  site_stats="$(python3 - "$site" <<'PY'
+import pathlib
+import re
+import sys
 
-  total=$(grep -rl "Status: shipped" "$feature_dir"/*/feature.md 2>/dev/null | wc -l || echo 0)
-  in_progress=$(grep -rl "Status: in_progress" "$feature_dir"/*/feature.md 2>/dev/null | wc -l || echo 0)
-  ready=$(grep -rl "Status: ready" "$feature_dir"/*/feature.md 2>/dev/null | wc -l || echo 0)
-  info "[$site] shipped=$total  in_progress=$in_progress  ready(backlog)=$ready"
+site = sys.argv[1].strip().lower()
+features_root = pathlib.Path("features")
+counts = {"shipped": 0, "done": 0, "in_progress": 0, "ready": 0}
+stale = []
 
-  # Stale in_progress: mtime > 48h
+for feature_md in sorted(features_root.glob("*/feature.md")):
+    text = feature_md.read_text(encoding="utf-8", errors="ignore")
+    website_match = re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+    if not website_match:
+        continue
+    website = website_match.group(1).strip().lower()
+    if site not in website:
+        continue
+    status_match = re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+    status = status_match.group(1).strip().lower() if status_match else ""
+    status = status.replace("-", "_")
+    if status in counts:
+        counts[status] += 1
+    if status == "in_progress":
+        age_h = int((pathlib.Path(feature_md).stat().st_mtime_ns // 1_000_000_000))
+        stale.append((feature_md.parent.name, age_h))
+
+print(f"{counts['shipped']}\t{counts['done']}\t{counts['in_progress']}\t{counts['ready']}")
+for feature_id, mtime_epoch in stale:
+    print(f"STALE\t{feature_id}\t{mtime_epoch}")
+PY
+  )"
+
+  shipped=0
+  done=0
+  in_progress=0
+  ready=0
   stale_ip=0
-  while IFS= read -r ffile; do
-    fmtime=$(stat -c %Y "$ffile" 2>/dev/null || stat -f %m "$ffile" 2>/dev/null || echo 0)
-    age_h=$(( (now_ts - fmtime) / 3600 ))
+  if [ -n "${site_stats:-}" ]; then
+    IFS=$'\t' read -r shipped done in_progress ready <<<"$(printf '%s\n' "$site_stats" | head -1)"
+  fi
+
+  info "[$site] shipped=$shipped  done=$done  in_progress=$in_progress  ready(backlog)=$ready"
+
+  while IFS=$'\t' read -r marker feature_id mtime_epoch; do
+    [ "$marker" = "STALE" ] || continue
+    age_h=$(( (now_ts - mtime_epoch) / 3600 ))
     if [ "$age_h" -gt 48 ]; then
-      warn "[$site] Stale in_progress feature (${age_h}h): $(dirname "$ffile" | xargs basename)"
+      warn "[$site] Stale in_progress feature (${age_h}h): ${feature_id}"
       stale_ip=$(( stale_ip + 1 ))
-      feature_id=$(dirname "$ffile" | xargs basename)
       dev_agent="dev-${site}"
       queue_dispatch "$dev_agent" "stale-feature-${feature_id}" "6" "WARN" \
         "Stale in_progress feature: $feature_id (${age_h}h without update)" \
         "Feature $feature_id has been in_progress for ${age_h}h without a file update.\n\nEither complete implementation and update status to 'done', or re-scope back to 'ready' if blocked. File outbox entry with current status."
     fi
-  done < <(grep -rl "Status: in_progress" "$feature_dir"/*/feature.md 2>/dev/null || true)
+  done < <(printf '%s\n' "$site_stats" | tail -n +2)
 
   if [ "$stale_ip" -eq 0 ] && [ "$in_progress" -gt 0 ]; then
     pass "[$site] All $in_progress in_progress feature(s) recently active"

@@ -307,13 +307,18 @@ PY
         # Check for dev outbox (implementation)
         DEV_AGENT="dev-$TEAM"
         HAS_IMPL="$(ls "sessions/${DEV_AGENT}/outbox/" 2>/dev/null | grep "$FEAT_NAME" | head -1 || true)"
+        SDLC_RUNTIME="tmp/flow-runs/agentic_sdlc/${FEAT_NAME}/product-team.json"
+        SDLC_SIGNAL="legacy/no-sdlc-runtime"
+        if [ -f "$SDLC_RUNTIME" ]; then
+          SDLC_SIGNAL="flow-managed"
+        fi
         if [ -n "$HAS_IMPL" ]; then
-          pass "  feature: $FEAT_NAME (status=$STATUS, dev outbox: $HAS_IMPL)"
+          pass "  feature: $FEAT_NAME (status=$STATUS, dev outbox: $HAS_IMPL, sdlc: $SDLC_SIGNAL)"
         else
           if [ "$IN_RELEASE_GRACE" = "1" ]; then
-            warn "  feature: $FEAT_NAME (status=$STATUS, no dev outbox yet — release still within startup grace)"
+            warn "  feature: $FEAT_NAME (status=$STATUS, no dev outbox yet — release still within startup grace, sdlc: $SDLC_SIGNAL)"
           else
-            fail "  feature: $FEAT_NAME (status=$STATUS, NO dev outbox found — implementation missing)"
+            fail "  feature: $FEAT_NAME (status=$STATUS, NO dev outbox found — implementation missing, sdlc: $SDLC_SIGNAL)"
           fi
           FEATURES_WAITING_FOR_IMPL=$((FEATURES_WAITING_FOR_IMPL + 1))
           FEATURES_NOT_DONE+=("$FEAT_NAME")
