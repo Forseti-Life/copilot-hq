@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the KPI stagnation follow-up for release `20260412-dungeoncrawler-release-x`. Dev inbox shows 2 items with latest status `needs-info` and 15 open issues after 40+ minutes of no movement. Reading current dev inbox items and release state to determine what is blocking dev and what PM decisions are needed to unblock.
+- Summary: Investigating the stagnation state for release 20260412-dungeoncrawler-release-x. Dev inbox shows 2 items with latest status needs-info, 15 open issues, no movement in 40m. Reading dev seat outbox and feature state to determine what the dev seat is blocked on before writing unblock artifacts.
 
 ## Next actions
-- Read dev-dungeoncrawler inbox to identify the exact needs-info blockers
-- Read release feature list to assess which of the 15 open issues are in-scope for this release
-- Determine if PM can resolve the needs-info items directly or if escalation to CEO is required
-- Produce unblock artifacts or scope decisions as needed
+- Read dev-dungeoncrawler outbox and inbox to identify the exact needs-info blocker
+- Read release feature list under features/ for release 20260412-dungeoncrawler-release-x
+- Produce unblock response or acceptance criteria clarification targeting dev seat's stated blocker
+- Update seat instructions if a repeat blocker pattern is identified
 
 ## Blockers
-- None yet — still investigating
+- None yet — investigating before escalating
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Release is stalled with 15 open issues and dev blocked on needs-info; every additional cycle of inaction delays the release and compounds unresolved findings. Unblocking dev is the highest-leverage action available right now.
+- Rationale: Release is stalled with 15 open issues and dev blocked on needs-info; every additional idle cycle delays ship and risks auto-close with unresolved scope debt.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260428-release-kpi-stagnation-followup
-- Generated: 2026-04-30T10:17:32+00:00
+- Generated: 2026-04-30T10:27:27+00:00
