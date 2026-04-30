@@ -1,0 +1,5 @@
+{
+  "source_node": "Test Cases Review",
+  "condition": "Approved",
+  "source_outbox": "sessions/qa-dungeoncrawler/outbox/20260430-170952-suite-activate-dc-cr-unburdened-iron.md"
+}

@@ -14,6 +14,82 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 DRUSH_ROOT = Path("/var/www/html/forseti")
 PRODUCT_TEAMS_PATH = ROOT / "org-chart" / "products" / "product-teams.json"
+BUILTIN_FLOW_FALLBACKS: dict[str, dict[str, Any]] = {
+    "agentic_sdlc": {
+        "id": "agentic_sdlc",
+        "default_entrypoint": "User Requirements",
+        "transitions": [
+            {"from_node": "User Requirements", "to_node": "Auto-generate User Stories", "kind": "direct", "condition": ""},
+            {"from_node": "Auto-generate User Stories", "to_node": "Product Owner Review", "kind": "direct", "condition": ""},
+            {"from_node": "Product Owner Review", "to_node": "Create Design Document", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Product Owner Review", "to_node": "Revise User Stories", "kind": "conditional", "condition": "Changes requested"},
+            {"from_node": "Revise User Stories", "to_node": "Auto-generate User Stories", "kind": "direct", "condition": ""},
+            {"from_node": "Create Design Document", "to_node": "Design Review", "kind": "direct", "condition": ""},
+            {"from_node": "Design Review", "to_node": "Generate Code", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Design Review", "to_node": "Write Test Cases", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Design Review", "to_node": "Revise Design Document", "kind": "conditional", "condition": "Changes requested"},
+            {"from_node": "Revise Design Document", "to_node": "Design Review", "kind": "direct", "condition": ""},
+            {"from_node": "Generate Code", "to_node": "Code Review", "kind": "direct", "condition": ""},
+            {"from_node": "Generate Code", "to_node": "PM Scope Rebaseline", "kind": "conditional", "condition": "Scope decision required"},
+            {"from_node": "Write Test Cases", "to_node": "PM Scope Rebaseline", "kind": "conditional", "condition": "Scope decision required"},
+            {"from_node": "Code Review", "to_node": "Security Review", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Code Review", "to_node": "Generate Code", "kind": "conditional", "condition": "Changes requested"},
+            {"from_node": "Security Review", "to_node": "Ready for QA", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Security Review", "to_node": "Generate Code", "kind": "conditional", "condition": "Changes requested"},
+            {"from_node": "Write Test Cases", "to_node": "Test Cases Review", "kind": "direct", "condition": ""},
+            {"from_node": "Test Cases Review", "to_node": "Ready for QA", "kind": "conditional", "condition": "Approved"},
+            {"from_node": "Test Cases Review", "to_node": "Write Test Cases", "kind": "conditional", "condition": "Changes requested"},
+            {"from_node": "PM Scope Rebaseline", "to_node": "Generate Code", "kind": "conditional", "condition": "Resume implementation"},
+            {"from_node": "PM Scope Rebaseline", "to_node": "Write Test Cases", "kind": "conditional", "condition": "Resume test design"},
+            {"from_node": "PM Scope Rebaseline", "to_node": "Revise User Stories", "kind": "conditional", "condition": "Re-scope requirements"},
+            {"from_node": "PM Scope Rebaseline", "to_node": "END", "kind": "conditional", "condition": "Hold / defer / consolidate"},
+            {"from_node": "Ready for QA", "to_node": "QA Testing", "kind": "direct", "condition": ""},
+            {"from_node": "QA Testing", "to_node": "END", "kind": "conditional", "condition": "Passed"},
+            {"from_node": "QA Testing", "to_node": "Generate Code", "kind": "conditional", "condition": "Failed - code changes required"},
+            {"from_node": "QA Testing", "to_node": "Write Test Cases", "kind": "conditional", "condition": "Failed - test changes required"},
+            {"from_node": "QA Testing", "to_node": "PM Scope Rebaseline", "kind": "conditional", "condition": "Failed - scope decision required"},
+        ],
+        "node_breakdown": [
+            {"parent_node": "Generate Code", "owner_binding": "product_team.dev_agent"},
+            {"parent_node": "PM Scope Rebaseline", "owner_binding": "product_team.pm_agent"},
+            {"parent_node": "Write Test Cases", "owner_binding": "product_team.qa_agent"},
+            {"parent_node": "Code Review", "owner_seat": "agent-code-review"},
+            {"parent_node": "Security Review", "owner_seat": "sec-analyst-forseti"},
+            {"parent_node": "Test Cases Review", "owner_binding": "product_team.qa_agent"},
+            {"parent_node": "QA Testing", "owner_binding": "product_team.qa_agent"},
+        ],
+    },
+    "release_shipping_flow": {
+        "id": "release_shipping_flow",
+        "default_entrypoint": "Seed Release Cycle",
+        "transitions": [
+            {"from_node": "Seed Release Cycle", "to_node": "Release Code Review", "kind": "direct", "condition": ""},
+            {"from_node": "Release Code Review", "to_node": "PM Code Review Triage", "kind": "conditional", "condition": "MEDIUM+ findings present"},
+            {"from_node": "Release Code Review", "to_node": "Release QA Verification", "kind": "conditional", "condition": "No MEDIUM+ findings"},
+            {"from_node": "PM Code Review Triage", "to_node": "SDLC Delivery", "kind": "conditional", "condition": "Route fixes to Dev"},
+            {"from_node": "PM Code Review Triage", "to_node": "Release QA Verification", "kind": "conditional", "condition": "Risk accepted / all findings resolved"},
+            {"from_node": "SDLC Delivery", "to_node": "Release QA Verification", "kind": "direct", "condition": ""},
+            {"from_node": "SDLC Delivery", "to_node": "PM Code Review Triage", "kind": "conditional", "condition": "Scope decision required"},
+            {"from_node": "Release QA Verification", "to_node": "PM Signoff Readiness Check", "kind": "conditional", "condition": "APPROVE"},
+            {"from_node": "Release QA Verification", "to_node": "SDLC Delivery", "kind": "conditional", "condition": "BLOCK - code changes required"},
+            {"from_node": "Release QA Verification", "to_node": "PM Code Review Triage", "kind": "conditional", "condition": "BLOCK - scope or risk decision required"},
+            {"from_node": "PM Signoff Readiness Check", "to_node": "PM Code Review Triage", "kind": "conditional", "condition": "Gate 1b incomplete"},
+            {"from_node": "PM Signoff Readiness Check", "to_node": "Release QA Verification", "kind": "conditional", "condition": "Gate 2 incomplete"},
+            {"from_node": "PM Signoff Readiness Check", "to_node": "Coordinated Push", "kind": "conditional", "condition": "Ready for signoff and push"},
+            {"from_node": "Coordinated Push", "to_node": "Advance Release Boundary", "kind": "direct", "condition": ""},
+            {"from_node": "Advance Release Boundary", "to_node": "END", "kind": "direct", "condition": ""},
+        ],
+        "node_breakdown": [
+            {"parent_node": "Release Code Review", "owner_seat": "agent-code-review"},
+            {"parent_node": "PM Code Review Triage", "owner_binding": "product_team.pm_agent"},
+            {"parent_node": "SDLC Delivery", "handoff_flow_id": "agentic_sdlc"},
+            {"parent_node": "Release QA Verification", "owner_binding": "product_team.qa_agent"},
+            {"parent_node": "PM Signoff Readiness Check", "owner_binding": "product_team.pm_agent"},
+            {"parent_node": "Coordinated Push", "owner_seat": "ceo-copilot-2"},
+            {"parent_node": "Advance Release Boundary", "owner_seat": "ceo-copilot-2"},
+        ],
+    },
+}
 TRANSCRIPT_MARKERS = (
     "tool call:",
     "**tool call:**",
@@ -239,7 +315,11 @@ def extract_flow_outcomes(text: str) -> list[str]:
 
 
 def load_flow(flow_id: str) -> dict[str, Any] | None:
+    fallback = BUILTIN_FLOW_FALLBACKS.get(flow_id)
     if not DRUSH_ROOT.exists():
+        if fallback is not None:
+            log(f"using repo fallback for {flow_id}: missing {DRUSH_ROOT}")
+            return json.loads(json.dumps(fallback))
         log(f"skip live flow lookup for {flow_id}: missing {DRUSH_ROOT}")
         return None
 
@@ -256,14 +336,46 @@ def load_flow(flow_id: str) -> dict[str, Any] | None:
         check=False,
     )
     if proc.returncode != 0 or not proc.stdout.strip():
+        if fallback is not None:
+            log(f"using repo fallback for {flow_id}: drush lookup failed")
+            return json.loads(json.dumps(fallback))
         log(f"skip flow {flow_id}: drush lookup failed")
         return None
     try:
         payload = json.loads(proc.stdout)
     except json.JSONDecodeError:
+        if fallback is not None:
+            log(f"using repo fallback for {flow_id}: invalid JSON from drush lookup")
+            return json.loads(json.dumps(fallback))
         log(f"skip flow {flow_id}: invalid JSON from drush lookup")
         return None
-    return payload if isinstance(payload, dict) else None
+    if not isinstance(payload, dict):
+        return json.loads(json.dumps(fallback)) if fallback is not None else None
+    if fallback is None:
+        return payload
+
+    live_transitions = {
+        (
+            str(item.get("from_node", "")).strip(),
+            str(item.get("to_node", "")).strip(),
+            str(item.get("condition", "")).strip(),
+        )
+        for item in payload.get("transitions", [])
+        if isinstance(item, dict)
+    }
+    required_transitions = {
+        (
+            str(item.get("from_node", "")).strip(),
+            str(item.get("to_node", "")).strip(),
+            str(item.get("condition", "")).strip(),
+        )
+        for item in fallback.get("transitions", [])
+        if isinstance(item, dict)
+    }
+    if not required_transitions.issubset(live_transitions):
+        log(f"using repo fallback for {flow_id}: live flow is missing required transitions")
+        return json.loads(json.dumps(fallback))
+    return payload
 
 
 def node_detail_map(flow: dict[str, Any]) -> dict[str, dict[str, str]]:

@@ -1,4 +1,5 @@
 from importlib.util import module_from_spec, spec_from_file_location
+import json
 from pathlib import Path
 
 
@@ -52,3 +53,35 @@ def test_route_flow_transitions_prefers_default_direct_edge_without_flow_outcome
 
     assert module.selected_transitions(outgoing, []) == [outgoing[0]]
     assert module.selected_transitions(outgoing, ["Scope decision required"]) == [outgoing[1]]
+
+
+def test_load_flow_falls_back_when_live_registry_is_missing_required_transitions(monkeypatch):
+    module = _load_route_flow_module()
+
+    class DummyResult:
+        returncode = 0
+        stdout = json.dumps(
+            {
+                "id": "agentic_sdlc",
+                "default_entrypoint": "User Requirements",
+                "transitions": [
+                    {
+                        "from_node": "Generate Code",
+                        "to_node": "Code Review",
+                        "kind": "direct",
+                        "condition": "",
+                    }
+                ],
+                "node_breakdown": [
+                    {"parent_node": "Generate Code", "owner_binding": "product_team.dev_agent"}
+                ],
+            }
+        )
+
+    monkeypatch.setattr(module, "DRUSH_ROOT", Path("/tmp/fake-drupal-root"))
+    monkeypatch.setattr(module, "run", lambda *args, **kwargs: DummyResult())
+
+    flow = module.load_flow("agentic_sdlc")
+    outgoing = module.outgoing_transitions(flow, "Generate Code")
+
+    assert {"from_node": "Generate Code", "to_node": "PM Scope Rebaseline", "kind": "conditional", "condition": "Scope decision required"} in outgoing
