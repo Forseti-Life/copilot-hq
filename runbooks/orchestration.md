@@ -66,17 +66,20 @@ release-cycle-start.sh <team_id> <current_release_id> <next_release_id>
   ├─ tmp/release-cycle-active/<team>.next_release_id
   ├─ sessions/qa-<team>/inbox/<preflight-item>/         ← QA preflight startup artifact
   └─ sessions/pm-<team>/inbox/<groom-next-item>/        ← PM next-release grooming artifact
+  └─ sessions/agent-code-review/inbox/<code-review-item>/command.md
+       └─ flow-managed `release_shipping_flow` / `Release Code Review`
 
 → orchestrator picks these up on next tick → exec_agents runs qa-<team> and pm-<team>
 
 QA → Dev → QA repair loop (Stages 3-4)
-  └─ Dev fixes → QA re-verifies → PM signs off
-        └─ scripts/release-signoff.sh <team> <release-id>
-             → sessions/pm-<team>/artifacts/release-signoffs/<id>.md
+  └─ agent-code-review / PM triage / Dev fixes → QA re-verifies → PM signs off
+         └─ scripts/release-signoff.sh <team> <release-id>
+              → sessions/pm-<team>/artifacts/release-signoffs/<id>.md
 
 If the coordinated cohort is fully signed:
   └─ scripts/release-signoff.sh also creates
        sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md
+       └─ flow-managed `release_shipping_flow` / `Coordinated Push`
 
 PM signoff marks the release ready, but runtime stays on that release until the operator consumes that push-ready item and runs:
   └─ scripts/post-coordinated-push.sh [team-id ...]

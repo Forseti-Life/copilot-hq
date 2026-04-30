@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-$HOME/forseti.life}/copilot-hq}"
+DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-/home/ubuntu/forseti.life}}"
 HQ_DIR="${1:-$DEFAULT_HQ_DIR}"
+
+if [ ! -d "$HQ_DIR" ] && [ -d "${HQ_DIR}/copilot-hq" ]; then
+  HQ_DIR="${HQ_DIR}/copilot-hq"
+fi
 
 if [ ! -d "$HQ_DIR" ]; then
   echo "ERROR: HQ directory not found: $HQ_DIR" >&2
@@ -21,9 +25,13 @@ echo "=== Required files ==="
 for f in \
   "org-chart/products/product-teams.json" \
   "scripts/release-cycle-start.sh" \
+  "scripts/backfill-release-shipping-flow-runtime.sh" \
+  "scripts/release-signoff.sh" \
   "scripts/release-signoff-status.sh" \
+  "scripts/route-flow-transitions.py" \
   "scripts/verify-hq-runtime.sh" \
-  "orchestrator/run.py"
+  "orchestrator/run.py" \
+  "drupal-langgraph/src/Service/ProcessFlowRegistryService.php"
 do
   if [ -f "$f" ]; then
     echo "present: $f"
@@ -31,6 +39,29 @@ do
     echo "MISSING: $f"
   fi
 done
+
+echo
+echo "=== Flow-managed release framework ==="
+if grep -q "release_shipping_flow" "drupal-langgraph/src/Service/ProcessFlowRegistryService.php" 2>/dev/null; then
+  echo "present: release_shipping_flow registry definition"
+else
+  echo "MISSING: release_shipping_flow registry definition"
+fi
+if grep -q "Flow id: release_shipping_flow" "scripts/release-cycle-start.sh" 2>/dev/null; then
+  echo "present: flow-managed Release Code Review seeding"
+else
+  echo "MISSING: flow-managed Release Code Review seeding"
+fi
+if grep -q "Flow node: PM Code Review Triage" "orchestrator/dispatch.py" 2>/dev/null; then
+  echo "present: flow-managed PM Code Review Triage dispatch"
+else
+  echo "MISSING: flow-managed PM Code Review Triage dispatch"
+fi
+if grep -q "Flow node: Coordinated Push" "scripts/release-signoff.sh" 2>/dev/null; then
+  echo "present: flow-managed Coordinated Push handoff"
+else
+  echo "MISSING: flow-managed Coordinated Push handoff"
+fi
 
 echo
 echo "=== Runtime release-cycle state ==="
@@ -42,6 +73,10 @@ for f in tmp/release-cycle-active/*.release_id; do
   nxt="$(cat "tmp/release-cycle-active/${team}.next_release_id" 2>/dev/null || true)"
   echo "team=$team current=$cur next=$nxt"
 done
+
+echo
+echo "=== Active release flow runtime ==="
+find tmp/flow-runs/release_shipping_flow -maxdepth 2 -type f 2>/dev/null | sort || echo "missing: tmp/flow-runs/release_shipping_flow"
 
 echo
 echo "=== Verify release control flags ==="
