@@ -251,6 +251,8 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
     if has_transcript_markers(outbox_text):
         errors.append("final outbox must not contain tool-call or transcript markers")
 
+    status = extract_status(outbox_text)
+    flow_outcomes = extract_flow_outcomes(outbox_text)
     source_text = load_command_source_context(command_meta)
     anchors, matched = semantic_anchor_matches(source_text, outbox_text)
     if len(anchors) >= 4 and len(matched) < 2:
@@ -261,7 +263,7 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
         )
     flow_id = command_meta.get("Flow id", "").strip()
     node = command_meta.get("Flow node", "").strip()
-    if extract_status(outbox_text) == "done" and (flow_id, node) in {
+    if status == "done" and (flow_id, node) in {
         ("agentic_sdlc", "Code Review"),
         ("release_shipping_flow", "Release Code Review"),
     }:
@@ -269,10 +271,10 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
         if candidates and not any(path in outbox_text for path in candidates):
             errors.append("review outbox must cite at least one reviewed artifact path from the handoff")
     if (
-        extract_status(outbox_text) == "done"
+        status == "done"
         and flow_id == "release_shipping_flow"
         and node == "PM Signoff Readiness Check"
-        and "Ready for signoff and push" in extract_flow_outcomes(outbox_text)
+        and "Ready for signoff and push" in flow_outcomes
     ):
         owner_seat = command_meta.get("Flow owner seat", "").strip()
         release_id = command_meta.get("Flow run id", "").strip()
@@ -282,6 +284,26 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
                 errors.append("PM signoff readiness outbox must cite the canonical PM signoff artifact path")
             if not (ROOT / expected_rel).exists():
                 errors.append("PM signoff readiness cannot route Ready for signoff and push until the canonical PM signoff artifact exists")
+    if (
+        status == "done"
+        and flow_id == "feature_request_intake"
+        and node == "PM Scope Decision"
+        and "Approved for delivery" in flow_outcomes
+    ):
+        feature_id = extract_feature_id(outbox_text)
+        if not feature_id:
+            errors.append("PM Scope Decision must include '- Feature id: <canonical-id>' when approving delivery")
+        elif not valid_feature_id(feature_id):
+            errors.append("Feature id must be a lowercase slug using letters, numbers, dots, underscores, or hyphens")
+    if status == "done" and flow_id == "feature_request_intake" and node == "Prepare Delivery Handoff":
+        feature_id = extract_feature_id(outbox_text)
+        if not feature_id:
+            errors.append("Prepare Delivery Handoff must include '- Feature id: <canonical-id>'")
+        elif not valid_feature_id(feature_id):
+            errors.append("Feature id must be a lowercase slug using letters, numbers, dots, underscores, or hyphens")
+        source_feature_id = extract_feature_id(load_source_outbox_text(command_meta))
+        if source_feature_id and feature_id and source_feature_id != feature_id:
+            errors.append("Prepare Delivery Handoff must preserve the exact Feature id chosen in the PM Scope Decision outbox")
     return errors
 
 
@@ -336,6 +358,45 @@ def extract_flow_outcomes(text: str) -> list[str]:
         parts = [part.strip() for part in re.split(r"[;|]", raw) if part.strip()]
         outcomes.extend(parts if parts else [raw.strip()])
     return outcomes
+
+
+def extract_metadata_value(text: str, label: str) -> str:
+    match = re.search(
+        rf"^\-\s+{re.escape(label)}:\s*(.+?)\s*$",
+        text,
+        re.MULTILINE | re.IGNORECASE,
+    )
+    if not match:
+        return ""
+    return match.group(1).strip()
+
+
+def extract_feature_id(text: str) -> str:
+    return extract_metadata_value(text, "Feature id")
+
+
+def valid_feature_id(feature_id: str) -> bool:
+    return bool(re.fullmatch(r"[a-z0-9][a-z0-9._-]*", feature_id.strip()))
+
+
+def parse_suggestion_run_id(run_id: str) -> tuple[str, str] | None:
+    match = re.fullmatch(r"suggestion-([a-z0-9][a-z0-9.-]*)-nid-([0-9]+)", run_id.strip().lower())
+    if not match:
+        return None
+    return match.group(1), match.group(2)
+
+
+def load_source_outbox_text(command_meta: dict[str, str]) -> str:
+    source_outbox = command_meta.get("Flow source outbox", "").strip()
+    if not source_outbox:
+        return ""
+    path = (ROOT / source_outbox).resolve() if not source_outbox.startswith("/") else Path(source_outbox)
+    try:
+        if path.exists():
+            return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+    return ""
 
 
 def load_flow(flow_id: str) -> dict[str, Any] | None:
