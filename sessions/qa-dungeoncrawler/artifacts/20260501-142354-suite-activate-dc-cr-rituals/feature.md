@@ -3,7 +3,7 @@
 - Work item id: dc-cr-rituals
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: ready
 - Release: 20260412-dungeoncrawler-release-aa
 - Release decision: queued into 20260412-dungeoncrawler-release-aa on 2026-05-01 after CEO release-z backlog rebaseline; do not close via dc-cr-spells-ch07 until ritual execution and validation flows are independently covered.
 - Defer reason: lower priority than next-release MVP scope and still needs dedicated ritual execution, participant validation, and failure-path coverage beyond the shipped spell catalog.
