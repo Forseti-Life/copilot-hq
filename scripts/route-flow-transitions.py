@@ -590,6 +590,12 @@ def node_required_artifacts(
                 "Review the supporting acceptance criteria and test plan paths listed under `## Release scope artifacts` when present.",
                 "Cite at least one reviewed release artifact path in your `- Summary:` or findings section before clearing the gate.",
             ]
+    if flow_id == "feature_request_intake" and target_node == "Prepare Delivery Handoff":
+        return [
+            "Include `- Feature id: <canonical-id>` in the outbox so delivery launch can use the canonical backlog/work-item id.",
+            "For community suggestions, the router will materialize `features/<feature-id>/feature.md` via `scripts/suggestion-triage.sh` before launching downstream delivery.",
+            "For non-suggestion intake runs, ensure `features/<feature-id>/feature.md` already exists before marking the handoff complete.",
+        ]
     return []
 
 
@@ -630,6 +636,18 @@ def node_required_guidance(
             "If Gate 1b still has unresolved MEDIUM+ findings, finish with `- Status: done` and `- Flow outcome: Gate 1b incomplete`; do not claim release readiness.",
             "If Gate 2 lacks a current APPROVE outbox for this release id, finish with `- Status: done` and `- Flow outcome: Gate 2 incomplete`.",
             "Only choose `- Flow outcome: Ready for signoff and push` after `bash scripts/release-signoff.sh <team> <release-id>` succeeds and your summary cites the exact PM signoff artifact path.",
+        ]
+    if flow_id == "feature_request_intake" and target_node == "PM Scope Decision":
+        return [
+            "If you approve the request for delivery, include `- Feature id: <canonical-id>` in the outbox using the final backlog/work-item slug you want delivery to use.",
+            "Choose one canonical Feature id and keep it stable across the PM approval, delivery handoff, and downstream `agentic_sdlc` launch; do not leave it as a suggestion run id.",
+            "If the request should be parked or changed instead of launched, omit `- Feature id:` and use the matching flow outcome.",
+        ]
+    if flow_id == "feature_request_intake" and target_node == "Prepare Delivery Handoff":
+        return [
+            "Repeat the exact `- Feature id:` selected by PM; do not rename the work item during the handoff.",
+            "For community suggestions, this handoff is the point where the canonical backlog artifact must exist before downstream delivery starts.",
+            "Use the approved requirements package to support the handoff, but keep the feature definition anchored to `features/<feature-id>/feature.md` rather than the temporary suggestion run id.",
         ]
     return []
 
@@ -740,6 +758,14 @@ def build_command(
         f"- Flow previous node: {source_node}",
         f"- Flow source outbox: {source_outbox}",
     ]
+    if flow_id == "feature_request_intake" and target_node == "Prepare Delivery Handoff":
+        try:
+            source_outbox_path = source_outbox if source_outbox.is_absolute() else ROOT / source_outbox
+            source_feature_id = extract_feature_id(source_outbox_path.read_text(encoding="utf-8", errors="ignore"))
+        except OSError:
+            source_feature_id = ""
+        if source_feature_id:
+            metadata.append(f"- Feature id: {source_feature_id}")
     if target_owner_binding:
         metadata.append(f"- Flow owner binding: {target_owner_binding}")
     if product_team is not None:
@@ -882,10 +908,63 @@ def route_to_node(
     return True
 
 
+def materialize_feature_request_handoff(
+    *,
+    run_id: str,
+    outbox_text: str,
+    run_dir: Path,
+) -> tuple[str, bool]:
+    feature_id = extract_feature_id(outbox_text)
+    if not feature_id or not valid_feature_id(feature_id):
+        return "", False
+
+    feature_brief = ROOT / "features" / feature_id / "feature.md"
+    suggestion_context = parse_suggestion_run_id(run_id)
+    receipt_path = run_dir / "delivery-materialization.json"
+    payload: dict[str, Any] = {
+        "run_id": run_id,
+        "feature_id": feature_id,
+        "feature_brief": str(feature_brief.relative_to(ROOT)),
+    }
+
+    if suggestion_context is None:
+        payload["source"] = "non-suggestion"
+        payload["materialized"] = feature_brief.exists()
+        receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        return feature_id, feature_brief.exists()
+
+    site, nid = suggestion_context
+    proc = run(
+        ["bash", str(ROOT / "scripts" / "suggestion-triage.sh"), site, nid, "accept", feature_id],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    payload.update({
+        "source": "community_suggestion",
+        "site": site,
+        "nid": nid,
+        "returncode": proc.returncode,
+        "stdout": proc.stdout.strip(),
+        "stderr": proc.stderr.strip(),
+        "materialized": proc.returncode == 0 and feature_brief.exists(),
+    })
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if proc.returncode != 0:
+        log(
+            "failed to materialize approved suggestion "
+            f"{site}/{nid} as {feature_id}: {proc.stderr.strip() or proc.stdout.strip() or 'unknown error'}"
+        )
+        return feature_id, False
+    return feature_id, feature_brief.exists()
+
+
 def route_downstream_flow(
     *,
     handoff_flow_id: str,
     run_id: str,
+    downstream_run_id: str | None,
     route_date: str,
     source_agent: str,
     source_node: str,
@@ -902,7 +981,8 @@ def route_downstream_flow(
     if not entry_node:
         log(f"skip downstream launch for {handoff_flow_id}: missing default entrypoint")
         return False
-    downstream_run_dir = flow_runtime_dir(handoff_flow_id, run_id)
+    effective_run_id = (downstream_run_id or run_id).strip() or run_id
+    downstream_run_dir = flow_runtime_dir(handoff_flow_id, effective_run_id)
     downstream_run_dir.mkdir(parents=True, exist_ok=True)
     if product_team is not None:
         save_product_team(downstream_run_dir, product_team)
@@ -910,7 +990,7 @@ def route_downstream_flow(
     routed = route_to_node(
         flow=downstream_flow,
         flow_id=handoff_flow_id,
-        run_id=run_id,
+        run_id=effective_run_id,
         route_date=route_date,
         target_node=entry_node,
         source_agent=source_agent,
@@ -924,7 +1004,7 @@ def route_downstream_flow(
         run_dir=downstream_run_dir,
     )
     if routed:
-        log(f"launched downstream flow {handoff_flow_id}/{run_id} at {entry_node}")
+        log(f"launched downstream flow {handoff_flow_id}/{effective_run_id} at {entry_node}")
     return routed
 
 
@@ -1105,9 +1185,24 @@ def main() -> int:
             )
             handoff_flow_id = node_details.get(current_node, {}).get("handoff_flow_id", "").strip()
             if handoff_flow_id:
+                downstream_run_id: str | None = None
+                if flow_id == "feature_request_intake" and current_node == "Prepare Delivery Handoff":
+                    feature_id, materialized = materialize_feature_request_handoff(
+                        run_id=run_id,
+                        outbox_text=outbox_text,
+                        run_dir=run_dir,
+                    )
+                    if not materialized:
+                        log(
+                            "skip downstream launch for feature_request_intake/"
+                            f"{run_id}: canonical feature brief was not materialized"
+                        )
+                        continue
+                    downstream_run_id = feature_id
                 route_downstream_flow(
                     handoff_flow_id=handoff_flow_id,
                     run_id=run_id,
+                    downstream_run_id=downstream_run_id,
                     route_date=route_date,
                     source_agent=agent_id,
                     source_node=current_node,

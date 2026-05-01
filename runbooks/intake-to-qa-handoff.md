@@ -116,7 +116,7 @@ Use `feature_request_intake` as the intake authority:
 
 ### Step 4 — Continue grooming after PM approval
 
-Once PM approves the request for delivery, continue with normal PM/QA grooming and QA handoff for the resulting feature/work item.
+Once PM approves the request for delivery, record a canonical `- Feature id:` in the PM outbox. `route-flow-transitions.py` then uses that id to materialize `features/<feature-id>/feature.md` for approved community suggestions before downstream delivery starts, and later PM/QA grooming continues against that feature/work item.
 
 ### Step 5 — Gap analysis (required before writing AC)
 

@@ -151,6 +151,67 @@ def test_build_command_code_review_requires_review_artifact_citations():
     assert "features/dc-cr-rituals/03-test-plan.md" in command
 
 
+def test_build_command_pm_scope_decision_requires_canonical_feature_id_guidance():
+    module = _load_route_flow_module()
+
+    command = module.build_command(
+        flow_id="feature_request_intake",
+        run_id="suggestion-forseti-nid-7",
+        target_node="PM Scope Decision",
+        target_owner="pm-forseti",
+        target_owner_binding="product_team.pm_agent",
+        source_agent="ba-forseti",
+        source_node="BA Requirements Review",
+        source_outbox=Path("sessions/ba-forseti/outbox/example.md"),
+        incoming_conditions=["Requirements ready"],
+        available_outcomes=["Approved for delivery", "Changes requested", "Parked in backlog"],
+        product_team={"id": "forseti", "site": "forseti", "label": "Forseti"},
+        product_team_selection_required=False,
+        available_product_teams=["forseti"],
+        direct_route_available=False,
+    )
+
+    assert "`- Feature id: <canonical-id>`" in command
+    assert "do not leave it as a suggestion run id" in command
+
+
+def test_build_command_prepare_delivery_handoff_carries_feature_id_from_pm_outbox(tmp_path, monkeypatch):
+    module = _load_route_flow_module()
+
+    root = tmp_path / "hq"
+    root.mkdir()
+    source_outbox = root / "sessions" / "pm-forseti" / "outbox" / "example.md"
+    source_outbox.parent.mkdir(parents=True)
+    source_outbox.write_text(
+        "- Status: done\n"
+        "- Summary: Approved.\n"
+        "- Flow outcome: Approved for delivery\n"
+        "- Feature id: forseti-homepage-fun-time\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(module, "ROOT", root)
+
+    command = module.build_command(
+        flow_id="feature_request_intake",
+        run_id="suggestion-forseti-nid-7",
+        target_node="Prepare Delivery Handoff",
+        target_owner="ba-forseti",
+        target_owner_binding="product_team.ba_agent",
+        source_agent="pm-forseti",
+        source_node="PM Scope Decision",
+        source_outbox=Path("sessions/pm-forseti/outbox/example.md"),
+        incoming_conditions=["Approved for delivery"],
+        available_outcomes=[],
+        product_team={"id": "forseti", "site": "forseti", "label": "Forseti"},
+        product_team_selection_required=False,
+        available_product_teams=["forseti"],
+        direct_route_available=True,
+    )
+
+    assert "- Feature id: forseti-homepage-fun-time" in command
+    assert "Repeat the exact `- Feature id:` selected by PM" in command
+
+
 def test_validate_flow_done_outbox_requires_review_artifact_citation_for_code_review():
     module = _load_route_flow_module()
 
@@ -187,3 +248,48 @@ def test_validate_flow_done_outbox_requires_review_artifact_citation_for_code_re
         "- Flow outcome: Approved\n"
     )
     assert module.validate_flow_done_outbox(command_meta, command_text, cited) == []
+
+
+def test_materialize_feature_request_handoff_uses_suggestion_triage_and_returns_feature_id(tmp_path, monkeypatch):
+    module = _load_route_flow_module()
+
+    root = tmp_path / "hq"
+    root.mkdir()
+    (root / "scripts").mkdir()
+    feature_dir = root / "features" / "forseti-homepage-fun-time"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text("ok\n", encoding="utf-8")
+    run_dir = root / "tmp" / "flow-runs" / "feature_request_intake" / "suggestion-forseti-nid-7"
+    run_dir.mkdir(parents=True)
+    monkeypatch.setattr(module, "ROOT", root)
+
+    captured = {}
+
+    class DummyResult:
+        returncode = 0
+        stdout = "done"
+        stderr = ""
+
+    def fake_run(args, cwd=None, capture_output=None, text=None, check=None):
+        captured["args"] = args
+        captured["cwd"] = cwd
+        return DummyResult()
+
+    monkeypatch.setattr(module, "run", fake_run)
+
+    feature_id, materialized = module.materialize_feature_request_handoff(
+        run_id="suggestion-forseti-nid-7",
+        outbox_text="- Status: done\n- Feature id: forseti-homepage-fun-time\n",
+        run_dir=run_dir,
+    )
+
+    assert feature_id == "forseti-homepage-fun-time"
+    assert materialized is True
+    assert captured["args"] == [
+        "bash",
+        str(root / "scripts" / "suggestion-triage.sh"),
+        "forseti",
+        "7",
+        "accept",
+        "forseti-homepage-fun-time",
+    ]

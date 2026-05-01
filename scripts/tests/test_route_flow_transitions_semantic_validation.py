@@ -132,3 +132,47 @@ def test_validate_flow_done_outbox_accepts_ready_for_push_with_existing_signoff_
     errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert errors == []
+
+
+def test_validate_flow_done_outbox_requires_feature_id_for_pm_delivery_approval():
+    command_meta = {
+        "Flow id": "feature_request_intake",
+        "Flow node": "PM Scope Decision",
+        "Flow owner seat": "pm-forseti",
+    }
+    outbox_text = """- Status: done
+- Summary: Approving this suggestion for delivery.
+- Flow outcome: Approved for delivery
+"""
+
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
+
+    assert any("PM Scope Decision must include '- Feature id:" in error for error in errors)
+
+
+def test_validate_flow_done_outbox_requires_matching_feature_id_for_prepare_delivery_handoff(tmp_path, monkeypatch):
+    root = tmp_path / "hq"
+    root.mkdir()
+    source = root / "source.md"
+    source.write_text(
+        "- Status: done\n"
+        "- Summary: Approved request.\n"
+        "- Flow outcome: Approved for delivery\n"
+        "- Feature id: forseti-homepage-fun-time\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(MODULE, "ROOT", root)
+    command_meta = {
+        "Flow id": "feature_request_intake",
+        "Flow node": "Prepare Delivery Handoff",
+        "Flow owner seat": "ba-forseti",
+        "Flow source outbox": "source.md",
+    }
+    outbox_text = """- Status: done
+- Summary: Prepared the delivery handoff.
+- Feature id: forseti-ai-assistant
+"""
+
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
+
+    assert any("must preserve the exact Feature id" in error for error in errors)

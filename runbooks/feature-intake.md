@@ -50,7 +50,7 @@ The intake flow is artifact-driven. Every handoff must produce one canonical art
 | Intake entrypoint | Flow-managed CEO inbox item | `sessions/ceo-copilot-2/inbox/<date>-flow-feature-request-intake-.../command.md` | `scripts/suggestion-intake.sh` | `feature_request_intake` execution |
 | Intake routing trail | Flow outboxes / runtime state | `sessions/<seat>/outbox/*.md`, `tmp/flow-runs/feature_request_intake/<run-id>/` | CEO / BA / PM via flow execution | downstream intake node or delivery launch |
 | Approved delivery handoff | Delivery entrypoint item | `sessions/<seat>/inbox/<date>-flow-agentic_sdlc-.../command.md` | `route-flow-transitions.py` | delivery flow |
-| Accepted backlog item | Feature brief | `features/<feature-id>/feature.md` | PM / BA once delivery/backlog decision is made | BA / PM grooming |
+| Accepted backlog item | Feature brief | `features/<feature-id>/feature.md` | `route-flow-transitions.py` materialization for approved community suggestions, otherwise PM / BA | BA / PM grooming |
 | Problem framing | Problem Statement | `features/<feature-id>/00-problem-statement.md` or equivalent linked intake artifact | PM / BA | Acceptance-criteria authoring |
 | Scope contract | Acceptance Criteria | `features/<feature-id>/01-acceptance-criteria.md` | PM | QA test planning + Dev implementation |
 | Initial risk contract | Risk Assessment | `features/<feature-id>/06-risk-assessment.md` or linked risk artifact | PM | PM scope decision / release selection |
@@ -96,7 +96,7 @@ The `feature_request_intake` flow now owns review and routing:
    - `BA Requirements Review`
 3. PM executes:
    - `PM Scope Decision`
-4. If PM approves, the flow launches `agentic_sdlc`
+4. If PM approves, the flow requires a canonical `Feature id`, materializes `features/<feature-id>/feature.md`, and launches `agentic_sdlc` using that feature id
 5. If delivery later discovers a scope ambiguity (for example a feature that should be held, deferred, or consolidated into a parent slice), the active `agentic_sdlc` run must branch to `PM Scope Rebaseline` using the exact flow outcome `Scope decision required`
 
 Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` so the router can advance the next node.
@@ -105,8 +105,7 @@ Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` s
 
 ## Step 3 — Materialize accepted work
 
-If PM approves the request for delivery, the intake flow launches `agentic_sdlc`.
-Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming after intake approval.
+If PM approves the request for delivery, the intake flow must carry a canonical `Feature id`. For approved community suggestions, `route-flow-transitions.py` materializes `features/<feature-id>/feature.md` via `scripts/suggestion-triage.sh` before launching `agentic_sdlc`, so downstream delivery is anchored to the backlog artifact instead of the temporary suggestion run id.
 
 For release-stage scoped work, `pm-scope-activate.sh` now seeds the same `agentic_sdlc` runtime directly for the active feature by writing flow-managed `Generate Code` and `Test Cases Review` inbox items plus `tmp/flow-runs/agentic_sdlc/<feature-id>/product-team.json`. That keeps late release activation on the same LangGraph contract as intake-launched work instead of falling back to legacy ad hoc Dev/QA handoffs.
 
