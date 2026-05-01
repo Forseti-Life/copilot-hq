@@ -107,7 +107,7 @@ def find_pm_grooming_item(pm_agent: str, next_release_id: str, repo_root: Path) 
 
 
 def site_has_incomplete_grooming_backlog(site: str, current_release: str, repo_root: Path) -> bool:
-    """Check if a site has ungroomed features in the backlog."""
+    """Check if a site has backlog items that still need PM grooming attention."""
     features_dir = repo_root / "features"
     if not features_dir.exists():
         return False
@@ -121,13 +121,15 @@ def site_has_incomplete_grooming_backlog(site: str, current_release: str, repo_r
         if not m:
             continue
         status = m.group(1).strip()
-        if status not in {"planned", "ready", "in_progress"}:
+        if status not in {"planned", "ready", "in_progress", "deferred"}:
             continue
         release_match = re.search(r"^- Release:\s*(.*)$", text, re.MULTILINE)
         release_value = release_match.group(1).strip() if release_match else ""
         if status == "in_progress" and release_value == current_release:
             continue
         feature_dir = feature_md.parent
+        if status == "deferred":
+            return True
         if not (feature_dir / "01-acceptance-criteria.md").exists():
             return True
         if not (feature_dir / "03-test-plan.md").exists():
@@ -171,7 +173,7 @@ def ensure_pm_next_release_grooming(
         f"This task does NOT touch the current release. All work here is for {next_release_id} only.\n\n"
         "## Steps\n\n"
         "### 1. Audit the existing next-release backlog first\n"
-        "If there are already next-release features in `planned`, `ready`, or `in_progress` without both grooming artifacts, finish those before treating suggestion intake as done.\n"
+        "If there are already next-release features in `planned`, `ready`, `in_progress`, or `deferred`, audit them before treating suggestion intake as done. Deferred features must be explicitly re-evaluated each cycle instead of silently disappearing from backlog review.\n"
         "```bash\n"
         "python3 - <<'PY'\n"
         "import pathlib, re\n"
@@ -184,12 +186,19 @@ def ensure_pm_next_release_grooming(
         "    if not m:\n"
         "        continue\n"
         "    status = m.group(1).strip()\n"
-        "    if status not in {'planned', 'ready', 'in_progress'}:\n"
+        "    if status not in {'planned', 'ready', 'in_progress', 'deferred'}:\n"
         "        continue\n"
         "    ac = fm.with_name('01-acceptance-criteria.md').exists()\n"
         "    tp = fm.with_name('03-test-plan.md').exists()\n"
-        "    if not (ac and tp):\n"
-        "        print(f'{fm.parent.name}: status={status} ac={ac} testplan={tp}')\n"
+        "    reason = ''\n"
+        "    if status == 'deferred':\n"
+        "        dm = re.search(r'^- Defer reason:\\s*(.*)$', text, re.MULTILINE)\n"
+        "        reason = dm.group(1).strip() if dm else 're-evaluate this deferred backlog item for next release'\n"
+        "    if status == 'deferred' or not (ac and tp):\n"
+        "        msg = f'{fm.parent.name}: status={status} ac={ac} testplan={tp}'\n"
+        "        if reason:\n"
+        "            msg += f' defer_reason={reason}'\n"
+        "        print(msg)\n"
         "PY\n"
         "```\n\n"
         "### 2. Pull community suggestions\n"
@@ -205,6 +214,7 @@ def ensure_pm_next_release_grooming(
         "## Done when\n"
         f"- The next release `{next_release_id}` has an actively groomed ready backlog.\n"
         "- Every existing next-release feature already in `planned`, `ready`, or `in_progress` either has both grooming artifacts (`01-acceptance-criteria.md` + `03-test-plan.md`) or is explicitly deferred/blocked.\n"
+        "- Every deferred next-release feature has been explicitly re-confirmed for deferral or moved back to an actionable status (`planned`/`ready`).\n"
         "- Any newly accepted feature has acceptance criteria and a QA handoff queued.\n",
         encoding="utf-8",
     )
@@ -372,6 +382,7 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
                         "next": new_current,
                         "scoped_count": work_summary["scoped_count"],
                         "ready_backlog_count": work_summary["ready_backlog_count"],
+                        "deferred_backlog_count": work_summary.get("deferred_backlog_count", 0),
                     }
                 )
                 continue

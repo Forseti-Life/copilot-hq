@@ -183,12 +183,15 @@ def summarize_release_work(
     1. The candidate/current release already has scoped work (`in_progress` or `done`).
     2. The site has groomed backlog that can be scoped immediately (`ready` or `done`)
        and is either unassigned or already tagged to the candidate release.
+    Deferred backlog is tracked separately for visibility, but is not actionable
+    until PM reactivates it to a scoping-eligible state.
     """
     features_root = root / "features"
     if not features_root.exists():
         return {
             "scoped_count": 0,
             "ready_backlog_count": 0,
+            "deferred_backlog_count": 0,
             "ready_feature_ids": [],
             "has_actionable_work": False,
         }
@@ -196,6 +199,7 @@ def summarize_release_work(
     tokens = _team_site_tokens(team)
     scoped_count = 0
     ready_feature_ids: list[str] = []
+    deferred_feature_ids: list[str] = []
 
     for feature_md in sorted(features_root.glob("*/feature.md")):
         try:
@@ -219,10 +223,13 @@ def summarize_release_work(
 
         if status in {"ready", "done"} and (not feature_release or feature_release == release_id):
             ready_feature_ids.append(feature_md.parent.name)
+        elif status == "deferred":
+            deferred_feature_ids.append(feature_md.parent.name)
 
     return {
         "scoped_count": scoped_count,
         "ready_backlog_count": len(ready_feature_ids),
+        "deferred_backlog_count": len(deferred_feature_ids),
         "ready_feature_ids": ready_feature_ids,
         "has_actionable_work": bool(scoped_count or ready_feature_ids),
     }

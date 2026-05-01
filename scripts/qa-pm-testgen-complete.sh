@@ -10,7 +10,8 @@
 #
 # What it does:
 #   1. Validates features/<id>/03-test-plan.md exists (QA must write it first)
-#   2. Marks features/<id>/feature.md status: ready (groomed gate passed)
+#   2. Marks features/<id>/feature.md status: ready (groomed gate passed),
+#      including when the feature was previously deferred
 #   3. Writes a PM inbox item: feature is groomed and ready for next Stage 0
 set -euo pipefail
 
@@ -70,24 +71,15 @@ echo "[qa-pm-testgen-complete] Feature overlay: $OVERLAY_MANIFEST ✓"
 
 # Mark feature as groomed/ready in feature.md
 if [ -f "$FEATURE_BRIEF" ]; then
-  python3 - "$FEATURE_BRIEF" "$FEATURE_ID" <<'PY'
-import pathlib, sys, datetime
+  python3 - "$FEATURE_BRIEF" <<'PY'
+import pathlib
+import sys
+
+sys.path.insert(0, str((pathlib.Path.cwd() / 'scripts' / 'lib').resolve()))
+from feature_brief_status import promote_feature_brief_to_ready
+
 p = pathlib.Path(sys.argv[1])
-feature_id = sys.argv[2]
-today = datetime.date.today().isoformat()
-text = p.read_text(encoding='utf-8')
-# Update status to ready
-text = text.replace('- Status: in_progress', '- Status: ready')
-text = text.replace('- Status: planned', '- Status: ready')
-# Append to latest updates
-if '## Latest updates' in text:
-    lines = text.split('\n')
-    for i, line in enumerate(lines):
-        if line.strip() == '## Latest updates':
-            lines.insert(i+1, f'\n- {today}: Grooming complete — test plan written by QA. Ready for next Stage 0 scope selection.')
-            break
-    text = '\n'.join(lines)
-p.write_text(text, encoding='utf-8')
+promote_feature_brief_to_ready(p)
 print(f"Updated {p}: status → ready")
 PY
 fi

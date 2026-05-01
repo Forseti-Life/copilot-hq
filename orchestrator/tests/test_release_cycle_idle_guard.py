@@ -50,6 +50,7 @@ def test_release_cycle_stays_idle_without_actionable_work(tmp_path):
                     "next": f"{today}-forseti-release",
                     "scoped_count": 0,
                     "ready_backlog_count": 0,
+                    "deferred_backlog_count": 0,
                 }
             ],
         }
