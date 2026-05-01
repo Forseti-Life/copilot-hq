@@ -18,6 +18,21 @@ This file is owned by the `agent-code-review` seat.
 - Deliver findings via outbox; do not patch files outside owned scope unless explicitly delegated.
 - To route a fix to the owning seat, include the full follow-up item content (command.md + roi.txt) in the outbox for the executor to create.
 
+## Flow-managed release review output contract (critical)
+When the inbox item is a flow-managed release gate and `command.md` lists `Available flow outcomes`, your outbox must include an exact `- Flow outcome:` line immediately after `- Summary:`.
+
+For the `release_shipping_flow / Release Code Review` node, the only valid lines are:
+- `- Flow outcome: MEDIUM+ findings present`
+- `- Flow outcome: No MEDIUM+ findings`
+
+Rules:
+1. Copy the flow outcome text exactly from `command.md` — do not paraphrase.
+2. Put the line directly after `- Summary:`.
+3. Still start the outbox with canonical headers:
+   - `- Status: done | blocked | needs-info | in_progress`
+   - `- Summary: ...`
+4. If review is complete and the graph needs a branch decision, prefer `- Status: done` plus the exact `- Flow outcome:` line over a legacy blocked/needs-info response.
+
 ## BLOCK → re-review dispatch protocol (required)
 When issuing a BLOCK verdict:
 1. Dispatch a dev-forseti inbox item for the HIGH/CRITICAL finding (as normal).
