@@ -497,6 +497,56 @@ _extract_final_canonical_outbox() {
   printf '%s\n' "$text" | sed -n "${last_status_line},\$p"
 }
 
+_normalize_summary_heading_outbox() {
+  python3 - "$1" <<'PY'
+import re
+import sys
+
+text = sys.argv[1]
+if re.search(r"(?im)^\- Summary:\s*\S", text):
+    print(text, end="")
+    raise SystemExit(0)
+
+lines = text.splitlines()
+first_nonempty = next((i for i, line in enumerate(lines) if line.strip()), None)
+if first_nonempty is None or not re.match(r"^\- Status:", lines[first_nonempty]):
+    print(text, end="")
+    raise SystemExit(0)
+
+summary_heading = None
+for idx in range(first_nonempty + 1, len(lines)):
+    if re.match(r"^\s*##\s+Summary\s*$", lines[idx]):
+        summary_heading = idx
+        break
+if summary_heading is None:
+    print(text, end="")
+    raise SystemExit(0)
+
+summary_parts = []
+cursor = summary_heading + 1
+while cursor < len(lines) and not lines[cursor].strip():
+    cursor += 1
+while cursor < len(lines):
+    line = lines[cursor]
+    if re.match(r"^\s*##\s+", line) or re.match(r"^\s*---\s*$", line):
+        break
+    if line.strip():
+        summary_parts.append(line.strip())
+    cursor += 1
+
+if not summary_parts:
+    print(text, end="")
+    raise SystemExit(0)
+
+summary_line = f"- Summary: {' '.join(summary_parts)}"
+replacement = lines[: first_nonempty + 1] + [summary_line]
+replacement.extend(lines[first_nonempty + 1 : summary_heading])
+if cursor < len(lines):
+    replacement.extend(lines[cursor:])
+print("\n".join(replacement), end=("\n" if text.endswith("\n") else ""))
+PY
+}
+
 invalid_outbox_reason() {
   local text="$1"
   local status_count
@@ -1129,6 +1179,7 @@ response="$(_recover_tool_written_outbox "$response")"
 # Normalize common formatting mistakes (e.g. "- **Status:** done", "Status: done").
 response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
 response="$(_extract_final_canonical_outbox "$response")"
+response="$(_normalize_summary_heading_outbox "$response")"
 _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
 if [ -n "$_semantic_validation_error" ]; then
   echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
@@ -1155,6 +1206,7 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
         response="$(_recover_tool_written_outbox "$response")"
         response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
         response="$(_extract_final_canonical_outbox "$response")"
+        response="$(_normalize_summary_heading_outbox "$response")"
         _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
         if [ -n "$_semantic_validation_error" ]; then
           echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2

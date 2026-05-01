@@ -51,6 +51,7 @@ def test_extract_final_canonical_outbox_prefers_last_status_block():
 
 def test_recovered_outbox_passes_semantic_validation_without_transcript_noise(tmp_path):
     extract_fn = _extract_function("_extract_final_canonical_outbox")
+    normalize_fn = _extract_function("_normalize_summary_heading_outbox")
     validate_fn = _extract_function("invalid_outbox_reason")
     inbox_item = tmp_path / "inbox-item"
     inbox_item.mkdir()
@@ -58,6 +59,7 @@ def test_recovered_outbox_passes_semantic_validation_without_transcript_noise(tm
         "set -euo pipefail\n"
         f'inbox_item="{inbox_item}"\n'
         f"{extract_fn}\n"
+        f"{normalize_fn}\n"
         f"{validate_fn}\n"
         "response=$(cat <<'EOF'\n"
         "Let me do the actual work now.\n\n"
@@ -77,6 +79,7 @@ def test_recovered_outbox_passes_semantic_validation_without_transcript_noise(tm
         "EOF\n"
         ")\n"
         "response=\"$(_extract_final_canonical_outbox \"$response\")\"\n"
+        "response=\"$(_normalize_summary_heading_outbox \"$response\")\"\n"
         "if invalid_outbox_reason \"$response\"; then\n"
         "  exit 1\n"
         "fi\n"
@@ -88,6 +91,33 @@ def test_recovered_outbox_passes_semantic_validation_without_transcript_noise(tm
     assert result.returncode == 0, result.stderr
     assert result.stdout.startswith("- Status: done\n")
     assert "Let me do the actual work now." not in result.stdout
+
+
+def test_normalize_summary_heading_outbox_converts_legacy_summary_section():
+    normalize_fn = _extract_function("_normalize_summary_heading_outbox")
+    script = (
+        "set -euo pipefail\n"
+        f"{normalize_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Flow outcome: Scope decision required\n"
+        "\n"
+        "## Summary\n"
+        "\n"
+        "Legacy summary content from an older seat template.\n"
+        "\n"
+        "## Next actions\n"
+        "- Continue.\n"
+        "EOF\n"
+        ")\n"
+        "_normalize_summary_heading_outbox \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.startswith("- Status: done\n- Summary: Legacy summary content from an older seat template.\n- Flow outcome: Scope decision required\n")
+    assert "## Summary" not in result.stdout
 
 
 def test_invalid_outbox_reason_rejects_noncanonical_status(tmp_path):
