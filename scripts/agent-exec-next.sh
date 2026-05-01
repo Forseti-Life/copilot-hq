@@ -697,6 +697,29 @@ PY
   return 1
 }
 
+build_retry_prompt() {
+  local original_prompt="$1"
+  local failure_reason="$2"
+  local prior_response="$3"
+  local prompt=""
+  prompt+="Your previous outbox draft was rejected by the executor.\n"
+  if [ -n "${failure_reason:-}" ]; then
+    prompt+="Failure reason: ${failure_reason}\n"
+  fi
+  prompt+="Rewrite the result as canonical outbox markdown only.\n"
+  prompt+="Requirements:\n"
+  prompt+="- First non-empty line must be exactly '- Status: <value>'\n"
+  prompt+="- Second non-empty line must be exactly '- Summary: <value>'\n"
+  prompt+="- Do not include planning notes, tool transcripts, analysis preambles, XML, or JSON\n"
+  prompt+="- If command.md lists Available flow outcomes, include the exact required '- Flow outcome:' line(s)\n"
+  prompt+="- If prior draft had a valid status but the structure was wrong, keep the same underlying decision and fix only the format/required fields\n\n"
+  prompt+="Original task:\n${original_prompt}\n\n"
+  if [ -n "$(printf '%s' "$prior_response" | tr -d ' \t\r\n')" ]; then
+    prompt+="Rejected draft to rewrite:\n${prior_response}\n"
+  fi
+  printf '%b' "$prompt"
+}
+
 PROMPT+="$(read_file "org-chart/org-wide.instructions.md")"
 PROMPT+="$(read_file "org-chart/DECISION_OWNERSHIP_MATRIX.md")"
 PROMPT+="$(read_file "org-chart/ownership/file-ownership.md")"
@@ -1224,6 +1247,7 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
   else
     _retry_count=0
     _saw_rate_limit=0
+    _last_invalid_reason="${_semantic_validation_error:-}"
     if copilot_rate_limited "$response"; then
       _saw_rate_limit=1
       _rate_limit_backoff="$(copilot_rate_limit_backoff_seconds "$response")"
@@ -1233,9 +1257,17 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
       # Retry up to 2 more times with 30s backoff before writing a failure record.
       while [ "$_retry_count" -lt 2 ]; do
         _retry_count=$((_retry_count + 1))
-        echo "WARN: agent response missing status header; retry ${_retry_count}/2 for ${AGENT_ID} (sleep 30s)" >&2
+        if [ -n "${_last_invalid_reason:-}" ]; then
+          echo "WARN: agent response invalid for ${AGENT_ID} (${_last_invalid_reason}); retry ${_retry_count}/2 (sleep 30s)" >&2
+        else
+          echo "WARN: agent response missing status header; retry ${_retry_count}/2 for ${AGENT_ID} (sleep 30s)" >&2
+        fi
         sleep 30
-        response="$(run_primary_backend "$PROMPT")"
+        _retry_prompt="$PROMPT"
+        if [ -n "${_last_invalid_reason:-}" ] || [ -n "$(printf '%s' "$response" | tr -d ' \t\r\n')" ]; then
+          _retry_prompt="$(build_retry_prompt "$PROMPT" "${_last_invalid_reason:-response is missing a valid status header}" "$response")"
+        fi
+        response="$(run_primary_backend "$_retry_prompt")"
         response="$(_recover_tool_written_outbox "$response")"
         response="$(printf '%s\n' "$response" | sed -E 's/^[[:space:]]*-[[:space:]]+\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*-[[:space:]]+\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*\\*\\*Status\\*\\*:/- Status:/I; s/^[[:space:]]*\\*\\*Summary\\*\\*:/- Summary:/I; s/^[[:space:]]*Status:/- Status:/I; s/^[[:space:]]*Summary:/- Summary:/I')"
         response="$(_extract_final_canonical_outbox "$response")"
@@ -1243,6 +1275,7 @@ if ! echo "$response" | grep -qiE '^\- Status:'; then
         _semantic_validation_error="$(invalid_outbox_reason "$response" || true)"
         if [ -n "$_semantic_validation_error" ]; then
           echo "WARN: semantic outbox validation failed for ${AGENT_ID}: ${_semantic_validation_error}" >&2
+          _last_invalid_reason="$_semantic_validation_error"
           response=""
         fi
         if copilot_rate_limited "$response"; then

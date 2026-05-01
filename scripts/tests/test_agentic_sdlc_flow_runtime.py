@@ -39,6 +39,8 @@ def test_agent_exec_next_skips_legacy_dev_to_qa_handoff_for_flow_managed_items()
     assert "grep -qiE '^\\- Flow id:' \"$inbox_item/command.md\"" in source
     assert "bedrock_response_needs_followup" in source
     assert "requesting structured rewrite" in source
+    assert "build_retry_prompt()" in source
+    assert "Failure reason:" in source
 
 
 def test_route_flow_transitions_prefers_default_direct_edge_without_flow_outcome():
