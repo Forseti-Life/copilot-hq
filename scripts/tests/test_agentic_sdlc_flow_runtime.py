@@ -117,3 +117,69 @@ def test_build_command_hardcodes_allowed_statuses_and_write_test_case_artifacts(
     assert "Flow outcome: Scope decision required" in command
     assert "sessions/qa-dungeoncrawler/artifacts/dc-cr-unburdened-iron-test-plan.md" in command
     assert "qa-suites/products/dungeoncrawler/features/dc-cr-unburdened-iron.json" in command
+
+
+def test_build_command_code_review_requires_review_artifact_citations():
+    module = _load_route_flow_module()
+
+    command = module.build_command(
+        flow_id="agentic_sdlc",
+        run_id="dc-cr-rituals",
+        target_node="Code Review",
+        target_owner="agent-code-review",
+        target_owner_binding="",
+        source_agent="dev-dungeoncrawler",
+        source_node="Generate Code",
+        source_outbox=Path("sessions/dev-dungeoncrawler/outbox/example.md"),
+        incoming_conditions=[],
+        available_outcomes=["Approved", "Changes requested"],
+        product_team={"id": "dungeoncrawler", "site": "dungeoncrawler", "label": "Dungeoncrawler"},
+        product_team_selection_required=False,
+        available_product_teams=["dungeoncrawler"],
+        direct_route_available=False,
+    )
+
+    assert "Treat the upstream dev outbox as a handoff receipt" in command
+    assert "Flow outcome: Changes requested" in command
+    assert "sessions/dev-dungeoncrawler/outbox/example.md" in command
+    assert "features/dc-cr-rituals/feature.md" in command
+    assert "features/dc-cr-rituals/01-acceptance-criteria.md" in command
+    assert "features/dc-cr-rituals/03-test-plan.md" in command
+
+
+def test_validate_flow_done_outbox_requires_review_artifact_citation_for_code_review():
+    module = _load_route_flow_module()
+
+    command_text = module.build_command(
+        flow_id="agentic_sdlc",
+        run_id="dc-cr-rituals",
+        target_node="Code Review",
+        target_owner="agent-code-review",
+        target_owner_binding="",
+        source_agent="dev-dungeoncrawler",
+        source_node="Generate Code",
+        source_outbox=Path("sessions/dev-dungeoncrawler/outbox/example.md"),
+        incoming_conditions=[],
+        available_outcomes=["Approved", "Changes requested"],
+        product_team={"id": "dungeoncrawler", "site": "dungeoncrawler", "label": "Dungeoncrawler"},
+        product_team_selection_required=False,
+        available_product_teams=["dungeoncrawler"],
+        direct_route_available=False,
+    )
+    command_meta = module.parse_simple_metadata(command_text)
+
+    missing_citation = (
+        "- Status: done\n"
+        "- Summary: Reviewed the implementation and approved it.\n"
+        "- Flow outcome: Approved\n"
+    )
+    errors = module.validate_flow_done_outbox(command_meta, command_text, missing_citation)
+    assert any("review outbox must cite at least one reviewed artifact path" in error for error in errors)
+
+    cited = (
+        "- Status: done\n"
+        "- Summary: Reviewed `sessions/dev-dungeoncrawler/outbox/example.md` and "
+        "`features/dc-cr-rituals/feature.md`; implementation approved.\n"
+        "- Flow outcome: Approved\n"
+    )
+    assert module.validate_flow_done_outbox(command_meta, command_text, cited) == []

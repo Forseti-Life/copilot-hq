@@ -244,7 +244,7 @@ def load_command_source_context(command_meta: dict[str, str]) -> str:
     return "\n".join(part for part in parts if part.strip())
 
 
-def validate_flow_done_outbox(command_meta: dict[str, str], outbox_text: str) -> list[str]:
+def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, outbox_text: str) -> list[str]:
     errors: list[str] = []
     if first_nonempty_line(outbox_text)[:9].lower() != "- status:":
         errors.append("final outbox must start with '- Status:' on the first non-empty line")
@@ -259,6 +259,15 @@ def validate_flow_done_outbox(command_meta: dict[str, str], outbox_text: str) ->
             f"(matched anchors: {', '.join(matched) if matched else 'none'}; "
             f"expected anchors include: {', '.join(anchors[:5])})"
         )
+    flow_id = command_meta.get("Flow id", "").strip()
+    node = command_meta.get("Flow node", "").strip()
+    if extract_status(outbox_text) == "done" and (flow_id, node) in {
+        ("agentic_sdlc", "Code Review"),
+        ("release_shipping_flow", "Release Code Review"),
+    }:
+        candidates = review_artifact_citation_candidates(command_text)
+        if candidates and not any(path in outbox_text for path in candidates):
+            errors.append("review outbox must cite at least one reviewed artifact path from the handoff")
     return errors
 
 
@@ -439,6 +448,27 @@ def save_product_team(run_dir: Path, product_team: dict[str, Any]) -> None:
     path.write_text(json.dumps(product_team, indent=2) + "\n", encoding="utf-8")
 
 
+def feature_doc_paths(run_id: str) -> list[str]:
+    return [
+        f"features/{run_id}/feature.md",
+        f"features/{run_id}/01-acceptance-criteria.md",
+        f"features/{run_id}/03-test-plan.md",
+    ]
+
+
+def review_artifact_citation_candidates(command_text: str) -> list[str]:
+    candidates: list[str] = []
+    seen: set[str] = set()
+    for raw in re.findall(r"`((?:features|sessions|qa-suites)/[^`\n]+)`", command_text):
+        path = raw.strip()
+        if path.startswith("sessions/") and "/outbox/" not in path and "/artifacts/" not in path:
+            continue
+        if path not in seen:
+            candidates.append(path)
+            seen.add(path)
+    return candidates
+
+
 def resolve_owner(binding_details: dict[str, str], product_team: dict[str, Any] | None) -> tuple[str, str]:
     owner_seat = binding_details.get("owner_seat", "").strip()
     owner_binding = binding_details.get("owner_binding", "").strip()
@@ -458,6 +488,7 @@ def node_required_artifacts(
     run_id: str,
     product_team: dict[str, Any] | None,
     target_owner: str,
+    source_outbox: Path,
 ) -> list[str]:
     if flow_id == "agentic_sdlc" and target_node == "Write Test Cases" and product_team is not None:
         site = str(product_team.get("site") or product_team.get("id") or "").strip()
@@ -466,6 +497,23 @@ def node_required_artifacts(
                 f"Write or update `sessions/{target_owner}/artifacts/{run_id}-test-plan.md` with the concrete test plan for this feature.",
                 f"Write or update `qa-suites/products/{site}/features/{run_id}.json` with the feature-level suite overlay or equivalent QA coverage metadata.",
                 "Reference the exact artifact path(s) you changed in your `- Summary:` or `## Next actions` section.",
+            ]
+    if flow_id == "agentic_sdlc" and target_node == "Code Review":
+        feature_brief, acceptance_criteria, test_plan = feature_doc_paths(run_id)
+        return [
+            f"Review the upstream implementation handoff: `{source_outbox}`.",
+            f"Review the approved feature brief: `{feature_brief}`.",
+            f"Review the acceptance criteria: `{acceptance_criteria}`.",
+            f"Review the test plan when present: `{test_plan}`.",
+            "Cite at least one reviewed artifact path in your `- Summary:` or findings section.",
+        ]
+    if flow_id == "release_shipping_flow" and target_node == "Release Code Review" and product_team is not None:
+        site = str(product_team.get("site") or product_team.get("id") or "").strip()
+        if site:
+            return [
+                f"Review every scoped feature artifact listed in this handoff for site `{site}` and release `{run_id}`.",
+                "Review the supporting acceptance criteria and test plan paths listed under `## Release scope artifacts` when present.",
+                "Cite at least one reviewed release artifact path in your `- Summary:` or findings section before clearing the gate.",
             ]
     return []
 
@@ -477,6 +525,7 @@ def node_required_guidance(
     run_id: str,
     product_team: dict[str, Any] | None,
     target_owner: str,
+    source_outbox: Path,
 ) -> list[str]:
     if flow_id == "agentic_sdlc" and target_node == "Write Test Cases" and product_team is not None:
         site = str(product_team.get("site") or product_team.get("id") or "").strip()
@@ -487,6 +536,19 @@ def node_required_guidance(
                 "Use `- Status: in_progress` only when you are actively continuing the same artifact-authoring work and your outbox cites the exact artifact path(s) already updated plus the next concrete completion step.",
                 "If the upstream PM/dev context contradicts the approved feature docs, finish with `- Status: done` and `- Flow outcome: Scope decision required` rather than inventing a new scope.",
             ]
+    if flow_id == "agentic_sdlc" and target_node == "Code Review":
+        return [
+            "Treat the upstream dev outbox as a handoff receipt, not the only source of truth; verify the repo state and approved feature docs still match before approving.",
+            f"If `{source_outbox}` omits the exact implementation commit hash, changed-file context, or verification needed to understand the diff, finish with `- Status: done` and `- Flow outcome: Changes requested`; do not guess or drift into `needs-info`.",
+            "An `Approved` verdict must cite the exact reviewed artifact path(s) and the verified implementation commit hash or equivalent repo-state evidence from the upstream handoff.",
+            "If you identify substantive problems, enumerate finding severity + file path + recommended fix pattern and use `- Flow outcome: Changes requested` instead of a legacy blocker response.",
+        ]
+    if flow_id == "release_shipping_flow" and target_node == "Release Code Review":
+        return [
+            "Treat this command as the release handoff artifact for Gate 1b; verify the release id, release start time, and scoped feature list before clearing the gate.",
+            "If the release handoff omits enough scoped artifact context to support a real review, record that gap as a MEDIUM finding and use `- Flow outcome: MEDIUM+ findings present`.",
+            "A `No MEDIUM+ findings` verdict must cite the reviewed release artifact path(s) and the reviewed commit/file scope, or explicitly note the data-only fast-path evidence.",
+        ]
     return []
 
 
@@ -618,6 +680,7 @@ def build_command(
         run_id=run_id,
         product_team=product_team,
         target_owner=target_owner,
+        source_outbox=source_outbox,
     )
 
     return "\n".join(
@@ -665,6 +728,7 @@ def build_command(
                 run_id=run_id,
                 product_team=product_team,
                 target_owner=target_owner,
+                source_outbox=source_outbox,
             )]
             if node_required_guidance(
                 flow_id=flow_id,
@@ -672,6 +736,7 @@ def build_command(
                 run_id=run_id,
                 product_team=product_team,
                 target_owner=target_owner,
+                source_outbox=source_outbox,
             )
             else []
         )
@@ -928,7 +993,11 @@ def main() -> int:
     source_item_roi = read_item_roi(command_path.parent, 20)
     roi = max(source_item_roi, extract_roi(outbox_text, source_item_roi))
     route_date = route_date_for_item(item_name)
-    validation_errors = validate_flow_done_outbox(command_meta, outbox_text)
+    validation_errors = validate_flow_done_outbox(
+        command_meta,
+        command_path.read_text(encoding="utf-8", errors="ignore"),
+        outbox_text,
+    )
     if validation_errors:
         queue_validation_retry(
             run_dir=run_dir,

@@ -14,6 +14,9 @@ def test_release_cycle_start_seeds_release_shipping_flow_context():
     assert "- Flow id: release_shipping_flow" in source
     assert "- Flow node: Release Code Review" in source
     assert "- Available flow outcomes: MEDIUM+ findings present | No MEDIUM+ findings" in source
+    assert "- Release started at: ${release_started_at}" in source
+    assert "## Release scope artifacts" in source
+    assert "Treat this \\`command.md\\` as the authoritative release handoff artifact for Gate 1b." in source
 
 
 def test_dispatch_queues_flow_managed_pm_code_review_triage():

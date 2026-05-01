@@ -21,7 +21,7 @@ def test_validate_flow_done_outbox_rejects_transcript_prefix():
 - Summary: Complete.
 """
 
-    errors = MODULE.validate_flow_done_outbox(command_meta, outbox_text)
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert any("first non-empty line" in error for error in errors)
 
@@ -38,7 +38,7 @@ def test_validate_flow_done_outbox_rejects_tool_transcript_markers():
 **Tool call:** bash
 """
 
-    errors = MODULE.validate_flow_done_outbox(command_meta, outbox_text)
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert any("tool-call or transcript markers" in error for error in errors)
 
@@ -62,7 +62,7 @@ def test_validate_flow_done_outbox_rejects_semantic_divergence(tmp_path, monkeyp
 - Summary: AI chatbot assistant with conversation memory and Drupal content surfacing.
 """
 
-    errors = MODULE.validate_flow_done_outbox(command_meta, outbox_text)
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert any("semantically divergent" in error for error in errors)
 
@@ -86,6 +86,6 @@ def test_validate_flow_done_outbox_accepts_semantically_aligned_summary(tmp_path
 - Summary: The Forseti UI should show the keyboard shortcuts bar only once and remove duplicate shortcut rendering.
 """
 
-    errors = MODULE.validate_flow_done_outbox(command_meta, outbox_text)
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert errors == []

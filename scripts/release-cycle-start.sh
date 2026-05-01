@@ -118,9 +118,10 @@ fi
 # release_cycle step sees the new release_id on the next tick regardless of whether
 # a QA preflight item is dispatched (GAP-AGE-PREFLIGHT-01 exit was skipping this).
 mkdir -p tmp/release-cycle-active 2>/dev/null || true
+release_started_at="$(date -Iseconds)"
 printf '%s\n' "$release_id"      > "tmp/release-cycle-active/${team_id}.release_id"
 printf '%s\n' "$next_release_id" > "tmp/release-cycle-active/${team_id}.next_release_id"
-printf '%s\n' "$(date -Iseconds)" > "tmp/release-cycle-active/${team_id}.started_at"
+printf '%s\n' "$release_started_at" > "tmp/release-cycle-active/${team_id}.started_at"
 
 # Seed release flow runtime context so downstream flow-managed release items can
 # resolve dynamic PM / Dev / QA ownership using the existing flow router.
@@ -136,6 +137,43 @@ cat >"$flow_run_dir/product-team.json" <<JSON
   "dev_agent": "${dev_agent}"
 }
 JSON
+
+release_scope_artifacts="$(python3 - "$site" "$release_id" <<'PY'
+import sys
+from pathlib import Path
+
+site, release_id = sys.argv[1:3]
+rows = []
+for feature_md in sorted(Path("features").glob("*/feature.md")):
+    text = feature_md.read_text(encoding="utf-8", errors="ignore")
+    if f"- Website: {site}" not in text:
+        continue
+    if f"- Release: {release_id}" not in text:
+        continue
+    if "- Status: in_progress" not in text:
+        continue
+    feature_id = feature_md.parent.name
+    rows.append(f"- `{feature_id}`")
+    rows.append(f"  - Feature brief: `features/{feature_id}/feature.md`")
+    ac_path = feature_md.parent / "01-acceptance-criteria.md"
+    tp_path = feature_md.parent / "03-test-plan.md"
+    rows.append(
+        f"  - Acceptance criteria: `features/{feature_id}/01-acceptance-criteria.md`"
+        if ac_path.exists()
+        else f"  - Acceptance criteria: missing (`features/{feature_id}/01-acceptance-criteria.md`)"
+    )
+    rows.append(
+        f"  - Test plan: `features/{feature_id}/03-test-plan.md`"
+        if tp_path.exists()
+        else f"  - Test plan: missing (`features/{feature_id}/03-test-plan.md`)"
+    )
+
+if not rows:
+    rows.append("- No active release-scoped feature artifacts were found. Treat missing scope evidence as a handoff defect and do not clear Gate 1b without documenting it.")
+
+print("\n".join(rows))
+PY
+)"
 
 # GAP-AGE-PREFLIGHT-01: suppress preflight when no features are activated for this release.
 # Count features with Status: in_progress AND Release: <release_id> — if zero, skip dispatch.
@@ -334,6 +372,16 @@ Your task is to execute the first routed release gate step for the active releas
 - Site: ${site}
 - Product team: ${team_id}
 - Release id: ${release_id}
+- Release started at: ${release_started_at}
+
+## Release scope artifacts
+${release_scope_artifacts}
+
+## Required evidence controls
+1. Treat this \`command.md\` as the authoritative release handoff artifact for Gate 1b.
+2. Cite the exact reviewed feature/outbox artifact path(s) in your outbox summary or findings.
+3. If the scoped feature list or supporting artifacts are incomplete, do not clear the gate; record a MEDIUM finding for missing release evidence and use \`- Flow outcome: MEDIUM+ findings present\`.
+4. If you apply the data-only fast-path, say so explicitly and name the reviewed file set.
 
 ## Required action
 1. Perform the pre-ship release code review for \`${release_id}\`.

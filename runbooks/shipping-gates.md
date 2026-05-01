@@ -52,6 +52,11 @@ Current automation note:
 - Alignment rule: `release_shipping_flow` is the release-only validation/signoff wrapper. If Gate 1b or Gate 2 discovers delivery work, that work returns to `agentic_sdlc`; release does not own a separate long-lived remediation loop.
 - Gate 2, PM signoff, coordinated push, and release advancement are still enforced by scripts and repo-state guards; those back-half steps have not yet been fully migrated to flow-managed execution.
 
+**Release Code Review handoff contract (required):**
+- The `agent-code-review` `command.md` must identify the release id, release start time, and the scoped feature artifact paths for the active release.
+- Reviewer verdicts must cite the exact reviewed artifact paths in the outbox summary or findings.
+- Missing or incomplete release handoff evidence is **not** a silent blocker: record it as a routed finding (MEDIUM+) so PM triage can repair the handoff or route the underlying work.
+
 After each `agent-code-review` run for a release cycle, PM must:
 1. Read the code-review outbox for that release: `sessions/agent-code-review/outbox/<date>-code-review-<site>-<release-id>.md`
 2. For every finding rated **MEDIUM or higher**, create a dev-seat inbox item **within the same release cycle**:
