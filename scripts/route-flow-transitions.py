@@ -268,6 +268,20 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
         candidates = review_artifact_citation_candidates(command_text)
         if candidates and not any(path in outbox_text for path in candidates):
             errors.append("review outbox must cite at least one reviewed artifact path from the handoff")
+    if (
+        extract_status(outbox_text) == "done"
+        and flow_id == "release_shipping_flow"
+        and node == "PM Signoff Readiness Check"
+        and "Ready for signoff and push" in extract_flow_outcomes(outbox_text)
+    ):
+        owner_seat = command_meta.get("Flow owner seat", "").strip()
+        release_id = command_meta.get("Flow run id", "").strip()
+        if owner_seat and release_id:
+            expected_rel = f"sessions/{owner_seat}/artifacts/release-signoffs/{release_id}.md"
+            if expected_rel not in outbox_text:
+                errors.append("PM signoff readiness outbox must cite the canonical PM signoff artifact path")
+            if not (ROOT / expected_rel).exists():
+                errors.append("PM signoff readiness cannot route Ready for signoff and push until the canonical PM signoff artifact exists")
     return errors
 
 
@@ -548,6 +562,13 @@ def node_required_guidance(
             "Treat this command as the release handoff artifact for Gate 1b; verify the release id, release start time, and scoped feature list before clearing the gate.",
             "If the release handoff omits enough scoped artifact context to support a real review, record that gap as a MEDIUM finding and use `- Flow outcome: MEDIUM+ findings present`.",
             "A `No MEDIUM+ findings` verdict must cite the reviewed release artifact path(s) and the reviewed commit/file scope, or explicitly note the data-only fast-path evidence.",
+        ]
+    if flow_id == "release_shipping_flow" and target_node == "PM Signoff Readiness Check":
+        return [
+            "Use the release gate artifacts as the source of truth for this decision: confirm Gate 1b via the release code-review outbox and Gate 2 via the QA verification outbox before choosing a flow outcome.",
+            "If Gate 1b still has unresolved MEDIUM+ findings, finish with `- Status: done` and `- Flow outcome: Gate 1b incomplete`; do not claim release readiness.",
+            "If Gate 2 lacks a current APPROVE outbox for this release id, finish with `- Status: done` and `- Flow outcome: Gate 2 incomplete`.",
+            "Only choose `- Flow outcome: Ready for signoff and push` after `bash scripts/release-signoff.sh <team> <release-id>` succeeds and your summary cites the exact PM signoff artifact path.",
         ]
     return []
 

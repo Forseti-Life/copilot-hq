@@ -89,3 +89,46 @@ def test_validate_flow_done_outbox_accepts_semantically_aligned_summary(tmp_path
     errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert errors == []
+
+
+def test_validate_flow_done_outbox_requires_existing_pm_signoff_artifact(tmp_path, monkeypatch):
+    root = tmp_path / "hq"
+    root.mkdir()
+    monkeypatch.setattr(MODULE, "ROOT", root)
+    command_meta = {
+        "Flow id": "release_shipping_flow",
+        "Flow node": "PM Signoff Readiness Check",
+        "Flow owner seat": "pm-dungeoncrawler",
+        "Flow run id": "20260412-dungeoncrawler-release-aa",
+    }
+    outbox_text = """- Status: done
+- Summary: Release gates are clear and signoff was completed.
+- Flow outcome: Ready for signoff and push
+"""
+
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
+
+    assert any("canonical PM signoff artifact path" in error for error in errors)
+    assert any("until the canonical PM signoff artifact exists" in error for error in errors)
+
+
+def test_validate_flow_done_outbox_accepts_ready_for_push_with_existing_signoff_artifact(tmp_path, monkeypatch):
+    root = tmp_path / "hq"
+    artifact = root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-dungeoncrawler-release-aa.md"
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text("signed\n", encoding="utf-8")
+    monkeypatch.setattr(MODULE, "ROOT", root)
+    command_meta = {
+        "Flow id": "release_shipping_flow",
+        "Flow node": "PM Signoff Readiness Check",
+        "Flow owner seat": "pm-dungeoncrawler",
+        "Flow run id": "20260412-dungeoncrawler-release-aa",
+    }
+    outbox_text = """- Status: done
+- Summary: Release gates are clear and signoff artifact `sessions/pm-dungeoncrawler/artifacts/release-signoffs/20260412-dungeoncrawler-release-aa.md` is recorded.
+- Flow outcome: Ready for signoff and push
+"""
+
+    errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
+
+    assert errors == []
