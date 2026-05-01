@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-05-01T16:32:12Z
+
 - Flow id: release_shipping_flow
 - Flow run id: 20260412-dungeoncrawler-release-aa
 - Flow node: Release Code Review
