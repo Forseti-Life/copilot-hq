@@ -12,3 +12,4 @@
 - GitHub deploy workflow was triggered (rc=4)
 
 See inbox item `20260501-post-push-20260412-dungeoncrawler-release-aa` for post-release steps.
+- Agent: pm-dungeoncrawler
