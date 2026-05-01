@@ -297,6 +297,21 @@ if team_release_ids:
             stdout = (promote_result.stdout or "").strip()
             if stdout:
                 print(f"FEATURES {release_id}: {stdout}")
+        cleanup_result = subprocess.run(
+            [sys.executable, str(root / 'scripts' / 'cleanup-stale-release-features.py'), '--release', release_id],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+        )
+        if cleanup_result.returncode != 0:
+            print(f"WARN cleanup-stale-release-features failed for {release_id}: {cleanup_result.returncode}")
+            stderr = (cleanup_result.stderr or "").strip()
+            if stderr:
+                print(stderr)
+        else:
+            stdout = (cleanup_result.stdout or "").strip()
+            if stdout:
+                print(f"CLEANUP {release_id}: {stdout}")
 else:
     print("WARNING: no active team releases found — nothing to push")
 

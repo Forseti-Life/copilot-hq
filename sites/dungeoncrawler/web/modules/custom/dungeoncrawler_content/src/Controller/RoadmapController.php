@@ -307,6 +307,7 @@ class RoadmapController extends ControllerBase {
    */
   private function buildReleaseProcessFlow(array $release_snapshot, array $release_scope_counts): array {
     $is_pushed_pending_advance = ($release_snapshot['active_release_status'] ?? '') === 'pushed_pending_advance';
+    $is_idle_advanced = ($release_snapshot['active_release_status'] ?? '') === 'idle_advanced';
     $active_features = (int) ($release_scope_counts['active']['features'] ?? 0);
     $active_requirements = (int) ($release_scope_counts['active']['requirements'] ?? 0);
     $next_features = (int) ($release_scope_counts['next']['features'] ?? 0);
@@ -315,36 +316,46 @@ class RoadmapController extends ControllerBase {
     return [
       [
         'step' => 1,
-        'badge_label' => $is_pushed_pending_advance ? 'Completed' : 'Current',
-        'badge_status' => $is_pushed_pending_advance ? 'done' : 'in_progress',
-        'stage_class' => $is_pushed_pending_advance ? 'done' : 'active',
+        'badge_label' => $is_pushed_pending_advance ? 'Completed' : ($is_idle_advanced ? 'Idle' : 'Current'),
+        'badge_status' => $is_pushed_pending_advance ? 'done' : ($is_idle_advanced ? 'queued' : 'in_progress'),
+        'stage_class' => $is_pushed_pending_advance ? 'done' : ($is_idle_advanced ? 'tracked' : 'active'),
         'title' => 'Work active release',
         'value' => (string) ($release_snapshot['active_release'] ?: '—'),
         'features' => $active_features,
         'requirements' => $active_requirements,
-        'copy' => 'This is the release currently being built, tested, and scoped.',
+        'copy' => $is_idle_advanced
+          ? 'No release is currently active; the previous cycle has already been advanced.'
+          : 'This is the release currently being built, tested, and scoped.',
       ],
       [
         'step' => 2,
-        'badge_label' => $is_pushed_pending_advance ? 'Recorded' : 'Awaiting',
-        'badge_status' => $is_pushed_pending_advance ? 'implemented' : 'pending',
-        'stage_class' => $is_pushed_pending_advance ? 'done' : 'pending',
+        'badge_label' => ($is_pushed_pending_advance || $is_idle_advanced) ? 'Recorded' : 'Awaiting',
+        'badge_status' => ($is_pushed_pending_advance || $is_idle_advanced) ? 'implemented' : 'pending',
+        'stage_class' => ($is_pushed_pending_advance || $is_idle_advanced) ? 'done' : 'pending',
         'title' => 'Push to production',
-        'value' => (string) (($release_snapshot['active_release_pushed_at'] ?? '') ?: 'Not pushed yet'),
+        'value' => $is_idle_advanced
+          ? (string) (($release_snapshot['last_completed_release'] ?? '') ?: (($release_snapshot['active_release_pushed_at'] ?? '') ?: 'Already pushed'))
+          : (string) (($release_snapshot['active_release_pushed_at'] ?? '') ?: 'Not pushed yet'),
         'features' => $active_features,
         'requirements' => $active_requirements,
-        'copy' => 'Production deployment of the active release lands here.',
+        'copy' => $is_idle_advanced
+          ? 'The most recent release already landed in production.'
+          : 'Production deployment of the active release lands here.',
       ],
       [
         'step' => 3,
-        'badge_label' => $is_pushed_pending_advance ? 'Current' : 'Later',
-        'badge_status' => $is_pushed_pending_advance ? 'in_progress' : 'pending',
-        'stage_class' => $is_pushed_pending_advance ? 'active' : 'pending',
+        'badge_label' => $is_pushed_pending_advance ? 'Current' : ($is_idle_advanced ? 'Completed' : 'Later'),
+        'badge_status' => $is_pushed_pending_advance ? 'in_progress' : ($is_idle_advanced ? 'done' : 'pending'),
+        'stage_class' => $is_pushed_pending_advance ? 'active' : ($is_idle_advanced ? 'done' : 'pending'),
         'title' => 'Advance release cycle',
-        'value' => $is_pushed_pending_advance ? 'Ready to activate next release' : 'Waiting for production push',
+        'value' => $is_pushed_pending_advance
+          ? 'Ready to activate next release'
+          : ($is_idle_advanced ? 'Boundary advanced — waiting for scoped work' : 'Waiting for production push'),
         'features' => $next_features,
         'requirements' => $next_requirements,
-        'copy' => 'After push, the boundary advances so the next release can begin.',
+        'copy' => $is_idle_advanced
+          ? 'The release boundary has already advanced; the next cycle starts once backlog work is scoped.'
+          : 'After push, the boundary advances so the next release can begin.',
       ],
       [
         'step' => 4,

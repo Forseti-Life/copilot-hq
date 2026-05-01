@@ -314,6 +314,29 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotShowsIdleAdvancedStateAfterBoundaryAdvance(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-aa\n");
+    file_put_contents($this->pushStatePath . '/dungeoncrawler.advanced', "20260412-dungeoncrawler-release-z\n");
+    file_put_contents(
+      $this->pushStatePath . '/20260412-dungeoncrawler-release-z.pushed',
+      "2026-05-01T13:06:02+00:00\n"
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('', $snapshot['active_release']);
+    $this->assertSame('20260412-dungeoncrawler-release-z', $snapshot['last_completed_release']);
+    $this->assertSame('idle_advanced', $snapshot['active_release_status']);
+    $this->assertSame('implemented', $snapshot['active_release_status_display']);
+    $this->assertSame('Idle — waiting for scoped work', $snapshot['active_release_status_label']);
+    $this->assertNotSame('', $snapshot['active_release_pushed_at']);
+    $this->assertStringContainsString('cycle boundary already advanced', $snapshot['release_sync_note']);
+  }
+
+  /**
    * @covers ::getPipelineStatus
    * @dataProvider pathTraversalProvider
    */

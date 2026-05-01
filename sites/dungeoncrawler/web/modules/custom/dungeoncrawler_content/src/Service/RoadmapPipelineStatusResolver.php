@@ -251,6 +251,7 @@ class RoadmapPipelineStatusResolver {
       'active_release' => $active_release,
       'next_release' => $next_release,
       'started_at' => $started_at,
+      'last_completed_release' => '',
       'active_release_status' => '',
       'active_release_status_display' => 'pending',
       'active_release_status_label' => 'Unavailable',
@@ -260,7 +261,14 @@ class RoadmapPipelineStatusResolver {
       'next_features' => [],
     ];
 
-    $snapshot = array_merge($snapshot, $this->resolveReleaseSnapshotState($active_release, $next_release));
+    $snapshot = array_merge(
+      $snapshot,
+      $this->resolveReleaseSnapshotState(
+        $active_release,
+        $next_release,
+        $this->readPushState("{$website}.advanced")
+      )
+    );
 
     if (!is_dir($this->featuresPath) || ($active_release === '' && $next_release === '')) {
       return $snapshot;
@@ -481,6 +489,18 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+   * Reads a coordinated-push state file.
+   */
+  private function readPushState(string $filename): string {
+    $path = $this->pushStatePath . DIRECTORY_SEPARATOR . $filename;
+    if (!is_readable($path)) {
+      return '';
+    }
+    $contents = file_get_contents($path);
+    return $contents === FALSE ? '' : trim($contents);
+  }
+
+  /**
    * Maps raw pipeline status to release-snapshot display state.
    */
   private function snapshotDisplayStatus(string $status): string {
@@ -512,9 +532,23 @@ class RoadmapPipelineStatusResolver {
    * @return array<string, string>
    *   Status fields for the release snapshot.
    */
-  private function resolveReleaseSnapshotState(string $active_release, string $next_release): array {
+  private function resolveReleaseSnapshotState(string $active_release, string $next_release, string $last_completed_release = ''): array {
     if ($active_release === '') {
+      if ($last_completed_release !== '') {
+        $push_marker = $this->findPushMarker($last_completed_release);
+        return [
+          'last_completed_release' => $last_completed_release,
+          'active_release_status' => 'idle_advanced',
+          'active_release_status_display' => 'implemented',
+          'active_release_status_label' => 'Idle — waiting for scoped work',
+          'active_release_pushed_at' => $push_marker !== '' ? date(DATE_ATOM, filemtime($push_marker) ?: time()) : '',
+          'release_sync_note' => $next_release !== ''
+            ? 'The most recent release was already pushed and the cycle boundary already advanced. The next release stays queued until work is scoped.'
+            : 'The most recent release was already pushed and the cycle is currently idle.',
+        ];
+      }
       return [
+        'last_completed_release' => '',
         'active_release_status' => '',
         'active_release_status_display' => 'pending',
         'active_release_status_label' => 'Unavailable',
@@ -526,6 +560,7 @@ class RoadmapPipelineStatusResolver {
     $push_marker = $this->findPushMarker($active_release);
     if ($push_marker !== '') {
       return [
+        'last_completed_release' => '',
         'active_release_status' => 'pushed_pending_advance',
         'active_release_status_display' => 'implemented',
         'active_release_status_label' => 'Pushed — awaiting cycle advance',
@@ -537,6 +572,7 @@ class RoadmapPipelineStatusResolver {
     }
 
     return [
+      'last_completed_release' => '',
       'active_release_status' => 'in_progress',
       'active_release_status_display' => 'in_progress',
       'active_release_status_label' => 'In Progress',

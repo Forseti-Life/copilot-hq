@@ -11,10 +11,14 @@ SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "post-coordinated-pus
 BOUNDARY_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "ceo-release-boundary-health.sh"
 RELEASE_CYCLE_START = Path(__file__).resolve().parents[2] / "scripts" / "release-cycle-start.sh"
 HELPER_MODULE = Path(__file__).resolve().parents[2] / "scripts" / "lib" / "release_cycle_helpers.py"
+PROMOTE_RELEASE_FEATURES = Path(__file__).resolve().parents[2] / "scripts" / "promote-release-features.py"
+CLEANUP_STALE_RELEASE_FEATURES = Path(__file__).resolve().parents[2] / "scripts" / "cleanup-stale-release-features.py"
 assert SCRIPT.exists(), f"Script not found: {SCRIPT}"
 assert BOUNDARY_SCRIPT.exists(), f"Script not found: {BOUNDARY_SCRIPT}"
 assert RELEASE_CYCLE_START.exists(), f"Script not found: {RELEASE_CYCLE_START}"
 assert HELPER_MODULE.exists(), f"Script not found: {HELPER_MODULE}"
+assert PROMOTE_RELEASE_FEATURES.exists(), f"Script not found: {PROMOTE_RELEASE_FEATURES}"
+assert CLEANUP_STALE_RELEASE_FEATURES.exists(), f"Script not found: {CLEANUP_STALE_RELEASE_FEATURES}"
 
 _TEAMS_JSON = {
     "teams": [
@@ -114,9 +118,13 @@ def _make_root(tmp: Path, *, signoffs_done: bool = True, include_ready_backlog: 
     gate2_backstop.chmod(0o755)
     shutil.copy2(BOUNDARY_SCRIPT, scripts_dir / "ceo-release-boundary-health.sh")
     shutil.copy2(RELEASE_CYCLE_START, scripts_dir / "release-cycle-start.sh")
+    shutil.copy2(PROMOTE_RELEASE_FEATURES, scripts_dir / "promote-release-features.py")
+    shutil.copy2(CLEANUP_STALE_RELEASE_FEATURES, scripts_dir / "cleanup-stale-release-features.py")
     shutil.copy2(HELPER_MODULE, lib_dir / "release_cycle_helpers.py")
     (scripts_dir / "ceo-release-boundary-health.sh").chmod(0o755)
     (scripts_dir / "release-cycle-start.sh").chmod(0o755)
+    (scripts_dir / "promote-release-features.py").chmod(0o755)
+    (scripts_dir / "cleanup-stale-release-features.py").chmod(0o755)
 
     return root
 
@@ -415,3 +423,55 @@ class TestReleaseIdAdvancement:
             advanced_rid = (active / f"{team_id}.release_id").read_text().strip()
             assert advanced_rid == f"{today}-{team_id}-release-c"
             assert (pushed_dir / f"{current_pair}.{team_id}.advanced").exists()
+
+    def test_stale_in_progress_features_from_closed_release_are_reset(self, tmp_path):
+        """Closed-release features should not stay in_progress on the roadmap after push."""
+        root = _make_root(tmp_path)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        features = root / "features"
+
+        deferred_feature_dir = features / "dc-stale-deferred"
+        deferred_feature_dir.mkdir(parents=True, exist_ok=True)
+        (deferred_feature_dir / "feature.md").write_text(
+            textwrap.dedent(
+                f"""\
+                # Feature Brief: Stale Deferred
+
+                - Work item id: dc-stale-deferred
+                - Website: dungeoncrawler
+                - Status: in_progress
+                - Release: {today}-dungeoncrawler-release-b
+                - Defer reason: Waiting on re-scope
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        ready_feature_dir = features / "dc-stale-ready"
+        ready_feature_dir.mkdir(parents=True, exist_ok=True)
+        (ready_feature_dir / "feature.md").write_text(
+            textwrap.dedent(
+                f"""\
+                # Feature Brief: Stale Ready
+
+                - Work item id: dc-stale-ready
+                - Website: dungeoncrawler
+                - Status: in_progress
+                - Release: {today}-dungeoncrawler-release-b
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        result = _run(root)
+        assert result.returncode == 0, result.stderr
+
+        deferred_text = (deferred_feature_dir / "feature.md").read_text(encoding="utf-8")
+        assert "- Status: deferred" in deferred_text
+        assert f"- Release: {today}-dungeoncrawler-release-b" not in deferred_text
+        assert "- Release:" in deferred_text
+
+        ready_text = (ready_feature_dir / "feature.md").read_text(encoding="utf-8")
+        assert "- Status: ready" in ready_text
+        assert f"- Release: {today}-dungeoncrawler-release-b" not in ready_text
+        assert "- Release:" in ready_text
