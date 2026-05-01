@@ -190,3 +190,111 @@ def test_invalid_outbox_reason_accepts_existing_created_path_claim(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == ""
+
+
+def test_invalid_outbox_reason_rejects_missing_summary_line(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    script = (
+        "set -euo pipefail\n"
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: in_progress\n"
+        "\n"
+        "## Overview\n"
+        "Not a canonical summary line.\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "required summary line immediately after status" in result.stdout
+
+
+def test_invalid_outbox_reason_rejects_write_test_cases_without_artifact_reference(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    (inbox_item / "command.md").write_text(
+        "- Flow node: Write Test Cases\n"
+        "- Flow direct route available: yes\n"
+        "- Available flow outcomes: Scope decision required\n"
+        "\n"
+        "## Required artifacts\n"
+        "- Write or update `sessions/qa-dungeoncrawler/artifacts/dc-cr-rituals-test-plan.md` with the concrete test plan for this feature.\n"
+        "- Write or update `qa-suites/products/dungeoncrawler/features/dc-cr-rituals.json` with the feature-level suite overlay or equivalent QA coverage metadata.\n",
+        encoding="utf-8",
+    )
+    script = (
+        "set -euo pipefail\n"
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: in_progress\n"
+        "- Summary: Continuing test authoring.\n"
+        "\n"
+        "## Next actions\n"
+        "- Keep drafting cases.\n"
+        "\n"
+        "## Blockers\n"
+        "- None\n"
+        "\n"
+        "## Needs from Supervisor\n"
+        "- None\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "must cite at least one required artifact path" in result.stdout
+
+
+def test_invalid_outbox_reason_accepts_write_test_cases_with_artifact_reference(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    (inbox_item / "command.md").write_text(
+        "- Flow node: Write Test Cases\n"
+        "- Flow direct route available: yes\n"
+        "- Available flow outcomes: Scope decision required\n"
+        "\n"
+        "## Required artifacts\n"
+        "- Write or update `sessions/qa-dungeoncrawler/artifacts/dc-cr-rituals-test-plan.md` with the concrete test plan for this feature.\n"
+        "- Write or update `qa-suites/products/dungeoncrawler/features/dc-cr-rituals.json` with the feature-level suite overlay or equivalent QA coverage metadata.\n",
+        encoding="utf-8",
+    )
+    script = (
+        "set -euo pipefail\n"
+        f'inbox_item="{inbox_item}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: in_progress\n"
+        "- Summary: Updated `sessions/qa-dungeoncrawler/artifacts/dc-cr-rituals-test-plan.md`; next pass will reconcile `qa-suites/products/dungeoncrawler/features/dc-cr-rituals.json`.\n"
+        "\n"
+        "## Next actions\n"
+        "- Finish overlay update in `qa-suites/products/dungeoncrawler/features/dc-cr-rituals.json`.\n"
+        "\n"
+        "## Blockers\n"
+        "- None\n"
+        "\n"
+        "## Needs from Supervisor\n"
+        "- None\n"
+        "EOF\n"
+        ")\n"
+        "if invalid_outbox_reason \"$response\"; then\n"
+        "  exit 1\n"
+        "fi\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""

@@ -110,6 +110,10 @@ def test_build_command_hardcodes_allowed_statuses_and_write_test_case_artifacts(
     assert "## Accepted status values" in command
     assert "`done | in_progress | blocked | needs-info`" in command
     assert "## Required outbox template" in command
+    assert "## Node-specific guidance" in command
     assert "## Required artifacts" in command
+    assert "do not redefine or rename the feature" in command
+    assert "fast-exit with `- Status: done` and cite those exact paths" in command
+    assert "Flow outcome: Scope decision required" in command
     assert "sessions/qa-dungeoncrawler/artifacts/dc-cr-unburdened-iron-test-plan.md" in command
     assert "qa-suites/products/dungeoncrawler/features/dc-cr-unburdened-iron.json" in command

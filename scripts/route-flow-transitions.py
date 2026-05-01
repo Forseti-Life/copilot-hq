@@ -470,6 +470,26 @@ def node_required_artifacts(
     return []
 
 
+def node_required_guidance(
+    *,
+    flow_id: str,
+    target_node: str,
+    run_id: str,
+    product_team: dict[str, Any] | None,
+    target_owner: str,
+) -> list[str]:
+    if flow_id == "agentic_sdlc" and target_node == "Write Test Cases" and product_team is not None:
+        site = str(product_team.get("site") or product_team.get("id") or "").strip()
+        if site:
+            return [
+                "Translate the existing PM-approved feature scope into QA artifacts; do not redefine or rename the feature.",
+                f"If `features/{run_id}/03-test-plan.md` and `qa-suites/products/{site}/features/{run_id}.json` already exist and still match the current feature scope, fast-exit with `- Status: done` and cite those exact paths instead of regenerating them.",
+                "Use `- Status: in_progress` only when you are actively continuing the same artifact-authoring work and your outbox cites the exact artifact path(s) already updated plus the next concrete completion step.",
+                "If the upstream PM/dev context contradicts the approved feature docs, finish with `- Status: done` and `- Flow outcome: Scope decision required` rather than inventing a new scope.",
+            ]
+    return []
+
+
 def outgoing_transitions(flow: dict[str, Any], node: str) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
     for item in flow.get("transitions", []):
@@ -637,6 +657,24 @@ def build_command(
             "- <specific need, or `None` when status is done/in_progress>",
             "```",
         ]
+        + (
+            ["", "## Node-specific guidance"]
+            + [f"- {line}" for line in node_required_guidance(
+                flow_id=flow_id,
+                target_node=target_node,
+                run_id=run_id,
+                product_team=product_team,
+                target_owner=target_owner,
+            )]
+            if node_required_guidance(
+                flow_id=flow_id,
+                target_node=target_node,
+                run_id=run_id,
+                product_team=product_team,
+                target_owner=target_owner,
+            )
+            else []
+        )
         + (
             ["", "## Required artifacts"]
             + [f"- {line}" for line in required_artifacts]

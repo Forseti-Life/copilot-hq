@@ -253,6 +253,28 @@ If prior APPROVE or BLOCK evidence exists and the feature code has not changed s
 
 Root cause: `dc-cr-ancestry-traits` was re-dispatched in 20260405 cycle despite a complete APPROVE record from 2026-03-27. A full execution slot was consumed with no new value.
 
+## Flow-managed `Write Test Cases` contract (required)
+
+When the inbox item is a flow-managed `agentic_sdlc / Write Test Cases` node:
+
+1. Treat these as the fixed scope inputs:
+   - `feature.md`
+   - `01-acceptance-criteria.md`
+   - the upstream PM/source outbox referenced in `command.md`
+2. Your job is to translate existing PM-approved scope into QA artifacts.
+   - Write or update the test plan artifact requested in `command.md`
+   - Write or update the feature overlay requested in `command.md`
+   - Validate the resulting suite metadata before claiming completion
+3. Do **not** redefine the feature, rename it, or invent a different product slice. QA verifies and formalizes scope; PM defines it.
+4. If the required test plan and feature overlay already exist and still match the current feature scope, fast-exit with `Status: done` and cite the exact existing artifact paths. Do not regenerate them just because the node was re-dispatched.
+5. Use `Status: in_progress` only when you are actively continuing the same artifact-authoring work and your outbox names the exact artifact path(s) already updated plus the next concrete completion step.
+6. If the upstream PM/dev context is contradictory or scope cannot be inferred from the approved feature docs, stay inside the flow:
+   - `Status: done`
+   - `Flow outcome: Scope decision required`
+   - explain the contradiction briefly and cite the conflicting source artifact paths
+
+Root cause (GAP-DC-QA-WRITE-TEST-CASES-01, 2026-05-01): `dc-cr-rituals` received a rebaseline `Write Test Cases` node even though the feature already had a test plan and overlay. QA drifted into a different ritual concept and kept the inbox alive with `Status: in_progress` instead of either fast-exiting on the existing artifacts or routing `Scope decision required` for contradictory upstream context.
+
 ## Synthetic/malformed release-ID fast-exit (required)
 
 When any inbox item arrives, validate the release ID before executing:

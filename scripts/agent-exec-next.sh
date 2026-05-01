@@ -501,6 +501,8 @@ invalid_outbox_reason() {
   local text="$1"
   local status_count
   local status_value=""
+  local first_nonempty=""
+  local second_nonempty=""
   local expected_outcomes=""
   local found_outcomes=""
   local found_count=0
@@ -530,6 +532,17 @@ invalid_outbox_reason() {
       return 0
       ;;
   esac
+
+  first_nonempty="$(printf '%s\n' "$text" | awk 'NF { print; exit }')"
+  second_nonempty="$(printf '%s\n' "$text" | awk 'NF { count++; if (count == 2) { print; exit } }')"
+  if ! printf '%s\n' "$first_nonempty" | grep -qE '^\- Status:'; then
+    echo "response must begin with the canonical status header"
+    return 0
+  fi
+  if ! printf '%s\n' "$second_nonempty" | grep -qE '^\- Summary:[[:space:]]*[^[:space:]].*$'; then
+    echo "response is missing the required summary line immediately after status"
+    return 0
+  fi
 
   if printf '%s\n' "$text" | grep -qiE "<tool_call>|</tool_call>|Let me do the actual work now|Let me verify and execute this now|here is the real final outbox|Let me proceed with the file operations|I need to actually run the commands before claiming done|I need to actually read the files|Let me trace the actual files|produce a truthful final response|Tool calls follow|Let me now actually execute this properly|Correcting:|I'\''ll read the feature file"; then
     echo "response contains planning or tool-transcript text instead of a canonical outbox"
@@ -606,6 +619,28 @@ PY
           return 0
         fi
       done <<< "$found_outcomes"
+    fi
+    if grep -qiE '^\- Flow node:\s*Write Test Cases\s*$' "$inbox_item/command.md"; then
+      local referenced_required_paths=""
+      local referenced_count=0
+      local matched_required_path=0
+      local required_path=""
+      referenced_required_paths="$(sed -nE 's/^\-\s+Write or update `([^`]+)`.*$/\1/p' "$inbox_item/command.md")"
+      referenced_count="$(printf '%s\n' "$referenced_required_paths" | sed '/^$/d' | wc -l | tr -d ' ')"
+      [[ "$referenced_count" =~ ^[0-9]+$ ]] || referenced_count=0
+      if [ "$referenced_count" -gt 0 ]; then
+        while IFS= read -r required_path; do
+          [ -n "$required_path" ] || continue
+          if printf '%s\n' "$text" | grep -Fq -- "$required_path"; then
+            matched_required_path=1
+            break
+          fi
+        done <<< "$referenced_required_paths"
+        if [ "$matched_required_path" -ne 1 ]; then
+          echo "write-test-cases response must cite at least one required artifact path from command.md"
+          return 0
+        fi
+      fi
     fi
   fi
 
