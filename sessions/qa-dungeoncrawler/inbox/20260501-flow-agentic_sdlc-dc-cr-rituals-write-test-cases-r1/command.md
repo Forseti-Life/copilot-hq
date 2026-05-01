@@ -48,3 +48,4 @@ This inbox item was routed automatically from `PM Scope Rebaseline` after `pm-du
 - Write or update `sessions/qa-dungeoncrawler/artifacts/dc-cr-rituals-test-plan.md` with the concrete test plan for this feature.
 - Write or update `qa-suites/products/dungeoncrawler/features/dc-cr-rituals.json` with the feature-level suite overlay or equivalent QA coverage metadata.
 - Reference the exact artifact path(s) you changed in your `- Summary:` or `## Next actions` section.
+- Agent: qa-dungeoncrawler
