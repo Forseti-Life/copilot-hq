@@ -5,6 +5,7 @@
 - Test cases: 5 (TC-RTL-01-05)
 - Suites: playwright (ritual casting, participant validation, campaign actions)
 - Security: Security AC exemption: spellcasting/rules-engine scope only; no new public routes expected beyond existing spellcasting, downtime, or session-action handlers.
+- Existing implementation seed: `CharacterManager::RITUALS` provides ritual catalog fixtures; tests should focus on execution flow and validation gaps rather than re-proving catalog ingestion.
 
 ---
 

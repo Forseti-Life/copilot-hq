@@ -3,10 +3,9 @@
 - Work item id: dc-cr-gm-tools
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: ready
+- Status: shipped
 - Release:
-- Release decision: held from 20260412-dungeoncrawler-release-z by CEO on 2026-04-30 pending PM Scope Rebaseline outcome `Hold / defer / consolidate`
-- Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
+- Scope resolution: Closed via shipped parent dc-gmg-running-guide on 2026-05-01 during CEO release-z backlog rebaseline.
 - Consolidated into: dc-gmg-running-guide (requirements covered in that feature's acceptance criteria)
 - Priority: P2
 - PM owner: pm-dungeoncrawler

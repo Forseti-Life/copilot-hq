@@ -11,7 +11,8 @@ Define ritual magic as a separate QA-ready subsystem contract covering long cast
 
 ## Dependency checkpoints
 
-- Consolidated into: dc-cr-spells-ch07 (requirements covered in that feature's acceptance criteria)
+- Related parent: dc-cr-spells-ch07 shipped the spell catalog, but ritual execution remains standalone scope.
+- Existing seed asset: `CharacterManager::RITUALS` already contains CRB/APG ritual definitions and participant metadata for integration reuse.
 
 ## Happy Path
 

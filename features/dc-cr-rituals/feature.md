@@ -4,10 +4,10 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: ready
-- Release:
-- Release decision: held from 20260412-dungeoncrawler-release-z by CEO on 2026-04-30 pending PM Scope Rebaseline outcome `Hold / defer / consolidate`
-- Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
-- Consolidated into: dc-cr-spells-ch07 (requirements covered in that feature's acceptance criteria)
+- Release: 20260412-dungeoncrawler-release-aa
+- Release decision: queued into 20260412-dungeoncrawler-release-aa on 2026-05-01 after CEO release-z backlog rebaseline; do not close via dc-cr-spells-ch07 until ritual execution and validation flows are independently covered.
+- Defer reason: lower priority than next-release MVP scope and still needs dedicated ritual execution, participant validation, and failure-path coverage beyond the shipped spell catalog.
+- Related parent: dc-cr-spells-ch07 (spell catalog shipped, but ritual subsystem remains separately actionable)
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -26,7 +26,7 @@ Implement rituals as a distinct form of magic separate from standard spellcastin
 
 ## Implementation hint
 
-Content type: `ritual` with fields for spell level, cast time, primary check (skill + DC), secondary check (skill + DC), cost (material components), and outcomes (critical success / success / failure / critical failure). Ritual resolution API: roll primary + secondary caster checks, look up outcome, apply effect. Separate from standard `spell` type.
+Reuse the shipped ritual catalog data already present in `CharacterManager::RITUALS` as the source seed, but move ritual execution into a dedicated subsystem. The remaining gap is not catalog content; it is runtime flow: explicit ritual initiation outside normal spell-slot casting, participant validation for primary/secondary casters, long-duration progress tracking, and outcome resolution (success / failure / critical failure) with GM approval gates for uncommon or rare rituals. Keep rituals distinct from standard `spell` actions even when they share source chapter coverage with `dc-cr-spells-ch07`.
 
 ## Mission alignment
 
