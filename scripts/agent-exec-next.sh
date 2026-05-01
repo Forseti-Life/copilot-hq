@@ -1062,6 +1062,17 @@ run_copilot() {
   printf '%s\n' "$_copilot_response"
 }
 
+bedrock_response_needs_followup() {
+  local text="${1:-}"
+  if [ -z "$(printf '%s' "$text" | tr -d ' \t\r\n')" ]; then
+    return 0
+  fi
+  if ! printf '%s\n' "$text" | grep -qiE '^\- Status:'; then
+    return 0
+  fi
+  return 1
+}
+
 bedrock_site_for_context() {
   if [ -n "${CTX_WEBSITE:-}" ] && [ "${CTX_WEBSITE}" != "*" ]; then
     echo "$CTX_WEBSITE"
@@ -1077,14 +1088,36 @@ run_bedrock() {
   local prompt="$1"
   local site
   local contract
+  local _bedrock_response
+  local _followup
   site="$(bedrock_site_for_context)"
   contract=$'Return plain markdown only.\n'
   contract+=$'The first line must be exactly "- Status: <value>".\n'
   contract+=$'The second line must be exactly "- Summary: <value>".\n'
   contract+=$'Do not emit tool calls, tool responses, XML, JSON, or analysis preambles.\n'
   contract+=$'If you need to continue investigating, use "- Status: in_progress" and summarize the next concrete step.\n\n'
-  BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}" \
+  _bedrock_response="$(
+    BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}" \
     "$BEDROCK_ASSIST_SCRIPT" "$site" "${contract}${prompt}" 2>/dev/null || true
+  )"
+  if bedrock_response_needs_followup "$_bedrock_response"; then
+    echo "WARN: first-pass Bedrock response from ${AGENT_ID} missing a canonical status header; requesting structured rewrite" >&2
+    _followup=$'Rewrite the result as canonical outbox markdown only.\n'
+    _followup+=$'First line must be exactly "- Status: <value>".\n'
+    _followup+=$'Second line must be exactly "- Summary: <value>".\n'
+    _followup+=$'Do not emit analysis, tool calls, XML, JSON, or any prose before the outbox.\n'
+    _followup+=$'If the prior draft was empty or unusable, answer from the original task.\n\n'
+    _followup+=$'Original task:\n'
+    _followup+="${prompt}"
+    _followup+=$'\n\nPrior draft to rewrite (may be empty):\n'
+    _followup+="${_bedrock_response}"
+    _bedrock_response="$(
+      BEDROCK_MAX_TOKENS="${BEDROCK_STRUCTURED_FOLLOWUP_MAX_TOKENS:-400}" \
+      BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}_followup" \
+      "$BEDROCK_ASSIST_SCRIPT" "$site" "${contract}${_followup}" 2>/dev/null || true
+    )"
+  fi
+  printf '%s\n' "$_bedrock_response"
 }
 
 run_primary_backend() {

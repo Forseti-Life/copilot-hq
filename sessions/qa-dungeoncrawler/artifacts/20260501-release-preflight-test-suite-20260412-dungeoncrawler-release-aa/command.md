@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-05-01T16:28:29Z
+
 - command: |
     Release-cycle QA preflight (run once per release cycle).
 

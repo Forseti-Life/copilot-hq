@@ -37,8 +37,9 @@ roles:
 # Only list agents that need a DIFFERENT backend than their role default above.
 # (qa-*, ba-*, sec-analyst-*, dev-*, pm-*, ceo-* are all handled by role defaults.)
 agents:
-  # Code review is structured analysis, not primary implementation.
-  agent-code-review: bedrock
+  # Code review needs the strongest instruction following plus executor-side
+  # follow-up recovery when the first draft is not a canonical outbox.
+  agent-code-review: copilot
 
   # Explore agents do summarization/reading, not primary implementation.
   agent-explore: bedrock
