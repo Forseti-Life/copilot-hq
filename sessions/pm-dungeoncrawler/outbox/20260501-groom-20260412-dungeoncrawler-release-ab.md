@@ -1,24 +1,25 @@
 - Status: in_progress
-- Summary: Beginning grooming for 20260412-dungeoncrawler-release-ab. Running the backlog audit script to identify any dungeoncrawler features in planned/ready/in_progress status that are missing acceptance criteria or test plans, then will pull community suggestions and triage them before writing AC and issuing QA handoffs.
+- Summary: Beginning grooming work for 20260412-dungeoncrawler-release-ab. First step is to audit the existing backlog for incomplete dungeoncrawler features (missing AC or test plan), then run suggestion intake, triage suggestions, complete AC for accepted items, and hand off to QA. Running the backlog audit now to identify any features requiring completion before treating intake as done.
 
 ## Next actions
-- Run the backlog audit Python snippet to find features missing AC or test plan
-- Run `./scripts/suggestion-intake.sh dungeoncrawler` to pull community suggestions
-- Triage each suggestion (accept/defer/decline/escalate) using `suggestion-triage.sh`
-- Write or complete `01-acceptance-criteria.md` for any accepted/tracked features missing AC
-- Run `./scripts/pm-qa-handoff.sh dungeoncrawler <feature-id>` for features with AC but no test plan
+- Run backlog audit script to identify incomplete dungeoncrawler features
+- Run suggestion-intake.sh for dungeoncrawler
+- Triage each suggestion and accept/defer/decline/escalate
+- Write or complete 01-acceptance-criteria.md for any accepted/tracked features missing AC
+- Run pm-qa-handoff.sh for features with AC but no test plan
+- Update seat instructions if any process changes discovered
 
 ## Blockers
-- None yet — proceeding with audit step.
+- None yet — proceeding to execution
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Grooming the next release backlog keeps Stage 0 of release-ab instant and prevents scope delays; unblocks Dev and QA pipeline continuity for dungeoncrawler.
+- Rationale: Grooming the next release backlog ensures Stage 0 of release-ab can start immediately without delay; unblocking the dev pipeline has direct throughput value.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260501-groom-20260412-dungeoncrawler-release-ab
-- Generated: 2026-05-01T21:22:58+00:00
+- Generated: 2026-05-01T21:33:02+00:00
