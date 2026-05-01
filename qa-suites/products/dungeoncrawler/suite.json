@@ -16555,6 +16555,50 @@
       "required_for_release": true,
       "activated_release": "20260412-dungeoncrawler-release-q",
       "activated_date": "2026-04-19"
+    },
+    {
+      "id": "dc-cr-rituals-e2e-availability",
+      "feature_id": "dc-cr-rituals",
+      "label": "TC-RTL-01: Rituals separate from spellcasting, no slot consumption",
+      "type": "e2e",
+      "command": "cd /var/www/html/dungeoncrawler && ./vendor/bin/drush test:run --filter=ritual_availability_test",
+      "artifacts": [
+        "sessions/qa-dungeoncrawler/artifacts/tc-rtl-01-availability.txt"
+      ],
+      "required_for_release": true
+    },
+    {
+      "id": "dc-cr-rituals-e2e-resolution",
+      "feature_id": "dc-cr-rituals",
+      "label": "TC-RTL-02/03: Ritual definitions, execution outcomes, campaign actions",
+      "type": "e2e",
+      "command": "cd /var/www/html/dungeoncrawler && ./vendor/bin/drush test:run --filter=ritual_resolution_test",
+      "artifacts": [
+        "sessions/qa-dungeoncrawler/artifacts/tc-rtl-02-03-resolution.txt"
+      ],
+      "required_for_release": true
+    },
+    {
+      "id": "dc-cr-rituals-e2e-longduration",
+      "feature_id": "dc-cr-rituals",
+      "label": "TC-RTL-04: Long casting times, participant validation, narrative separation",
+      "type": "e2e",
+      "command": "cd /var/www/html/dungeoncrawler && ./vendor/bin/drush test:run --filter=ritual_longduration_test",
+      "artifacts": [
+        "sessions/qa-dungeoncrawler/artifacts/tc-rtl-04-longduration.txt"
+      ],
+      "required_for_release": true
+    },
+    {
+      "id": "dc-cr-rituals-e2e-validation",
+      "feature_id": "dc-cr-rituals",
+      "label": "TC-RTL-05: Rejection from spellcasting flow, validation errors",
+      "type": "e2e",
+      "command": "cd /var/www/html/dungeoncrawler && ./vendor/bin/drush test:run --filter=ritual_validation_test",
+      "artifacts": [
+        "sessions/qa-dungeoncrawler/artifacts/tc-rtl-05-validation.txt"
+      ],
+      "required_for_release": true
     }
   ],
   "dc-cr-first-world-adept": [
