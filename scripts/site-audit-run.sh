@@ -51,6 +51,9 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+sys.path.insert(0, str((Path.cwd() / 'scripts' / 'lib').resolve()))
+from gate2_artifacts import latest_gate2_artifact
+
 label = sys.argv[1]
 base_url = sys.argv[2]
 out_dir = Path(sys.argv[3])
@@ -501,18 +504,8 @@ def _existing_release_gate2_verdict(qa_agent_id: str, release_id: str) -> Path |
   if not qa_agent_id or not release_id:
     return None
   outbox_dir = Path('sessions') / qa_agent_id / 'outbox'
-  if not outbox_dir.exists():
-    return None
-  for path in sorted(outbox_dir.glob("*gate2*.md")):
-    try:
-      content = path.read_text(encoding='utf-8', errors='ignore')
-    except Exception:
-      continue
-    if release_id not in content:
-      continue
-    if "APPROVE" in content or "BLOCK" in content:
-      return path
-  return None
+  artifact = latest_gate2_artifact(outbox_dir, release_id)
+  return artifact.path if artifact else None
 
 def _queue_release_gate2_verdict_item() -> None:
   if not release_cycle_active:
@@ -528,8 +521,14 @@ def _queue_release_gate2_verdict_item() -> None:
 
   existing_verdict = _existing_release_gate2_verdict(qa_agent_id, release_id)
   if existing_verdict is not None:
-    print(f"INFO: skip Gate 2 verdict queue — release verdict already recorded: {existing_verdict}")
-    return
+    try:
+      verdict_text = existing_verdict.read_text(encoding='utf-8', errors='ignore').upper()
+    except OSError:
+      verdict_text = ''
+    if "BLOCK" in verdict_text:
+      print(f"INFO: skip Gate 2 verdict queue — release BLOCK already recorded: {existing_verdict}")
+      return
+    print(f"INFO: existing Gate 2 verdict is APPROVE; queueing fresh verdict because open issues remain for {release_id}")
 
   release_slug = re.sub(r'[^A-Za-z0-9._-]+', '-', release_id.strip()).strip('-')[:80]
   item_id = f"{run_ts}-gate2-verdict-{release_slug}"

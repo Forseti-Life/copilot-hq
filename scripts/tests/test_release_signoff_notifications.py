@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "release-signoff.sh"
+GATE2_HELPER = Path(__file__).resolve().parents[2] / "scripts" / "lib" / "gate2_artifacts.py"
 
 
 def _write(path: Path, content: str) -> None:
@@ -19,6 +20,10 @@ def _make_root(tmp_path: Path) -> Path:
         "#!/usr/bin/env python3\nprint('OK: no unresolved findings')\n",
     )
     (root / "scripts" / "check-code-review-routing.py").chmod(0o755)
+    _write(
+        root / "scripts" / "lib" / "gate2_artifacts.py",
+        GATE2_HELPER.read_text(encoding="utf-8"),
+    )
     _write(
         root / "org-chart" / "products" / "product-teams.json",
         json.dumps(

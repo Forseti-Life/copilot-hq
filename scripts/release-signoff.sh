@@ -132,22 +132,40 @@ PY
 )"
 
 qa_outbox="sessions/${qa_agent}/outbox"
-_check_gate2_in() {
-  local outbox_dir="$1"
-  [ -d "$outbox_dir" ] || return 1
-  grep -rl "$release_id" "$outbox_dir/" 2>/dev/null \
-    | xargs grep -l "APPROVE" 2>/dev/null \
-    | grep -q .
+_latest_gate2_artifact_across() {
+  python3 - "$ROOT_DIR" "$release_id" "$@" <<'PY'
+from pathlib import Path
+import sys
+
+root_dir = Path(sys.argv[1])
+release_id = sys.argv[2]
+outbox_dirs = [Path(arg) for arg in sys.argv[3:] if arg]
+sys.path.insert(0, str(root_dir / "scripts" / "lib"))
+
+from gate2_artifacts import latest_gate2_artifact_across
+
+artifact = latest_gate2_artifact_across(outbox_dirs, release_id)
+if artifact is None:
+    raise SystemExit(1)
+print(f"{artifact.verdict}\t{artifact.path}")
+PY
 }
 
-if _check_gate2_in "$qa_outbox"; then
+gate2_verdict=""
+gate2_artifact_path=""
+if gate2_result="$(_latest_gate2_artifact_across "$qa_outbox" "${owning_qa_agent:+sessions/${owning_qa_agent}/outbox}")"; then
+  IFS=$'\t' read -r gate2_verdict gate2_artifact_path <<<"$gate2_result"
+fi
+
+if [ "$gate2_verdict" = "APPROVE" ]; then
   gate2_approved=1
-elif [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ]; then
-  owning_qa_outbox="sessions/${owning_qa_agent}/outbox"
-  if _check_gate2_in "$owning_qa_outbox"; then
-    gate2_approved=1
+  if [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ] && printf '%s' "$gate2_artifact_path" | grep -q "sessions/${owning_qa_agent}/outbox/"; then
     echo "INFO: Gate 2 APPROVE found in owning team QA outbox (${owning_qa_agent}) for cross-team co-sign"
   fi
+elif [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ]; then
+  owning_qa_outbox="sessions/${owning_qa_agent}/outbox"
+else
+  owning_qa_outbox=""
 fi
 
 if [ "$gate2_approved" -ne 1 ]; then
@@ -173,9 +191,12 @@ CERT
     gate2_approved=1
   else
     echo "ERROR: Gate 2 APPROVE evidence not found for release '${release_id}'" >&2
-    echo "  Searched: ${qa_outbox}/ for files containing both '${release_id}' and 'APPROVE'" >&2
+    echo "  Searched canonical Gate 2 verdict artifacts in: ${qa_outbox}/" >&2
     if [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ]; then
       echo "  Also searched: sessions/${owning_qa_agent}/outbox/ (owning team QA for cross-team co-sign)" >&2
+    fi
+    if [ -n "$gate2_artifact_path" ] && [ "$gate2_verdict" = "BLOCK" ]; then
+      echo "  Latest Gate 2 verdict is BLOCK: ${gate2_artifact_path}" >&2
     fi
     echo "  If this release shipped zero features, re-run with --empty-release to self-certify." >&2
     echo "BLOCKED: PM signoff requires Gate 2 QA APPROVE before it can be issued." >&2

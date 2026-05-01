@@ -30,6 +30,15 @@ This file is owned by the `qa-dungeoncrawler` seat.
 - **QA -> PM / release automation:** Gate 2 output must match the exact file/content expectations consumed by `release-signoff.sh` and `ceo-release-health.sh`
 - **QA -> Dev follow-up:** QA records evidence and verdicts; PM/CEO automation routes new implementation work when needed
 
+## Gate 2 verdict rule (authoritative)
+- Release-scoped Gate 2 verdicts live only in canonical files under `sessions/qa-dungeoncrawler/outbox/`:
+  - `*-gate2-approve-<release-id>.md`
+  - `*-gate2-block-<release-id>.md`
+  - exception approvals: `*-gate2-waiver-<release-id>.md` or legacy `*-empty-release-self-cert-<release-id>.md`
+- The file body must include the exact active release ID and the exact verdict word.
+- Feature-level QA notes do **not** satisfy Gate 2 on their own.
+- **Latest canonical verdict wins.** If you previously APPROVED a release and later find a release-level blocker, write a newer `gate2-block` artifact.
+
 ## Default mode (while PM organizes)
 - Your test-case source of truth (SoT) is the product suite manifest:
 	- `qa-suites/products/dungeoncrawler/suite.json`

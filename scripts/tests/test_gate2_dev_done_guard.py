@@ -21,6 +21,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "site-audit-run.sh"
+_GATE2_HELPER = Path(__file__).resolve().parents[1] / "lib" / "gate2_artifacts.py"
 
 
 def _load_dispatch_python(root: Path, *, label="forseti.life", base_url="http://localhost:9999",
@@ -82,6 +83,9 @@ def _load_dispatch_python(root: Path, *, label="forseti.life", base_url="http://
             import json, re, sys
             from pathlib import Path
             from datetime import datetime, timezone
+
+            sys.path.insert(0, str((Path.cwd() / "scripts" / "lib").resolve()))
+            from gate2_artifacts import latest_gate2_artifact
 
             label = sys.argv[1]
             base_url = sys.argv[2]
@@ -167,6 +171,12 @@ def _make_hq(tmp: Path, *,
     active_dir = root / "tmp" / "release-cycle-active"
     active_dir.mkdir(parents=True, exist_ok=True)
     (active_dir / f"{team_id}.release_id").write_text(release_id + "\n")
+    helper_dir = root / "scripts" / "lib"
+    helper_dir.mkdir(parents=True, exist_ok=True)
+    (helper_dir / "gate2_artifacts.py").write_text(
+        _GATE2_HELPER.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
     # PM inbox/outbox dirs
     (root / "sessions" / pm_agent_id / "inbox").mkdir(parents=True, exist_ok=True)
     (root / "sessions" / pm_agent_id / "outbox").mkdir(parents=True, exist_ok=True)

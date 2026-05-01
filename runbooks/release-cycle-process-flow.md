@@ -192,6 +192,7 @@ The live automation is still partly script-driven after that point:
 - QA owns test-case design and the verification protocol:
   - PM hands release scope to QA.
   - QA produces/updates the test plan and ensures coverage for every release-bound change.
+  - QA expresses the release-level Gate 2 state with the latest canonical `gate2-approve` / `gate2-block` artifact in `sessions/qa-*/outbox/`; feature-level notes are supporting evidence only.
 - QA does not dispatch inbox items for other roles.
 - Dev consumes failing suite evidence directly; PM is pulled in only for scope/intent decisions and for final ship.
 - Test-case source of truth requirement:

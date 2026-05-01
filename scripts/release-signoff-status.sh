@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT_DIR"
 
 PRODUCT_TEAMS_JSON="org-chart/products/product-teams.json"
@@ -21,18 +21,42 @@ if [ ! -f "$PRODUCT_TEAMS_JSON" ]; then
   exit 2
 fi
 
-if ! rows="$(python3 - "$PRODUCT_TEAMS_JSON" <<'PY'
-import json
+if ! rows="$(python3 - "$PRODUCT_TEAMS_JSON" "$release_id" <<'PY'
 import sys
+from pathlib import Path
 
-with open(sys.argv[1], 'r', encoding='utf-8') as fh:
-    data = json.load(fh)
+root = Path.cwd()
+sys.path.insert(0, str(root / "scripts" / "lib"))
 
-for team in (data.get('teams') or []):
-    if not team.get('active', False):
+from release_cycle_helpers import load_product_teams, release_cohort
+
+config_path = Path(sys.argv[1])
+release_id = str(sys.argv[2] or "").strip().lower()
+
+teams = load_product_teams(config_path)
+team_ids: list[str] = []
+best_len = 0
+for team in teams:
+    if not team.get("active", False):
         continue
-    if not team.get('coordinated_release_default', False):
-        continue
+    candidates = [str(team.get("id") or "").strip().lower()]
+    candidates.extend(str(alias or "").strip().lower() for alias in (team.get("aliases") or []))
+    for cand in candidates:
+        if cand and cand in release_id and len(cand) > best_len:
+            best_len = len(cand)
+            team_ids = [str(team.get("id") or "").strip()]
+
+selected = []
+if team_ids:
+    selected = release_cohort(config_path, team_ids[0])
+else:
+    selected = [
+        team
+        for team in teams
+        if team.get("active") and team.get("coordinated_release_default")
+    ]
+
+for team in selected:
     team_id = str(team.get('id') or '').strip()
     pm_agent = str(team.get('pm_agent') or '').strip()
     if not team_id or not pm_agent:
@@ -45,7 +69,7 @@ PY
 fi
 
 if [ -z "$rows" ]; then
-  echo "ERROR: no coordinated-release PM seats configured in $PRODUCT_TEAMS_JSON" >&2
+  echo "ERROR: no release-signoff PM seats resolved in $PRODUCT_TEAMS_JSON" >&2
   exit 2
 fi
 
@@ -112,7 +136,7 @@ PY
 fi
 
 echo "Release id: ${release_id}"
-echo "- required coordinated PM signoffs: ${required_count}"
+echo "- required PM signoffs: ${required_count}"
 while IFS=$'\t' read -r team_id pm_agent signoff_file has_signoff; do
   [ -n "$team_id" ] || continue
   printf '%s\n' "- ${team_id} (${pm_agent}) signoff: ${has_signoff} (${signoff_file})"

@@ -7,6 +7,7 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "ceo-release-health.sh"
 HELPER_MODULE = Path(__file__).resolve().parents[1] / "lib" / "release_cycle_helpers.py"
+GATE2_MODULE = Path(__file__).resolve().parents[1] / "lib" / "gate2_artifacts.py"
 
 
 def _make_root(tmp_path: Path) -> Path:
@@ -18,6 +19,7 @@ def _make_root(tmp_path: Path) -> Path:
     (root / "sessions" / "qa-forseti" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True)
     shutil.copy2(HELPER_MODULE, root / "scripts" / "lib" / "release_cycle_helpers.py")
+    shutil.copy2(GATE2_MODULE, root / "scripts" / "lib" / "gate2_artifacts.py")
 
     teams = {
         "teams": [
@@ -97,6 +99,7 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
     (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True)
     shutil.copy2(HELPER_MODULE, root / "scripts" / "lib" / "release_cycle_helpers.py")
+    shutil.copy2(GATE2_MODULE, root / "scripts" / "lib" / "gate2_artifacts.py")
 
     teams = {
         "teams": [
@@ -135,8 +138,8 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
     (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / f"{dc_rid}.md").write_text("# PM signoff\n", encoding="utf-8")
     (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / f"{dc_rid}.md").write_text("# PM co-signoff\n", encoding="utf-8")
     (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / f"{forseti_rid}.md").write_text("# PM co-signoff\n", encoding="utf-8")
-    (root / "sessions" / "qa-forseti" / "outbox" / f"20260418-gate2-{forseti_rid}.md").write_text(f"{forseti_rid}\nAPPROVE\n", encoding="utf-8")
-    (root / "sessions" / "qa-dungeoncrawler" / "outbox" / f"20260418-gate2-{dc_rid}.md").write_text(f"{dc_rid}\nAPPROVE\n", encoding="utf-8")
+    (root / "sessions" / "qa-forseti" / "outbox" / f"20260418-gate2-approve-{forseti_rid}.md").write_text(f"{forseti_rid}\nAPPROVE\n", encoding="utf-8")
+    (root / "sessions" / "qa-dungeoncrawler" / "outbox" / f"20260418-gate2-approve-{dc_rid}.md").write_text(f"{dc_rid}\nAPPROVE\n", encoding="utf-8")
     (root / "tmp" / "auto-push-dispatched" / f"{dc_rid}__{forseti_rid}.pushed").write_text("2026-04-27T12:37:40+00:00\n", encoding="utf-8")
 
     result = _run(root)
@@ -144,3 +147,25 @@ def test_missing_advance_markers_fail_when_push_marker_exists(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert f"{dc_rid}__{forseti_rid}" in result.stdout
     assert "boundary advance is incomplete" in result.stdout
+
+
+def test_latest_gate2_block_is_reported_as_release_blocker(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+    outbox = root / "sessions" / "qa-forseti" / "outbox"
+    for path in list(outbox.iterdir()):
+        path.unlink()
+    (outbox / f"20260418-000000-gate2-approve-{release_id}.md").write_text(
+        f"{release_id}\nAPPROVE\n",
+        encoding="utf-8",
+    )
+    (outbox / f"20260418-010000-gate2-block-{release_id}.md").write_text(
+        f"{release_id}\nBLOCK\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Gate 2 BLOCK recorded" in result.stdout
+    assert "PM signoff (pm-forseti): found" in result.stdout

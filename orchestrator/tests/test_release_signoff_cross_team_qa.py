@@ -181,6 +181,43 @@ class TestCrossTeamQAGate2(unittest.TestCase):
                          msg=f"--empty-release should bypass Gate 2\nstderr={result.stderr}")
         self.assertTrue(written, "Signoff artifact should be written with --empty-release")
 
+    def test_noncanonical_approve_file_does_not_unlock_signoff(self):
+        """Feature-level APPROVE prose without gate2 filename must not count as Gate 2."""
+        release_id = '20260408-dungeoncrawler-release-p'
+        qa_outbox = os.path.join(REPO_ROOT, 'sessions', 'qa-dungeoncrawler', 'outbox')
+        approve_file = _write_approve(
+            qa_outbox,
+            release_id,
+            filename='20260408-feature-verification-release-p.md',
+        )
+        result, written = self._run_in_real_root('dungeoncrawler', release_id,
+                                                 extra_qa_outbox_file=approve_file)
+        self.assertNotEqual(result.returncode, 0, "Noncanonical QA prose must not satisfy Gate 2")
+        self.assertIn('canonical Gate 2 verdict artifacts', result.stderr)
+        self.assertFalse(written)
+
+    def test_latest_gate2_block_overrides_older_approve(self):
+        """A newer gate2-block must prevent signoff even if an older approve exists."""
+        release_id = '20260408-dungeoncrawler-release-q'
+        qa_outbox = os.path.join(REPO_ROOT, 'sessions', 'qa-dungeoncrawler', 'outbox')
+        approve_file = _write_approve(
+            qa_outbox,
+            release_id,
+            filename='20260408-010000-gate2-approve-release-q.md',
+        )
+        block_file = os.path.join(qa_outbox, '20260408-020000-gate2-block-release-q.md')
+        with open(block_file, 'w') as f:
+            f.write(f'# Gate 2\n\n- Release: {release_id}\n- Status: BLOCK\n')
+        result, written = self._run_in_real_root('dungeoncrawler', release_id,
+                                                 extra_qa_outbox_file=approve_file)
+        try:
+            self.assertNotEqual(result.returncode, 0, "Latest BLOCK should prevent PM signoff")
+            self.assertIn('Latest Gate 2 verdict is BLOCK', result.stderr)
+            self.assertFalse(written)
+        finally:
+            if os.path.exists(block_file):
+                os.remove(block_file)
+
 
 if __name__ == '__main__':
     unittest.main()

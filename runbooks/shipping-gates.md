@@ -96,6 +96,18 @@ Gate 2 integration contract:
 - **Outputs:** one release-scoped QA decision artifact containing the exact release ID and explicit APPROVE/BLOCK, plus supporting test evidence
 - **Consumers:** PM signoff flow, `scripts/release-signoff.sh`, `scripts/release-signoff-status.sh`, and `scripts/ceo-release-health.sh`
 
+Canonical Gate 2 artifact filenames:
+- `sessions/qa-<team>/outbox/<timestamp>-gate2-approve-<release-id>.md`
+- `sessions/qa-<team>/outbox/<timestamp>-gate2-block-<release-id>.md`
+- Exception approvals recognized by automation:
+  - `...-gate2-waiver-<release-id>.md`
+  - legacy `...-empty-release-self-cert-<release-id>.md`
+
+Rules:
+- The artifact body must contain the exact release ID and the exact verdict word.
+- Feature-level verification reports and targeted retest notes do **not** complete Gate 2 unless one of the canonical release-scoped artifacts above exists.
+- **Latest canonical Gate 2 artifact wins.** If a newer `gate2-block` exists after an older `gate2-approve`, the release is blocked until QA writes a newer approval/waiver/self-cert artifact.
+
 Test-case source of truth requirement:
 - Test cases must reside in a central executable automation suite with PASS/FAIL outcomes.
 - The release candidate must record which automated suites were run and the results (see `templates/release/02-test-evidence.md`).

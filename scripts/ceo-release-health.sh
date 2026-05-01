@@ -48,9 +48,22 @@ hr() { echo "──────────────────────�
 find_gate2_evidence() {
   local qa_outbox="$1"
   local release_id="$2"
-  [ -d "$qa_outbox" ] || return 0
-  find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null \
-    | xargs grep -l "$release_id" 2>/dev/null | head -1 || true
+  python3 - "$ROOT_DIR" "$qa_outbox" "$release_id" <<'PY'
+from pathlib import Path
+import sys
+
+root_dir = Path(sys.argv[1])
+outbox_dir = Path(sys.argv[2])
+release_id = sys.argv[3]
+sys.path.insert(0, str(root_dir / "scripts" / "lib"))
+
+from gate2_artifacts import latest_gate2_artifact
+
+artifact = latest_gate2_artifact(outbox_dir, release_id)
+if artifact is None:
+    raise SystemExit(0)
+print(f"{artifact.verdict}\t{artifact.path}")
+PY
 }
 
 echo
@@ -377,10 +390,18 @@ PY
   # 4. Gate 2 APPROVE
   echo
   QA_OUTBOX="sessions/${QA_AGENT}/outbox"
-  GATE2_FILE="$(find_gate2_evidence "$QA_OUTBOX" "$RELEASE_ID")"
+  GATE2_STATUS="$(find_gate2_evidence "$QA_OUTBOX" "$RELEASE_ID")"
+  GATE2_VERDICT=""
+  GATE2_FILE=""
+  if [ -n "$GATE2_STATUS" ]; then
+    IFS=$'\t' read -r GATE2_VERDICT GATE2_FILE <<<"$GATE2_STATUS"
+  fi
 
-  if [ -n "$GATE2_FILE" ]; then
+  if [ "$GATE2_VERDICT" = "APPROVE" ] && [ -n "$GATE2_FILE" ]; then
     pass "[$TEAM] Gate 2 evidence: $(basename "$GATE2_FILE")"
+  elif [ "$GATE2_VERDICT" = "BLOCK" ] && [ -n "$GATE2_FILE" ]; then
+    fail "[$TEAM] Gate 2 BLOCK recorded: $(basename "$GATE2_FILE")"
+    info "Release remains blocked until QA writes a newer gate2-approve/waiver/self-cert artifact for '$RELEASE_ID'"
   else
     if [ "$FEAT_COUNT" -eq 0 ]; then
       warn "[$TEAM] Gate 2 APPROVE not found (empty release — may need --empty-release flag)"
@@ -400,6 +421,8 @@ PY
     warn "[$TEAM] PM signoff pending scope activation for $RELEASE_ID"
   elif [ "$FEATURES_WAITING_FOR_IMPL" -gt 0 ]; then
     warn "[$TEAM] PM signoff pending implementation and QA completion for $RELEASE_ID"
+  elif [ "$GATE2_VERDICT" = "BLOCK" ]; then
+    warn "[$TEAM] PM signoff blocked by Gate 2 BLOCK for $RELEASE_ID"
   elif [ -z "$GATE2_FILE" ]; then
     warn "[$TEAM] PM signoff pending Gate 2 APPROVE for $RELEASE_ID"
   else
