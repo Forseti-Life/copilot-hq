@@ -226,3 +226,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260428-syshealth-php-fatal-forseti — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260428-syshealth-php-fatal-forseti.md)
 - [ ] 20260428-syshealth-drupal-watchdog-errors — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260428-syshealth-drupal-watchdog-errors.md)
 - [ ] 20260428-syshealth-tailoring-queue-errors — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260428-syshealth-tailoring-queue-errors.md)
+- [ ] 20260501-200109-qa-findings-forseti.life-2 — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260501-200109-qa-findings-forseti.life-2.md)
