@@ -1,0 +1,12 @@
+{
+  "run_id": "suggestion-dungeoncrawler-nid-42",
+  "feature_id": "dungeoncrawler-player-suggestion-intake",
+  "feature_brief": "features/dungeoncrawler-player-suggestion-intake/feature.md",
+  "source": "community_suggestion",
+  "site": "dungeoncrawler",
+  "nid": "42",
+  "returncode": 0,
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 42 | Decision: accept\nUpdated NID 42 to in_progress[suggestion-triage] Drupal node 42 \u2192 in_progress\n[suggestion-triage] Feature dir already exists: features/dungeoncrawler-player-suggestion-intake \u2014 skipping creation\n[suggestion-triage] Done. Decision recorded: accept for NID 42",
+  "stderr": "",
+  "materialized": true
+}
