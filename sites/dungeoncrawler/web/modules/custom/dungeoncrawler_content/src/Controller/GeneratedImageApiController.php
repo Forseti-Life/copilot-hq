@@ -296,46 +296,7 @@ class GeneratedImageApiController extends ControllerBase {
     }
 
     $owner_uid = (int) $this->currentAccount->id();
-
-    // Step 1: Bulk lookup — campaign-scoped first, then global/library fallback.
-    // This is the cache layer. No generation happens here.
-    $sprite_ids = [];
-    $def_by_sprite = [];
-    foreach ($object_definitions as $object_id => $def) {
-      $sid = trim((string) ($def['visual']['sprite_id'] ?? ''));
-      if ($sid !== '' && !isset($def_by_sprite[$sid])) {
-        $sprite_ids[] = $sid;
-        $def_by_sprite[$sid] = $def;
-      }
-    }
-
-    $cached_urls = $this->spriteGenerator->lookupSprites($sprite_ids, $campaign_id);
-
-    // Step 2: Identify truly missing sprites (no campaign image, no library image).
-    $sprites = [];
-    $missing = [];
-    foreach ($sprite_ids as $sid) {
-      if (isset($cached_urls[$sid]) && $cached_urls[$sid] !== NULL) {
-        $sprites[$sid] = [
-          'url' => $cached_urls[$sid],
-          'generated' => FALSE,
-          'cached' => TRUE,
-        ];
-      }
-      else {
-        $missing[$sid] = $def_by_sprite[$sid];
-      }
-    }
-
-    // Step 3: Generate only the truly missing sprites.
-    foreach ($missing as $sid => $def) {
-      $result = $this->spriteGenerator->resolveSprite($sid, $def, $campaign_id, $owner_uid);
-      $sprites[$sid] = [
-        'url' => $result['url'],
-        'generated' => $result['generated'] ?? FALSE,
-        'cached' => $result['cached'] ?? FALSE,
-      ];
-    }
+    $sprites = $this->spriteGenerator->resolveBatchDetailed($object_definitions, $campaign_id, $owner_uid);
 
     return new JsonResponse([
       'success' => TRUE,

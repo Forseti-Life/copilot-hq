@@ -6431,6 +6431,32 @@ import { SpriteService } from './SpriteService.js';
           Object.entries(directionalSprites.preloadUrls).forEach(([spriteId, url]) => {
             this.spriteService.preloadUrl(spriteId, url);
           });
+
+          if (contentId && Object.keys(directionalSprites.resolvableVariants).length) {
+            if (!this.dungeonData.object_definitions || typeof this.dungeonData.object_definitions !== 'object') {
+              this.dungeonData.object_definitions = {};
+            }
+
+            const existingDef = this.dungeonData.object_definitions[contentId] || objectDefinition || {};
+            const existingVisual = existingDef.visual && typeof existingDef.visual === 'object' ? existingDef.visual : {};
+            const existingVariants = existingVisual.sprite_variants && typeof existingVisual.sprite_variants === 'object'
+              ? existingVisual.sprite_variants
+              : {};
+
+            this.dungeonData.object_definitions[contentId] = {
+              ...existingDef,
+              object_id: existingDef.object_id || contentId,
+              label: existingDef.label || entityName,
+              category: existingDef.category || options.objectCategory || 'creature',
+              visual: {
+                ...existingVisual,
+                sprite_variants: {
+                  ...existingVariants,
+                  ...directionalSprites.resolvableVariants,
+                },
+              },
+            };
+          }
         }
 
         const created = this.createEntityObject(q, r, entityType, entityName, null, options);
@@ -6563,6 +6589,7 @@ import { SpriteService } from './SpriteService.js';
 
       const variants = {};
       const preloadUrls = {};
+      const resolvableVariants = {};
 
       sources.forEach((source) => {
         if (!source || typeof source !== 'object' || Array.isArray(source)) {
@@ -6578,6 +6605,8 @@ import { SpriteService } from './SpriteService.js';
           variants[resolved.direction] = resolved.spriteId;
           if (resolved.url) {
             preloadUrls[resolved.spriteId] = resolved.url;
+          } else {
+            resolvableVariants[resolved.direction] = resolved.spriteId;
           }
         });
       });
@@ -6585,6 +6614,7 @@ import { SpriteService } from './SpriteService.js';
       return {
         variants,
         preloadUrls,
+        resolvableVariants,
       };
     },
 

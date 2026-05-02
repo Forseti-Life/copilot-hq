@@ -1,22 +1,18 @@
 - Flow id: feature_request_intake
-- Flow run id: suggestion-dungeoncrawler-nid-38
-- Flow node: BA Requirements Review
-- Flow owner seat: ba-dungeoncrawler
-- Flow previous node: Match Product Team
-- Flow source outbox: sessions/ceo-copilot-2/outbox/20260502-flow-feature_request_intake-suggestion-dungeoncrawler-nid-38-match-product-team-r1.md
-- Flow owner binding: product_team.ba_agent
-- Product team id: dungeoncrawler
-- Product team label: Dungeoncrawler
-- Flow incoming conditions: Team selected
-- Available flow outcomes: Requirements ready | Needs clarification | Rejected as non-actionable
+- Flow run id: suggestion-dungeoncrawler-nid-43
+- Flow node: Intake Review
+- Flow owner seat: ceo-copilot-2
+- Flow previous node: Receive Feature Request
+- Flow source outbox: sessions/ceo-copilot-2/outbox/20260502-195302-flow-feature-request-intake-dungeoncrawler-nid-43-party-member-npcs-who-explicitly-agree-t.md
+- Available flow outcomes: Valid request | Needs clarification | Rejected / duplicate / not a feature
 
-# Flow handoff: feature_request_intake / BA Requirements Review
+# Flow handoff: feature_request_intake / Intake Review
 
-This inbox item was routed automatically from `Match Product Team` after `ceo-copilot-2` completed the previous step.
+This inbox item was routed automatically from `Receive Feature Request` after `ceo-copilot-2` completed the previous step.
 
 ## Required action
-1. Execute the responsibilities of `BA Requirements Review` as the owning seat `ba-dungeoncrawler`.
-2. Review the source outbox: `sessions/ceo-copilot-2/outbox/20260502-flow-feature_request_intake-suggestion-dungeoncrawler-nid-38-match-product-team-r1.md` for the completed upstream context.
+1. Execute the responsibilities of `Intake Review` as the owning seat `ceo-copilot-2`.
+2. Review the source outbox: `sessions/ceo-copilot-2/outbox/20260502-195302-flow-feature-request-intake-dungeoncrawler-nid-43-party-member-npcs-who-explicitly-agree-t.md` for the completed upstream context.
 3. If this node has branching outcomes, include one or more `- Flow outcome:` lines in your outbox using the exact allowed values listed above.
 4. If this node has only one direct next step, no Flow outcome line is required.
 5. If the work is complete but needs a graph-defined branch (for example scope rebaseline, QA failure, or requested changes), keep `- Status: done` and use the matching `- Flow outcome:` line instead of escalating through a legacy `needs-*` artifact.

@@ -148,6 +148,67 @@ class SpriteGenerationService {
   }
 
   /**
+   * Resolves sprite URLs for multiple objects in batch with status flags.
+   *
+   * Supports both the primary visual.sprite_id and directional variant maps
+   * such as visual.sprite_variants, visual.directional_sprites,
+   * visual.orientation_sprites, and visual.facing_sprites.
+   *
+   * @param array $object_definitions
+   *   Keyed by object_id, each containing sprite metadata.
+   * @param int|null $campaign_id
+   *   Campaign context.
+   * @param int $owner_uid
+   *   Requesting user id.
+   *
+   * @return array<string, array{url: string|null, generated: bool, cached: bool, error: string|null}>
+   *   Map of sprite_id => status payload.
+   */
+  public function resolveBatchDetailed(array $object_definitions, ?int $campaign_id = NULL, int $owner_uid = 0): array {
+    $requests = [];
+    foreach ($object_definitions as $object_id => $def) {
+      foreach ($this->extractSpriteRequests($def) as $sprite_id => $request) {
+        if (!isset($requests[$sprite_id])) {
+          $requests[$sprite_id] = $request;
+        }
+      }
+    }
+
+    if (empty($requests)) {
+      return [];
+    }
+
+    $results = [];
+    $existing = $this->lookupSprites(array_keys($requests), $campaign_id);
+    foreach ($existing as $sid => $url) {
+      if ($url !== NULL) {
+        $results[$sid] = [
+          'url' => $url,
+          'generated' => FALSE,
+          'cached' => TRUE,
+          'error' => NULL,
+        ];
+      }
+    }
+
+    foreach ($requests as $sid => $request) {
+      if (isset($results[$sid])) {
+        continue;
+      }
+
+      $results[$sid] = $this->generateAndPersist(
+        $sid,
+        $request['definition'],
+        $campaign_id,
+        $owner_uid,
+        $request['options']
+      );
+    }
+
+    return $results;
+  }
+
+  /**
    * Resolves sprite URLs for multiple objects in batch.
    *
    * Returns a map of sprite_id => url. Only generates missing sprites.
@@ -163,39 +224,11 @@ class SpriteGenerationService {
    *   Map of sprite_id => URL (null if generation failed).
    */
   public function resolveBatch(array $object_definitions, ?int $campaign_id = NULL, int $owner_uid = 0): array {
+    $resolved = $this->resolveBatchDetailed($object_definitions, $campaign_id, $owner_uid);
     $sprite_map = [];
-    $to_generate = [];
-
-    // Collect unique sprite_ids.
-    foreach ($object_definitions as $object_id => $def) {
-      $sprite_id = $this->extractSpriteId($def);
-      if ($sprite_id === '') {
-        continue;
-      }
-      if (isset($sprite_map[$sprite_id])) {
-        continue;
-      }
-      $sprite_map[$sprite_id] = NULL;
-      $to_generate[$sprite_id] = $def;
+    foreach ($resolved as $sprite_id => $result) {
+      $sprite_map[$sprite_id] = $result['url'];
     }
-
-    if (empty($sprite_map)) {
-      return [];
-    }
-
-    // Bulk lookup of existing sprites (2 queries max: campaign + global).
-    $existing = $this->lookupSprites(array_keys($sprite_map), $campaign_id);
-    foreach ($existing as $sid => $url) {
-      $sprite_map[$sid] = $url;
-      unset($to_generate[$sid]);
-    }
-
-    // Generate missing sprites.
-    foreach ($to_generate as $sid => $def) {
-      $result = $this->generateAndPersist($sid, $def, $campaign_id, $owner_uid, []);
-      $sprite_map[$sid] = $result['url'];
-    }
-
     return $sprite_map;
   }
 
@@ -233,7 +266,7 @@ class SpriteGenerationService {
    * Generates a sprite and persists it.
    */
   protected function generateAndPersist(string $sprite_id, array $object_definition, ?int $campaign_id, int $owner_uid, array $options): array {
-    $prompt = $this->buildSpritePrompt($sprite_id, $object_definition);
+    $prompt = $this->buildSpritePrompt($sprite_id, $object_definition, $options);
 
     $payload = [
       'prompt' => $prompt,
@@ -288,7 +321,7 @@ class SpriteGenerationService {
   /**
    * Builds a generation prompt from sprite_id and object data.
    */
-  protected function buildSpritePrompt(string $sprite_id, array $object_definition): string {
+  protected function buildSpritePrompt(string $sprite_id, array $object_definition, array $options = []): string {
     $custom_prompt = trim((string) ($object_definition['visual']['prompt'] ?? $object_definition['prompt'] ?? ''));
     if ($custom_prompt !== '') {
       return $custom_prompt;
@@ -334,6 +367,12 @@ class SpriteGenerationService {
       $lines[] = 'Dominant color: ' . $color;
     }
 
+    $direction = $this->normalizeDirectionToken($options['direction'] ?? NULL);
+    if ($direction !== NULL) {
+      $lines[] = 'Facing direction: ' . $direction . '.';
+      $lines[] = 'Keep the subject oriented consistently for that facing direction while preserving top-down token readability.';
+    }
+
     // Add category-specific guidance.
     $category_guidance = $this->getCategoryGuidance($category);
     if ($category_guidance !== '') {
@@ -366,6 +405,110 @@ class SpriteGenerationService {
    */
   private function extractSpriteId(array $def): string {
     return trim((string) ($def['visual']['sprite_id'] ?? ''));
+  }
+
+  /**
+   * Collect all sprite generation requests from an object definition.
+   *
+   * @param array $def
+   *   Object definition payload.
+   *
+   * @return array<string, array{definition: array, options: array}>
+   *   Map of sprite_id => request payload.
+   */
+  private function extractSpriteRequests(array $def): array {
+    $requests = [];
+
+    $primary = $this->extractSpriteId($def);
+    if ($primary !== '') {
+      $requests[$primary] = [
+        'definition' => $def,
+        'options' => [],
+      ];
+    }
+
+    $variant_sources = [
+      $def['visual']['sprite_variants'] ?? NULL,
+      $def['visual']['directional_sprites'] ?? NULL,
+      $def['visual']['orientation_sprites'] ?? NULL,
+      $def['visual']['facing_sprites'] ?? NULL,
+    ];
+
+    foreach ($variant_sources as $source) {
+      if (!is_array($source)) {
+        continue;
+      }
+
+      foreach ($source as $direction => $value) {
+        $sprite_id = $this->extractDirectionalSpriteId($value);
+        $normalized_direction = $this->normalizeDirectionToken($direction);
+        if ($sprite_id === '' || $normalized_direction === NULL || isset($requests[$sprite_id])) {
+          continue;
+        }
+
+        $requests[$sprite_id] = [
+          'definition' => $def,
+          'options' => ['direction' => $normalized_direction],
+        ];
+      }
+    }
+
+    return $requests;
+  }
+
+  /**
+   * Extract a sprite identifier from a directional sprite entry.
+   *
+   * @param mixed $value
+   *   String sprite id or map containing sprite_id.
+   *
+   * @return string
+   *   Sprite identifier or empty string when unsupported.
+   */
+  private function extractDirectionalSpriteId(mixed $value): string {
+    if (is_string($value)) {
+      $trimmed = trim($value);
+      if ($trimmed === '' || $this->looksLikeUrl($trimmed)) {
+        return '';
+      }
+      return $trimmed;
+    }
+
+    if (is_array($value)) {
+      $candidate = $value['sprite_id'] ?? $value['spriteId'] ?? $value['id'] ?? $value['key'] ?? '';
+      return is_string($candidate) ? trim($candidate) : '';
+    }
+
+    return '';
+  }
+
+  /**
+   * Normalize a direction token into a human-readable phrase.
+   */
+  private function normalizeDirectionToken(mixed $direction): ?string {
+    if (!is_scalar($direction)) {
+      return NULL;
+    }
+
+    $token = strtolower(preg_replace('/[\s_-]+/', '', trim((string) $direction)));
+    return match ($token) {
+      'n', 'north' => 'north',
+      'ne', 'northeast' => 'northeast',
+      'e', 'east' => 'east',
+      'se', 'southeast' => 'southeast',
+      's', 'south' => 'south',
+      'sw', 'southwest' => 'southwest',
+      'w', 'west' => 'west',
+      'nw', 'northwest' => 'northwest',
+      default => NULL,
+    };
+  }
+
+  /**
+   * Detect whether a string looks like a URL/path instead of a sprite id.
+   */
+  private function looksLikeUrl(string $value): bool {
+    return preg_match('@^(https?:)?//@i', $value) === 1 || str_starts_with($value, '/');
   }
 
 }
