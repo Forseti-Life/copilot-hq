@@ -1,13 +1,13 @@
 - Status: in_progress
-- Summary: Investigating KPI stagnation for forseti.life — no KPI movement in 243 minutes as of 2026-05-02T00:04:52Z. The trigger shows release_id is empty (no active release), dev_inbox=1 item present, dev_latest_status=done, open_issues=2, findings_items=0. Need to read current KPI state, scoreboard, active release state, and dev outbox to diagnose root cause before filling artifacts.
+- Summary: Investigating KPI stagnation on forseti.life release cycle. No release_id is populated in the command, meaning either no active release is open or the release ID was not captured. Dev inbox has 1 item (latest status: done), 2 open issues are noted, and no findings items exist. Need to read current KPI state, open issues, and any active release markers before concluding root cause and recommending next action.
 
 ## Next actions
-- Read `org-chart/kpis.md` and `knowledgebase/scoreboards/` for current KPI baseline
-- Check `tmp/release-cycle-active/` for active release state
-- Read dev-forseti latest outbox to understand what "done" refers to
-- Check open issues and what is blocking KPI movement
-- Fill problem statement, acceptance criteria, and risk artifacts
-- Determine whether a new release needs to be opened or existing work needs to be unblocked
+- Read `org-chart/kpis.md` to identify which KPIs apply to forseti.life
+- Check `tmp/release-cycle-active/` for any active release state
+- Check `sessions/pm-forseti/artifacts/` for recent outbox/artifacts showing last known release ID
+- Check `knowledgebase/scoreboards/` for forseti scoreboard
+- Check dev-seat inbox item (1 item) to understand what is pending
+- After reading, fill `00-problem-statement.md`, `01-acceptance-criteria.md`, `06-risk-assessment.md` and produce a diagnosis + next-action recommendation
 
 ## Blockers
 - None yet — investigation in progress.
@@ -17,9 +17,9 @@
 
 ## ROI estimate
 - ROI: 40
-- Rationale: KPI stagnation for 243 minutes on the primary product site suggests delivery pipeline is blocked or idle; unblocking it directly restores forward velocity on forseti.life roadmap items.
+- Rationale: KPI stagnation for 243 minutes indicates a stalled release cycle; unblocking it directly impacts product velocity and delivery cadence for forseti.life.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T13:41:10+00:00
+- Generated: 2026-05-02T13:51:10+00:00
