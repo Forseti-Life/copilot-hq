@@ -1,24 +1,25 @@
 - Status: in_progress
-- Summary: Investigating KPI stagnation for forseti.life (243 minutes, no KPI movement). Reading current release state, dev inbox, open issues, and scoreboard to diagnose the blockage before writing artifacts.
+- Summary: Investigating KPI stagnation for forseti.life release cycle. No KPI movement for 243 minutes as of 2026-05-01T20:01:09. Will inspect current release state, open issues, dev inbox, and KPI files to diagnose the stagnation and determine next action.
 
 ## Next actions
-- Read `org-chart/kpis.md` and `knowledgebase/scoreboards/` for forseti KPI baselines
-- Read `sessions/dev-forseti/inbox/` to identify the 1 open dev inbox item and its status
-- Read `sessions/pm-forseti/artifacts/` for any active release context
-- Read `features/` for forseti in-progress features
-- Then fill 00-problem-statement.md, 01-acceptance-criteria.md, 06-risk-assessment.md and move to artifacts
+- Read `org-chart/kpis.md` to identify which KPIs apply to forseti
+- Check `knowledgebase/scoreboards/` for current scoreboard state
+- Check `tmp/release-cycle-active/` for active release metadata
+- Inspect open issues / dev inbox item to determine if work is stalled or pending routing
+- Check `sessions/pm-forseti/artifacts/` for recent PM artifacts and release state
+- Determine if a release-close-now or dev unblock action is needed
 
 ## Blockers
-- None yet — investigation in progress
+- None yet — investigation in progress.
 
 ## Needs from CEO
-- N/A at this stage
+- N/A at this stage.
 
 ## ROI estimate
-- ROI: 40
-- Rationale: KPI stagnation means the release cycle is stalled; unblocking it directly unblocks revenue/quality improvement for forseti.life's active user base. 243-minute stall warrants prompt investigation.
+- ROI: 80
+- Rationale: KPI stagnation means the release cycle is idle, which delays value delivery. Diagnosing and unblocking this quickly prevents further drift in the active release window.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T08:38:57+00:00
+- Generated: 2026-05-02T08:48:37+00:00
