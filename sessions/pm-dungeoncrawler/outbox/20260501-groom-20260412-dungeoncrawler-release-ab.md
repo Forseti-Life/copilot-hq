@@ -1,11 +1,11 @@
 - Status: in_progress
-- Summary: Beginning the grooming task for 20260412-dungeoncrawler-release-ab. First step is to audit the existing backlog for dungeoncrawler features in planned/ready/in_progress status that are missing acceptance criteria or test plans, then pull community suggestions, triage them, write AC for any accepted features, and hand off to QA. Running the backlog audit now.
+- Summary: Starting grooming task for 20260412-dungeoncrawler-release-ab. Running the backlog audit first to check for any planned/ready/in_progress dungeoncrawler features missing acceptance criteria or test plans, then will pull community suggestions and triage them.
 
 ## Next actions
 - Run backlog audit script to identify incomplete features
-- Run suggestion-intake.sh to pull community suggestions
-- Triage each suggestion and create/complete feature.md + AC files
-- Hand off groomed features to QA via pm-qa-handoff.sh
+- Pull community suggestions via suggestion-intake.sh
+- Triage suggestions and write/complete AC for any accepted features
+- Hand off to QA for test plan design
 
 ## Blockers
 - None yet
@@ -14,14 +14,10 @@
 - N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Grooming the next release backlog ensures Stage 0 of release-ab can start instantly with zero delay, keeping the dungeoncrawler delivery pipeline flowing continuously.
-
----
-
-*(Running backlog audit now — continuing in next step.)*
+- ROI: 40
+- Rationale: Grooming the next release backlog ensures Stage 0 of release-ab can start instantly, unblocking dev and QA throughput for the dungeoncrawler product line.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260501-groom-20260412-dungeoncrawler-release-ab
-- Generated: 2026-05-02T13:31:23+00:00
+- Generated: 2026-05-02T13:41:33+00:00
