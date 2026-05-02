@@ -1,0 +1,12 @@
+{
+  "run_id": "suggestion-dungeoncrawler-nid-47",
+  "feature_id": "dc-gm-auto-bug-report",
+  "feature_brief": "features/dc-gm-auto-bug-report/feature.md",
+  "source": "community_suggestion",
+  "site": "dungeoncrawler",
+  "nid": "47",
+  "returncode": 0,
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 47 | Decision: accept\nUpdated NID 47 to in_progress[suggestion-triage] Drupal node 47 \u2192 in_progress\nCreated features/dc-gm-auto-bug-report/feature.md\n[suggestion-triage] Feature brief created: features/dc-gm-auto-bug-report/feature.md\n[suggestion-triage] Next: fill in Acceptance Criteria and assign module ownership\n[suggestion-triage] Done. Decision recorded: accept for NID 47",
+  "stderr": "",
+  "materialized": true
+}
