@@ -2645,6 +2645,219 @@ import { SpriteService } from './SpriteService.js';
     },
 
     /**
+     * Center the camera on a world-space point.
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    focusCameraOnWorldPoint: function (x, y) {
+      if (!this.app || !this.hexContainer) {
+        return false;
+      }
+
+      const scale = Number(this.hexContainer.scale?.x || 1);
+      const targetX = (this.app.screen.width / 2) - (x * scale);
+      const targetY = (this.app.screen.height / 2) - (y * scale);
+      this.setWorldPosition(targetX, targetY);
+      return true;
+    },
+
+    /**
+     * Center the camera on an entity.
+     * @param {Entity|null} entity
+     * @returns {boolean}
+     */
+    focusCameraOnEntity: function (entity) {
+      if (!entity) {
+        return false;
+      }
+
+      const renderedCenter = this.getRenderedEntityCenter?.(entity);
+      if (renderedCenter && Number.isFinite(renderedCenter.x) && Number.isFinite(renderedCenter.y)) {
+        return this.focusCameraOnWorldPoint(renderedCenter.x, renderedCenter.y);
+      }
+
+      const position = entity.getComponent('PositionComponent');
+      if (!position) {
+        return false;
+      }
+
+      const center = this.axialToPixel(position.q, position.r, this.config.hexSize);
+      return this.focusCameraOnWorldPoint(center.x, center.y);
+    },
+
+    /**
+     * Center the camera on the currently active or selected entity.
+     * @returns {boolean}
+     */
+    focusCameraOnSelectedEntity: function () {
+      const entity = this.stateManager?.get('selectedEntity')
+        || this.turnManagementSystem?.getCurrentTurnEntity?.()
+        || this.findLaunchPlayerEntity?.();
+
+      return entity ? this.focusCameraOnEntity(entity) : false;
+    },
+
+    /**
+     * Pan the camera by a screen-space offset.
+     * @param {number} dx
+     * @param {number} dy
+     * @returns {boolean}
+     */
+    panCameraBy: function (dx, dy) {
+      if (!this.hexContainer) {
+        return false;
+      }
+
+      this.setWorldPosition(
+        Number(this.hexContainer.x || 0) + dx,
+        Number(this.hexContainer.y || 0) + dy
+      );
+      return true;
+    },
+
+    /**
+     * Adjust zoom while preserving the current viewport center.
+     * @param {number} multiplier
+     * @returns {boolean}
+     */
+    adjustZoom: function (multiplier) {
+      if (!this.app || !this.hexContainer) {
+        return false;
+      }
+
+      const currentScale = Number(this.hexContainer.scale?.x || 1);
+      const nextScale = Math.min(
+        this.config.maxZoom,
+        Math.max(this.config.minZoom, currentScale * multiplier)
+      );
+
+      if (!Number.isFinite(nextScale) || Math.abs(nextScale - currentScale) < 0.001) {
+        return false;
+      }
+
+      const worldCenterX = (this.app.screen.width / 2 - Number(this.hexContainer.x || 0)) / currentScale;
+      const worldCenterY = (this.app.screen.height / 2 - Number(this.hexContainer.y || 0)) / currentScale;
+
+      this.setWorldScale(nextScale);
+      this.setWorldPosition(
+        (this.app.screen.width / 2) - (worldCenterX * nextScale),
+        (this.app.screen.height / 2) - (worldCenterY * nextScale)
+      );
+      this.uiManager?.updateZoomLevel(nextScale);
+      return true;
+    },
+
+    /**
+     * Determine whether keyboard shortcuts should be suppressed for the active element.
+     * @param {EventTarget|null} target
+     * @returns {boolean}
+     */
+    isTypingTarget: function (target) {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      const tag = String(target.tagName || '').toLowerCase();
+      return target.isContentEditable || ['input', 'textarea', 'select'].includes(tag);
+    },
+
+    /**
+     * Trigger a visible and enabled button by id.
+     * @param {string} buttonId
+     * @returns {boolean}
+     */
+    clickVisibleControl: function (buttonId) {
+      const button = document.getElementById(buttonId);
+      if (!(button instanceof HTMLButtonElement)) {
+        return false;
+      }
+
+      const style = window.getComputedStyle(button);
+      const rect = button.getBoundingClientRect();
+      const isVisible = style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && rect.width > 0
+        && rect.height > 0;
+
+      if (!isVisible || button.disabled || button.classList.contains('btn-disabled')) {
+        return false;
+      }
+
+      button.click();
+      return true;
+    },
+
+    /**
+     * Handle controller-style keyboard shortcuts for the map.
+     * @param {KeyboardEvent} event
+     */
+    handleKeyboardShortcut: function (event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      if (this.isTypingTarget(event.target)) {
+        return;
+      }
+
+      const key = String(event.key || '').toLowerCase();
+      const panStep = Math.max(48, this.config.hexSize * 1.8);
+      let handled = false;
+
+      switch (key) {
+        case '1':
+        case 'm':
+          handled = this.clickVisibleControl('action-move');
+          break;
+        case '2':
+        case 'a':
+          handled = this.clickVisibleControl('action-attack');
+          break;
+        case '3':
+        case 'i':
+          handled = this.clickVisibleControl('action-interact');
+          break;
+        case '4':
+        case 't':
+          handled = this.clickVisibleControl('action-talk');
+          break;
+        case ' ':
+        case 'spacebar':
+          handled = this.clickVisibleControl('end-turn');
+          break;
+        case 'f':
+          handled = this.focusCameraOnSelectedEntity();
+          break;
+        case '+':
+        case '=':
+          handled = this.adjustZoom(1.1);
+          break;
+        case '-':
+        case '_':
+          handled = this.adjustZoom(0.9);
+          break;
+        case 'arrowup':
+          handled = this.panCameraBy(0, panStep);
+          break;
+        case 'arrowdown':
+          handled = this.panCameraBy(0, -panStep);
+          break;
+        case 'arrowleft':
+          handled = this.panCameraBy(panStep, 0);
+          break;
+        case 'arrowright':
+          handled = this.panCameraBy(-panStep, 0);
+          break;
+      }
+
+      if (handled) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+
+    /**
      * Clear all ECS entities and related overlays/state.
      */
     clearEntities: function () {
@@ -3597,6 +3810,7 @@ import { SpriteService } from './SpriteService.js';
             if (actions && movementComp) {
               this.uiManager.updateCurrentTurn(name, actions, movementComp, actions.hasReactionAvailable(), combat?.team, isPlayersTurn);
             }
+            this.focusCameraOnEntity(selectedEntity);
             this.refreshFogOfWar();
           }
           return;
@@ -3948,6 +4162,7 @@ import { SpriteService } from './SpriteService.js';
         moveLeft: movement ? movement.movementRemaining : 0,
         isPlayersTurn
       });
+      this.focusCameraOnEntity(entity);
       this.refreshFogOfWar(entity);
       this.syncTokenBadgeState();
     },
@@ -5267,6 +5482,11 @@ import { SpriteService } from './SpriteService.js';
       addTrackedListener(deselectBtn, 'click', function () {
         self.deselectEntity();
       });
+
+      const focusSelectedBtn = document.getElementById('focus-selected');
+      addTrackedListener(focusSelectedBtn, 'click', function () {
+        self.focusCameraOnSelectedEntity();
+      });
       
       // Combat controls
       const startCombatBtn = document.getElementById('start-combat');
@@ -5418,6 +5638,10 @@ import { SpriteService } from './SpriteService.js';
       const endCombatBtn = document.getElementById('end-combat');
       addTrackedListener(endCombatBtn, 'click', function () {
         self.endCombat();
+      });
+
+      addTrackedListener(document, 'keydown', function (event) {
+        self.handleKeyboardShortcut(event);
       });
     },
 
