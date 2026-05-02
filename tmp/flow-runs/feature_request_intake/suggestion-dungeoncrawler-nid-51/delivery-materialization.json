@@ -1,0 +1,12 @@
+{
+  "run_id": "suggestion-dungeoncrawler-nid-51",
+  "feature_id": "dungeoncrawler-npc-autonomy-doctrine",
+  "feature_brief": "features/dungeoncrawler-npc-autonomy-doctrine/feature.md",
+  "source": "community_suggestion",
+  "site": "dungeoncrawler",
+  "nid": "51",
+  "returncode": 0,
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 51 | Decision: accept\nUpdated NID 51 to in_progress[suggestion-triage] Drupal node 51 \u2192 in_progress\nCreated features/dungeoncrawler-npc-autonomy-doctrine/feature.md\n[suggestion-triage] Feature brief created: features/dungeoncrawler-npc-autonomy-doctrine/feature.md\n[suggestion-triage] Next: fill in Acceptance Criteria and assign module ownership\n[suggestion-triage] Done. Decision recorded: accept for NID 51",
+  "stderr": "",
+  "materialized": true
+}
