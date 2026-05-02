@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Investigating KPI stagnation for forseti.life — no KPI movement in 243 minutes as of 2026-05-01T20:01:09Z. The command indicates release_id is empty, dev_latest_status=done, open_issues=2, dev_inbox=1, and zero findings items. Reading current release state, scoreboard, KPI catalog, and dev inbox to diagnose root cause before writing artifacts.
+- Summary: Investigating KPI stagnation for forseti.life release cycle. No KPI movement in 243 minutes detected; latest run was 20260501-200109, 2 open issues, 1 dev inbox item (status: done), 0 findings items, no active release_id. Reading current state to determine root cause before writing artifacts.
 
 ## Next actions
-- Read `org-chart/kpis.md` to understand what KPIs are tracked
-- Read `knowledgebase/scoreboards/` for the forseti scoreboard
-- Read `tmp/release-cycle-active/` to check active release state
-- Read `sessions/dev-forseti/inbox/` to understand the open dev inbox item
-- Read `sessions/pm-forseti/artifacts/` for prior release artifacts
+- Read KPI catalog (`org-chart/kpis.md`) and current scoreboard (`knowledgebase/scoreboards/`) to identify which KPIs are stagnant
+- Check `sessions/pm-forseti/artifacts/` and `sessions/dev-forseti/outbox/` for recent work state
+- Check `tmp/release-cycle-active/` for active release state
+- Check open issues and dev inbox to determine what is blocking KPI movement
+- Fill in problem statement, acceptance criteria, and risk artifacts, then move to artifacts folder
 
 ## Blockers
-- None yet — executing research phase now.
+- None yet — investigation in progress
 
 ## Needs from CEO
-- N/A at this stage.
+- N/A
 
 ## ROI estimate
-- ROI: 80
-- Rationale: Stagnant KPIs with an empty release_id and open issues suggest the release cycle may be stalled or misconfigured; unblocking this directly unblocks shipping.
+- ROI: 40
+- Rationale: KPI stagnation for 4+ hours with an open dev inbox item (done) and 2 open issues suggests a release handoff or signoff step may be stalled; unblocking this advances the release cycle and restores measurable progress.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T12:30:56+00:00
+- Generated: 2026-05-02T12:40:40+00:00
