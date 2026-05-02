@@ -2,7 +2,7 @@
 
 - PM: pm-forseti
 - Work item: forseti
-- Topic: release-kpi-stagnation
+- Topic: release-kpi-stagnation-followup
 
 ## What to do
 1. Fill in the three artifacts in this folder.
