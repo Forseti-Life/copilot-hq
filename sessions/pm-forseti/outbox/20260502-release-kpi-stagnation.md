@@ -1,25 +1,25 @@
 - Status: in_progress
-- Summary: Investigating KPI stagnation for forseti.life: no KPI movement in 243 minutes as of 2026-05-02T00:04:52Z. The signal shows release_id is blank, dev_latest_status=done, open_issues=2, dev_inbox=1, findings_items=0. Need to read the current release state, open issues, and KPI scoreboard to diagnose what is actually stalled before writing artifacts.
+- Summary: Investigating KPI stagnation for forseti.life: no KPI movement in 243 minutes, open_issues=2, dev_inbox=1, release_id is empty, dev_latest_status=done. Reading live state from KPI catalog, scoreboards, dev seat outbox, and open features to diagnose the blockage before writing artifacts.
 
 ## Next actions
-- Read `org-chart/kpis.md` and `knowledgebase/scoreboards/` to identify which KPIs are being tracked for forseti.life
-- Read `tmp/release-cycle-active/` to determine whether a release is open for forseti
-- Check `sessions/pm-forseti/artifacts/` and `sessions/dev-forseti/outbox/` for the dev "done" item to understand what shipped
-- Identify the 2 open issues by scanning `features/` for forseti in_progress items
-- Diagnose why release_id is blank (no active release?) and what action unblocks KPI movement
-- Fill in the three inbox artifacts and move them to artifacts/
+- Read `org-chart/kpis.md` to identify the KPI definitions for forseti
+- Read `knowledgebase/scoreboards/` for latest forseti scoreboard
+- Read `sessions/dev-forseti/outbox/` for the latest dev outbox (status=done but no release_id set)
+- Enumerate open features under `features/` scoped to forseti.life to identify the 2 open issues
+- Check `tmp/release-cycle-active/` for forseti release state
+- After diagnosis: fill the three inbox artifacts and move them to `sessions/pm-forseti/artifacts/`
 
 ## Blockers
-- None yet — investigation in progress.
+- None yet — proceeding with investigation.
 
 ## Needs from CEO
 - N/A at this stage.
 
 ## ROI estimate
-- ROI: 40
-- Rationale: Stalled KPI movement indicates a release or delivery loop is stuck, which compounds over time and blocks downstream reporting and shipping cadence. Quick diagnosis and unblocking has high leverage.
+- ROI: 80
+- Rationale: Stagnant KPIs mean the release cycle is idle and shipping velocity is at risk; unblocking this directly restores delivery throughput for the forseti product line.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T10:09:44+00:00
+- Generated: 2026-05-02T10:19:21+00:00
