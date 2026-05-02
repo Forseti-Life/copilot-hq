@@ -94,6 +94,28 @@
         {{ 'Exploration'|t }}
       </div>
 
+      <div class="game-controls-hud" id="game-controls-hud" aria-label="{{ 'Map controls'|t }}">
+        <div class="game-controls-hud__header">
+          <div>
+            <div class="game-controls-hud__eyebrow">{{ 'Player controls'|t }}</div>
+            <div class="game-controls-hud__title">{{ 'Play the map more like a board game'|t }}</div>
+          </div>
+          <button id="focus-selected" class="btn btn-icon btn--focus-map" type="button" title="{{ 'Center on active character'|t }}">
+            {{ '🎯 Focus'|t }}
+          </button>
+        </div>
+        <div class="game-controls-hud__list">
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>1</kbd><kbd>M</kbd></span>{{ 'Move'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>2</kbd><kbd>A</kbd></span>{{ 'Strike'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>3</kbd><kbd>I</kbd></span>{{ 'Interact'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>4</kbd><kbd>T</kbd></span>{{ 'Talk'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>Space</kbd></span>{{ 'End turn'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>F</kbd></span>{{ 'Focus hero'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>+</kbd><kbd>-</kbd></span>{{ 'Zoom'|t }}</span>
+          <span class="game-controls-hud__item"><span class="game-controls-hud__keys"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></span>{{ 'Pan camera'|t }}</span>
+        </div>
+      </div>
+
       {# Game Coordinator — Exploration Actions Panel #}
       <div id="exploration-actions" class="exploration-actions" style="display:none;">
         <div class="exploration-actions__header">
