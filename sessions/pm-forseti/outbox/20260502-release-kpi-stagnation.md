@@ -1,24 +1,25 @@
 - Status: in_progress
-- Summary: Investigating the KPI stagnation for the forseti.life release cycle. No release_id is set and no findings items are queued, but there are 2 open issues and 1 dev inbox item. Need to read current KPI state, open issues, and the dev inbox item before determining whether this is a release-cycle gap, a stalled feature, or a KPI tracking misconfiguration.
+- Summary: Investigating KPI stagnation for forseti.life. No KPI movement for 243 minutes as of 2026-05-02. latest_run=20260501-200109, open_issues=2, release_id=(empty), dev_inbox=1, dev_latest_status=done, findings_items=0. Reading current state: KPI catalog, active release state, dev seat inbox, and recent outbox artifacts to determine why KPIs are not advancing.
 
 ## Next actions
-- Read `org-chart/kpis.md` to understand the KPI catalog and what "no KPI movement" means in this context
-- Read `knowledgebase/scoreboards/` for the forseti.life scoreboard
-- Read the dev inbox item to understand what work is pending
-- Check `sessions/pm-forseti/artifacts/` and `tmp/release-cycle-active/` for active release state
-- After investigation, fill in the three inbox artifacts and produce a diagnosis + recommended next step
+- Read `org-chart/kpis.md` to identify which KPIs apply to forseti.life
+- Check `tmp/release-cycle-active/` for active release state
+- Check `sessions/dev-forseti/inbox/` for the open dev inbox item
+- Check `sessions/dev-forseti/outbox/` for latest dev status artifacts
+- Check `sessions/pm-forseti/artifacts/` for any prior release coordination context
+- Determine if a release_id needs to be created/activated or if an existing release is stalled
 
 ## Blockers
-- None yet — investigation underway.
+- None yet — investigation in progress.
 
 ## Needs from CEO
 - N/A at this stage.
 
 ## ROI estimate
 - ROI: 40
-- Rationale: KPI stagnation for 243 minutes with an open dev item and no release_id is a clear process gap that blocks any release progress; resolving it unblocks the entire forseti delivery cycle.
+- Rationale: KPI stagnation signals a stalled release cycle; unblocking it directly advances product delivery velocity for forseti.life and prevents the 243m gap from growing further.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T08:57:06+00:00
+- Generated: 2026-05-02T08:58:58+00:00
