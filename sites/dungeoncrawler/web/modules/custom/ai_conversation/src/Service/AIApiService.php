@@ -1176,7 +1176,7 @@ class AIApiService {
    * @param string $category
    *   The suggestion category.
    * @param array $context
-   *   Optional context: campaign_id, room_id, character_id.
+   *   Optional context: campaign_id, room_id, character_id, original_message.
    *
    * @return \Drupal\node\NodeInterface|null
    *   The created suggestion node or NULL on failure.

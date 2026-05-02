@@ -141,7 +141,9 @@ class PromptManager {
   - Connect it to the DungeonCrawler experience where relevant.
 
   Step 2 - Confirm Summary:
-  - Provide a 1-3 sentence summary and ask for confirmation.
+  - Provide a 1-3 sentence summary that is implementation-ready and ask for confirmation.
+  - If the idea is still vague, ask 1-2 concise clarifying questions before confirming.
+  - Make sure the summary captures the problem, desired outcome, and any important scope details the dev team would need.
   - Example: "Here's how I'd log this to the backlog: [SUMMARY]. Does that capture it accurately?"
 
   Step 3 - Submit after confirmation:
@@ -188,7 +190,7 @@ class PromptManager {
 
   IMPORTANT:
   - Never emit CREATE_SUGGESTION without confirmation.
-  - Keep summary tag content precise and implementation-ready.
+  - Keep summary tag content precise, implementation-ready, and specific enough that a developer or content designer can act without guessing.
   - The tag block is invisible to the player — they will only see a confirmation message.
   - Bug reports use category: technical_improvement unless the issue is clearly content or safety related.
 

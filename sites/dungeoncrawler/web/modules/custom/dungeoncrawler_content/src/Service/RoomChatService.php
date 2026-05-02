@@ -519,9 +519,23 @@ class RoomChatService {
         $s_original = trim($m[1]);
       }
       if (!empty($s_summary)) {
+        $reference_excerpt = $this->buildSuggestionReferenceExcerpt($chat, $s_original, [
+          'campaign_id' => $campaign_id,
+          'room_id' => $room_id,
+          'character_id' => $character_id,
+          'category' => $s_category,
+          'summary' => $s_summary,
+        ]);
         $this->aiApiService->createBacklogSuggestion(
-          $s_summary, $s_original, $s_category,
-          ['campaign_id' => $campaign_id, 'room_id' => $room_id]
+          $s_summary,
+          $reference_excerpt,
+          $s_category,
+          [
+            'campaign_id' => $campaign_id,
+            'room_id' => $room_id,
+            'character_id' => $character_id,
+            'original_message' => $s_original,
+          ]
         );
       }
       // Strip the tag from the player-visible narrative.
@@ -691,6 +705,55 @@ class RoomChatService {
       'navigation' => $navigation_result,
       'canonical_actions' => $canonical_results,
     ];
+  }
+
+  /**
+   * Build a suggestion reference excerpt from recent room chat.
+   *
+   * Stores the exact player request plus the latest conversation context so
+   * GMs/devs can act on suggestions without reopening the live session.
+   *
+   * @param array $chat
+   *   Room chat entries.
+   * @param string $originalMessage
+   *   Original player suggestion text.
+   * @param array $context
+   *   Suggestion context metadata.
+   *
+   * @return string
+   *   Formatted reference text for field_original_message.
+   */
+  protected function buildSuggestionReferenceExcerpt(array $chat, string $originalMessage, array $context = []): string {
+    $lines = [];
+    foreach ($chat as $entry) {
+      $speaker = trim((string) ($entry['speaker'] ?? 'Unknown'));
+      $message = trim(preg_replace('/\s+/', ' ', (string) ($entry['message'] ?? '')));
+      if ($message === '') {
+        continue;
+      }
+      $lines[] = sprintf('%s: %s', $speaker !== '' ? $speaker : 'Unknown', $message);
+    }
+
+    $excerpt = array_slice($lines, -150);
+    $reference = [
+      'Suggestion summary: ' . trim((string) ($context['summary'] ?? '')),
+      'Suggestion category: ' . trim((string) ($context['category'] ?? 'general_feedback')),
+      'Original player request:',
+      trim($originalMessage),
+      '',
+      'Context:',
+      'Campaign ID: ' . ($context['campaign_id'] ?? 'unknown'),
+      'Room ID: ' . ($context['room_id'] ?? 'unknown'),
+      'Character ID: ' . ($context['character_id'] ?? 'unknown'),
+      '',
+      'Recent conversation reference (last ' . count($excerpt) . ' lines, max 150):',
+    ];
+
+    if (!empty($excerpt)) {
+      $reference = array_merge($reference, $excerpt);
+    }
+
+    return trim(implode("\n", array_filter($reference, static fn ($value) => $value !== NULL)));
   }
 
   /**
