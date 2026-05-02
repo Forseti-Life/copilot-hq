@@ -1,24 +1,24 @@
 - Status: in_progress
-- Summary: Investigating KPI stagnation for forseti.life release cycle. No KPI movement in 243 minutes detected; latest run was 20260501-200109, 2 open issues, 1 dev inbox item (status: done), 0 findings items, no active release_id. Reading current state to determine root cause before writing artifacts.
+- Summary: Investigating KPI stagnation for forseti.life release. No KPI movement for 243 minutes as of 2026-05-02; latest run was 20260501-200109 with 2 open issues, 1 dev inbox item, and dev_latest_status=done. Reading current release state, open issues, and KPI catalog to diagnose the stagnation before producing artifacts.
 
 ## Next actions
-- Read KPI catalog (`org-chart/kpis.md`) and current scoreboard (`knowledgebase/scoreboards/`) to identify which KPIs are stagnant
-- Check `sessions/pm-forseti/artifacts/` and `sessions/dev-forseti/outbox/` for recent work state
-- Check `tmp/release-cycle-active/` for active release state
-- Check open issues and dev inbox to determine what is blocking KPI movement
-- Fill in problem statement, acceptance criteria, and risk artifacts, then move to artifacts folder
+- Read `org-chart/kpis.md` to identify which KPIs are being tracked for forseti.life
+- Read `knowledgebase/scoreboards/` for the latest forseti scoreboard state
+- Check `tmp/release-cycle-active/` for active release metadata
+- Read the 2 open issues and the 1 dev inbox item to identify what is blocking KPI movement
+- Determine if there is a release currently open and whether signoff/push steps are missing
 
 ## Blockers
-- None yet — investigation in progress
+- None yet — investigating
 
 ## Needs from CEO
-- N/A
+- N/A at this stage
 
 ## ROI estimate
-- ROI: 40
-- Rationale: KPI stagnation for 4+ hours with an open dev inbox item (done) and 2 open issues suggests a release handoff or signoff step may be stalled; unblocking this advances the release cycle and restores measurable progress.
+- ROI: 85
+- Rationale: KPI stagnation of 4+ hours on an active release is a meaningful process failure signal; diagnosing and resolving it quickly prevents compounding delay and keeps the release cycle healthy.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T12:40:40+00:00
+- Generated: 2026-05-02T12:50:52+00:00
