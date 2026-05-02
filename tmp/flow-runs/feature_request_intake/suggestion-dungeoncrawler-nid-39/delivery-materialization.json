@@ -6,7 +6,14 @@
   "site": "dungeoncrawler",
   "nid": "39",
   "returncode": 0,
-  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 39 | Decision: accept\nUpdated NID 39 to in_progress[suggestion-triage] Drupal node 39 \u2192 in_progress\nCreated features/dungeoncrawler-player-suggestion-intake/feature.md\n[suggestion-triage] Feature brief created: features/dungeoncrawler-player-suggestion-intake/feature.md\n[suggestion-triage] Next: fill in Acceptance Criteria and assign module ownership\n[suggestion-triage] Done. Decision recorded: accept for NID 39",
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 39 | Decision: accept\nUpdated NID 39 to in_progress[suggestion-triage] Drupal node 39 \u2192 in_progress\n[suggestion-triage] Feature dir already exists: features/dungeoncrawler-player-suggestion-intake \u2014 skipping creation\n[suggestion-triage] Done. Decision recorded: accept for NID 39",
   "stderr": "",
-  "materialized": true
+  "materialized": true,
+  "release_ready_package": {
+    "prepared": true,
+    "site": "dungeoncrawler",
+    "release_id": "20260412-dungeoncrawler-release-ac",
+    "acceptance_criteria_path": "features/dungeoncrawler-player-suggestion-intake/01-acceptance-criteria.md",
+    "test_plan_path": "features/dungeoncrawler-player-suggestion-intake/03-test-plan.md"
+  }
 }

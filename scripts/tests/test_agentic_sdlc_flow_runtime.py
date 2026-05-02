@@ -256,11 +256,33 @@ def test_materialize_feature_request_handoff_uses_suggestion_triage_and_returns_
     root = tmp_path / "hq"
     root.mkdir()
     (root / "scripts").mkdir()
+    active_dir = root / "tmp" / "release-cycle-active"
+    active_dir.mkdir(parents=True)
+    (active_dir / "forseti.next_release_id").write_text("20260502-forseti-release-q\n", encoding="utf-8")
     feature_dir = root / "features" / "forseti-homepage-fun-time"
     feature_dir.mkdir(parents=True)
-    (feature_dir / "feature.md").write_text("ok\n", encoding="utf-8")
+    (feature_dir / "feature.md").write_text(
+        "# Feature Brief: Homepage fun time\n\n"
+        "- Work item id: forseti-homepage-fun-time\n"
+        "- Website: forseti.life\n"
+        "- Status: planned\n"
+        "- Release: \n"
+        "- Summary: Make the homepage friendlier for first-time visitors.\n\n"
+        "## Latest updates\n",
+        encoding="utf-8",
+    )
     run_dir = root / "tmp" / "flow-runs" / "feature_request_intake" / "suggestion-forseti-nid-7"
     run_dir.mkdir(parents=True)
+    ba_outbox = root / "sessions" / "ba-forseti" / "outbox"
+    ba_outbox.mkdir(parents=True)
+    (ba_outbox / "20260502-flow-feature-request-intake-suggestion-forseti-nid-7-ba-requirements-review-r1.md").write_text(
+        "- Status: done\n"
+        "- Summary: Requirements ready. Acceptance criteria: (1) homepage shows a clear primary CTA; "
+        "(2) supporting copy explains the product in plain language; "
+        "(3) first-time visitors can reach the main workflow without ambiguity. Non-goals: visual redesign.\n"
+        "- Flow outcome: Requirements ready\n",
+        encoding="utf-8",
+    )
     monkeypatch.setattr(module, "ROOT", root)
 
     captured = {}
@@ -293,3 +315,11 @@ def test_materialize_feature_request_handoff_uses_suggestion_triage_and_returns_
         "accept",
         "forseti-homepage-fun-time",
     ]
+    feature_text = (feature_dir / "feature.md").read_text(encoding="utf-8")
+    assert "- Status: ready" in feature_text
+    assert "- Release: 20260502-forseti-release-q" in feature_text
+    assert "Auto-groomed from approved intake handoff" in feature_text
+    assert (feature_dir / "01-acceptance-criteria.md").exists()
+    assert (feature_dir / "03-test-plan.md").exists()
+    receipt = json.loads((run_dir / "delivery-materialization.json").read_text(encoding="utf-8"))
+    assert receipt["release_ready_package"]["release_id"] == "20260502-forseti-release-q"

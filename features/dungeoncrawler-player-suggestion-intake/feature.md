@@ -3,7 +3,9 @@
 - Work item id: dungeoncrawler-player-suggestion-intake
 - Website: dungeoncrawler.life
 - Module: _TBD (PM to assign)_
-- Status: planned
+- Status: ready
+- Release: 20260412-dungeoncrawler-release-ab
+
 - Priority: P1
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -47,5 +49,9 @@ _PM to assess during triage._
 - Intake risk signals: none
 
 ## Latest updates
+
+- 2026-05-02: Auto-groomed from approved intake handoff; acceptance criteria + test plan were materialized and the item was scoped to `20260412-dungeoncrawler-release-ac`.
+
+- 2026-05-02: Auto-groomed from approved intake handoff; acceptance criteria + test plan were materialized and the item was scoped to `20260412-dungeoncrawler-release-ab`.
 
 - 2026-05-02: Created from community_suggestion NID 39 via suggestion-triage.sh

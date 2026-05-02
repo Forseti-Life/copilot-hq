@@ -5,7 +5,7 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from subprocess import run
 from typing import Any
@@ -14,6 +14,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 DRUSH_ROOT = Path("/var/www/html/forseti")
 PRODUCT_TEAMS_PATH = ROOT / "org-chart" / "products" / "product-teams.json"
+sys.path.insert(0, str((ROOT / "scripts" / "lib").resolve()))
+from release_cycle_helpers import next_release_id_after  # type: ignore
+
 BUILTIN_FLOW_FALLBACKS: dict[str, dict[str, Any]] = {
     "agentic_sdlc": {
         "id": "agentic_sdlc",
@@ -375,6 +378,17 @@ def extract_feature_id(text: str) -> str:
     return extract_metadata_value(text, "Feature id")
 
 
+def extract_summary(text: str) -> str:
+    return extract_metadata_value(text, "Summary")
+
+
+def extract_goal_section(text: str) -> str:
+    match = re.search(r"^## Goal\s*$\n+(.+?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
+    if not match:
+        return ""
+    return re.sub(r"\s+", " ", match.group(1)).strip()
+
+
 def valid_feature_id(feature_id: str) -> bool:
     return bool(re.fullmatch(r"[a-z0-9][a-z0-9._-]*", feature_id.strip()))
 
@@ -397,6 +411,200 @@ def load_source_outbox_text(command_meta: dict[str, str]) -> str:
     except OSError:
         return ""
     return ""
+
+
+def feature_release_target(site: str) -> str:
+    normalized_site = (site or "").strip().lower().removesuffix(".life")
+    active_dir = ROOT / "tmp" / "release-cycle-active"
+    next_release_file = active_dir / f"{normalized_site}.next_release_id"
+    if next_release_file.exists():
+        return next_release_file.read_text(encoding="utf-8", errors="ignore").strip()
+    current_release_file = active_dir / f"{normalized_site}.release_id"
+    if current_release_file.exists():
+        current_release = current_release_file.read_text(encoding="utf-8", errors="ignore").strip()
+        if current_release:
+            today = datetime.utcnow().strftime("%Y%m%d")
+            return next_release_id_after(current_release, normalized_site, today)
+    return f"{datetime.utcnow().strftime('%Y%m%d')}-{normalized_site}-release"
+
+
+def feature_site_slug(feature_brief: Path, run_id: str) -> str:
+    try:
+        text = feature_brief.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        text = ""
+    website = extract_metadata_value(text, "Website").lower()
+    if website:
+        return website.removesuffix(".life")
+    suggestion_context = parse_suggestion_run_id(run_id)
+    if suggestion_context is not None:
+        return suggestion_context[0]
+    return ""
+
+
+def find_prior_flow_outbox(run_id: str, node_slug: str) -> Path | None:
+    run_slug = slugify(run_id)
+    outbox_root = ROOT / "sessions"
+    if not outbox_root.exists():
+        return None
+    matches = sorted(
+        outbox_root.glob(f"*/outbox/*{run_slug}*{node_slug}*.md"),
+        reverse=True,
+    )
+    for path in matches:
+        if path.is_file():
+            return path
+    return None
+
+
+def extract_acceptance_criteria(ba_outbox_text: str, feature_summary: str) -> list[str]:
+    feature_tokens = {
+        token
+        for token in re.findall(r"[a-z0-9]{5,}", (feature_summary or "").lower())
+        if token not in STOPWORDS and token not in GENERIC_FLOW_WORDS
+    }
+    source = ba_outbox_text or ""
+    match = re.search(
+        r"Acceptance criteria:\s*(.+?)(?:\.\s*Non-goals:|Non-goals:|No open questions remain|## Next actions|## Blockers|## Needs from Supervisor|$)",
+        source,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if match:
+        criteria_blob = " ".join(match.group(1).split())
+        if "## " in criteria_blob or "- Flow outcome:" in criteria_blob or "## Next actions" in criteria_blob:
+            criteria_blob = ""
+        blob_tokens = {
+            token
+            for token in re.findall(r"[a-z0-9]{5,}", criteria_blob.lower())
+            if token not in STOPWORDS and token not in GENERIC_FLOW_WORDS
+        }
+        if feature_tokens and blob_tokens and not (feature_tokens & blob_tokens):
+            criteria_blob = ""
+        numbered = [
+            re.sub(r"\s+", " ", item).strip(" ;.")
+            for item in re.findall(r"\(\d+\)\s*(.+?)(?=(?:\(\d+\)|$))", criteria_blob)
+        ]
+        if numbered:
+            return [item for item in numbered if item]
+        parts = [re.sub(r"\s+", " ", part).strip(" ;.") for part in criteria_blob.split(";")]
+        criteria = [part for part in parts if part]
+        if criteria:
+            return criteria
+
+    concise_summary = re.sub(r"\s+", " ", feature_summary).strip().rstrip(".")
+    if concise_summary:
+        return [
+            concise_summary + ".",
+            "The change preserves adjacent gameplay behavior and does not regress the surrounding user flow.",
+            "QA can verify the original report or requested behavior directly in the live Dungeoncrawler/Forseti experience.",
+        ]
+    return [
+        "Implement the approved intake request exactly as described in the canonical feature brief.",
+        "Preserve existing adjacent behavior and avoid regressions in the touched gameplay or UX flow.",
+        "Provide a QA-verifiable path that proves the original user-reported issue or request is addressed.",
+    ]
+
+
+def ensure_release_ready_feature_package(*, feature_id: str, run_id: str) -> dict[str, Any]:
+    feature_dir = ROOT / "features" / feature_id
+    feature_brief = feature_dir / "feature.md"
+    if not feature_brief.exists():
+        return {"prepared": False, "reason": "missing_feature_brief"}
+
+    site = feature_site_slug(feature_brief, run_id)
+    if not site:
+        return {"prepared": False, "reason": "missing_site"}
+
+    release_id = feature_release_target(site)
+    feature_text = feature_brief.read_text(encoding="utf-8", errors="ignore")
+    feature_summary = extract_summary(feature_text) or extract_goal_section(feature_text)
+    ba_outbox = find_prior_flow_outbox(run_id, "ba-requirements-review")
+    ba_text = ba_outbox.read_text(encoding="utf-8", errors="ignore") if ba_outbox else ""
+    acceptance_criteria = extract_acceptance_criteria(ba_text, feature_summary)
+
+    ac_path = feature_dir / "01-acceptance-criteria.md"
+    if not ac_path.exists():
+        ac_lines = [
+            f"# Acceptance Criteria — {feature_id}",
+            "",
+        ]
+        for index, item in enumerate(acceptance_criteria, start=1):
+            ac_lines.append(f"{index}. {item}")
+        ac_lines.extend(
+            [
+                "",
+                "## Source of truth",
+                "",
+                f"- Intake flow run: `{run_id}`",
+                f"- Canonical feature brief: `features/{feature_id}/feature.md`",
+            ]
+        )
+        ac_path.write_text("\n".join(ac_lines) + "\n", encoding="utf-8")
+
+    test_plan_path = feature_dir / "03-test-plan.md"
+    if not test_plan_path.exists():
+        test_lines = [
+            f"# Test Plan — {feature_id}",
+            "",
+            "## Validation steps",
+            "",
+        ]
+        for index, item in enumerate(acceptance_criteria, start=1):
+            test_lines.append(f"{index}. Verify AC-{index}: {item}")
+        test_lines.extend(
+            [
+                "",
+                "## Regression checks",
+                "",
+                "1. Reproduce the original user-reported flow or feature entry point and confirm the prior defect/behavior gap is resolved.",
+                "2. Verify adjacent gameplay or UX behavior remains intact after the change.",
+                "3. Confirm the scoped release artifact still matches the approved feature brief and acceptance criteria.",
+            ]
+        )
+        test_plan_path.write_text("\n".join(test_lines) + "\n", encoding="utf-8")
+
+    updated = feature_text
+    if re.search(r"^-\s+Status:\s*(planned|in_progress|deferred)\s*$", updated, re.MULTILINE):
+        updated = re.sub(r"^(-\s+Status:\s*).*$", r"\1ready", updated, count=1, flags=re.MULTILINE)
+    elif "- Status: ready" not in updated:
+        updated = re.sub(r"^(-\s+Status:\s*).*$", r"\1ready", updated, count=1, flags=re.MULTILINE)
+
+    if re.search(r"^-\s+Release:[ \t]*$", updated, re.MULTILINE):
+        updated = re.sub(
+            r"^(-\s+Release:[ \t]*).*$",
+            lambda match: f"{match.group(1)}{release_id}",
+            updated,
+            count=1,
+            flags=re.MULTILINE,
+        )
+    elif not re.search(r"^-\s+Release:[ \t]*.+\S[ \t]*$", updated, re.MULTILINE):
+        status_match = re.search(r"^-\s+Status:.*$", updated, re.MULTILINE)
+        insertion = f"- Release: {release_id}\n"
+        if status_match:
+            updated = updated[:status_match.end()] + "\n" + insertion + updated[status_match.end():]
+        else:
+            updated += ("\n" if not updated.endswith("\n") else "") + insertion
+
+    note = (
+        f"- {date.today().isoformat()}: Auto-groomed from approved intake handoff; "
+        f"acceptance criteria + test plan were materialized and the item was scoped to `{release_id}`."
+    )
+    if note not in updated:
+        if "## Latest updates" in updated:
+            updated = updated.replace("## Latest updates", f"## Latest updates\n\n{note}", 1)
+        else:
+            updated = updated.rstrip() + f"\n\n## Latest updates\n\n{note}\n"
+
+    if updated != feature_text:
+        feature_brief.write_text(updated, encoding="utf-8")
+
+    return {
+        "prepared": True,
+        "site": site,
+        "release_id": release_id,
+        "acceptance_criteria_path": str(ac_path.relative_to(ROOT)),
+        "test_plan_path": str(test_plan_path.relative_to(ROOT)),
+    }
 
 
 def load_flow(flow_id: str) -> dict[str, Any] | None:
@@ -593,7 +801,7 @@ def node_required_artifacts(
     if flow_id == "feature_request_intake" and target_node == "Prepare Delivery Handoff":
         return [
             "Include `- Feature id: <canonical-id>` in the outbox so delivery launch can use the canonical backlog/work-item id.",
-            "For community suggestions, the router will materialize `features/<feature-id>/feature.md` via `scripts/suggestion-triage.sh` before launching downstream delivery.",
+            "For community suggestions, the router will materialize `features/<feature-id>/feature.md` via `scripts/suggestion-triage.sh`, then auto-groom the item into a release-ready next-cycle package.",
             "For non-suggestion intake runs, ensure `features/<feature-id>/feature.md` already exists before marking the handoff complete.",
         ]
     return []
@@ -646,7 +854,7 @@ def node_required_guidance(
     if flow_id == "feature_request_intake" and target_node == "Prepare Delivery Handoff":
         return [
             "Repeat the exact `- Feature id:` selected by PM; do not rename the work item during the handoff.",
-            "For community suggestions, this handoff is the point where the canonical backlog artifact must exist before downstream delivery starts.",
+            "For community suggestions, this handoff is the point where the canonical backlog artifact must exist and be promoted into the next release-ready backlog before delivery starts.",
             "Use the approved requirements package to support the handoff, but keep the feature definition anchored to `features/<feature-id>/feature.md` rather than the temporary suggestion run id.",
         ]
     return []
@@ -929,9 +1137,11 @@ def materialize_feature_request_handoff(
 
     if suggestion_context is None:
         payload["source"] = "non-suggestion"
-        payload["materialized"] = feature_brief.exists()
+        package = ensure_release_ready_feature_package(feature_id=feature_id, run_id=run_id)
+        payload["release_ready_package"] = package
+        payload["materialized"] = feature_brief.exists() and bool(package.get("prepared"))
         receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        return feature_id, feature_brief.exists()
+        return feature_id, feature_brief.exists() and bool(package.get("prepared"))
 
     site, nid = suggestion_context
     proc = run(
@@ -957,7 +1167,11 @@ def materialize_feature_request_handoff(
             f"{site}/{nid} as {feature_id}: {proc.stderr.strip() or proc.stdout.strip() or 'unknown error'}"
         )
         return feature_id, False
-    return feature_id, feature_brief.exists()
+    package = ensure_release_ready_feature_package(feature_id=feature_id, run_id=run_id)
+    payload["release_ready_package"] = package
+    payload["materialized"] = feature_brief.exists() and bool(package.get("prepared"))
+    receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return feature_id, feature_brief.exists() and bool(package.get("prepared"))
 
 
 def route_downstream_flow(

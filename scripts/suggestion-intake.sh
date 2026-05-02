@@ -386,7 +386,7 @@ for suggestion in suggestions:
         f"## Intake notes\n\n"
         f"- This request was automatically seeded by `scripts/suggestion-intake.sh`.\n"
         f"- Legacy PM-only suggestion triage has been retired; use the `feature_request_intake` flow to review, clarify, defer, reject, or approve this request.\n"
-        f"- If approved, the intake flow should decide whether to materialize or update a backlog feature artifact before launching delivery.\n"
+        f"- If approved, the intake flow should materialize or update the canonical backlog feature artifact and auto-groom it into the next release-ready pool before delivery starts.\n"
         f"- Drupal node edit URL: /node/{nid}/edit\n"
         f"{cross_site_section}"
     )
