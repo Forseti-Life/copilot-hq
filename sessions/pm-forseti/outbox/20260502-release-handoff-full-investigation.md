@@ -1,23 +1,23 @@
 - Status: in_progress
-- Summary: Full investigation started. Reading dev outbox and current release state to understand what issues remain open and what the idle lane gap is before triaging next actions.
+- Summary: Reading dev outbox and release state to diagnose the two open issues and idle lane before writing triage artifacts.
 
 ## Next actions
-- Read dev outbox at `sessions/dev-forseti/outbox/20260428-syshealth-tailoring-queue-errors.md` and any recent dev artifacts to understand what was completed and what the two open issues are
-- Check active release state (`tmp/release-cycle-active/`) and current feature backlog for forseti
-- Read QA latest audit at `sessions/qa-forseti/artifacts/auto-site-audit/latest/`
-- After reading, write triage artifact and dispatch inbox items to restore execution flow
+- Read dev outbox `sessions/dev-forseti/outbox/20260428-syshealth-tailoring-queue-errors.md`
+- Check current active release for forseti
+- Read dev inbox item count and any open feature files
+- Then fill triage artifacts and route follow-up
 
 ## Blockers
-- None yet — investigating now
+- None yet
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Active lane idle for 243+ minutes with open issues signals delivery risk; restoring flow quickly prevents compounding delays and protects release integrity.
+- Rationale: Idle dev lane with 2 open issues after a completed run represents blocked throughput; restoring active execution flow directly unblocks shipping velocity.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-handoff-full-investigation
-- Generated: 2026-05-02T03:16:14+00:00
+- Generated: 2026-05-02T03:26:07+00:00
