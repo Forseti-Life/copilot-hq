@@ -421,3 +421,21 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-dungeoncrawler-release-ab — 2026-05-02
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-019 — Gating agent(s) majority-quarantined: pm-dungeoncrawler (1/2 = 50%) —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-ab
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gating agent(s) majority-quarantined: pm-dungeoncrawler (1/2 = 50%) — release gates bypassed by executor failure
+
+**Status:** 🔴 Open — review and assign fix
+
