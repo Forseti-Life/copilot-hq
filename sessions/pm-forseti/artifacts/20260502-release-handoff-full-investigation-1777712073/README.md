@@ -2,7 +2,7 @@
 
 - PM: pm-forseti
 - Work item: forseti
-- Topic: release-handoff-gap
+- Topic: release-handoff-full-investigation
 
 ## What to do
 1. Fill in the three artifacts in this folder.
