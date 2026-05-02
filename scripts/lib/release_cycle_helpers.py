@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -209,7 +210,7 @@ def summarize_release_work(
 
         website_match = re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
         status_match = re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
-        release_match = re.search(r"^-\s+Release:\s*(.*)$", text, re.MULTILINE | re.IGNORECASE)
+        release_match = re.search(r"^-\s+Release:[ \t]*([^\n]*)$", text, re.MULTILINE | re.IGNORECASE)
 
         website = (website_match.group(1).strip().lower() if website_match else "")
         status = (status_match.group(1).strip().lower() if status_match else "")
@@ -233,6 +234,119 @@ def summarize_release_work(
         "ready_feature_ids": ready_feature_ids,
         "has_actionable_work": bool(scoped_count or ready_feature_ids),
     }
+
+
+def materialized_runtime_release_feature_id(team_id: str, run_id: str) -> str:
+    run_slug = slugify(run_id.lower(), limit=40)
+    return f"{team_id}-release-runtime-{run_slug}"
+
+
+def ensure_runtime_release_defect(
+    root: Path,
+    team: dict[str, Any],
+    *,
+    run_id: str,
+    open_issue_count: int,
+    dev_latest_outbox: str = "",
+    release_id: str = "",
+    source_reason: str = "release-kpi-monitor",
+) -> dict[str, Any]:
+    """Materialize unresolved runtime findings as a durable release work item.
+
+    The release-cycle opener only trusts tracked feature/defect artifacts. When the
+    monitor detects post-dev findings without an active release, create a repo-native
+    ready bugfix item so the normal release flow can pick it up on the next tick.
+    """
+    team_id = str(team.get("id") or "").strip()
+    site = str(team.get("site") or team_id).strip() or team_id
+    pm_agent = str(team.get("pm_agent") or f"pm-{team_id}").strip()
+    qa_agent = str(team.get("qa_agent") or f"qa-{team_id}").strip()
+    dev_agent = str(team.get("dev_agent") or f"dev-{team_id}").strip()
+    team_label = str(team.get("label") or team_id).strip() or team_id
+    feature_id = materialized_runtime_release_feature_id(team_id, run_id)
+    feature_dir = root / "features" / feature_id
+    feature_md = feature_dir / "feature.md"
+    ac_md = feature_dir / "01-acceptance-criteria.md"
+    test_plan_md = feature_dir / "03-test-plan.md"
+
+    feature_dir.mkdir(parents=True, exist_ok=True)
+    created = not feature_md.exists()
+    now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    current_release = release_id.strip()
+    release_line = current_release if current_release else ""
+    latest_outbox_line = dev_latest_outbox.strip() or "none"
+
+    if created:
+        feature_md.write_text(
+            (
+                "# Feature Brief\n\n"
+                f"- Work item id: {feature_id}\n"
+                f"- Website: {site}\n"
+                "- Module: release-ops\n"
+                "- Project: PROJ-OPS\n"
+                "- Group Order: 99\n"
+                "- Group: release-runtime\n"
+                "- Group Title: Release Runtime Recovery\n"
+                "- Group Sort: 99\n"
+                "- Status: ready\n"
+                f"- Release: {release_line}\n"
+                "- Priority: P1\n"
+                "- Feature type: bugfix\n"
+                f"- PM owner: {pm_agent}\n"
+                f"- Dev owner: {dev_agent}\n"
+                f"- QA owner: {qa_agent}\n"
+                f"- Source: {source_reason} {now_iso}\n"
+                f"- Runtime run id: {run_id}\n"
+                f"- Runtime open issues: {open_issue_count}\n"
+                f"- Runtime latest dev outbox: {latest_outbox_line}\n\n"
+                "## Summary\n\n"
+                f"Release runtime findings for {team_label} remain unresolved after the latest QA/dev cycle. "
+                "This defect item materializes those runtime-only findings into a tracked release work item so "
+                "the standard PM/Dev/QA release flow can scope, verify, and close them.\n\n"
+                "## Goal\n\n"
+                f"Drive the unresolved runtime findings from QA run `{run_id}` to zero open issues using the normal "
+                "release ceremony instead of leaving them as monitor-only alerts.\n\n"
+                "## Acceptance criteria\n\n"
+                f"- AC-1: The follow-up QA audit for run `{run_id}` (or its replacement rerun for the same issue set) reports 0 open issues.\n"
+                f"- AC-2: Any code/config/content fixes required to close the {open_issue_count} currently open issue(s) are routed through the owning dev workflow.\n"
+                "- AC-3: PM records the disposition of the original runtime findings in release artifacts or outbox notes.\n"
+                "- AC-4: QA provides an explicit PASS/BLOCK verdict after rerun, rather than leaving the release in a monitor-only state.\n\n"
+                "## Non-goals\n\n"
+                "- Creating a parallel release process outside the normal feature/release workflow.\n"
+                "- Leaving this item unscoped while the monitor continues to page on the same findings.\n\n"
+                "## Security acceptance criteria\n\n"
+                "- Authentication/permission surface: No new user-facing surface is introduced by this tracking artifact.\n"
+                "- CSRF expectations: Not applicable — release recovery work follows existing routes and forms only.\n"
+                "- Input validation requirements: Any fix-forward work must preserve existing validation and permissions for the affected surfaces.\n"
+                "- PII/logging constraints: Do not add new logs that expose user-submitted content or private runtime payloads while investigating the findings.\n"
+            ),
+            encoding="utf-8",
+        )
+
+    if not ac_md.exists():
+        ac_md.write_text(
+            (
+                f"# Acceptance Criteria — {feature_id}\n\n"
+                f"1. QA rerun evidence for `{run_id}` shows zero remaining open issues.\n"
+                "2. Any fix-forward implementation references the owning dev outbox item or commit hash.\n"
+                "3. PM records whether the original findings were resolved, deferred with rationale, or superseded by a new rerun.\n"
+            ),
+            encoding="utf-8",
+        )
+
+    if not test_plan_md.exists():
+        test_plan_md.write_text(
+            (
+                f"# Test Plan — {feature_id}\n\n"
+                "## Validation steps\n\n"
+                f"1. Re-run the relevant site audit / QA workflow for runtime run `{run_id}`.\n"
+                "2. Confirm the previously open findings are either resolved or explicitly replaced by a new tracked item.\n"
+                "3. Verify PM/QA produce an explicit close-out artifact instead of relying on the KPI monitor alone.\n"
+            ),
+            encoding="utf-8",
+        )
+
+    return {"feature_id": feature_id, "created": created, "path": str(feature_dir)}
 
 
 def has_groom_item(root: Path, pm_agent: str, next_release_id: str) -> bool:

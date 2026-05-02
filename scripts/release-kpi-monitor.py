@@ -5,6 +5,7 @@ import argparse
 import collections
 import json
 import subprocess
+import sys
 import time
 import uuid
 from dataclasses import dataclass
@@ -15,6 +16,9 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 PRODUCT_TEAMS = ROOT / "org-chart/products/product-teams.json"
 STATE_DIR = ROOT / "tmp/release-kpi-monitor"
+
+sys.path.insert(0, str(ROOT / "scripts" / "lib"))
+from release_cycle_helpers import ensure_runtime_release_defect  # type: ignore
 
 
 @dataclass
@@ -853,6 +857,7 @@ def queue_investigation(team: Team, run_id: str, total: int, stagnant_seconds: i
         f"Release KPI stagnation investigation for {team.team_id} ({team.site}). "
         f"No KPI movement for {stagnant_seconds//60}m. "
         f"latest_run={run_id}, open_issues={total}, release_id={diag.get('release_id','')}, "
+        f"materialized_feature={diag.get('materialized_feature_id','')}, "
         f"dev_inbox={diag.get('dev_inbox_count',0)}, findings_items={diag.get('dev_findings_items',0)}, "
         f"dev_latest_status={diag.get('dev_latest_status','')}"
     )
@@ -882,6 +887,7 @@ def queue_followup(team: Team, run_id: str, total: int, stagnant_seconds: int, d
         f"Release KPI stagnation FOLLOW-UP for {team.team_id} ({team.site}). "
         f"Still no movement after {stagnant_seconds//60}m. "
         f"run={run_id}, open_issues={total}, release_id={diag.get('release_id','')}, "
+        f"materialized_feature={diag.get('materialized_feature_id','')}, "
         f"dev_inbox={diag.get('dev_inbox_count',0)}, findings_items={diag.get('dev_findings_items',0)}, "
         f"dev_latest_status={diag.get('dev_latest_status','')}"
     )
@@ -966,6 +972,30 @@ def main() -> int:
             and not bool(diag.get("dev_active_processing", False))
             and dev_status in {"in_progress", "blocked", "needs-info", "idle", ""}
         )
+
+        materialized_feature_id = ""
+        materialized_feature_created = False
+        if total > 0 and not str(diag.get("release_id", "")).strip() and dev_status in {"complete", "done"}:
+            materialized = ensure_runtime_release_defect(
+                ROOT,
+                {
+                    "id": team.team_id,
+                    "label": team.team_id,
+                    "site": team.site,
+                    "pm_agent": team.pm_agent,
+                    "qa_agent": team.qa_agent,
+                    "dev_agent": team.dev_agent,
+                },
+                run_id=run_id,
+                open_issue_count=total,
+                dev_latest_outbox=str(diag.get("dev_latest_outbox", "") or ""),
+                release_id="",
+                source_reason="release-kpi-monitor",
+            )
+            materialized_feature_id = str(materialized.get("feature_id", "") or "")
+            materialized_feature_created = bool(materialized.get("created", False))
+            if materialized_feature_id:
+                diag["materialized_feature_id"] = materialized_feature_id
 
         should_investigate = stagnant or execution_stalled or starved_lane or handoff_gap
 
@@ -1138,6 +1168,8 @@ def main() -> int:
             "no_progress_15m": no_progress_15m,
             "handoff_gap": handoff_gap,
             "starved_lane": starved_lane,
+            "materialized_feature_id": materialized_feature_id,
+            "materialized_feature_created": materialized_feature_created,
             "stagnant_minutes": round(stagnant_seconds / 60.0, 1),
             "dev_outbox_age_minutes": round(dev_outbox_age_seconds / 60.0, 1),
             "investigation_queued": queued,
