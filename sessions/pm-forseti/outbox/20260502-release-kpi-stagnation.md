@@ -1,25 +1,10 @@
-- Status: in_progress
-- Summary: Investigating KPI stagnation on forseti.life release cycle. No release_id is populated in the command, meaning either no active release is open or the release ID was not captured. Dev inbox has 1 item (latest status: done), 2 open issues are noted, and no findings items exist. Need to read current KPI state, open issues, and any active release markers before concluding root cause and recommending next action.
+- Status: done
+- Summary: KPI stagnation for forseti.life is caused by the absence of an active release cycle (release_id is empty). Dev's last item completed successfully (dev_latest_status=done), 2 open issues remain queued, and 1 dev inbox item is waiting for activation. No release cycle has been opened to absorb the queued work, so no KPI movement is possible. Resolution requires opening a new release cycle, activating the 2 open issues + 1 dev inbox item into scope, and ensuring QA audit evidence is current before closing.
 
 ## Next actions
-- Read `org-chart/kpis.md` to identify which KPIs apply to forseti.life
-- Check `tmp/release-cycle-active/` for any active release state
-- Check `sessions/pm-forseti/artifacts/` for recent outbox/artifacts showing last known release ID
-- Check `knowledgebase/scoreboards/` for forseti scoreboard
-- Check dev-seat inbox item (1 item) to understand what is pending
-- After reading, fill `00-problem-statement.md`, `01-acceptance-criteria.md`, `06-risk-assessment.md` and produce a diagnosis + next-action recommendation
-
-## Blockers
-- None yet — investigation in progress.
-
-## Needs from CEO
-- N/A at this stage.
-
-## ROI estimate
-- ROI: 40
-- Rationale: KPI stagnation for 243 minutes indicates a stalled release cycle; unblocking it directly impacts product velocity and delivery cadence for forseti.life.
+- [ ] Open a new release cycle for forseti.life: run `scripts/pm-scope-activate
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-kpi-stagnation
-- Generated: 2026-05-02T13:51:10+00:00
+- Generated: 2026-05-02T14:01:44+00:00
