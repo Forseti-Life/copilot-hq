@@ -22,6 +22,9 @@ export class SpriteService {
 
     /** @type {Object<string, Promise<string|null>>} In-flight single lookups. */
     this._pendingLookups = {};
+
+    /** @type {Object<string, Promise<PIXI.Texture|null>>} In-flight texture loads. */
+    this._pendingTextureLoads = {};
   }
 
   // ---------------------------------------------------------------------------
@@ -175,42 +178,103 @@ export class SpriteService {
    * @param {string} spriteId - Sprite identifier (for cache keys and logging)
    * @param {object} renderSystem - RenderSystem instance with replaceEntitySprite()
    */
-  loadAndApplyTexture(entity, url, spriteId, renderSystem) {
+  async ensureTextureLoaded(url, spriteId) {
+    const cacheKey = 'gen_' + spriteId;
+    if (PIXI.utils.TextureCache[cacheKey]) {
+      return PIXI.utils.TextureCache[cacheKey];
+    }
+
+    if (this._pendingTextureLoads[spriteId]) {
+      return this._pendingTextureLoads[spriteId];
+    }
+
+    this._pendingTextureLoads[spriteId] = new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const baseTexture = new PIXI.BaseTexture(img);
+          const texture = new PIXI.Texture(baseTexture);
+          PIXI.utils.TextureCache[cacheKey] = texture;
+          resolve(texture);
+        } catch (err) {
+          console.warn(`SpriteService: texture creation failed for ${spriteId}:`, err);
+          resolve(null);
+        }
+      };
+      img.onerror = () => {
+        console.warn(`SpriteService: image load failed for ${spriteId}: ${url}`);
+        resolve(null);
+      };
+      img.src = url;
+    }).finally(() => {
+      delete this._pendingTextureLoads[spriteId];
+    });
+
+    return this._pendingTextureLoads[spriteId];
+  }
+
+  async loadAndApplyTexture(entity, url, spriteId, renderSystem) {
     const render = entity.getComponent('RenderComponent');
     if (!render) return;
 
     // Check PixiJS texture cache first (instant swap).
     const cacheKey = 'gen_' + spriteId;
     if (PIXI.utils.TextureCache[cacheKey]) {
-      renderSystem.replaceEntitySprite(entity, PIXI.utils.TextureCache[cacheKey]);
+      renderSystem.replaceEntitySprite(entity, PIXI.utils.TextureCache[cacheKey], spriteId);
       render._generatedSpriteApplied = true;
+      render._appliedGeneratedSpriteId = spriteId;
       return;
     }
 
-    // Async image load.
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const baseTexture = new PIXI.BaseTexture(img);
-        const texture = new PIXI.Texture(baseTexture);
-        PIXI.utils.TextureCache[cacheKey] = texture;
+    const texture = await this.ensureTextureLoaded(url, spriteId);
+    if (!texture) {
+      return;
+    }
 
-        // Verify entity still exists and hasn't been cleared.
-        const currentRender = entity.getComponent('RenderComponent');
-        if (currentRender && currentRender.sprite && !currentRender._generatedSpriteApplied) {
-          renderSystem.replaceEntitySprite(entity, texture);
-          currentRender._generatedSpriteApplied = true;
-          console.log(`SpriteService: applied texture for ${spriteId}`);
+    // Verify entity still exists and hasn't been cleared.
+    const currentRender = entity.getComponent('RenderComponent');
+    if (currentRender && currentRender.sprite) {
+      renderSystem.replaceEntitySprite(entity, texture, spriteId);
+      currentRender._generatedSpriteApplied = true;
+      currentRender._appliedGeneratedSpriteId = spriteId;
+      console.log(`SpriteService: applied texture for ${spriteId}`);
+    }
+  }
+
+  getRenderSpriteIds(render) {
+    if (!render) {
+      return [];
+    }
+
+    const ids = [];
+    if (render.spriteKey) {
+      ids.push(render.spriteKey);
+    }
+    if (render.spriteVariants && typeof render.spriteVariants === 'object') {
+      ids.push(...Object.values(render.spriteVariants));
+    }
+
+    return [...new Set(ids.filter((value) => typeof value === 'string' && value.trim()))];
+  }
+
+  async resolveRenderSpriteIds(entityManager, campaignId = null) {
+    if (!entityManager) {
+      return;
+    }
+
+    const spriteIds = new Set();
+    const entities = entityManager.getEntitiesWith('RenderComponent');
+    entities.forEach((entity) => {
+      const render = entity.getComponent('RenderComponent');
+      this.getRenderSpriteIds(render).forEach((spriteId) => {
+        if (!this._cache[spriteId]) {
+          spriteIds.add(spriteId);
         }
-      } catch (err) {
-        console.warn(`SpriteService: texture creation failed for ${spriteId}:`, err);
-      }
-    };
-    img.onerror = () => {
-      console.warn(`SpriteService: image load failed for ${spriteId}: ${url}`);
-    };
-    img.src = url;
+      });
+    });
+
+    await Promise.all([...spriteIds].map((spriteId) => this.fetchOne(spriteId, campaignId)));
   }
 
   /**
@@ -227,28 +291,22 @@ export class SpriteService {
     if (!entityManager || !renderSystem) return;
 
     const allEntities = entityManager.getEntitiesWith('RenderComponent');
-    const definitions = dungeonData?.object_definitions;
-    if (!definitions) return;
-    const dungeonEntities = Array.isArray(dungeonData?.entities) ? dungeonData.entities : [];
 
     allEntities.forEach((entity) => {
-      const dcRef = entity.dcEntityRef;
-      if (!dcRef) return;
-
-      // Find the dungeon entity to get content_id.
-      const match = dungeonEntities.find(e =>
-        (e?.instance_id === dcRef || e?.entity_ref?.content_id === dcRef)
-      );
-      if (!match) return;
-
-      const contentId = match?.entity_ref?.content_id;
-      const spriteId = definitions[contentId]?.visual?.sprite_id;
-      if (!spriteId || !this._cache[spriteId]) return;
-
       const render = entity.getComponent('RenderComponent');
-      if (!render || render._generatedSpriteApplied) return;
+      if (!render) return;
 
-      this.loadAndApplyTexture(entity, this._cache[spriteId], spriteId, renderSystem);
+      const spriteIds = this.getRenderSpriteIds(render);
+      spriteIds.forEach((spriteId) => {
+        const url = this._cache[spriteId];
+        if (!url) return;
+        void this.ensureTextureLoaded(url, spriteId);
+      });
+
+      const preferredSpriteId = renderSystem.getPreferredSpriteKeyForEntity(entity);
+      if (!preferredSpriteId || !this._cache[preferredSpriteId]) return;
+
+      void this.loadAndApplyTexture(entity, this._cache[preferredSpriteId], preferredSpriteId, renderSystem);
     });
   }
 
@@ -293,6 +351,7 @@ export class SpriteService {
 
     if (Object.keys(neededDefs).length === 0) {
       // All sprites already cached — just apply from cache.
+      await this.resolveRenderSpriteIds(entityManager, campaignId);
       this.applyFromCache(entityManager, renderSystem, dungeonData);
       return;
     }
@@ -300,6 +359,7 @@ export class SpriteService {
     this._resolveInFlight = true;
     try {
       await this.fetchBatch(neededDefs, campaignId);
+      await this.resolveRenderSpriteIds(entityManager, campaignId);
     } finally {
       // Always apply cached sprites (including pre-cached portrait URLs)
       // regardless of whether furniture sprite resolution succeeded.

@@ -2322,6 +2322,7 @@ import { SpriteService } from './SpriteService.js';
     _spreadHoverAnchorKey: null,
     _spreadExpandedHexKey: null,
     _spreadClearTimer: null,
+    floatingCombatTexts: [],
     
     // Managers
     uiManager: null,
@@ -2506,6 +2507,8 @@ import { SpriteService } from './SpriteService.js';
         this.stateManager.reset();
       }
 
+      this.clearCombatTextEffects();
+
       this.launchContext = {};
       this.dungeonData = {};
       this.launchCharacter = {};
@@ -2580,6 +2583,8 @@ import { SpriteService } from './SpriteService.js';
       if (this.entityManager) {
         this.entityManager.update(delta * 16.67); // Convert to milliseconds
       }
+
+      this.updateCombatTextEffects(delta * 16.67);
     },
 
     /**
@@ -2858,6 +2863,148 @@ import { SpriteService } from './SpriteService.js';
     },
 
     /**
+     * Resolve a rendered world-space anchor point for an entity.
+     * @param {Entity|null} entity
+     * @returns {{x:number,y:number}|null}
+     */
+    getCombatTextAnchor: function (entity) {
+      if (!entity) {
+        return null;
+      }
+
+      const renderedCenter = this.getRenderedEntityCenter?.(entity);
+      if (renderedCenter && Number.isFinite(renderedCenter.x) && Number.isFinite(renderedCenter.y)) {
+        return renderedCenter;
+      }
+
+      const position = entity.getComponent('PositionComponent');
+      if (!position) {
+        return null;
+      }
+
+      return this.axialToPixel(position.q, position.r, this.config.hexSize);
+    },
+
+    /**
+     * Spawn a floating combat text element on the FX layer.
+     * @param {Entity|null} entity
+     * @param {string} label
+     * @param {object} [options]
+     */
+    spawnCombatText: function (entity, label, options = {}) {
+      if (!this.fxContainer || !label) {
+        return;
+      }
+
+      const anchor = this.getCombatTextAnchor(entity);
+      if (!anchor) {
+        return;
+      }
+
+      const container = new PIXI.Container();
+      const fill = options.fill ?? 0xffffff;
+      const stroke = options.stroke ?? 0x111827;
+      const background = options.background ?? 0x111827;
+      const fontSize = options.fontSize ?? Math.max(16, this.config.hexSize * 0.62);
+      const duration = options.duration ?? 900;
+      const rise = options.rise ?? (this.config.hexSize * 1.15);
+      const driftX = options.driftX ?? 0;
+      const jitterX = options.jitterX ?? 0;
+      const baseY = anchor.y - (options.offsetY ?? (this.config.hexSize * 0.78));
+
+      const text = new PIXI.Text(label, {
+        fontFamily: 'Arial',
+        fontSize,
+        fontWeight: '700',
+        fill,
+        stroke,
+        strokeThickness: Math.max(3, fontSize * 0.14),
+        align: 'center',
+      });
+      text.anchor.set(0.5);
+
+      const paddingX = Math.max(8, fontSize * 0.38);
+      const paddingY = Math.max(4, fontSize * 0.22);
+      const backgroundPlate = new PIXI.Graphics();
+      backgroundPlate.beginFill(background, 0.78);
+      backgroundPlate.lineStyle(1, 0xffffff, 0.15);
+      backgroundPlate.drawRoundedRect(
+        -(text.width / 2) - paddingX,
+        -(text.height / 2) - paddingY,
+        text.width + (paddingX * 2),
+        text.height + (paddingY * 2),
+        Math.max(8, fontSize * 0.35)
+      );
+      backgroundPlate.endFill();
+
+      container.addChild(backgroundPlate);
+      container.addChild(text);
+      container.x = anchor.x + jitterX;
+      container.y = baseY;
+      container.alpha = 1;
+      container.zIndex = 9999;
+      this.fxContainer.addChild(container);
+
+      this.floatingCombatTexts.push({
+        container,
+        duration,
+        elapsed: 0,
+        startX: container.x,
+        startY: container.y,
+        rise,
+        driftX,
+      });
+    },
+
+    /**
+     * Advance and cull floating combat text effects.
+     * @param {number} deltaMs
+     */
+    updateCombatTextEffects: function (deltaMs) {
+      if (!Array.isArray(this.floatingCombatTexts) || this.floatingCombatTexts.length === 0) {
+        return;
+      }
+
+      for (let i = this.floatingCombatTexts.length - 1; i >= 0; i -= 1) {
+        const effect = this.floatingCombatTexts[i];
+        effect.elapsed += deltaMs;
+        const progress = Math.min(effect.elapsed / effect.duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 2);
+
+        effect.container.y = effect.startY - (effect.rise * eased);
+        effect.container.x = effect.startX + (effect.driftX * eased);
+        effect.container.alpha = 1 - progress;
+        effect.container.scale.set(1 + (0.08 * eased));
+
+        if (progress >= 1) {
+          if (effect.container.parent) {
+            effect.container.parent.removeChild(effect.container);
+          }
+          effect.container.destroy({ children: true });
+          this.floatingCombatTexts.splice(i, 1);
+        }
+      }
+    },
+
+    /**
+     * Remove all active floating combat text effects.
+     */
+    clearCombatTextEffects: function () {
+      if (!Array.isArray(this.floatingCombatTexts)) {
+        this.floatingCombatTexts = [];
+        return;
+      }
+
+      this.floatingCombatTexts.forEach((effect) => {
+        if (effect?.container?.parent) {
+          effect.container.parent.removeChild(effect.container);
+        }
+        effect?.container?.destroy?.({ children: true });
+      });
+      this.floatingCombatTexts = [];
+    },
+
+    /**
      * Clear all ECS entities and related overlays/state.
      */
     clearEntities: function () {
@@ -2867,6 +3014,7 @@ import { SpriteService } from './SpriteService.js';
 
       this.clearSpreadInteractionTargets();
       this._spreadHoverAnchorKey = null;
+      this.clearCombatTextEffects();
 
       this.deselectEntity();
 
@@ -4013,6 +4161,9 @@ import { SpriteService } from './SpriteService.js';
       const renderComp = new RenderComponent(spriteKey);
       const explicitScale = Number(options.scale);
       renderComp.orientation = String(options.orientation || 'n').toLowerCase();
+      renderComp.spriteVariants = options.spriteVariants && typeof options.spriteVariants === 'object'
+        ? { ...options.spriteVariants }
+        : null;
       renderComp.scale = Number.isFinite(explicitScale)
         ? explicitScale
         : (entityType === EntityType.ITEM ? 0.4 : 1.0);
@@ -5333,8 +5484,37 @@ import { SpriteService } from './SpriteService.js';
       }
       
       console.log(message);
-      
-      // Could add floating damage numbers or attack animations here
+
+      const attackTextMap = {
+        [AttackResult.CRITICAL_HIT]: {
+          label: 'CRIT!',
+          fill: 0xfef3c7,
+          background: 0x92400e,
+          duration: 1100,
+          rise: this.config.hexSize * 1.35,
+        },
+        [AttackResult.HIT]: {
+          label: 'HIT',
+          fill: 0xdcfce7,
+          background: 0x166534,
+        },
+        [AttackResult.MISS]: {
+          label: 'MISS',
+          fill: 0xe5e7eb,
+          background: 0x374151,
+        },
+        [AttackResult.CRITICAL_MISS]: {
+          label: 'WHIFF',
+          fill: 0xfecaca,
+          background: 0x7f1d1d,
+          duration: 1050,
+        },
+      };
+
+      const feedback = attackTextMap[attackData.result];
+      if (feedback) {
+        this.spawnCombatText(attackData.target, feedback.label, feedback);
+      }
     },
     
     /**
@@ -5345,9 +5525,28 @@ import { SpriteService } from './SpriteService.js';
       const targetName = damageData.target.getComponent('IdentityComponent')?.name || 'Target';
       
       console.log(`${targetName}: ${damageData.remainingHp}/${damageData.maxHp} HP`);
+
+      if (Number(damageData.damage) > 0) {
+        this.spawnCombatText(damageData.target, `-${damageData.damage}`, {
+          fill: 0xfef2f2,
+          background: 0x991b1b,
+          duration: 1000,
+          rise: this.config.hexSize * 1.5,
+          driftX: this.config.hexSize * 0.12,
+          jitterX: this.config.hexSize * 0.08,
+          fontSize: Math.max(18, this.config.hexSize * 0.7),
+        });
+      }
       
       if (damageData.defeated) {
         console.log(`${targetName} has been defeated!`);
+        this.spawnCombatText(damageData.target, 'DOWN', {
+          fill: 0xfef3c7,
+          background: 0x78350f,
+          duration: 1250,
+          rise: this.config.hexSize * 1.1,
+          fontSize: Math.max(18, this.config.hexSize * 0.65),
+        });
         
         // Update sprite to show defeated state (could add death animation)
         const render = damageData.target.getComponent('RenderComponent');
@@ -6226,6 +6425,14 @@ import { SpriteService } from './SpriteService.js';
           options.objectCategory = options.objectCategory || 'creature';
         }
 
+        const directionalSprites = this.buildDirectionalSpriteConfig(contentId, metadata, this.getObjectDefinition(contentId));
+        if (Object.keys(directionalSprites.variants).length) {
+          options.spriteVariants = directionalSprites.variants;
+          Object.entries(directionalSprites.preloadUrls).forEach(([spriteId, url]) => {
+            this.spriteService.preloadUrl(spriteId, url);
+          });
+        }
+
         const created = this.createEntityObject(q, r, entityType, entityName, null, options);
         if (created) {
           created.dcEntityRef = entity?.instance_id || entity?.entity_ref?.content_id || null;
@@ -6272,6 +6479,113 @@ import { SpriteService } from './SpriteService.js';
       }
 
       return definitions[contentId] || null;
+    },
+
+    normalizeSpriteDirectionToken: function (direction) {
+      const token = String(direction || 'n').toLowerCase().replace(/[\s_-]+/g, '');
+      const map = {
+        n: 'n',
+        north: 'n',
+        ne: 'ne',
+        northeast: 'ne',
+        e: 'e',
+        east: 'e',
+        se: 'se',
+        southeast: 'se',
+        s: 's',
+        south: 's',
+        sw: 'sw',
+        southwest: 'sw',
+        w: 'w',
+        west: 'w',
+        nw: 'nw',
+        northwest: 'nw',
+      };
+      return map[token] || null;
+    },
+
+    isSpriteUrlValue: function (value) {
+      return typeof value === 'string' && (/^(https?:)?\/\//i.test(value.trim()) || value.trim().startsWith('/'));
+    },
+
+    resolveDirectionalSpriteEntry: function (contentId, direction, value) {
+      const normalizedDirection = this.normalizeSpriteDirectionToken(direction);
+      if (!normalizedDirection || !value) {
+        return null;
+      }
+
+      let spriteId = null;
+      let url = null;
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return null;
+        }
+        if (this.isSpriteUrlValue(trimmed)) {
+          spriteId = `directional_${String(contentId || 'entity')}_${normalizedDirection}`;
+          url = trimmed;
+        } else {
+          spriteId = trimmed;
+        }
+      } else if (typeof value === 'object') {
+        spriteId = value.sprite_id || value.spriteId || value.id || value.key || null;
+        url = value.url || value.image_url || value.imageUrl || value.portrait_url || value.portraitUrl || null;
+        if (!spriteId && typeof url === 'string' && this.isSpriteUrlValue(url)) {
+          spriteId = `directional_${String(contentId || 'entity')}_${normalizedDirection}`;
+        }
+      }
+
+      if (!spriteId) {
+        return null;
+      }
+
+      return {
+        direction: normalizedDirection,
+        spriteId: String(spriteId),
+        url: typeof url === 'string' && url.trim() ? url.trim() : null,
+      };
+    },
+
+    buildDirectionalSpriteConfig: function (contentId, metadata = {}, objectDefinition = null) {
+      const sources = [
+        metadata?.sprite_variants,
+        metadata?.directional_sprites,
+        metadata?.orientation_sprites,
+        metadata?.facing_sprites,
+        metadata?.directional_portraits,
+        metadata?.portrait_directions,
+        objectDefinition?.visual?.sprite_variants,
+        objectDefinition?.visual?.directional_sprites,
+        objectDefinition?.visual?.orientation_sprites,
+        objectDefinition?.visual?.facing_sprites,
+      ];
+
+      const variants = {};
+      const preloadUrls = {};
+
+      sources.forEach((source) => {
+        if (!source || typeof source !== 'object' || Array.isArray(source)) {
+          return;
+        }
+
+        Object.entries(source).forEach(([direction, value]) => {
+          const resolved = this.resolveDirectionalSpriteEntry(contentId, direction, value);
+          if (!resolved) {
+            return;
+          }
+
+          variants[resolved.direction] = resolved.spriteId;
+          if (resolved.url) {
+            preloadUrls[resolved.spriteId] = resolved.url;
+          }
+        });
+      });
+
+      return {
+        variants,
+        preloadUrls,
+      };
     },
 
     /**

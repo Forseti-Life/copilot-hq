@@ -115,6 +115,8 @@ export class RenderSystem extends System {
       this.createSprite(entity);
     }
 
+    this.syncPreferredSpriteTexture(entity, render);
+
     // Update position
     const pixelPos = this.hexToPixel(position.q, position.r);
     const offsetX = Number.isFinite(render._spreadOffsetX) ? render._spreadOffsetX : 0;
@@ -173,7 +175,7 @@ export class RenderSystem extends System {
       this.updateNameLabel(entity, render, identity, renderPos);
     }
 
-    if (this.shouldShowDirectionIndicator(identity)) {
+    if (this.shouldShowDirectionIndicator(identity, render)) {
       this.updateDirectionIndicator(entity, render, renderPos);
     }
     else if (render.directionIndicator) {
@@ -203,7 +205,10 @@ export class RenderSystem extends System {
    * @param {IdentityComponent|null|undefined} identity
    * @returns {boolean}
    */
-  shouldShowDirectionIndicator(identity) {
+  shouldShowDirectionIndicator(identity, render = null) {
+    if (this.hasDirectionalSpriteVariants(render)) {
+      return false;
+    }
     const type = String(identity?.entityType || '').toLowerCase();
     return type === 'creature'
       || type === 'player_character'
@@ -219,6 +224,9 @@ export class RenderSystem extends System {
    * @returns {boolean}
    */
   shouldApplyOrientationSpriteRotation(identity, render) {
+    if (this.hasDirectionalSpriteVariants(render)) {
+      return false;
+    }
     const type = String(identity?.entityType || '').toLowerCase();
     return type === 'creature'
       || type === 'player_character'
@@ -590,20 +598,23 @@ export class RenderSystem extends System {
   createSprite(entity) {
     const render = entity.getComponent('RenderComponent');
     const identity = entity.getComponent('IdentityComponent');
+    const preferredSpriteKey = this.getPreferredSpriteKeyForRender(render);
 
     let sprite;
 
     // Check if we have a texture/sprite key
-    if (render.spriteKey && PIXI.utils.TextureCache[render.spriteKey]) {
-      sprite = new PIXI.Sprite(PIXI.utils.TextureCache[render.spriteKey]);
+    const preferredTexture = this.getCachedTextureForSpriteKey(preferredSpriteKey);
+    if (preferredSpriteKey && preferredTexture) {
+      sprite = new PIXI.Sprite(preferredTexture);
       sprite.anchor.set(0.5);
-      const baseDims = this.getSpriteBaseDimensions(render.objectCategory, render.spriteKey);
+      const baseDims = this.getSpriteBaseDimensions(render.objectCategory, preferredSpriteKey);
       sprite.__fixedHexSize = true;
       sprite.__baseWidth = baseDims.width;
       sprite.__baseHeight = baseDims.height;
       sprite.width = baseDims.width;
       sprite.height = baseDims.height;
       this.applyCategoryMask(sprite, render.objectCategory);
+      render._appliedTextureKey = preferredSpriteKey;
     } else {
       // Create placeholder graphics using category hints when available
       const entityType = identity ? identity.entityType : 'default';
@@ -624,7 +635,7 @@ export class RenderSystem extends System {
    * @param {Entity} entity - Entity to update
    * @param {PIXI.Texture} texture - Loaded texture
    */
-  replaceEntitySprite(entity, texture) {
+  replaceEntitySprite(entity, texture, appliedSpriteKey = null) {
     const render = entity.getComponent('RenderComponent');
     if (!render || !render.sprite) {
       return;
@@ -649,7 +660,8 @@ export class RenderSystem extends System {
     // Create new sprite from texture
     const newSprite = new PIXI.Sprite(texture);
     newSprite.anchor.set(0.5);
-    const baseDims = this.getSpriteBaseDimensions(render.objectCategory, render.spriteKey);
+    const dimensionSpriteKey = appliedSpriteKey || render.spriteKey;
+    const baseDims = this.getSpriteBaseDimensions(render.objectCategory, dimensionSpriteKey);
     newSprite.__fixedHexSize = true;
     newSprite.__baseWidth = baseDims.width;
     newSprite.__baseHeight = baseDims.height;
@@ -669,7 +681,101 @@ export class RenderSystem extends System {
     newSprite.visible = render.visible;
 
     render.sprite = newSprite;
+    render._appliedTextureKey = appliedSpriteKey || null;
     this.objectContainer.addChild(newSprite);
+  }
+
+  hasDirectionalSpriteVariants(render) {
+    return !!(render && render.spriteVariants && Object.keys(render.spriteVariants).length);
+  }
+
+  normalizeDirectionToken(direction) {
+    const token = String(direction || 'n').toLowerCase().replace(/[\s_-]+/g, '');
+    const map = {
+      n: 'n',
+      north: 'n',
+      ne: 'ne',
+      northeast: 'ne',
+      e: 'e',
+      east: 'e',
+      se: 'se',
+      southeast: 'se',
+      s: 's',
+      south: 's',
+      sw: 'sw',
+      southwest: 'sw',
+      w: 'w',
+      west: 'w',
+      nw: 'nw',
+      northwest: 'nw',
+    };
+    return map[token] || 'n';
+  }
+
+  getSpriteFallbackOrder(direction) {
+    const normalized = this.normalizeDirectionToken(direction);
+    const orders = {
+      n: ['n', 'ne', 'nw', 'e', 'w', 's', 'se', 'sw'],
+      ne: ['ne', 'n', 'e', 'se', 'nw', 's', 'w', 'sw'],
+      e: ['e', 'ne', 'se', 'n', 's', 'w', 'nw', 'sw'],
+      se: ['se', 'e', 's', 'ne', 'sw', 'n', 'w', 'nw'],
+      s: ['s', 'se', 'sw', 'e', 'w', 'n', 'ne', 'nw'],
+      sw: ['sw', 's', 'w', 'se', 'nw', 'n', 'e', 'ne'],
+      w: ['w', 'nw', 'sw', 'n', 's', 'e', 'ne', 'se'],
+      nw: ['nw', 'n', 'w', 'ne', 'sw', 's', 'e', 'se'],
+    };
+    return orders[normalized] || orders.n;
+  }
+
+  getPreferredSpriteKeyForRender(render) {
+    if (!render) {
+      return null;
+    }
+
+    const variants = render.spriteVariants && typeof render.spriteVariants === 'object'
+      ? render.spriteVariants
+      : null;
+
+    if (variants) {
+      const fallbacks = this.getSpriteFallbackOrder(render.orientation);
+      for (const token of fallbacks) {
+        const spriteKey = variants[token];
+        if (typeof spriteKey === 'string' && spriteKey.trim()) {
+          return spriteKey;
+        }
+      }
+    }
+
+    return render.spriteKey || null;
+  }
+
+  getPreferredSpriteKeyForEntity(entity) {
+    const render = entity?.getComponent?.('RenderComponent');
+    return this.getPreferredSpriteKeyForRender(render);
+  }
+
+  getCachedTextureForSpriteKey(spriteKey) {
+    if (!spriteKey) {
+      return null;
+    }
+
+    return PIXI.utils.TextureCache[`gen_${spriteKey}`]
+      || PIXI.utils.TextureCache[spriteKey]
+      || null;
+  }
+
+  syncPreferredSpriteTexture(entity, render) {
+    const preferredSpriteKey = this.getPreferredSpriteKeyForRender(render);
+    if (!preferredSpriteKey || render?._appliedTextureKey === preferredSpriteKey) {
+      return;
+    }
+
+    const texture = this.getCachedTextureForSpriteKey(preferredSpriteKey);
+    if (!texture) {
+      return;
+    }
+
+    this.replaceEntitySprite(entity, texture, preferredSpriteKey);
   }
 
   /**

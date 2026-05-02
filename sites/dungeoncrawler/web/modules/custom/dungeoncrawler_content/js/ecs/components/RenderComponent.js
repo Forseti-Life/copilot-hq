@@ -30,6 +30,7 @@ export class RenderComponent extends Component {
     this.visible = true;
     this.zIndex = 0;
     this.orientation = 'n';
+    this.spriteVariants = null;
 
     // Object definition hints for placeholder rendering
     this.objectCategory = null; // e.g. 'bar', 'table', 'door', 'crate', 'stool', 'decor'
@@ -59,6 +60,7 @@ export class RenderComponent extends Component {
       visible: this.visible,
       zIndex: this.zIndex,
       orientation: this.orientation,
+      spriteVariants: this.spriteVariants,
       objectCategory: this.objectCategory,
       objectColor: this.objectColor
     };
@@ -78,6 +80,7 @@ export class RenderComponent extends Component {
     component.visible = data.visible ?? true;
     component.zIndex = data.zIndex ?? 0;
     component.orientation = data.orientation ?? 'n';
+    component.spriteVariants = data.spriteVariants ?? null;
     component.objectCategory = data.objectCategory ?? null;
     component.objectColor = data.objectColor ?? null;
     return component;
