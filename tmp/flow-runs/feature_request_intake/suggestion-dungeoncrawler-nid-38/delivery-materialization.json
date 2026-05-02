@@ -1,0 +1,12 @@
+{
+  "run_id": "suggestion-dungeoncrawler-nid-38",
+  "feature_id": "dungeoncrawler-npc-dialogue-fix-nid-38",
+  "feature_brief": "features/dungeoncrawler-npc-dialogue-fix-nid-38/feature.md",
+  "source": "community_suggestion",
+  "site": "dungeoncrawler",
+  "nid": "38",
+  "returncode": 0,
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 38 | Decision: accept\nUpdated NID 38 to in_progress[suggestion-triage] Drupal node 38 \u2192 in_progress\nCreated features/dungeoncrawler-npc-dialogue-fix-nid-38/feature.md\n[suggestion-triage] Feature brief created: features/dungeoncrawler-npc-dialogue-fix-nid-38/feature.md\n[suggestion-triage] Next: fill in Acceptance Criteria and assign module ownership\n[suggestion-triage] Done. Decision recorded: accept for NID 38",
+  "stderr": "",
+  "materialized": true
+}

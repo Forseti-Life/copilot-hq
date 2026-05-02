@@ -1,0 +1,12 @@
+{
+  "run_id": "suggestion-dungeoncrawler-nid-39",
+  "feature_id": "dungeoncrawler-player-suggestion-intake",
+  "feature_brief": "features/dungeoncrawler-player-suggestion-intake/feature.md",
+  "source": "community_suggestion",
+  "site": "dungeoncrawler",
+  "nid": "39",
+  "returncode": 0,
+  "stdout": "[suggestion-triage] Site: dungeoncrawler | NID: 39 | Decision: accept\nUpdated NID 39 to in_progress[suggestion-triage] Drupal node 39 \u2192 in_progress\nCreated features/dungeoncrawler-player-suggestion-intake/feature.md\n[suggestion-triage] Feature brief created: features/dungeoncrawler-player-suggestion-intake/feature.md\n[suggestion-triage] Next: fill in Acceptance Criteria and assign module ownership\n[suggestion-triage] Done. Decision recorded: accept for NID 39",
+  "stderr": "",
+  "materialized": true
+}
