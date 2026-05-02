@@ -9,7 +9,7 @@
  */
 #}
 
-  <div class="hexmap-container" id="hexmap-container"{% if is_admin %} data-admin="1"{% endif %}>
+  <div class="hexmap-container hexmap-container--surface-map" id="hexmap-container" data-surface="map"{% if is_admin %} data-admin="1"{% endif %}>
   <div class="hexmap-header">
     <div class="hexmap-header__top">
       <div>
@@ -50,6 +50,18 @@
       </div>
     </div>
     
+  </div>
+
+  <div class="play-surface-tabs" id="play-surface-tabs" role="tablist" aria-label="{{ 'Player interface sections'|t }}">
+    <button class="play-surface-tab play-surface-tab--active" id="play-surface-tab-map" type="button" role="tab" aria-selected="true" data-surface="map">
+      <span class="play-surface-tab__icon">&#x1F5FA;</span>{{ 'Map'|t }}
+    </button>
+    <button class="play-surface-tab" id="play-surface-tab-chat" type="button" role="tab" aria-selected="false" data-surface="chat">
+      <span class="play-surface-tab__icon">&#x1F4AC;</span>{{ 'Chat'|t }}
+    </button>
+    <button class="play-surface-tab" id="play-surface-tab-character" type="button" role="tab" aria-selected="false" data-surface="character">
+      <span class="play-surface-tab__icon">&#x1F4DC;</span>{{ 'Character Sheet'|t }}
+    </button>
   </div>
 
   <div class="game-layout-controls">
@@ -679,6 +691,57 @@
     btn.addEventListener('click', function () {
       setDebugMode(!container.classList.contains(CSS_CLASS));
     });
+  })();
+
+  /* ---- Player Surface Tabs ---- */
+  (function () {
+    const container = document.getElementById('hexmap-container');
+    const tabBar = document.getElementById('play-surface-tabs');
+    if (!container || !tabBar) return;
+    const tabs = Array.prototype.slice.call(tabBar.querySelectorAll('.play-surface-tab'));
+    const STORAGE_KEY = 'dc_player_surface_tab';
+    const SURFACES = ['map', 'chat', 'character'];
+
+    function activateCharacterSheet() {
+      const sidebarTabBar = document.getElementById('sidebar-tabs');
+      if (!sidebarTabBar) return;
+      const characterTab = sidebarTabBar.querySelector('.sidebar-tab[data-panel="character"]');
+      if (characterTab) {
+        characterTab.click();
+      }
+    }
+
+    function activate(surface) {
+      if (SURFACES.indexOf(surface) === -1) {
+        surface = 'map';
+      }
+
+      container.dataset.surface = surface;
+      SURFACES.forEach(function (name) {
+        container.classList.toggle('hexmap-container--surface-' + name, name === surface);
+      });
+
+      tabs.forEach(function (tab) {
+        const active = tab.dataset.surface === surface;
+        tab.classList.toggle('play-surface-tab--active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        tab.setAttribute('tabindex', active ? '0' : '-1');
+      });
+
+      if (surface === 'character') {
+        activateCharacterSheet();
+      }
+
+      localStorage.setItem(STORAGE_KEY, surface);
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        activate(this.dataset.surface || 'map');
+      });
+    });
+
+    activate(localStorage.getItem(STORAGE_KEY) || 'map');
   })();
 
   /* ---- Sidebar Tab Switching ---- */

@@ -792,8 +792,6 @@
   min-width: 110px;
 }
 
-}
-
 .turn-hud__actions-list .list-label {
   font-size: var(--text-sm);
   letter-spacing: 0.02em;
@@ -1242,6 +1240,106 @@
   grid-template-columns: calc(100% - var(--sidebar-pct) * 1% - 16px) calc(var(--sidebar-pct) * 1%);
   gap: var(--space-4);
   align-items: start;
+}
+
+.play-surface-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+  padding: 4px;
+  background: var(--gray-800, #1e293b);
+  border: 1px solid var(--overlay-white-08);
+  border-radius: var(--radius-2xl, 18px);
+}
+
+.play-surface-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 120px;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: none;
+  border-radius: var(--radius-xl, 12px);
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: var(--text-sm, 0.875rem);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.play-surface-tab:hover {
+  color: var(--text, #e2e8f0);
+  background: var(--overlay-white-05, rgba(255,255,255,0.05));
+}
+
+.play-surface-tab--active {
+  background: var(--accent, #60a5fa);
+  color: var(--gray-950, #020617);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.play-surface-tab__icon {
+  line-height: 1;
+}
+
+.hexmap-container--surface-map .game-layout,
+.hexmap-container--surface-chat .game-layout,
+.hexmap-container--surface-character .game-layout {
+  grid-template-columns: 1fr;
+}
+
+.hexmap-container--surface-map .game-layout-controls,
+.hexmap-container--surface-chat .game-layout-controls,
+.hexmap-container--surface-character .game-layout-controls,
+.hexmap-container--surface-map #sidebar-drawer-toggle,
+.hexmap-container--surface-chat #sidebar-drawer-toggle,
+.hexmap-container--surface-character #sidebar-drawer-toggle {
+  display: none;
+}
+
+.hexmap-container--surface-map .hexmap-chat,
+.hexmap-container--surface-map .game-layout__sidebar {
+  display: none !important;
+}
+
+.hexmap-container--surface-chat .game-layout__sidebar,
+.hexmap-container--surface-chat #hexmap-canvas-container {
+  display: none !important;
+}
+
+.hexmap-container--surface-chat .hexmap-chat {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+}
+
+.hexmap-container--surface-chat .hexmap-chat__log {
+  flex: 1;
+  min-height: 52vh;
+}
+
+.hexmap-container--surface-character .game-layout__main {
+  display: none !important;
+}
+
+.hexmap-container--surface-character .game-layout__sidebar {
+  display: block !important;
+  position: static;
+  top: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.hexmap-container--surface-character .sidebar-tabs,
+.hexmap-container--surface-character .sidebar-panel {
+  display: none !important;
+}
+
+.hexmap-container--surface-character #sidebar-panel-character {
+  display: block !important;
 }
 
 /* --- Layout ratio slider --- */
@@ -3113,6 +3211,17 @@
    ========================================================================== */
 
 @media (max-width: 768px) {
+  .play-surface-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .play-surface-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: var(--space-2, 8px);
+  }
+
   /* Override grid to single column — sidebar is always fixed */
   .game-layout {
     grid-template-columns: 100% !important;
@@ -3143,5 +3252,16 @@
 
   .game-layout-controls {
     display: none;
+  }
+
+  .hexmap-container--surface-character .game-layout__sidebar {
+    position: static;
+    top: auto;
+    right: auto;
+    height: auto;
+    width: 100%;
+    transform: none;
+    box-shadow: none;
+    padding: 0;
   }
 }
