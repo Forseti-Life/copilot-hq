@@ -1,28 +1,23 @@
 - Status: in_progress
-- Summary: Investigating the release handoff gap for forseti.life. Dev reports done on run=20260501-200109 with 2 open issues and 243 min no-progress; reading dev outbox and current release state to identify what remains unresolved before producing triage artifacts.
+- Summary: Full investigation started. Reading dev outbox and current release state to understand what issues remain open and what the idle lane gap is before triaging next actions.
 
 ## Next actions
-- Read dev outbox `sessions/dev-forseti/outbox/20260428-syshealth-tailoring-queue-errors.md` to understand what dev completed and what open issues were flagged
-- Check current release state via `tmp/release-cycle-active/` and any active feature.md files for forseti
-- Review dev inbox item count and any findings items
-- Produce filled problem-statement, acceptance-criteria, and risk-assessment artifacts
-- Determine if QA handoff is needed and create inbox item
+- Read dev outbox at `sessions/dev-forseti/outbox/20260428-syshealth-tailoring-queue-errors.md` and any recent dev artifacts to understand what was completed and what the two open issues are
+- Check active release state (`tmp/release-cycle-active/`) and current feature backlog for forseti
+- Read QA latest audit at `sessions/qa-forseti/artifacts/auto-site-audit/latest/`
+- After reading, write triage artifact and dispatch inbox items to restore execution flow
 
 ## Blockers
-- None yet — investigation in progress
+- None yet — investigating now
 
 ## Needs from CEO
 - N/A
 
 ## ROI estimate
 - ROI: 80
-- Rationale: Active release lane is idle with 2 open issues and 243+ min stall; restoring execution flow directly unblocks shipping progress for forseti.life.
-
----
-
-Let me now read the relevant files to complete the investigation.
+- Rationale: Active lane idle for 243+ minutes with open issues signals delivery risk; restoring flow quickly prevents compounding delays and protects release integrity.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-release-handoff-full-investigation
-- Generated: 2026-05-02T03:06:09+00:00
+- Generated: 2026-05-02T03:16:14+00:00
