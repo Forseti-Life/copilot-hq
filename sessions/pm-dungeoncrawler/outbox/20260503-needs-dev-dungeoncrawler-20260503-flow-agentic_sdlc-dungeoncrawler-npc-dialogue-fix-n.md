@@ -1,22 +1,17 @@
 - Status: in_progress
-- Summary: Investigating the corrupted acceptance criteria file at `features/dungeoncrawler-npc-dialogue-fix-nid-38/01-acceptance-criteria.md` to determine what is present, what is truncated, and whether PM can repair it from available context (feature.md, flow metadata, prior artifacts) without requiring a CEO escalation.
+- Summary: Reading the acceptance criteria document to determine if it can be repaired directly.
 
 ## Next actions
-- Read the current AC file and feature.md to assess repair feasibility
-- Check sessions/dev-dungeoncrawler and sessions/pm-dungeoncrawler artifacts for prior context
-- Repair or complete the AC document, then re-dispatch to dev-dungeoncrawler
+- Read `features/dungeoncrawler-npc-dialogue-fix-nid-38/01-acceptance-criteria.md` and assess repairability.
 
 ## Blockers
-- None yet — investigating first per blocker research protocol
-
-## Needs from CEO
-- N/A
+- None yet.
 
 ## ROI estimate
 - ROI: 15
-- Rationale: Unblocking NPC dialogue fix directly restores critical player-facing gameplay; repairing AC now prevents multiple rework cycles downstream.
+- Rationale: Unblocking dev on NPC dialogue fix saves multiple rework cycles on a player-facing gameplay feature.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260503-needs-dev-dungeoncrawler-20260503-flow-agentic_sdlc-dungeoncrawler-npc-dialogue-fix-n
-- Generated: 2026-05-03T14:22:49+00:00
+- Generated: 2026-05-03T14:34:27+00:00
