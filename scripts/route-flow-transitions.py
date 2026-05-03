@@ -628,6 +628,23 @@ def ensure_release_ready_feature_package(*, feature_id: str, run_id: str) -> dic
         else:
             updated += ("\n" if not updated.endswith("\n") else "") + insertion
 
+    if (
+        "## Security acceptance criteria" not in updated
+        and not re.search(r"^-\s+Security AC exemption:\s*\S", updated, re.MULTILINE | re.IGNORECASE)
+    ):
+        security_section = (
+            "## Security acceptance criteria\n\n"
+            "- Authentication/permission surface: Preserve the existing player/GM permission boundaries for the affected flow; do not introduce new anonymous or cross-campaign access without explicit follow-up review.\n"
+            "- CSRF expectations: Any new or changed write actions, forms, or commands must continue to use the existing CSRF/session protections before state changes persist.\n"
+            "- Input validation: Validate user-controlled identifiers, gameplay references, and generated payload fields before storage, state mutation, or rendering.\n"
+            "- PII/logging constraints: Do not log raw player prompts, private campaign state, or bug-report payload details beyond the current approved debug surface.\n"
+        )
+        insertion_point = re.search(r"^## Mission Alignment\s*$", updated, re.MULTILINE)
+        if insertion_point:
+            updated = updated[:insertion_point.start()] + security_section + "\n" + updated[insertion_point.start():]
+        else:
+            updated = updated.rstrip() + "\n\n" + security_section + "\n"
+
     note = (
         f"- {date.today().isoformat()}: Auto-groomed from approved intake handoff; "
         f"acceptance criteria + test plan were materialized and the item was scoped to `{release_id}`."

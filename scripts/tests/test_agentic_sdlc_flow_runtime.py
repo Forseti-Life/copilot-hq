@@ -319,6 +319,7 @@ def test_materialize_feature_request_handoff_uses_suggestion_triage_and_returns_
     assert "- Status: ready" in feature_text
     assert "- Release: 20260502-forseti-release-q" in feature_text
     assert "Auto-groomed from approved intake handoff" in feature_text
+    assert "## Security acceptance criteria" in feature_text
     assert (feature_dir / "01-acceptance-criteria.md").exists()
     assert (feature_dir / "03-test-plan.md").exists()
     receipt = json.loads((run_dir / "delivery-materialization.json").read_text(encoding="utf-8"))

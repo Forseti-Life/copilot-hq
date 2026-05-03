@@ -544,6 +544,24 @@ def _queue_scope_activate_item(team: Dict[str, Any], release_id: str, ready_feat
     feature_lines = "\n".join(f"- `{feature_id}`" for feature_id in ready_features[:7])
     if len(ready_features) > 7:
         feature_lines += f"\n- ... plus {len(ready_features) - 7} more ready feature(s)"
+    command_lines = "\n".join(
+        f"bash scripts/pm-scope-activate.sh {team_id} {feature_id}"
+        for feature_id in ready_features[:8]
+    )
+    (item_dir / "command.md").write_text(
+        f"# Scope activation required: {release_id}\n\n"
+        f"The active release `{release_id}` still has zero scoped in-progress features even though ready backlog exists.\n"
+        "Activate release-ready features using the exact commands below.\n\n"
+        "## Exact activation commands\n"
+        "```bash\n"
+        f"{command_lines}\n"
+        "```\n\n"
+        "## Done when\n"
+        f"1. At least one listed feature for `{release_id}` is `- Status: in_progress` in `features/<id>/feature.md`.\n"
+        "2. The corresponding Dev and QA inbox items were created.\n"
+        "3. Your outbox cites the feature id(s) you activated and the generated inbox artifact paths.\n",
+        encoding="utf-8",
+    )
     (item_dir / "README.md").write_text(
         f"# Scope activation required: {release_id}\n\n"
         f"- Agent: {pm_id}\n"
@@ -554,12 +572,12 @@ def _queue_scope_activate_item(team: Dict[str, Any], release_id: str, ready_feat
         f"- The active release `{release_id}` has no scoped in-progress work yet.\n"
         f"- The backlog already has {len(ready_features)} release-ready feature(s) that can be activated now.\n\n"
         "## Required action\n"
-        f"Activate one or more ready features into the current release by running `bash scripts/pm-scope-activate.sh {team_id} <feature-id>`.\n"
+        f"Run the exact `bash scripts/pm-scope-activate.sh {team_id} <feature-id>` commands listed in `command.md`.\n"
         "Do not leave the release in a groomed-but-unstarted state.\n\n"
         "## Ready feature candidates\n"
         f"{feature_lines}\n\n"
         "## Done when\n"
-        "- At least one feature is `Status: in_progress` for the active release, OR the release is explicitly closed/emptied with a canonical PM artifact.\n",
+        "- At least one feature is `Status: in_progress` for the active release and its Dev/QA inbox items exist, OR the release is explicitly closed/emptied with a canonical PM artifact.\n",
         encoding="utf-8",
     )
     (item_dir / "roi.txt").write_text("210\n", encoding="utf-8")

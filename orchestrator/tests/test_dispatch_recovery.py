@@ -105,9 +105,12 @@ def test_scope_activate_nudge_dispatches_pm_item_for_ready_backlog(tmp_path):
     inbox = root / "sessions" / "pm-dungeoncrawler" / "inbox"
     items = list(inbox.glob("*-scope-activate-*"))
     assert len(items) == 1
+    command = (items[0] / "command.md").read_text(encoding="utf-8")
     readme = (items[0] / "README.md").read_text(encoding="utf-8")
     assert release_id in readme
     assert "dc-release-ready-feature" in readme
+    assert "pm-scope-activate.sh dungeoncrawler dc-release-ready-feature" in command
+    assert "generated inbox artifact paths" in command
     assert "pm-scope-activate.sh dungeoncrawler <feature-id>" in readme
 
 
