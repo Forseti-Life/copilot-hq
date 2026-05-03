@@ -1,7 +1,9 @@
 # Acceptance Criteria — dungeoncrawler-npc-dialogue-fix-nid-38
 
-1. ** - AC1: When a player addresses an NPC present in the current room, the NPC dialogue subsystem produces a non-empty spoken response within the same turn. - AC2: NPC responses are contextually appropriate (in-character, consistent with room data and NPC demeanor). - AC3: If the NPC dialogue subsystem is unavailable or errors, Forseti produces a clear, player-facing fallback message rather than silent failure. - AC4: Forseti does not generate new NPC dialogue itself (NPC Autonomy Doctrine is preserved)
-2. the fix must route through the N --- - Agent: ba-dungeoncrawler - Source inbox: /home/ubuntu/forseti.life/sessions/ba-dungeoncrawler/inbox/20260502-flow-feature_request_intake-suggestion-dungeoncrawler-nid-38-ba-requirements-review-r1 - Generated: 2026-05-02T19:52:18+00:00
+1. When Marta the Scholar is present in The Gilded Tankard room inventory for the player's current scene, she is also rendered on the in-game room map for that room.
+2. Marta's visibility on the map remains consistent with the active room entity list; she does not disappear from the map while still present in the room inventory/state.
+3. The fix preserves adjacent gameplay behavior and does not regress NPC dialogue, room inventory presentation, or the visibility of other NPCs/entities on the map.
+4. QA can verify the original report directly in the live Dungeoncrawler experience by loading The Gilded Tankard and confirming Marta appears on the map whenever she is listed in the room inventory.
 
 ## Source of truth
 

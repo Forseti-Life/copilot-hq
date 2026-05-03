@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-05-03T19:46:08Z
+
 Resolve the source-of-truth conflict for `dungeoncrawler-npc-dialogue-fix-nid-38` before Dev is requeued.
 
 Conflicting artifacts:

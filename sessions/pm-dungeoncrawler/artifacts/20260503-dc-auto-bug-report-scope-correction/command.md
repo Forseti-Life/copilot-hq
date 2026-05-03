@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-05-03T19:49:10Z
+
 Resolve the source-of-truth conflict for `dungeoncrawler-auto-bug-report` so the current release can proceed.
 
 Conflicting artifacts:
