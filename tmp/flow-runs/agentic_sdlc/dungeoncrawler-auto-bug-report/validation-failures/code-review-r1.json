@@ -1,0 +1,10 @@
+{
+  "node": "Code Review",
+  "owner_seat": "agent-code-review",
+  "rejected_outbox": "sessions/agent-code-review/outbox/20260503-flow-agentic_sdlc-dungeoncrawler-auto-bug-report-code-review-r1.md",
+  "errors": [
+    "review outbox must cite at least one reviewed artifact path from the handoff"
+  ],
+  "retry_item": "20260503-flow-agentic_sdlc-dungeoncrawler-auto-bug-report-code-review-validation-r1",
+  "created_at": "2026-05-03T20:08:32.612297Z"
+}
