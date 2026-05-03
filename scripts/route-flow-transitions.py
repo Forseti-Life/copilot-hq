@@ -276,6 +276,16 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
     if (
         status == "done"
         and flow_id == "release_shipping_flow"
+        and node == "Release Code Review"
+        and "No MEDIUM+ findings" in flow_outcomes
+        and "No active release-scoped feature artifacts were found" in command_text
+    ):
+        errors.append(
+            "Release Code Review cannot clear with 'No MEDIUM+ findings' when the handoff reported no active release-scoped feature artifacts"
+        )
+    if (
+        status == "done"
+        and flow_id == "release_shipping_flow"
         and node == "PM Signoff Readiness Check"
         and "Ready for signoff and push" in flow_outcomes
     ):
@@ -308,6 +318,39 @@ def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, o
         if source_feature_id and feature_id and source_feature_id != feature_id:
             errors.append("Prepare Delivery Handoff must preserve the exact Feature id chosen in the PM Scope Decision outbox")
     return errors
+
+
+def transition_selection_errors(
+    outgoing: list[dict[str, str]],
+    outcomes: list[str],
+) -> list[str]:
+    if not outgoing:
+        return []
+    direct = [transition for transition in outgoing if transition["condition"] == ""]
+    conditional = sorted(
+        {transition["condition"] for transition in outgoing if transition["condition"].strip()}
+    )
+    if outcomes:
+        invalid = [outcome for outcome in outcomes if outcome not in conditional]
+        errors: list[str] = []
+        if invalid:
+            errors.append(
+                "final outbox declared unsupported Flow outcome(s): "
+                + ", ".join(invalid)
+            )
+        if conditional and not any(outcome in conditional for outcome in outcomes):
+            errors.append(
+                "final outbox must select one of the available Flow outcomes: "
+                + " | ".join(conditional)
+            )
+        return errors
+    if conditional and not direct:
+        return [
+            "final outbox must include '- Flow outcome: <value>' for conditional routing; "
+            + "expected one of: "
+            + " | ".join(conditional)
+        ]
+    return []
 
 
 def queue_validation_retry(
@@ -1331,6 +1374,7 @@ def main() -> int:
         return 0
 
     command_meta = parse_simple_metadata(command_path.read_text(encoding="utf-8", errors="ignore"))
+    command_text = command_path.read_text(encoding="utf-8", errors="ignore")
     flow_id = command_meta.get("Flow id", "").strip()
     current_node = command_meta.get("Flow node", "").strip()
     if not flow_id or not current_node:
@@ -1361,19 +1405,18 @@ def main() -> int:
 
     node_details = node_detail_map(flow)
     outgoing = outgoing_transitions(flow, current_node)
-    transitions = selected_transitions(outgoing, extract_flow_outcomes(outbox_text))
-    if outgoing and not transitions:
-        log(f"no matching flow outcome for {flow_id}/{current_node}; no handoff created")
-        return 0
+    flow_outcomes = extract_flow_outcomes(outbox_text)
+    transitions = selected_transitions(outgoing, flow_outcomes)
 
     source_item_roi = read_item_roi(command_path.parent, 20)
     roi = max(source_item_roi, extract_roi(outbox_text, source_item_roi))
     route_date = route_date_for_item(item_name)
     validation_errors = validate_flow_done_outbox(
         command_meta,
-        command_path.read_text(encoding="utf-8", errors="ignore"),
+        command_text,
         outbox_text,
     )
+    validation_errors.extend(transition_selection_errors(outgoing, flow_outcomes))
     if validation_errors:
         queue_validation_retry(
             run_dir=run_dir,
@@ -1382,7 +1425,7 @@ def main() -> int:
             run_id=run_id,
             current_node=current_node,
             owner_seat=command_meta.get("Flow owner seat", "").strip() or agent_id,
-            original_command=command_path.read_text(encoding="utf-8", errors="ignore"),
+            original_command=command_text,
             source_roi=roi,
             outbox_file=outbox_file,
             errors=validation_errors,

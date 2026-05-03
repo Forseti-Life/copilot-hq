@@ -474,6 +474,221 @@ _IMPL_AGENT_PREFIX  = "dev-"
 _QA_AGENT_PREFIX    = "qa-"
 
 
+def _team_site_tokens(team: Dict[str, Any]) -> set[str]:
+    tokens: set[str] = set()
+    team_id = str(team.get("id") or "").strip().lower()
+    site = str(team.get("site") or "").strip().lower()
+    if team_id:
+        tokens.add(team_id)
+    if site:
+        tokens.add(site)
+        if site.endswith(".life"):
+            tokens.add(site[: -len(".life")])
+    for alias in team.get("aliases") or []:
+        alias_text = str(alias or "").strip().lower()
+        if alias_text:
+            tokens.add(alias_text)
+    return {token for token in tokens if token}
+
+
+def _load_feature_records() -> List[Dict[str, str]]:
+    features: List[Dict[str, str]] = []
+    features_root = REPO_ROOT / "features"
+    if not features_root.exists():
+        return features
+    for feature_md in sorted(features_root.glob("*/feature.md")):
+        try:
+            text = feature_md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        features.append(
+            {
+                "id": feature_md.parent.name,
+                "path": str(feature_md),
+                "text": text,
+                "website": (re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE).group(1).strip().lower()
+                            if re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE) else ""),
+                "status": (re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE).group(1).strip().lower()
+                           if re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE) else ""),
+                "release": (re.search(r"^-\s+Release:[ \t]*([^\n]*)$", text, re.MULTILINE | re.IGNORECASE).group(1).strip()
+                            if re.search(r"^-\s+Release:[ \t]*([^\n]*)$", text, re.MULTILINE | re.IGNORECASE) else ""),
+                "dev_owner": (re.search(r"^-\s+Dev owner:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE).group(1).strip()
+                              if re.search(r"^-\s+Dev owner:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE) else ""),
+                "qa_owner": (re.search(r"^-\s+QA owner:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE).group(1).strip()
+                             if re.search(r"^-\s+QA owner:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE) else ""),
+            }
+        )
+    return features
+
+
+def _feature_matches_team(feature: Dict[str, str], team: Dict[str, Any]) -> bool:
+    website = str(feature.get("website") or "").strip().lower()
+    if not website:
+        return False
+    return any(token in website for token in _team_site_tokens(team))
+
+
+def _queue_scope_activate_item(team: Dict[str, Any], release_id: str, ready_features: List[str]) -> bool:
+    pm_id = str(team.get("pm") or "").strip()
+    team_id = str(team.get("id") or "").strip()
+    site = str(team.get("site") or team_id).strip() or team_id
+    if not pm_id or not team_id or not ready_features:
+        return False
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+    item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-scope-activate-{slug}"
+    item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
+    outbox_path = REPO_ROOT / "sessions" / pm_id / "outbox" / f"{item_id}.md"
+    if item_dir.exists() or outbox_path.exists():
+        return False
+    item_dir.mkdir(parents=True, exist_ok=True)
+    feature_lines = "\n".join(f"- `{feature_id}`" for feature_id in ready_features[:7])
+    if len(ready_features) > 7:
+        feature_lines += f"\n- ... plus {len(ready_features) - 7} more ready feature(s)"
+    (item_dir / "README.md").write_text(
+        f"# Scope activation required: {release_id}\n\n"
+        f"- Agent: {pm_id}\n"
+        f"- Release: {release_id}\n"
+        f"- Status: pending\n"
+        f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+        "## Why this was queued\n"
+        f"- The active release `{release_id}` has no scoped in-progress work yet.\n"
+        f"- The backlog already has {len(ready_features)} release-ready feature(s) that can be activated now.\n\n"
+        "## Required action\n"
+        f"Activate one or more ready features into the current release by running `bash scripts/pm-scope-activate.sh {team_id} <feature-id>`.\n"
+        "Do not leave the release in a groomed-but-unstarted state.\n\n"
+        "## Ready feature candidates\n"
+        f"{feature_lines}\n\n"
+        "## Done when\n"
+        "- At least one feature is `Status: in_progress` for the active release, OR the release is explicitly closed/emptied with a canonical PM artifact.\n",
+        encoding="utf-8",
+    )
+    (item_dir / "roi.txt").write_text("210\n", encoding="utf-8")
+    print(f"SCOPE-ACTIVATE-NUDGE: dispatched to {pm_id} for release {release_id}")
+    return True
+
+
+def _ensure_agentic_sdlc_runtime(team: Dict[str, Any], feature: Dict[str, str], dev_agent: str, qa_agent: str) -> None:
+    flow_run_dir = REPO_ROOT / "tmp" / "flow-runs" / "agentic_sdlc" / feature["id"]
+    flow_run_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "id": str(team.get("id") or "").strip(),
+        "label": str(team.get("label") or team.get("id") or "").strip(),
+        "site": str(team.get("site") or team.get("id") or "").strip(),
+        "pm_agent": str(team.get("pm") or "").strip(),
+        "qa_agent": qa_agent,
+        "dev_agent": dev_agent,
+    }
+    (flow_run_dir / "product-team.json").write_text(_json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+def _queue_missing_dev_handoff(team: Dict[str, Any], feature: Dict[str, str], release_id: str) -> bool:
+    feature_id = feature["id"]
+    dev_agent = str(feature.get("dev_owner") or team.get("dev") or f"{_IMPL_AGENT_PREFIX}{team.get('id')}").strip()
+    qa_agent = str(feature.get("qa_owner") or team.get("qa") or f"{_QA_AGENT_PREFIX}{team.get('id')}").strip()
+    if not dev_agent or _agent_inbox_has_feature(dev_agent, feature_id) or _agent_outbox_has_feature(dev_agent, feature_id):
+        return False
+    _ensure_agentic_sdlc_runtime(team, feature, dev_agent, qa_agent)
+    item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-auto-recover-impl-{feature_id}"
+    item_dir = REPO_ROOT / "sessions" / dev_agent / "inbox" / item_id
+    outbox_path = REPO_ROOT / "sessions" / dev_agent / "outbox" / f"{item_id}.md"
+    if item_dir.exists() or outbox_path.exists():
+        return False
+    feature_dir = REPO_ROOT / "features" / feature_id
+    item_dir.mkdir(parents=True, exist_ok=True)
+    (item_dir / "roi.txt").write_text("220\n", encoding="utf-8")
+    command = (
+        f"- Flow id: agentic_sdlc\n"
+        f"- Flow run id: {feature_id}\n"
+        f"- Flow node: Generate Code\n"
+        f"- Flow owner seat: {dev_agent}\n"
+        f"- Flow previous node: PM Scope Decision\n"
+        f"- Product team id: {str(team.get('id') or '').strip()}\n"
+        f"- Product team label: {str(team.get('label') or team.get('id') or '').strip()}\n"
+        f"- Release id: {release_id}\n"
+        f"- Feature id: {feature_id}\n"
+        "- Available flow outcomes: Scope decision required\n"
+        "- Flow direct route available: yes\n\n"
+        "# Flow handoff: agentic_sdlc / Generate Code\n\n"
+        f"System recovery dispatched this implementation handoff because `{feature_id}` is already scoped to release `{release_id}` but no Dev inbox or outbox artifact was found for `{dev_agent}`.\n\n"
+        "## Required action\n"
+        f"1. Review `features/{feature_id}/feature.md`, `features/{feature_id}/01-acceptance-criteria.md`, and `features/{feature_id}/03-test-plan.md`.\n"
+        "2. Resume the Generate Code lane for this feature.\n"
+        "3. Finish with `- Status: done` when implementation is ready for code review, or `- Status: done` plus `- Flow outcome: Scope decision required` if PM must rebaseline scope.\n"
+        "4. Cite commit hashes or equivalent repo-state evidence in the outbox.\n"
+    )
+    (item_dir / "command.md").write_text(command, encoding="utf-8")
+    (item_dir / "README.md").write_text(
+        f"# Auto-recovered implementation handoff\n\n"
+        f"- Agent: {dev_agent}\n"
+        f"- Feature: {feature_id}\n"
+        f"- Release: {release_id}\n"
+        f"- Status: pending\n"
+        f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+        "## Why this exists\n"
+        "- The release already scoped this feature, but the implementation handoff was missing.\n"
+        "- This recovery item restores the flow-managed SDLC path without requiring PM to rediscover the gap manually.\n",
+        encoding="utf-8",
+    )
+    for artifact_name in ("feature.md", "01-acceptance-criteria.md", "03-test-plan.md"):
+        source = feature_dir / artifact_name
+        if source.exists():
+            (item_dir / artifact_name).write_text(source.read_text(encoding="utf-8", errors="ignore"), encoding="utf-8")
+    print(f"FEATURE-GAP-DEV-RECOVERY: dispatched to {dev_agent} for {feature_id} ({release_id})")
+    return True
+
+
+def _queue_missing_qa_handoff(team: Dict[str, Any], feature: Dict[str, str], release_id: str) -> bool:
+    feature_id = feature["id"]
+    dev_agent = str(feature.get("dev_owner") or team.get("dev") or f"{_IMPL_AGENT_PREFIX}{team.get('id')}").strip()
+    qa_agent = str(feature.get("qa_owner") or team.get("qa") or f"{_QA_AGENT_PREFIX}{team.get('id')}").strip()
+    if not qa_agent or _agent_inbox_has_feature(qa_agent, feature_id) or _agent_outbox_has_feature(qa_agent, feature_id):
+        return False
+    _ensure_agentic_sdlc_runtime(team, feature, dev_agent, qa_agent)
+    item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-auto-recover-suite-activate-{feature_id}"
+    item_dir = REPO_ROOT / "sessions" / qa_agent / "inbox" / item_id
+    outbox_path = REPO_ROOT / "sessions" / qa_agent / "outbox" / f"{item_id}.md"
+    if item_dir.exists() or outbox_path.exists():
+        return False
+    feature_dir = REPO_ROOT / "features" / feature_id
+    item_dir.mkdir(parents=True, exist_ok=True)
+    (item_dir / "roi.txt").write_text("90\n", encoding="utf-8")
+    command = (
+        f"- Flow id: agentic_sdlc\n"
+        f"- Flow run id: {feature_id}\n"
+        f"- Flow node: Test Cases Review\n"
+        f"- Flow owner seat: {qa_agent}\n"
+        f"- Flow previous node: PM Scope Decision\n"
+        f"- Product team id: {str(team.get('id') or '').strip()}\n"
+        f"- Product team label: {str(team.get('label') or team.get('id') or '').strip()}\n"
+        f"- Release id: {release_id}\n"
+        f"- Feature id: {feature_id}\n"
+        "- Available flow outcomes: Approved | Changes requested\n\n"
+        "# Flow handoff: agentic_sdlc / Test Cases Review\n\n"
+        f"System recovery dispatched this QA handoff because `{feature_id}` is scoped to release `{release_id}` but no QA suite-activation inbox or outbox artifact was found for `{qa_agent}`.\n\n"
+        "## Required action\n"
+        f"1. Review `features/{feature_id}/03-test-plan.md` and activate the feature coverage into the live QA suite.\n"
+        "2. Finish with `- Status: done` and `- Flow outcome: Approved` once the suite activation is complete, or `- Flow outcome: Changes requested` if the test plan needs revision.\n"
+    )
+    (item_dir / "command.md").write_text(command, encoding="utf-8")
+    (item_dir / "README.md").write_text(
+        f"# Auto-recovered QA handoff\n\n"
+        f"- Agent: {qa_agent}\n"
+        f"- Feature: {feature_id}\n"
+        f"- Release: {release_id}\n"
+        f"- Status: pending\n"
+        f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+        "## Why this exists\n"
+        "- The release already scoped this feature, but the QA suite-activation handoff was missing.\n",
+        encoding="utf-8",
+    )
+    for artifact_name in ("feature.md", "01-acceptance-criteria.md", "03-test-plan.md"):
+        source = feature_dir / artifact_name
+        if source.exists():
+            (item_dir / artifact_name).write_text(source.read_text(encoding="utf-8", errors="ignore"), encoding="utf-8")
+    print(f"FEATURE-GAP-QA-RECOVERY: dispatched to {qa_agent} for {feature_id} ({release_id})")
+    return True
+
+
 def _agent_inbox_has_feature(agent_id: str, feat_name: str) -> bool:
     """Return True if agent's inbox has any item whose name contains feat_name."""
     inbox = _agent_inbox_dir(agent_id)
@@ -515,20 +730,105 @@ def _agent_outbox_has_done_feature(agent_id: str, feat_name: str) -> bool:
 
 
 def _dispatch_feature_gap_remediation() -> None:
-    """DEPRECATED: Feature gaps should be prevented by enforcing Gate 1a.
-    
-    Gate 1a (Feature Scope) must create dev/QA inbox items as part of scoping ceremony.
-    This function is no longer called and will be removed when Gate 1a enforcement is complete.
-    """
-    pass
+    """Repair scoped-release features that lost their Dev or QA handoff artifacts."""
+    active_dir = REPO_ROOT / "tmp" / "release-cycle-active"
+    if not active_dir.exists():
+        return
+    team_map = _release_enabled_team_map()
+    if not team_map:
+        return
+    now = _now_ts()
+    state_dir = REPO_ROOT / "tmp" / "feature-gap-remediation"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    feature_records = _load_feature_records()
+
+    for rid_file in active_dir.glob("*.release_id"):
+        team_id = rid_file.name.replace(".release_id", "")
+        team = team_map.get(team_id)
+        if not team:
+            continue
+        release_id = rid_file.read_text(encoding="utf-8").strip()
+        if not release_id:
+            continue
+        for feature in feature_records:
+            if feature.get("status") != "in_progress":
+                continue
+            if feature.get("release") != release_id:
+                continue
+            if not _feature_matches_team(feature, team):
+                continue
+            state_file = state_dir / f"{team_id}-{feature['id']}.last"
+            if not _cooldown_ok(state_file, _FEATURE_GAP_COOLDOWN):
+                continue
+            dispatched = False
+            dispatched = _queue_missing_dev_handoff(team, feature, release_id) or dispatched
+            dispatched = _queue_missing_qa_handoff(team, feature, release_id) or dispatched
+            if dispatched:
+                _mark_now(state_file)
 
 def _dispatch_scope_activate_nudge() -> None:
-    """DEPRECATED: Gate 1a enforcement removes the need for auto-nudge.
-    
-    Gate 1a is now mandatory — feature scoping must create work assignments immediately.
-    This function is no longer called and will be removed when Gate 1a enforcement is complete.
-    """
-    pass
+    """Queue PM scope-activation work when a current release has ready backlog but no active scope."""
+    active_dir = REPO_ROOT / "tmp" / "release-cycle-active"
+    if not active_dir.exists():
+        return
+    team_map = _release_enabled_team_map()
+    if not team_map:
+        return
+    now = _now_ts()
+    state_dir = REPO_ROOT / "tmp" / "scope-activate-nudges"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    feature_records = _load_feature_records()
+
+    for rid_file in active_dir.glob("*.release_id"):
+        team_id = rid_file.name.replace(".release_id", "")
+        team = team_map.get(team_id)
+        if not team:
+            continue
+        release_id = rid_file.read_text(encoding="utf-8").strip()
+        if not release_id:
+            continue
+        pm_id = str(team.get("pm") or "").strip()
+        if not pm_id:
+            continue
+        slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+        signoff_file = REPO_ROOT / "sessions" / pm_id / "artifacts" / "release-signoffs" / f"{slug}.md"
+        if signoff_file.exists():
+            continue
+
+        ready_features = [
+            feature["id"]
+            for feature in feature_records
+            if _feature_matches_team(feature, team)
+            and feature.get("status") in {"ready", "done"}
+            and (not feature.get("release") or feature.get("release") == release_id)
+        ]
+        scoped_count = sum(
+            1
+            for feature in feature_records
+            if _feature_matches_team(feature, team)
+            and feature.get("status") in {"in_progress", "done"}
+            and feature.get("release") == release_id
+        )
+        if scoped_count > 0 or not ready_features:
+            continue
+
+        started_file = active_dir / f"{team_id}.started_at"
+        if started_file.exists():
+            try:
+                started = _dt.fromisoformat(started_file.read_text(encoding="utf-8").strip().replace("Z", "+00:00"))
+                age_seconds = max(0, now - int(started.timestamp()))
+            except Exception:
+                age_seconds = 0
+        else:
+            age_seconds = 0
+        if age_seconds < (_SCOPE_ACTIVATE_GRACE_MINS * 60):
+            continue
+
+        state_file = state_dir / f"{team_id}-{slug}.last"
+        if not _cooldown_ok(state_file, _SCOPE_ACTIVATE_COOLDOWN):
+            continue
+        if _queue_scope_activate_item(team, release_id, ready_features):
+            _mark_now(state_file)
 
 def _dispatch_gate2_auto_approve() -> None:
     """MODIFIED: Detect when Gate 2 is ready for QA approval (detection-only, no auto-approve).
