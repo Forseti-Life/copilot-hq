@@ -1,0 +1,10 @@
+{
+  "node": "PM Scope Rebaseline",
+  "owner_seat": "pm-dungeoncrawler",
+  "rejected_outbox": "sessions/pm-dungeoncrawler/outbox/20260503-flow-agentic_sdlc-dungeoncrawler-npc-dialogue-bug-reporting-flow-pm-scope-rebaseline-r1.md",
+  "errors": [
+    "final outbox appears semantically divergent from the upstream request (matched anchors: criteria; expected anchors include: party, room, state, persistence, clear)"
+  ],
+  "retry_item": "20260503-flow-agentic_sdlc-dungeoncrawler-npc-dialogue-bug-reporting-flow-pm-scope-rebaseline-validation-r1",
+  "created_at": "2026-05-03T13:36:56.195004Z"
+}
