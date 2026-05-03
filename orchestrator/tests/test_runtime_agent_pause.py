@@ -49,6 +49,26 @@ class TestRuntimeAgentPause(unittest.TestCase):
             finally:
                 run._RUNTIME_AGENT_PAUSE_DIR = original_dir
 
+    def test_is_inbox_item_done_ignores_template_status_line(self):
+        with tempfile.TemporaryDirectory() as td:
+            item_dir = Path(td) / "item"
+            item_dir.mkdir(parents=True, exist_ok=True)
+            (item_dir / "command.md").write_text(
+                "- Status: done | in_progress | blocked | needs-info\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(run._is_inbox_item_done(item_dir))
+
+    def test_is_inbox_item_done_accepts_exact_done(self):
+        with tempfile.TemporaryDirectory() as td:
+            item_dir = Path(td) / "item"
+            item_dir.mkdir(parents=True, exist_ok=True)
+            (item_dir / "command.md").write_text(
+                "- Status: done\n",
+                encoding="utf-8",
+            )
+            self.assertTrue(run._is_inbox_item_done(item_dir))
+
 
 if __name__ == "__main__":
     unittest.main()

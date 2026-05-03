@@ -348,7 +348,11 @@ def _is_inbox_item_done(item_dir: Path) -> bool:
         return False
     try:
         text = cmd.read_text(encoding="utf-8", errors="ignore")
-        return bool(_re.search(r"^-\s+[Ss]tatus:\s*done", text, _re.MULTILINE))
+        match = _re.search(r"^-\s+[Ss]tatus:\s*(.+)$", text, _re.MULTILINE)
+        if not match:
+            return False
+        status_value = match.group(1).strip().lower()
+        return status_value == "done"
     except Exception:
         return False
 

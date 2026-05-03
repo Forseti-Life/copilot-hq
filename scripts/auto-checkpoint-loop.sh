@@ -40,7 +40,7 @@ case "$cmd" in
       echo "Already running (pid $(read_pid))"
       exit 0
     fi
-    setsid bash -c "'$0' run '$interval'" >/dev/null 2>&1 &
+    setsid "$0" run "$interval" </dev/null >/dev/null 2>&1 &
     pid=$!
     echo "$pid" > "$PIDFILE"
     echo "Started (pid $pid)"
