@@ -42,3 +42,4 @@ This feature has been re-queued after source-of-truth package repair. The canoni
 ## Needs from Supervisor
 - <specific need, or `None` when status is done/in_progress>
 ```
+- Agent: dev-dungeoncrawler

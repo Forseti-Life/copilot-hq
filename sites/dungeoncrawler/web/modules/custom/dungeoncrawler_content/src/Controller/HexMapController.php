@@ -1300,7 +1300,7 @@ class HexMapController extends ControllerBase {
     }
 
     $dungeon_payload['entities'][] = [
-      'entity_type' => 'npc',
+      'entity_type' => 'creature',
       'instance_id' => $instance_id,
       'entity_ref' => [
         'content_type' => 'npc',
@@ -1391,7 +1391,7 @@ class HexMapController extends ControllerBase {
       $r = isset($position['r']) ? (int) $position['r'] : rand(-2, 2);
 
       $dungeon_payload['entities'][] = [
-        'entity_type' => 'npc',
+        'entity_type' => 'creature',
         'instance_id' => $instance_id,
         'entity_ref' => [
           'content_type' => 'npc',

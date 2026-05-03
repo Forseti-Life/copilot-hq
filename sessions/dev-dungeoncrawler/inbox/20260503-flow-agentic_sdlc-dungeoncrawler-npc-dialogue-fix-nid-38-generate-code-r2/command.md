@@ -43,3 +43,4 @@ This inbox item was routed automatically from `PM Scope Rebaseline` after `pm-du
 ## Needs from Supervisor
 - <specific need, or `None` when status is done/in_progress>
 ```
+- Agent: dev-dungeoncrawler

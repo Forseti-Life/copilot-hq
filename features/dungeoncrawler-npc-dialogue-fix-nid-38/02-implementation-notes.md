@@ -4,21 +4,23 @@
 Marta the Scholar (quest_giver NPC) is present in The Gilded Tankard room inventory but does not appear on the in-game room map for the player. This is a rendering/visibility issue specific to this NPC node.
 
 ## Root Cause Analysis
-The issue appears to be in the NPC map rendering layer where entities in the room inventory are not all being included in the map display. The hexmap/entity visibility system likely has a filtering condition that is excluding Marta despite her being present in the room state.
+The issue was in the NPC entity type specification. The HexMapController PHP code was creating NPC entities with `entity_type: 'npc'`, but the JavaScript EntityInstanceMapper validator in the ECS (Entity Component System) expects entity_type to be one of: ['creature', 'item', 'obstacle']. This caused NPCs (including quest_giver NPCs like Marta) to fail validation and not appear on the map.
 
 ## Implementation Approach
-1. Trace the NPC/entity rendering pipeline for room maps
-2. Identify why Marta is not appearing on the map despite being in inventory
-3. Apply a targeted fix to restore visibility
-4. Verify no regressions in adjacent NPC/entity visibility
+1. Identified where NPCs are injected into the entity list in HexMapController
+2. Traced the entity type validation in the JavaScript ECS system
+3. Changed entity_type from 'npc' to 'creature' in two places:
+   - `injectRoomNpcEntities()` function (line 1394)
+   - `injectRoomBarkeepEntity()` function (line 1303)
+4. Kept `content_type: 'npc'` in the entity_ref to maintain semantic information about the entity type
 
 ## Code Changes
-- Target module: dungeoncrawler_content (entity/NPC rendering)
-- Key files to inspect:
-  - NPC rendering templates (Twig)
-  - Entity visibility logic
-  - Hexmap/map display components
-  
+- Target module: dungeoncrawler_content (HexMapController)
+- File modified: sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/src/Controller/HexMapController.php
+- Changes:
+  - Line 1303: Changed `'entity_type' => 'npc'` to `'entity_type' => 'creature'` in barkeep entity creation
+  - Line 1394: Changed `'entity_type' => 'npc'` to `'entity_type' => 'creature'` in NPC entity creation
+   
 ## Testing Plan
 - Verify Marta appears on The Gilded Tankard map when in room inventory
 - Confirm she remains visible consistently
@@ -26,8 +28,8 @@ The issue appears to be in the NPC map rendering layer where entities in the roo
 - Run adjacent dialogue/entity gameplay flows
 
 ## Rollback Plan
-If issues arise, revert the commit and restore prior behavior.
+If issues arise, revert to 'entity_type' => 'npc' in the two locations.
 
 ## Status
-- In progress
-- Created: 2026-05-03
+- Implementation complete
+- Ready for QA verification
