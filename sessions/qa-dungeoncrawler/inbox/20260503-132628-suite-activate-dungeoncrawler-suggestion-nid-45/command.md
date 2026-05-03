@@ -89,3 +89,5 @@ The feature is in scope; Dev will implement it this release. Tests must be live 
 
 - Intake flow run: `suggestion-dungeoncrawler-nid-45`
 - Canonical feature brief: `features/dungeoncrawler-suggestion-nid-45/feature.md`
+- Agent: qa-dungeoncrawler
+- Status: pending

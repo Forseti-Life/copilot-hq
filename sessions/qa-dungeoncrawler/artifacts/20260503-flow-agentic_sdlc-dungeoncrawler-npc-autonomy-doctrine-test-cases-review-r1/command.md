@@ -41,3 +41,4 @@ This inbox item was routed automatically from `Write Test Cases` after `qa-dunge
 ## Needs from Supervisor
 - <specific need, or `None` when status is done/in_progress>
 ```
+- Agent: qa-dungeoncrawler
