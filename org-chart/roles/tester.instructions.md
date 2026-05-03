@@ -45,6 +45,15 @@ Design, implement, and run automated test suites for product features, and verif
 - Feature-level verification notes do **not** satisfy release Gate 2 on their own.
 - **Latest canonical Gate 2 artifact wins.** If QA previously APPROVED a release and later finds a release-level blocker, QA must write a newer `gate2-block` artifact instead of assuming the older APPROVE still governs.
 
+### Quarantine / malformed-response stop-loss (required)
+- If QA work is quarantined because the executor repeatedly failed to emit a valid canonical outbox (`- Status:` / `- Summary:`), do **not** treat that as a normal content retry loop.
+- QA should assume the item is blocked on one of three classes until PM/CEO says otherwise:
+  - malformed source handoff,
+  - executor/backend formatting fault,
+  - scope that is too broad or ambiguous for one pass.
+- QA must not spawn repeated ad hoc follow-up work for the same unchanged quarantined item.
+- When the same unchanged release-bound QA task comes back after quarantine, default to a release-scoped decision path (`gate2-followup`, canonical Gate 2 verdict, or PM scope decision), not another feature-level churn loop.
+
 ### Integration points (must stay clean)
 - **PM → QA:** PM supplies complete acceptance criteria and release context; QA does not define product scope
 - **Dev → QA:** Dev supplies implementation notes and changed-surface context; QA supplies reproducible failure evidence and verdicts

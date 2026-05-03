@@ -18,6 +18,7 @@ Tick pipeline (in order):
 from __future__ import annotations
 
 import argparse
+import json as _json
 import os
 import re
 import subprocess
@@ -270,6 +271,64 @@ def _is_agent_paused(agent_id: str) -> bool:
         return False
     rc, out = _run(["bash", str(script), agent_id], timeout=30)
     return rc == 0 and out.strip().lower() == "true"
+
+
+_RUNTIME_AGENT_PAUSE_DIR = REPO_ROOT / "tmp" / "agent-pauses"
+_EXECUTOR_CIRCUIT_BREAKER_THRESHOLD = max(1, _safe_int(os.environ.get("EXECUTOR_CIRCUIT_BREAKER_THRESHOLD", "8"), 8))
+_EXECUTOR_CIRCUIT_BREAKER_TTL_SECONDS = max(300, _safe_int(os.environ.get("EXECUTOR_CIRCUIT_BREAKER_TTL_SECONDS", "7200"), 7200))
+
+
+def _runtime_agent_pause_file(agent_id: str) -> Path:
+    return _RUNTIME_AGENT_PAUSE_DIR / f"{agent_id}.json"
+
+
+def _runtime_pause_agent(agent_id: str, *, failure_count: int, reason: str, source: str, ttl_seconds: int) -> Path | None:
+    if not agent_id or agent_id == "unknown" or agent_id.startswith("ceo-"):
+        return None
+    _RUNTIME_AGENT_PAUSE_DIR.mkdir(parents=True, exist_ok=True)
+    pause_file = _runtime_agent_pause_file(agent_id)
+    payload = {
+        "agent_id": agent_id,
+        "paused": True,
+        "source": source,
+        "reason": reason,
+        "failure_count_24h": failure_count,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at_ts": _now_ts() + max(300, ttl_seconds),
+    }
+    pause_file.write_text(_json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return pause_file
+
+
+def _queue_executor_circuit_breaker_item(agent_id: str, failure_count: int, issues: List[str], pause_file: Path | None) -> str:
+    ceo_agent = _primary_ceo_agent()
+    slug = re.sub(r"[^a-z0-9-]+", "-", agent_id.lower()).strip("-")[:40]
+    item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-needs-{ceo_agent}-executor-circuit-{slug}"
+    item_dir = REPO_ROOT / "sessions" / ceo_agent / "inbox" / item_id
+    if item_dir.exists():
+        return f"duplicate:{item_id}"
+    item_dir.mkdir(parents=True, exist_ok=True)
+    issue_lines = "\n".join(f"- {issue}" for issue in issues) if issues else "- High executor failure rate triggered the circuit breaker."
+    pause_ref = str(pause_file) if pause_file else "not written"
+    (item_dir / "README.md").write_text(
+        f"# Executor circuit breaker: {agent_id}\n\n"
+        f"- Agent: {ceo_agent}\n"
+        f"- Item: {item_id}\n"
+        f"- Status: pending\n"
+        f"- Supervisor: board\n"
+        f"- Created: {datetime.now(timezone.utc).isoformat()}\n\n"
+        f"## Decision needed\n"
+        f"- Review why `{agent_id}` exceeded the executor failure threshold and decide whether to resume, tighten prompts/inputs, or keep the runtime pause in place.\n\n"
+        f"## Recommendation\n"
+        f"- Do not resume `{agent_id}` until the failure mode is classified as content-quality, backend, or prompt-structure and one concrete remediation is chosen.\n\n"
+        f"## Evidence\n"
+        f"- Agent paused: `{agent_id}`\n"
+        f"- Failures in last 24h: {failure_count}\n"
+        f"- Runtime pause file: `{pause_ref}`\n"
+        f"{issue_lines}\n",
+        encoding="utf-8",
+    )
+    return item_id
 
 
 def _agent_level_weight(role: str) -> int:
@@ -1253,6 +1312,45 @@ def _health_check_step(provider: "RuntimeProvider", log: List[Any]) -> None:
                     print(f"EXECUTOR-HEALTH: {failure_analysis['total_failures']} failures in 24h")
                     for issue in failure_analysis.get("potential_issues", []):
                         print(f"  - {issue}")
+                circuit_breaker_actions: List[Dict[str, Any]] = []
+                for agent_id, count in failure_analysis.get("high_rate_agents", []):
+                    if not agent_id or agent_id == "unknown" or agent_id.startswith("ceo-"):
+                        continue
+                    if count < _EXECUTOR_CIRCUIT_BREAKER_THRESHOLD:
+                        continue
+                    if _is_agent_paused(agent_id):
+                        continue
+                    reason = (
+                        f"Executor circuit breaker: {count} failures in 24h for {agent_id}. "
+                        f"Automatic seat pause applied pending CEO review."
+                    )
+                    pause_file = _runtime_pause_agent(
+                        agent_id,
+                        failure_count=count,
+                        reason=reason,
+                        source="executor-circuit-breaker",
+                        ttl_seconds=_EXECUTOR_CIRCUIT_BREAKER_TTL_SECONDS,
+                    )
+                    review_item = _queue_executor_circuit_breaker_item(
+                        agent_id,
+                        count,
+                        failure_analysis.get("potential_issues", []),
+                        pause_file,
+                    )
+                    print(
+                        f"EXECUTOR-CIRCUIT-BREAKER: paused {agent_id} "
+                        f"failures_24h={count} ttl={_EXECUTOR_CIRCUIT_BREAKER_TTL_SECONDS}s review_item={review_item}"
+                    )
+                    circuit_breaker_actions.append(
+                        {
+                            "agent": agent_id,
+                            "failures_24h": count,
+                            "pause_file": str(pause_file) if pause_file else None,
+                            "review_item": review_item,
+                        }
+                    )
+                if circuit_breaker_actions:
+                    alert["executor_circuit_breaker"] = circuit_breaker_actions
     except Exception as e:
         print(f"FAILURE-ANALYSIS-ERR: {e}")
 

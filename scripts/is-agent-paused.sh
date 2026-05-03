@@ -10,7 +10,8 @@ if [ -z "$AGENT_ID" ]; then
 fi
 
 python3 - "$AGENT_ID" <<'PY'
-import sys, re
+import json
+import sys, re, time
 from pathlib import Path
 agent_id = sys.argv[1]
 text = Path('org-chart/agents/agents.yaml').read_text(encoding='utf-8', errors='ignore').splitlines()
@@ -26,6 +27,14 @@ for line in text:
         if m:
             paused = m.group(1).strip().lower() in ('true','yes','1','on')
             break
+runtime_pause = Path("tmp/agent-pauses") / f"{agent_id}.json"
+if runtime_pause.exists():
+    try:
+        payload = json.loads(runtime_pause.read_text(encoding="utf-8", errors="ignore") or "{}")
+    except Exception:
+        payload = {}
+    expires_at = payload.get("expires_at_ts")
+    if isinstance(expires_at, int) and expires_at > int(time.time()):
+        paused = True
 print("true" if paused else "false")
 PY
-

@@ -56,6 +56,29 @@ This file is owned by the `pm-dungeoncrawler` seat.
 - **Expected QA return (release verification):** explicit feature-level verdicts plus one release-scoped Gate 2 APPROVE/BLOCK artifact containing the exact release ID
 - **Routing rule:** do not expect qa-dungeoncrawler to create Dev inbox items; QA supplies evidence, PM/CEO route follow-up
 
+## Pre-dev acceptance-criteria integrity check (required — added 2026-05-03)
+
+Before dispatching any `Generate Code` handoff to `dev-dungeoncrawler`, verify that `features/<feature-id>/01-acceptance-criteria.md` is complete and not visibly truncated.
+
+Minimum required check:
+
+```bash
+feature_id="<feature-id>"
+test -s "features/${feature_id}/01-acceptance-criteria.md" &&
+tail -20 "features/${feature_id}/01-acceptance-criteria.md"
+```
+
+Dispatch is blocked if any of the following are true:
+- the file is missing or empty,
+- the criteria stop mid-sentence or mid-bullet,
+- the implementation target / expected behavior is not explicit enough for Dev to act,
+- QA would not be able to determine success from the written criteria alone.
+
+If blocked:
+- repair the acceptance criteria in the same PM cycle, or
+- defer the feature with the exact reason,
+- but do **not** send Dev a speculative handoff and wait for a `needs-info` bounce.
+
 ## Repo-state proof rule (required — added 2026-04-27)
 
 Your outbox must describe only actions that are already visible in repo state.

@@ -20,6 +20,18 @@ from typing import Any, Dict, List, Optional
 REPO_ROOT = None  # Injected by caller
 
 
+def _emit_event(name: str) -> None:
+    """Write a best-effort event signal file for release observers."""
+    if REPO_ROOT is None or not name:
+        return
+    try:
+        events_dir = REPO_ROOT / "tmp" / "events" / "pending"
+        events_dir.mkdir(parents=True, exist_ok=True)
+        (events_dir / f"{name}.signal").write_text(str(_now_ts()), encoding="utf-8")
+    except Exception:
+        pass
+
+
 def set_repo_root(root: Path) -> None:
     """Inject REPO_ROOT path (called from run.py)."""
     global REPO_ROOT

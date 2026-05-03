@@ -163,3 +163,41 @@ def test_feature_gap_remediation_restores_dev_handoff_even_if_qa_artifact_exists
 
     qa_recovery_items = list((root / "sessions" / "qa-dungeoncrawler" / "inbox").glob("*-auto-recover-suite-activate-dc-release-missing-dev"))
     assert qa_recovery_items == []
+
+
+def test_gate2_ready_dispatch_emits_event_signal(tmp_path):
+    root = tmp_path / "hq"
+    (root / "features").mkdir(parents=True)
+    active_dir = root / "tmp" / "release-cycle-active"
+    active_dir.mkdir(parents=True)
+    release_id = "20990101-dungeoncrawler-release-z"
+    (active_dir / "dungeoncrawler.release_id").write_text(f"{release_id}\n", encoding="utf-8")
+    _write_product_team(
+        root,
+        team_id="dungeoncrawler",
+        site="dungeoncrawler",
+        pm="pm-dungeoncrawler",
+        dev="dev-dungeoncrawler",
+        qa="qa-dungeoncrawler",
+    )
+    _write_feature(
+        root,
+        feature_id="dc-release-ready-for-gate2",
+        site="dungeoncrawler",
+        release_id=release_id,
+        status="in_progress",
+        dev_owner="dev-dungeoncrawler",
+        qa_owner="qa-dungeoncrawler",
+    )
+    qa_outbox = root / "sessions" / "qa-dungeoncrawler" / "outbox"
+    qa_outbox.mkdir(parents=True, exist_ok=True)
+    (
+        qa_outbox
+        / "20990101-suite-activate-dc-release-ready-for-gate2.md"
+    ).write_text("- Status: done\n- Summary: suite activated\n", encoding="utf-8")
+
+    _setup_dispatch(root)
+    dispatch._dispatch_gate2_auto_approve()
+
+    signal = root / "tmp" / "events" / "pending" / "gate2-ready-for-qa-decision.signal"
+    assert signal.exists()

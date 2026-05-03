@@ -107,6 +107,33 @@ Delegation rule (current org policy):
 ### PM integration rule
 - PM must not expect QA to route Dev work. QA supplies evidence and decisions; PM/CEO automation routes implementation follow-up.
 
+## Pre-dev handoff integrity gate (required)
+- PM must not dispatch `Generate Code` / Dev implementation work unless the feature handoff is complete and internally coherent in repo state.
+- Minimum pre-dev handoff contract:
+  - `feature.md` exists and reflects the intended active status/release.
+  - `01-acceptance-criteria.md` exists and is complete enough for Dev and QA to act on without reconstructing scope from prose fragments.
+  - The acceptance criteria end in a complete set of actionable requirements and a definition of success for QA verification.
+- If the acceptance criteria file is truncated, malformed, contradictory, or clearly incomplete, PM must **repair or defer** the feature in the same cycle instead of dispatching Dev and waiting for a `needs-info` bounce.
+
+## Supervisor same-cycle disposition rule (required)
+- When PM receives a supervisor escalation such as `needs-info`, `needs-qa`, `needs-dev`, quarantine follow-up, or other handoff-repair item, PM must dispose of it in the **same inbox cycle**.
+- Allowed dispositions are exactly:
+  1. repair the source artifact or source-of-truth file,
+  2. defer / descope the feature or release-bound work,
+  3. re-dispatch with tighter scope or corrected handoff context,
+  4. escalate to CEO only when the decision exceeds PM authority.
+- PM must not passively carry unresolved supervisor escalations forward without choosing one of the dispositions above.
+
+## Quarantine stop-loss rule (required)
+- If a work item returns to PM because the executor quarantined it after repeated malformed or status-header-invalid responses, PM must treat the quarantine as a **stop signal**, not as a normal retry prompt.
+- Default rule: **one rewritten redrive maximum** for the same underlying work item when the source inputs changed materially.
+- PM must not re-dispatch the same unchanged task repeatedly after quarantine.
+- After the first rewritten redrive, PM must choose one of:
+  - close with manual evidence,
+  - defer / descoped pending clarification,
+  - escalate as backend / executor-health investigation.
+- Quarantine without material input changes is a process-quality issue, not productive throughput.
+
 Escalation rules:
 - QA escalates to PM after **5 failed attempts** to fix a single failing test (or tightly-coupled failure cluster). PM must decide:
   - accept risk,

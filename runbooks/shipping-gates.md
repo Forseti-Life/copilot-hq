@@ -127,6 +127,14 @@ Clean-audit auto-approval rule:
 - CEO backstop: the scheduled 2-hour CEO cycle (`scripts/ceo-ops-once.sh`, installed by `scripts/install-crons.sh`) re-runs the same remediation and queues a CEO root-cause review item if the backstop had to intervene.
 - Purpose: a clean audit is sufficient Gate 2 evidence; duplicate or stale suite-activate churn must not keep PM signoff blocked.
 
+Gate 2 anti-churn rule:
+- If release-bound QA work starts churning at the feature level (for example repeated quarantines, repeated test-review redispatches, or no new evidence between cycles), PM must stop generating more feature-level QA churn for that same release decision.
+- Instead, PM must route one release-scoped follow-up path:
+  - canonical Gate 2 APPROVE/BLOCK,
+  - clean-audit backstop,
+  - or explicit PM/CEO decision on whether the release remains blocked.
+- The intent is to keep Gate 2 as a release decision boundary, not an infinite loop of feature-level restatement.
+
 Failing-audit release verdict dispatch rule:
 - When an active-release audit is **not** clean, `scripts/site-audit-run.sh` must queue a release-scoped QA inbox item for the owning QA seat in addition to any dev findings items.
 - That QA item exists solely to produce one canonical release verdict artifact with the exact release ID and explicit `APPROVE` or `BLOCK`.
@@ -136,6 +144,35 @@ Failing-audit release verdict dispatch rule:
 Repo-state truth rule for handoffs:
 - Any outbox claim of the form `Created: <path>` only counts when that path exists in repo state after execution.
 - Executor and supervisor reviews must treat non-existent claimed paths the same way as missing signoff artifacts: the work is **not done** until the file or folder is actually present.
+
+Release handoff completeness rule:
+- Existence alone is not enough for release-bound handoffs.
+- PM may not treat a feature as ready for Dev or release verification merely because the expected file names exist; the handoff artifacts must also be materially complete for the receiving role.
+- Minimum examples:
+  - Dev handoff requires a coherent `01-acceptance-criteria.md`, not a truncated placeholder.
+  - Gate 2 readiness requires release-scoped evidence or the explicit clean-audit path, not scattered feature notes.
+
+### Supervisor escalation disposition contract (required — added 2026-05-03)
+
+When a release-bound item escalates to a supervisor (`needs-info`, quarantine follow-up, scope decision, malformed handoff repair), the supervisor must resolve it in the **same cycle** with one explicit disposition:
+1. repair the source artifact,
+2. defer / descoped the release-bound work,
+3. re-dispatch with materially tighter scope or corrected inputs,
+4. escalate one level up when the decision exceeds authority.
+
+Supervisors must not allow release-bound escalation items to accumulate as passive queue residue.
+
+### Quarantine one-redrive stop-loss (required — added 2026-05-03)
+
+If the executor quarantines a release-bound item after repeated malformed or status-invalid responses:
+- treat the quarantine as a **stop signal**,
+- do **not** automatically re-dispatch the same unchanged work,
+- allow at most **one rewritten redrive** when the underlying inputs changed materially.
+
+After that rewritten redrive, the supervisor must choose exactly one path:
+- close with manual evidence,
+- defer / descoped the work,
+- route to backend / executor-health investigation.
 
 ### Release-critical QA testgen backlog intervention rule (PM-owned, added 2026-03-22)
 
