@@ -580,6 +580,9 @@ invalid_outbox_reason() {
   local raw_outcome=""
   local matched=""
   local direct_route_available=0
+  local signoff_related=0
+  local signoff_release_id=""
+  local signoff_artifact_path=""
 
   status_count="$(printf '%s\n' "$text" | grep -ciE '^\- Status:' || true)"
   [[ "$status_count" =~ ^[0-9]+$ ]] || status_count=0
@@ -627,6 +630,34 @@ invalid_outbox_reason() {
   if printf '%s\n' "$text" | grep -qiE '\bcommitted\b' && ! printf '%s\n' "$text" | grep -qE '\b[0-9a-f]{7,40}\b'; then
     echo "response claims committed work without including a commit hash"
     return 0
+  fi
+
+  if [[ "${AGENT_ID:-}" == pm-* ]]; then
+    if printf '%s\n' "$text" | grep -qiE 'release-signoff\.sh|signoff artifact|pm signoff' \
+      || [ -f "$inbox_item/README.md" ] && grep -qiE 'release-signoff\.sh|signoff artifact|pm signoff' "$inbox_item/README.md" \
+      || [ -f "$inbox_item/command.md" ] && grep -qiE 'release-signoff\.sh|signoff artifact|pm signoff' "$inbox_item/command.md" \
+      || printf '%s\n' "${inbox_item##*/}" | grep -qiE 'signoff-reminder|gate2-ready|coordinated-signoff|release-close'; then
+      signoff_related=1
+    fi
+  fi
+
+  if [ "$signoff_related" -eq 1 ] && [ "$status_value" = "done" ]; then
+    signoff_release_id="$(
+      {
+        [ -f "$inbox_item/command.md" ] && cat "$inbox_item/command.md"
+        [ -f "$inbox_item/README.md" ] && cat "$inbox_item/README.md"
+        printf '%s\n' "$text"
+      } | grep -oE '[0-9]{8}-[A-Za-z0-9-]+-release-[a-z][a-z0-9]*' | head -n 1 || true
+    )"
+    if [ -z "$signoff_release_id" ]; then
+      echo "signoff-related response is missing an exact release id"
+      return 0
+    fi
+    signoff_artifact_path="sessions/${AGENT_ID}/artifacts/release-signoffs/${signoff_release_id}.md"
+    if [ ! -f "$signoff_artifact_path" ]; then
+      echo "signoff-related response claims completion but the release-signoff artifact is missing in repo state"
+      return 0
+    fi
   fi
 
   local created_claim=""

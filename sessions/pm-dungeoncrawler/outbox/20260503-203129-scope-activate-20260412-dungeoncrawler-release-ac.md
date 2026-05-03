@@ -1,20 +1,7 @@
 - Status: in_progress
-- Summary: Reading feature files to assess priority and deduplication before activating scope for release 20260412-dungeoncrawler-release-ac.
-
-## Next actions
-- Read feature.md for each candidate, deduplicate overlapping features, then run pm-scope-activate.sh for highest-priority non-redundant set.
-
-## Blockers
-- None yet.
-
-## Needs from CEO
-- N/A
-
-## ROI estimate
-- ROI: 80
-- Rationale: Release has zero activated features; unblocking dev/QA immediately restores release throughput for Dungeoncrawler.
+- Summary: Reviewing the ready feature list and repo state to select and activate the highest-priority features for release 20260412-dungeoncrawler-release-ac. Will run pm-scope-activate.sh for up to 10 features, then dispatch dev/QA inbox items for each activated feature.
 
 ---
 - Agent: pm-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-dungeoncrawler/inbox/20260503-203129-scope-activate-20260412-dungeoncrawler-release-ac
-- Generated: 2026-05-03T20:34:40+00:00
+- Generated: 2026-05-03T20:46:29+00:00

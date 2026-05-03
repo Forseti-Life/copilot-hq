@@ -273,6 +273,82 @@ def test_invalid_outbox_reason_rejects_missing_summary_line(tmp_path):
     assert "required summary line immediately after status" in result.stdout
 
 
+def test_invalid_outbox_reason_rejects_pm_signoff_done_without_artifact(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    (inbox_item / "README.md").write_text(
+        "# Release signoff reminder: 20260412-dungeoncrawler-release-ab\n\n"
+        "Run:\n"
+        "```bash\n"
+        "bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-ab\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    script = (
+        "set -euo pipefail\n"
+        "AGENT_ID='pm-dungeoncrawler'\n"
+        f'inbox_item="{inbox_item}"\n'
+        f'ROOT_DIR="{tmp_path}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Summary: Ran bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-ab and recorded PM signoff.\n"
+        "EOF\n"
+        ")\n"
+        "invalid_outbox_reason \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert "release-signoff artifact is missing" in result.stdout
+
+
+def test_invalid_outbox_reason_accepts_pm_signoff_done_with_artifact(tmp_path):
+    validate_fn = _extract_function("invalid_outbox_reason")
+    inbox_item = tmp_path / "inbox-item"
+    inbox_item.mkdir()
+    (inbox_item / "README.md").write_text(
+        "# Release signoff reminder: 20260412-dungeoncrawler-release-ab\n\n"
+        "Run:\n"
+        "```bash\n"
+        "bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-ab\n"
+        "```\n",
+        encoding="utf-8",
+    )
+    artifact = (
+        tmp_path
+        / "sessions"
+        / "pm-dungeoncrawler"
+        / "artifacts"
+        / "release-signoffs"
+        / "20260412-dungeoncrawler-release-ab.md"
+    )
+    artifact.parent.mkdir(parents=True)
+    artifact.write_text("# PM signoff\n", encoding="utf-8")
+    script = (
+        "set -euo pipefail\n"
+        "AGENT_ID='pm-dungeoncrawler'\n"
+        f'inbox_item="{inbox_item}"\n'
+        f'ROOT_DIR="{tmp_path}"\n'
+        f"{validate_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Summary: Ran bash scripts/release-signoff.sh dungeoncrawler 20260412-dungeoncrawler-release-ab and verified the PM signoff artifact.\n"
+        "EOF\n"
+        ")\n"
+        "if invalid_outbox_reason \"$response\"; then\n"
+        "  exit 1\n"
+        "fi\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+
+
 def test_invalid_outbox_reason_rejects_write_test_cases_without_artifact_reference(tmp_path):
     validate_fn = _extract_function("invalid_outbox_reason")
     inbox_item = tmp_path / "inbox-item"
