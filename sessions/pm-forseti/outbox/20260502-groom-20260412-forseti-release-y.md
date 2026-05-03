@@ -3,7 +3,7 @@
 
 ## Next actions
 - Run backlog audit script
-- Run suggestion intake
+- Run suggestion-intake.sh
 - Triage suggestions and complete AC + QA handoffs
 
 ## Blockers
@@ -14,9 +14,9 @@
 
 ## ROI estimate
 - ROI: 8
-- Rationale: Grooming the next release backlog ensures Stage 0 can start immediately when release-x closes, reducing idle time and keeping the delivery pipeline flowing.
+- Rationale: Grooming the next release backlog unblocks Stage 0 scope selection and keeps the delivery pipeline flowing.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-groom-20260412-forseti-release-y
-- Generated: 2026-05-03T02:57:53+00:00
+- Generated: 2026-05-03T02:58:13+00:00
