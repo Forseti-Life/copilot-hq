@@ -691,7 +691,7 @@ def _queue_missing_qa_handoff(team: Dict[str, Any], feature: Dict[str, str], rel
 
 def _agent_inbox_has_feature(agent_id: str, feat_name: str) -> bool:
     """Return True if agent's inbox has any item whose name contains feat_name."""
-    inbox = _agent_inbox_dir(agent_id)
+    inbox = REPO_ROOT / "sessions" / agent_id / "inbox"
     if not inbox.exists():
         return False
     return any(

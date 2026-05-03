@@ -176,3 +176,65 @@ def test_validate_flow_done_outbox_requires_matching_feature_id_for_prepare_deli
     errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert any("must preserve the exact Feature id" in error for error in errors)
+
+
+def test_validate_flow_done_outbox_rejects_release_code_review_clear_when_scope_artifacts_are_missing():
+    command_meta = {
+        "Flow id": "release_shipping_flow",
+        "Flow node": "Release Code Review",
+        "Flow owner seat": "code-review-dungeoncrawler",
+    }
+    command_text = """# Flow handoff: release_shipping_flow / Release Code Review
+
+## Release scope artifacts
+- No active release-scoped feature artifacts were found for this release.
+"""
+    outbox_text = """- Status: done
+- Flow outcome: No MEDIUM+ findings
+- Summary: No actionable findings remain.
+"""
+
+    errors = MODULE.validate_flow_done_outbox(command_meta, command_text, outbox_text)
+
+    assert any("cannot clear with 'No MEDIUM+ findings'" in error for error in errors)
+
+
+def test_main_queues_validation_retry_when_conditional_done_outbox_omits_flow_outcome(tmp_path, monkeypatch):
+    root = tmp_path / "hq"
+    command_dir = root / "sessions" / "code-review-dungeoncrawler" / "inbox" / "20260501-release-code-review"
+    command_dir.mkdir(parents=True, exist_ok=True)
+    command_path = command_dir / "command.md"
+    command_path.write_text(
+        """- Flow id: release_shipping_flow
+- Flow run id: 20260501-dungeoncrawler-release-z
+- Flow node: Release Code Review
+- Flow owner seat: code-review-dungeoncrawler
+
+# Flow handoff: release_shipping_flow / Release Code Review
+
+- Available flow outcomes: MEDIUM+ findings present | No MEDIUM+ findings
+""",
+        encoding="utf-8",
+    )
+    (command_dir / "roi.txt").write_text("50\n", encoding="utf-8")
+    outbox = root / "sessions" / "code-review-dungeoncrawler" / "outbox" / "20260501-release-code-review.md"
+    outbox.parent.mkdir(parents=True, exist_ok=True)
+    outbox.write_text(
+        """- Status: done
+- Summary: Reviewed the release handoff and found no critical concerns.
+""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(MODULE, "ROOT", root)
+    monkeypatch.setattr(MODULE, "DRUSH_ROOT", root / "missing-drush-root")
+    monkeypatch.setattr(MODULE.sys, "argv", ["route-flow-transitions.py", "code-review-dungeoncrawler", "20260501-release-code-review", str(outbox)])
+
+    result = MODULE.main()
+
+    assert result == 0
+    retry_items = list((root / "sessions" / "code-review-dungeoncrawler" / "inbox").glob("*-validation-r1"))
+    assert len(retry_items) == 1
+    retry_command = (retry_items[0] / "command.md").read_text(encoding="utf-8")
+    assert "did not pass flow-validation and was not routed" in retry_command
+    assert "must include '- Flow outcome: <value>' for conditional routing" in retry_command

@@ -1,22 +1,22 @@
 - Flow id: feature_request_intake
-- Flow run id: suggestion-dungeoncrawler-nid-54
-- Flow node: BA Requirements Review
-- Flow owner seat: ba-dungeoncrawler
-- Flow previous node: Match Product Team
-- Flow source outbox: sessions/ceo-copilot-2/outbox/20260503-flow-feature_request_intake-suggestion-dungeoncrawler-nid-54-match-product-team-r1.md
-- Flow owner binding: product_team.ba_agent
+- Flow run id: suggestion-dungeoncrawler-nid-55
+- Flow node: PM Scope Decision
+- Flow owner seat: pm-dungeoncrawler
+- Flow previous node: BA Requirements Review
+- Flow source outbox: sessions/ba-dungeoncrawler/outbox/20260503-flow-feature_request_intake-suggestion-dungeoncrawler-nid-55-ba-requirements-review-r1.md
+- Flow owner binding: product_team.pm_agent
 - Product team id: dungeoncrawler
 - Product team label: Dungeoncrawler
-- Flow incoming conditions: Team selected
-- Available flow outcomes: Requirements ready | Needs clarification | Rejected as non-actionable
+- Flow incoming conditions: Requirements ready
+- Available flow outcomes: Approved for delivery | Changes requested | Parked in backlog
 
-# Flow handoff: feature_request_intake / BA Requirements Review
+# Flow handoff: feature_request_intake / PM Scope Decision
 
-This inbox item was routed automatically from `Match Product Team` after `ceo-copilot-2` completed the previous step.
+This inbox item was routed automatically from `BA Requirements Review` after `ba-dungeoncrawler` completed the previous step.
 
 ## Required action
-1. Execute the responsibilities of `BA Requirements Review` as the owning seat `ba-dungeoncrawler`.
-2. Review the source outbox: `sessions/ceo-copilot-2/outbox/20260503-flow-feature_request_intake-suggestion-dungeoncrawler-nid-54-match-product-team-r1.md` for the completed upstream context.
+1. Execute the responsibilities of `PM Scope Decision` as the owning seat `pm-dungeoncrawler`.
+2. Review the source outbox: `sessions/ba-dungeoncrawler/outbox/20260503-flow-feature_request_intake-suggestion-dungeoncrawler-nid-55-ba-requirements-review-r1.md` for the completed upstream context.
 3. If this node has branching outcomes, include one or more `- Flow outcome:` lines in your outbox using the exact allowed values listed above.
 4. If this node has only one direct next step, no Flow outcome line is required.
 5. If the work is complete but needs a graph-defined branch (for example scope rebaseline, QA failure, or requested changes), keep `- Status: done` and use the matching `- Flow outcome:` line instead of escalating through a legacy `needs-*` artifact.
@@ -42,4 +42,8 @@ This inbox item was routed automatically from `Match Product Team` after `ceo-co
 ## Needs from Supervisor
 - <specific need, or `None` when status is done/in_progress>
 ```
-- Agent: ba-dungeoncrawler
+
+## Node-specific guidance
+- If you approve the request for delivery, include `- Feature id: <canonical-id>` in the outbox using the final backlog/work-item slug you want delivery to use.
+- Choose one canonical Feature id and keep it stable across the PM approval, delivery handoff, and downstream `agentic_sdlc` launch; do not leave it as a suggestion run id.
+- If the request should be parked or changed instead of launched, omit `- Feature id:` and use the matching flow outcome.
