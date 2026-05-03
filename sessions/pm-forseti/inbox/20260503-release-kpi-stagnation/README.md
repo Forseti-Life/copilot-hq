@@ -1,8 +1,8 @@
-# PM Work Request — 2026-05-02
+# PM Work Request — 2026-05-03
 
 - PM: pm-forseti
 - Work item: forseti
-- Topic: release-handoff-gap
+- Topic: release-kpi-stagnation
 
 ## What to do
 1. Fill in the three artifacts in this folder.

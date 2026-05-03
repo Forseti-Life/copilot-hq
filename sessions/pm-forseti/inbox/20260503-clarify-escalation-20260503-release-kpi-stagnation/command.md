@@ -11,3 +11,5 @@
     Reference:
     - Original outbox: sessions/pm-forseti/outbox/20260503-release-kpi-stagnation.md
     - If/when rewritten with Decision needed + Recommendation, escalation will be created automatically.
+- Agent: pm-forseti
+- Status: pending
