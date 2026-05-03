@@ -1,0 +1,5 @@
+{
+  "source_node": "Security Review",
+  "condition": "Approved",
+  "source_outbox": "sessions/sec-analyst-forseti/outbox/20260503-flow-agentic_sdlc-dungeoncrawler-npc-dialogue-fix-nid-38-security-review-r2.md"
+}
