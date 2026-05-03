@@ -503,14 +503,34 @@ import re
 import sys
 
 text = sys.argv[1]
-if re.search(r"(?im)^\- Summary:\s*\S", text):
-    print(text, end="")
-    raise SystemExit(0)
-
 lines = text.splitlines()
 first_nonempty = next((i for i, line in enumerate(lines) if line.strip()), None)
 if first_nonempty is None or not re.match(r"^\- Status:", lines[first_nonempty]):
     print(text, end="")
+    raise SystemExit(0)
+
+second_nonempty = next(
+    (lines[idx] for idx in range(first_nonempty + 1, len(lines)) if lines[idx].strip()),
+    "",
+)
+if re.match(r"^\- Summary:\s*\S", second_nonempty):
+    print(text, end="")
+    raise SystemExit(0)
+
+summary_line_idx = next(
+    (
+        idx
+        for idx in range(first_nonempty + 1, len(lines))
+        if re.match(r"^\- Summary:\s*\S", lines[idx])
+    ),
+    None,
+)
+if summary_line_idx is not None:
+    summary_line = lines[summary_line_idx]
+    replacement = lines[: first_nonempty + 1] + [summary_line]
+    replacement.extend(lines[first_nonempty + 1 : summary_line_idx])
+    replacement.extend(lines[summary_line_idx + 1 :])
+    print("\n".join(replacement), end=("\n" if text.endswith("\n") else ""))
     raise SystemExit(0)
 
 summary_heading = None

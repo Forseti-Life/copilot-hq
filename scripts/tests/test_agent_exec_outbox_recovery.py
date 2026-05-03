@@ -120,6 +120,33 @@ def test_normalize_summary_heading_outbox_converts_legacy_summary_section():
     assert "## Summary" not in result.stdout
 
 
+def test_normalize_summary_heading_outbox_moves_existing_summary_line_after_status():
+    normalize_fn = _extract_function("_normalize_summary_heading_outbox")
+    script = (
+        "set -euo pipefail\n"
+        f"{normalize_fn}\n"
+        "response=$(cat <<'EOF'\n"
+        "- Status: done\n"
+        "- Flow outcome: Changes requested\n"
+        "- Summary: Review complete; updates are required before approval.\n"
+        "\n"
+        "## Next actions\n"
+        "- Return the test plan to Write Test Cases.\n"
+        "EOF\n"
+        ")\n"
+        "_normalize_summary_heading_outbox \"$response\"\n"
+    )
+
+    result = _run_bash(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.startswith(
+        "- Status: done\n"
+        "- Summary: Review complete; updates are required before approval.\n"
+        "- Flow outcome: Changes requested\n"
+    )
+
+
 def test_invalid_outbox_reason_rejects_noncanonical_status(tmp_path):
     validate_fn = _extract_function("invalid_outbox_reason")
     inbox_item = tmp_path / "inbox-item"
