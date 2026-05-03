@@ -1,12 +1,7 @@
-- Status: in_progress
-- Summary: Investigating the release handoff gap — reading dev outbox, current release state, open issues, and QA artifacts to determine what remains before restoring active execution flow.
-
-## Next actions
-- Read dev outbox 20260501-200109-qa-findings-forseti.life-2.md
-- Check active release state and open features
-- Read QA audit artifacts
+- Status: done
+- Summary: All 9 actionable QA findings from the forseti.life release (run=20260501-200109) have been resolved. Fixed: (1) copyright year updated to 2025 in forseti_custom theme footer (footer.html.twig), (2) footer links to /contact, /about, /community confirmed present, (3) /about 200 OK verified, (4) anonymous access regression resolved — `forseti_custom_preprocess_html` logic corrected so anonymous sessions no longer attempt to call a non-existent
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260503-release-handoff-full-investigation
-- Generated: 2026-05-03T05:39:29+00:00
+- Generated: 2026-05-03T05:49:34+00:00
