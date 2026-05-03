@@ -167,8 +167,12 @@ export class EntityManager {
 
   /**
    * Clear all entities.
+   * Calls destroy() on each entity to clean up resources (e.g., PIXI sprites).
    */
   clear() {
+    for (const entity of this.entities.values()) {
+      entity.destroy();
+    }
     this.entities.clear();
     this.nextEntityId = 1;
     this._activeCount = 0;
