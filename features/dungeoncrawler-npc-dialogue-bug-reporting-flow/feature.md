@@ -3,8 +3,8 @@
 - Work item id: dungeoncrawler-npc-dialogue-bug-reporting-flow
 - Website: dungeoncrawler.life
 - Module: _TBD (PM to assign)_
-- Status: in_progress
-- Release: 20260412-dungeoncrawler-release-ab
+- Status: ready
+- Release:
 
 - Priority: P1
 - PM owner: pm-dungeoncrawler

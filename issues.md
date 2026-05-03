@@ -439,3 +439,21 @@
 
 **Status:** 🔴 Open — review and assign fix
 
+
+---
+
+## Release Efficiency Findings — 20260412-dungeoncrawler-release-ac — 2026-05-03
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 1 FAIL finding(s) detected. See below for details.
+
+### ISSUE-020 — CEO proxy load: 14 sessions doing dev/QA/PM work (dev=14, QA=0, PM=0)
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-ac
+**Source:** release-efficiency-analysis.py
+
+**Finding:** CEO proxy load: 14 sessions doing dev/QA/PM work (dev=14, QA=0, PM=0) — executor broken or roles understaffed
+
+**Status:** 🔴 Open — review and assign fix
+

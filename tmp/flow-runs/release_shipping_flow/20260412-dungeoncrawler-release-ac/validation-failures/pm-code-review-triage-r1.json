@@ -1,0 +1,10 @@
+{
+  "node": "PM Code Review Triage",
+  "owner_seat": "pm-dungeoncrawler",
+  "rejected_outbox": "sessions/pm-dungeoncrawler/outbox/20260503-flow-release_shipping_flow-20260412-dungeoncrawler-release-ac-pm-code-review-triage-r2.md",
+  "errors": [
+    "final outbox appears semantically divergent from the upstream request (matched anchors: code; expected anchors include: features, implementation, ready, required, remain)"
+  ],
+  "retry_item": "20260503-flow-release_shipping_flow-20260412-dungeoncrawler-release-ac-pm-code-review-triage-validation-r1",
+  "created_at": "2026-05-03T20:36:08.194743Z"
+}
