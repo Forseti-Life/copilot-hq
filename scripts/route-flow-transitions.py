@@ -1142,28 +1142,57 @@ def route_to_node(
     roi: int,
     run_dir: Path,
 ) -> bool:
-    target_owner, target_owner_binding = resolve_owner(node_details.get(target_node, {}), product_team)
-    if not target_owner:
+    current_target = target_node
+    current_source = source_node
+    seen_passthrough: set[str] = set()
+
+    while True:
+        target_owner, target_owner_binding = resolve_owner(node_details.get(current_target, {}), product_team)
+        if target_owner:
+            break
+
+        passthrough_outgoing = outgoing_transitions(flow, current_target)
+        passthrough_direct = [
+            transition
+            for transition in passthrough_outgoing
+            if transition["condition"] == "" and transition["to_node"] not in {"", "END", "__end__"}
+        ]
+        passthrough_conditional = [
+            transition for transition in passthrough_outgoing if transition["condition"].strip()
+        ]
+        if (
+            not target_owner_binding
+            and len(passthrough_direct) == 1
+            and not passthrough_conditional
+            and current_target not in seen_passthrough
+        ):
+            seen_passthrough.add(current_target)
+            next_target = passthrough_direct[0]["to_node"]
+            log(f"pass-through target {current_target}: auto-routing to {next_target}")
+            current_source = current_target
+            current_target = next_target
+            continue
+
         if target_owner_binding:
-            log(f"skip target {target_node}: unresolved owner binding {target_owner_binding}")
+            log(f"skip target {current_target}: unresolved owner binding {target_owner_binding}")
         else:
-            log(f"skip target {target_node}: no owner metadata")
+            log(f"skip target {current_target}: no owner metadata")
         return False
 
-    sequence = next_sequence(run_dir, target_node)
-    item_name_out = routed_item_name(route_date, flow_id, run_id, target_node, sequence)
-    next_outgoing = outgoing_transitions(flow, target_node)
+    sequence = next_sequence(run_dir, current_target)
+    item_name_out = routed_item_name(route_date, flow_id, run_id, current_target, sequence)
+    next_outgoing = outgoing_transitions(flow, current_target)
     available_outcomes = [item["condition"] for item in next_outgoing if item["condition"]]
     direct_route_available = any(item["condition"] == "" for item in next_outgoing)
-    product_team_selection_required = node_requires_product_team(flow, target_node, node_details, product_team)
+    product_team_selection_required = node_requires_product_team(flow, current_target, node_details, product_team)
     command_content = build_command(
         flow_id=flow_id,
         run_id=run_id,
-        target_node=target_node,
+        target_node=current_target,
         target_owner=target_owner,
         target_owner_binding=target_owner_binding,
         source_agent=source_agent,
-        source_node=source_node,
+        source_node=current_source,
         source_outbox=source_outbox,
         incoming_conditions=incoming_conditions,
         available_outcomes=available_outcomes,

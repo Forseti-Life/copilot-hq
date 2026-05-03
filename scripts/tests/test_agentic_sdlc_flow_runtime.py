@@ -59,6 +59,52 @@ def test_route_flow_transitions_prefers_default_direct_edge_without_flow_outcome
     assert module.selected_transitions(outgoing, ["Scope decision required"]) == [outgoing[1]]
 
 
+def test_route_to_node_auto_hops_ownerless_ready_for_qa(monkeypatch, tmp_path):
+    module = _load_route_flow_module()
+    created: dict[str, object] = {}
+
+    def fake_create_inbox_item(target_agent: str, item_name: str, roi: int, command_content: str) -> None:
+        created["target_agent"] = target_agent
+        created["item_name"] = item_name
+        created["roi"] = roi
+        created["command_content"] = command_content
+
+    monkeypatch.setattr(module, "create_inbox_item", fake_create_inbox_item)
+
+    flow = module.BUILTIN_FLOW_FALLBACKS["agentic_sdlc"]
+    node_details = module.node_detail_map(flow)
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    product_team = {
+        "id": "dungeoncrawler",
+        "site": "dungeoncrawler",
+        "label": "Dungeoncrawler",
+        "qa_agent": "qa-dungeoncrawler",
+    }
+
+    routed = module.route_to_node(
+        flow=flow,
+        flow_id="agentic_sdlc",
+        run_id="dungeoncrawler-auto-bug-report",
+        route_date="20260503",
+        target_node="Ready for QA",
+        source_agent="qa-dungeoncrawler",
+        source_node="Test Cases Review",
+        source_outbox=Path("sessions/qa-dungeoncrawler/outbox/example.md"),
+        incoming_conditions=["Approved"],
+        product_team=product_team,
+        teams=[product_team],
+        node_details=node_details,
+        roi=10,
+        run_dir=run_dir,
+    )
+
+    assert routed is True
+    assert created["target_agent"] == "qa-dungeoncrawler"
+    assert "- Flow node: QA Testing" in str(created["command_content"])
+    assert "- Flow previous node: Ready for QA" in str(created["command_content"])
+
+
 def test_load_flow_falls_back_when_live_registry_is_missing_required_transitions(monkeypatch):
     module = _load_route_flow_module()
 
