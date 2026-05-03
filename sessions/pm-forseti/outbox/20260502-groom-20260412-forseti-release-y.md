@@ -1,9 +1,9 @@
 - Status: in_progress
-- Summary: Beginning grooming task for 20260412-forseti-release-y. Running backlog audit, suggestion intake, and triage steps now.
+- Summary: Starting grooming task for 20260412-forseti-release-y. Running backlog audit, suggestion intake, and triage steps now.
 
 ## Next actions
 - Run backlog audit script
-- Run suggestion-intake.sh
+- Run suggestion intake
 - Triage suggestions and complete AC/handoffs
 
 ## Blockers
@@ -13,10 +13,10 @@
 - N/A
 
 ## ROI estimate
-- ROI: 40
-- Rationale: Grooming the next release backlog ensures Stage 0 can start instantly and keeps the delivery pipeline flowing without idle cycles.
+- ROI: 8
+- Rationale: Keeping the next release backlog groomed ensures Stage 0 can start instantly, reducing release cycle lag and maintaining development velocity.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260502-groom-20260412-forseti-release-y
-- Generated: 2026-05-03T02:38:07+00:00
+- Generated: 2026-05-03T02:48:06+00:00
