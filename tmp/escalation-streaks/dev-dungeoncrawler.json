@@ -1,4 +1,5 @@
 {
   "last_superior_escalation": "20260503-flow-agentic_sdlc-dc-gm-auto-bug-report-generate-code-r1",
-  "streak": 0
+  "should_escalate": false,
+  "streak": 1
 }
