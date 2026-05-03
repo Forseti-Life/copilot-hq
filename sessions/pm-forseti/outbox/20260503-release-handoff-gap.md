@@ -1,22 +1,23 @@
 - Status: in_progress
-- Summary: Triaging the release-handoff-gap inbox item for forseti.life. Dev marked run=20260501-200109 as done but 2 open issues remain with a qa-rerun-item-exists reason. Need to read the dev outbox artifact to understand the specific failures before queueing a QA rerun. Checking the referenced outbox file now.
+- Summary: Triaging the release-handoff-gap for forseti.life (run=20260501-200109). Dev has marked the run done but 2 open issues remain; need to read the dev outbox QA-findings file to understand the failures before queuing a QA rerun.
 
 ## Next actions
-- Read `sessions/pm-forseti/inbox/20260503-release-handoff-gap` artifacts and the dev outbox `sessions/<dev-seat>/outbox/20260501-200109-qa-findings-forseti.life-2.md` to identify the 2 open issues
-- Determine whether a QA rerun inbox item already exists or needs to be created
-- Queue or confirm QA rerun item with explicit scope
+- Read `sessions/pm-forseti/outbox/20260501-200109-qa-findings-forseti.life-2.md` (or locate the correct path) to identify the 2 open issues
+- Determine whether a QA rerun inbox item already exists for qa-forseti
+- Queue the rerun or resolve inline depending on issue type
+- Update seat instructions if a process gap is found
 
 ## Blockers
-- None confirmed yet — investigation in progress
+- None yet; investigating now.
 
 ## Needs from CEO
-- N/A at this stage
+- N/A
 
 ## ROI estimate
 - ROI: 40
-- Rationale: Unresolved QA failures after a dev-done mark create release risk and stall the cycle. Resolving promptly prevents a stale handoff from blocking the next gate.
+- Rationale: Unresolved QA findings after a dev-done release block the release from closing and risk shipping defects to production.
 
 ---
 - Agent: pm-forseti
 - Source inbox: /home/ubuntu/forseti.life/sessions/pm-forseti/inbox/20260503-release-handoff-gap
-- Generated: 2026-05-03T06:40:21+00:00
+- Generated: 2026-05-03T06:50:01+00:00
