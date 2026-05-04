@@ -22,3 +22,5 @@
 ```bash
 bash scripts/hq-blockers.sh
 ```
+- Agent: ceo-copilot-2
+- Status: pending
