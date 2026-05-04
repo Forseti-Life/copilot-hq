@@ -1,65 +1,64 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-05-04 during hexmap thin-client implementation
+> Last updated: 2026-05-04 during hexmap navigation backendization
 
 ---
 
 ## Currently Working On
 
-Started the next architect tranche of the Dungeoncrawler `/hexmap` thin-client cleanup.
+Continuing the Dungeoncrawler `/hexmap` thin-client cleanup with server-authoritative room travel.
 
 ### Current state
 
-- Extracted the remaining three-tab shell behavior out of `hexmap-demo.html.twig`
-  into a dedicated JS module:
-  - `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/js/GameShellTabs.js`
-  - mirrored in `dungeoncrawler-pf2e/.../js/GameShellTabs.js`
-- Updated the hexmap library definitions so the tab shell is loaded as a module
-  instead of inline template script.
-- Removed the inline tab script from both active Twig copies and marked the shell
-  root with `data-game-shell`.
-- Refactored chat-driven room navigation so `UIManager` no longer injects rooms,
-  moves allies, or persists entity movement directly from the browser.
-- Added shared hexmap-side navigation helpers in both JS copies:
-  - `mergeNavigationEntities()`
-  - `mergeNavigationConnections()`
-  - `updateSelectedEntityDungeonPlacement()`
-  - `finalizeRoomTransition()`
-  - `applyAuthoritativeNavigation()`
-- Simplified direct connection transitions to reuse the shared transition helper
-  and removed the ad hoc ally-auto-move + POST-persist side effects from that path.
-- Refreshed Drupal caches successfully with:
-  - `/var/www/html/dungeoncrawler/vendor/bin/drush cr`
+- The three-tab shell behavior is now loaded from `GameShellTabs.js` instead of
+  inline Twig script in both Dungeoncrawler trees.
+- Chat-driven room travel already reconciles from server-provided navigation
+  payloads through `applyAuthoritativeNavigation()`.
+- Direct connection-click room travel now has a backend API contract:
+  - `POST /api/campaign/{campaign_id}/hexmap/navigate`
+  - implemented in `HexMapController::navigate()`
+- The new endpoint:
+  - validates the requested connection against the authoritative dungeon payload
+  - persists the active campaign character's target room/hex on the server
+  - rebuilds the live hexmap payload through the same normalization/injection
+    pipeline as the page render
+  - returns a navigation payload shaped like the chat navigation contract
+- `hexmap-api.js` now exposes `navigate(payload)`.
+- `hexmap.js` direct room transitions now call the backend navigation endpoint
+  and reconcile from its response instead of switching rooms entirely in local
+  code for authenticated campaign play.
+- Successful room transitions now rewrite `room_id`, `start_q`, and `start_r`
+  in the browser URL/launch context so refresh and resume stay aligned with the
+  current room entry point.
+- Local direct-transition logic remains only as a fallback path when there is no
+  authenticated campaign/character context.
+- Drupal caches were rebuilt successfully after the server/client changes.
 
 ### Key decisions
 
-1. Move shell runtime behavior out of Twig first, even for the simplified tab UI,
-   so the template keeps shrinking toward pure markup.
-2. Keep room-navigation reconciliation in `hexmap.js`, not `UIManager`, because it
-   belongs to map/runtime state rather than chat presentation.
-3. Treat server-returned navigation payloads as the source of truth for new room,
-   entity, and connection data; only update the client presentation cache from
-   that payload.
-4. For legacy direct hex-click transitions, reduce browser side effects now rather
-   than invent a fake authority layer; a proper backend navigation endpoint is
-   still the cleaner follow-on.
+1. Put the direct-travel API in `HexMapController` because that controller
+   already owns the authoritative dungeon payload loading and normalization path.
+2. Reuse one payload pipeline (`buildHexmapPayload()`) for both page render and
+   navigation responses so the client sees the same room/entity/connection shape
+   in both cases.
+3. Keep the client navigation contract aligned with the chat travel payload
+   (`target_room_id`, `room`, `entities`, `connections`, `entry_hex`) so
+   `applyAuthoritativeNavigation()` can remain the single reconciliation path.
+4. Preserve a local fallback only for unauthenticated/no-campaign contexts rather
+   than forcing a hard failure for non-authoritative demo usage.
 
 ### Next actions
 
-1. Add or expose a backend-authoritative room-transition/navigation endpoint for
-   direct map travel so `tryTransitionAtHex()` no longer needs any local placement
-   mutation.
-2. Continue shrinking `hexmap.js` by extracting more shell/chat orchestration into
-   dedicated modules.
-3. Revisit state ownership between inspected entity data and canonical player-sheet
-   hydration so the view-model boundary is clearer.
+1. Eliminate the remaining local fallback path once direct room travel is always
+   gated behind authenticated campaign play.
+2. Tighten character position hydration so non-URL-driven resume flows derive
+   more from persisted server position and less from launch-query defaults.
+3. Continue extracting shell/runtime concerns out of `hexmap.js` into narrower
+   modules now that navigation has a cleaner server contract.
 
 ### Verification notes
 
-- `node --check` passed for:
-  - `sites/dungeoncrawler/.../js/GameShellTabs.js`
-  - `sites/dungeoncrawler/.../js/hexmap.js`
-  - `dungeoncrawler-pf2e/.../js/GameShellTabs.js`
-  - `dungeoncrawler-pf2e/.../js/hexmap.js`
-- Drupal cache rebuild succeeded from the production root.
+- `php -l` passed for both `HexMapController.php` copies.
+- `node --check` passed for both `hexmap-api.js` and `hexmap.js` copies.
+- Drupal cache rebuild succeeded from `/var/www/html/dungeoncrawler`.

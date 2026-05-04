@@ -8,6 +8,8 @@ use Drupal\dungeoncrawler_content\Service\GeneratedImageRepository;
 use Drupal\dungeoncrawler_content\Service\QuestTrackerService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -93,28 +95,9 @@ class HexMapController extends ControllerBase {
     }
 
     $campaign_name = $this->loadCampaignName($launch_context);
-    $dungeon_payload = $this->loadDungeonPayload($launch_context);
-    $dungeon_payload = $this->adjustBarCounterPlacements($dungeon_payload);
-    $dungeon_payload = $this->composeLongTableSegments($dungeon_payload);
-    $dungeon_payload = $this->adjustLongTableSegmentPlacements($dungeon_payload);
-    $dungeon_payload = $this->removeNorthernLongTableDuplicates($dungeon_payload);
-    $dungeon_payload = $this->injectRoomTemplateItemEntities($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->injectRoomBarkeepEntity($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->injectRoomNpcEntities($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
-    if ($this->shouldPersistTemplateChanges($launch_context)) {
-      $this->persistDungeonTemplatePayload($dungeon_payload, $launch_context);
-    }
-
-    $dungeon_payload = $this->injectCampaignCharacterEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->buildHexmapPayload($launch_context);
     $launch_character = $this->loadLaunchCharacterSummary($launch_context);
     $quest_summary = $this->loadQuestSummary($launch_context);
-    $dungeon_payload = $this->injectQuestItemEntities($dungeon_payload, $quest_summary);
-    $dungeon_payload = $this->attachEntityPortraitUrls($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
-
-    // Bootstrap NPC psychology profiles for all NPCs in the active room.
-    $this->ensureRoomNpcPsychologyProfiles($dungeon_payload, $launch_context);
 
     return [
       '#theme' => 'hexmap_demo',
@@ -141,6 +124,246 @@ class HexMapController extends ControllerBase {
         'contexts' => ['url.query_args:campaign_id', 'url.query_args:character_id', 'url.query_args:dungeon_level_id', 'url.query_args:map_id', 'url.query_args:room_id', 'url.query_args:next_room_id', 'url.query_args:start_q', 'url.query_args:start_r'],
       ],
     ];
+  }
+
+  /**
+   * Server-authoritative direct room navigation for hexmap connection clicks.
+   */
+  public function navigate(int $campaign_id, Request $request): JsonResponse {
+    $account = $this->currentUser();
+    $is_admin = in_array('administrator', $account->getRoles(), TRUE)
+      || (int) $account->id() === 1;
+
+    if (!$is_admin) {
+      $campaign_uid = $this->database->select('dc_campaigns', 'c')
+        ->fields('c', ['uid'])
+        ->condition('id', $campaign_id)
+        ->execute()
+        ->fetchField();
+      if ($campaign_uid === FALSE || (int) $campaign_uid !== (int) $account->id()) {
+        return new JsonResponse([
+          'success' => FALSE,
+          'error' => 'You do not own this campaign.',
+        ], 403);
+      }
+    }
+
+    $payload = json_decode($request->getContent(), TRUE);
+    if (!is_array($payload)) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'Invalid JSON payload'], 400);
+    }
+
+    $character_id = (int) ($payload['characterId'] ?? 0);
+    $current_room_id = (string) ($payload['currentRoomId'] ?? '');
+    $map_id = (string) ($payload['mapId'] ?? '');
+    $connection_id = (string) ($payload['connectionId'] ?? '');
+    $target_hex = is_array($payload['targetHex'] ?? NULL) ? $payload['targetHex'] : NULL;
+
+    if ($character_id <= 0) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'characterId is required'], 400);
+    }
+    if ($current_room_id === '') {
+      return new JsonResponse(['success' => FALSE, 'error' => 'currentRoomId is required'], 400);
+    }
+    if ($connection_id === '' && (!is_array($target_hex) || !isset($target_hex['q'], $target_hex['r']))) {
+      return new JsonResponse(['success' => FALSE, 'error' => 'connectionId or targetHex is required'], 400);
+    }
+
+    $launch_context = [
+      'campaign_id' => $campaign_id,
+      'character_id' => $character_id,
+      'map_id' => $map_id,
+      'room_id' => $current_room_id,
+      'start_q' => 0,
+      'start_r' => 0,
+    ];
+
+    $dungeon_payload = $this->buildHexmapPayload($launch_context);
+    $connection = $this->resolveRequestedNavigationConnection($dungeon_payload, $current_room_id, $connection_id, $target_hex);
+
+    if ($connection === NULL) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Connection not found for the requested room transition.',
+      ], 404);
+    }
+
+    if (($connection['is_passable'] ?? TRUE) === FALSE) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'That connection is not passable.',
+      ], 409);
+    }
+
+    if (($connection['from_room'] ?? '') === $current_room_id) {
+      $target_room_id = (string) ($connection['to_room'] ?? '');
+      $entry_hex = [
+        'q' => (int) ($connection['to_hex']['q'] ?? 0),
+        'r' => (int) ($connection['to_hex']['r'] ?? 0),
+      ];
+    }
+    else {
+      $target_room_id = (string) ($connection['from_room'] ?? '');
+      $entry_hex = [
+        'q' => (int) ($connection['from_hex']['q'] ?? 0),
+        'r' => (int) ($connection['from_hex']['r'] ?? 0),
+      ];
+    }
+
+    if ($target_room_id === '') {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Unable to resolve a destination room for that connection.',
+      ], 409);
+    }
+
+    $this->persistNavigatedCharacterPosition($campaign_id, $character_id, $target_room_id, $entry_hex);
+
+    $target_context = $launch_context;
+    $target_context['room_id'] = $target_room_id;
+    $target_context['start_q'] = $entry_hex['q'];
+    $target_context['start_r'] = $entry_hex['r'];
+
+    $target_payload = $this->buildHexmapPayload($target_context);
+
+    return new JsonResponse([
+      'success' => TRUE,
+      'data' => $this->buildNavigationPayloadFromDungeon($target_payload, $target_room_id, $entry_hex),
+    ]);
+  }
+
+  /**
+   * Build the live hexmap payload using the same pipeline as the page render.
+   */
+  protected function buildHexmapPayload(array $launch_context): array {
+    $dungeon_payload = $this->loadDungeonPayload($launch_context);
+    $dungeon_payload = $this->adjustBarCounterPlacements($dungeon_payload);
+    $dungeon_payload = $this->composeLongTableSegments($dungeon_payload);
+    $dungeon_payload = $this->adjustLongTableSegmentPlacements($dungeon_payload);
+    $dungeon_payload = $this->removeNorthernLongTableDuplicates($dungeon_payload);
+    $dungeon_payload = $this->injectRoomTemplateItemEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->injectRoomBarkeepEntity($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->injectRoomNpcEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
+    if ($this->shouldPersistTemplateChanges($launch_context)) {
+      $this->persistDungeonTemplatePayload($dungeon_payload, $launch_context);
+    }
+
+    $quest_summary = $this->loadQuestSummary($launch_context);
+    $dungeon_payload = $this->injectCampaignCharacterEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->injectQuestItemEntities($dungeon_payload, $quest_summary);
+    $dungeon_payload = $this->attachEntityPortraitUrls($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
+    $this->ensureRoomNpcPsychologyProfiles($dungeon_payload, $launch_context);
+
+    return $dungeon_payload;
+  }
+
+  /**
+   * Resolve the clicked/passable room connection from the authoritative payload.
+   */
+  protected function resolveRequestedNavigationConnection(array $dungeon_payload, string $current_room_id, string $connection_id = '', ?array $target_hex = NULL): ?array {
+    $connections = is_array($dungeon_payload['connections'] ?? NULL) ? $dungeon_payload['connections'] : [];
+    foreach ($connections as $connection) {
+      if (!is_array($connection)) {
+        continue;
+      }
+
+      $touches_room = (($connection['from_room'] ?? '') === $current_room_id)
+        || (($connection['to_room'] ?? '') === $current_room_id);
+      if (!$touches_room) {
+        continue;
+      }
+
+      if ($connection_id !== '' && (string) ($connection['connection_id'] ?? '') === $connection_id) {
+        return $connection;
+      }
+
+      if ($target_hex !== NULL) {
+        $from_match = (($connection['from_room'] ?? '') === $current_room_id)
+          && (int) ($connection['from_hex']['q'] ?? 0) === (int) $target_hex['q']
+          && (int) ($connection['from_hex']['r'] ?? 0) === (int) $target_hex['r'];
+        $to_match = (($connection['to_room'] ?? '') === $current_room_id)
+          && (int) ($connection['to_hex']['q'] ?? 0) === (int) $target_hex['q']
+          && (int) ($connection['to_hex']['r'] ?? 0) === (int) $target_hex['r'];
+        if ($from_match || $to_match) {
+          return $connection;
+        }
+      }
+    }
+
+    return NULL;
+  }
+
+  /**
+   * Build the client navigation payload from the normalized dungeon payload.
+   */
+  protected function buildNavigationPayloadFromDungeon(array $dungeon_payload, string $target_room_id, array $entry_hex): array {
+    $room = is_array($dungeon_payload['rooms'][$target_room_id] ?? NULL) ? $dungeon_payload['rooms'][$target_room_id] : [];
+
+    $entities = [];
+    foreach (($dungeon_payload['entities'] ?? []) as $entity) {
+      if (($entity['placement']['room_id'] ?? '') === $target_room_id) {
+        $entities[] = $entity;
+      }
+    }
+
+    $connections = [];
+    foreach (($dungeon_payload['connections'] ?? []) as $connection) {
+      if (($connection['from_room'] ?? '') === $target_room_id || ($connection['to_room'] ?? '') === $target_room_id) {
+        $connections[] = $connection;
+      }
+    }
+
+    return [
+      'target_room_id' => $target_room_id,
+      'destination' => (string) ($room['name'] ?? $target_room_id),
+      'room' => $room,
+      'entities' => $entities,
+      'connections' => $connections,
+      'entry_hex' => [
+        'q' => (int) ($entry_hex['q'] ?? 0),
+        'r' => (int) ($entry_hex['r'] ?? 0),
+      ],
+    ];
+  }
+
+  /**
+   * Persist the active campaign character position for server-authoritative travel.
+   */
+  protected function persistNavigatedCharacterPosition(int $campaign_id, int $character_id, string $room_id, array $entry_hex): void {
+    $query = $this->database->select('dc_campaign_characters', 'cc')
+      ->fields('cc', ['id'])
+      ->condition('campaign_id', $campaign_id);
+
+    $character_match = $query->orConditionGroup()
+      ->condition('character_id', $character_id)
+      ->condition('id', $character_id)
+      ->condition('instance_id', sprintf('pc-%d-%d', $campaign_id, $character_id));
+
+    $record_id = $query
+      ->condition($character_match)
+      ->orderBy('updated', 'DESC')
+      ->orderBy('id', 'DESC')
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+
+    if ($record_id === FALSE) {
+      return;
+    }
+
+    $this->database->update('dc_campaign_characters')
+      ->fields([
+        'location_type' => 'room',
+        'location_ref' => $room_id,
+        'last_room_id' => $room_id,
+        'position_q' => (int) ($entry_hex['q'] ?? 0),
+        'position_r' => (int) ($entry_hex['r'] ?? 0),
+        'updated' => time(),
+      ])
+      ->condition('id', (int) $record_id)
+      ->execute();
   }
 
   /**

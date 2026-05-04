@@ -4664,6 +4664,30 @@ import { StateManager } from './StateManager.js';
       return this.activeRoomId || this.stateManager.get('activeRoomId') || this.launchContext?.room_id || null;
     },
 
+    syncLaunchContextUrl: function (roomId, entryHex) {
+      const destination = {
+        q: Number(entryHex?.q || 0),
+        r: Number(entryHex?.r || 0),
+      };
+
+      if (this.launchContext && typeof this.launchContext === 'object') {
+        this.launchContext.room_id = roomId;
+        this.launchContext.start_q = destination.q;
+        this.launchContext.start_r = destination.r;
+      }
+
+      if (!window.history?.replaceState) {
+        return;
+      }
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('room_id', roomId);
+      url.searchParams.set('start_q', String(destination.q));
+      url.searchParams.set('start_r', String(destination.r));
+      url.searchParams.delete('next_room_id');
+      window.history.replaceState(window.history.state, '', url.toString());
+    },
+
     mergeNavigationEntities: function (entities = []) {
       if (!Array.isArray(entities) || !entities.length) {
         return;
@@ -4757,6 +4781,8 @@ import { StateManager } from './StateManager.js';
       };
       const selectedEntity = this.stateManager.get('selectedEntity');
 
+      this.syncLaunchContextUrl(roomId, destination);
+
       if (selectedEntity) {
         this.deselectEntity();
       }
@@ -4816,6 +4842,42 @@ import { StateManager } from './StateManager.js';
       });
 
       return true;
+    },
+
+    requestAuthoritativeNavigation: async function (connection, currentRoomId, targetHex, fallbackRoomId, fallbackEntryHex) {
+      const campaignId = this.resolveCampaignId();
+      const characterId = Number(this.launchContext?.character_id || 0);
+
+      if (!this.canUseServerCombatApi() || !campaignId || characterId <= 0) {
+        this.updateSelectedEntityDungeonPlacement(fallbackRoomId, fallbackEntryHex);
+        this.finalizeRoomTransition(fallbackRoomId, fallbackEntryHex, {
+          source: 'local-connection-fallback',
+          connectionId: connection?.connection_id || null,
+        });
+        return;
+      }
+
+      try {
+        const response = await combatApi.navigate({
+          campaignId,
+          characterId,
+          mapId: this.stateManager.get('mapId') || this.launchContext?.map_id || null,
+          currentRoomId,
+          connectionId: connection?.connection_id || null,
+          targetHex,
+        });
+        const navigation = response?.data || response;
+        if (!navigation || !navigation.target_room_id) {
+          throw new Error('Navigation response did not include a destination room.');
+        }
+
+        this.applyAuthoritativeNavigation(navigation);
+      } catch (err) {
+        console.error('[Navigation] Authoritative transition failed:', err);
+        if (this.uiManager?.appendChatLine) {
+          this.uiManager.appendChatLine('System', 'Unable to travel right now.', 'system');
+        }
+      }
     },
 
     /**
@@ -7247,11 +7309,13 @@ import { StateManager } from './StateManager.js';
         nextHex = match.from_hex;
       }
 
-      this.updateSelectedEntityDungeonPlacement(nextRoomId, nextHex);
-      this.finalizeRoomTransition(nextRoomId, nextHex, {
-        source: 'local-connection',
-        connectionId: match.connection_id || null,
-      });
+      this.requestAuthoritativeNavigation(
+        match,
+        this.activeRoomId,
+        { q: Number(q), r: Number(r) },
+        nextRoomId,
+        nextHex
+      );
       return true;
     },
 
