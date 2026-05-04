@@ -8,7 +8,7 @@
 - Group: contacts-companies
 - Group Title: Contacts & Companies
 - Group Sort: 4
-- Status: done
+- Status: shipped
 - Release: 20260412-forseti-release-l
 - Feature type: new-feature
 - PM owner: pm-forseti
@@ -72,3 +72,7 @@ Verify: `drush sql:query "SELECT COUNT(*) FROM jobhunter_contacts WHERE uid=<uid
 - LinkedIn URL must be validated as an HTTP/HTTPS URL; no `javascript:` or `data:` URIs stored
 - Full name and notes stored as plain text; Twig auto-escaping on display (no `|raw`)
 - Contact PII (name, LinkedIn URL) must NOT be logged to watchdog at debug severity; log only `uid` and contact `id`
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

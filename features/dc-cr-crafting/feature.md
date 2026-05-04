@@ -3,7 +3,7 @@
 - Work item id: dc-cr-crafting
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 - PM owner: pm-dungeoncrawler
@@ -41,3 +41,7 @@ Crafting downtime activity (extends dc-cr-downtime-mode): inputs (target item, d
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

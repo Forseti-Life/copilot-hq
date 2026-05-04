@@ -3,7 +3,7 @@
 - Work item id: dc-gng-guns-gears
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-p
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -35,3 +35,7 @@ Implement Guns and Gears content — Gunslinger and Inventor classes, firearm an
 - CSRF expectations: all POST/PATCH class/weapon routes require `_csrf_request_header_mode: TRUE`
 - Input validation: Way/Innovation subclass enums validated server-side; reload and misfire state computed server-side, not client-asserted
 - PII/logging constraints: no PII logged; character id + action type + weapon id only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-p.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-session-structure
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -40,3 +40,7 @@ Content types: `session` (single play instance, with start/end timestamps, parti
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

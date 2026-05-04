@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-bard
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 20260409-dungeoncrawler-release-f
 - PM owner: pm-dungeoncrawler
@@ -42,3 +42,7 @@ Composition spells use the Bard's Performance modifier as the spellcasting modif
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-f.

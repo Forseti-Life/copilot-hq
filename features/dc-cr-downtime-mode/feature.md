@@ -3,7 +3,7 @@
 - Work item id: dc-cr-downtime-mode
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P1
 - Release: 20260412-dungeoncrawler-release-d
 20260412-dungeoncrawler-release-d
@@ -40,3 +40,7 @@ Session state mode: downtime. Downtime activities content type with fields for d
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

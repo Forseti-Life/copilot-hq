@@ -3,7 +3,7 @@
 - Work item id: dc-cr-hazards
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - Release: 20260412-dungeoncrawler-release-d
 20260412-dungeoncrawler-release-d
@@ -56,3 +56,7 @@ Content type: `hazard` with fields for hazard type (trap/haunt/environmental), l
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

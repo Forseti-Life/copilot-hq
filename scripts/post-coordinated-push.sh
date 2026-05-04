@@ -7,8 +7,9 @@
 # It records a team-scoped release signoff for every coordinated team that has an
 # active release in tmp/release-cycle-active/ but has not yet been signed off.
 # This advances each team's orchestrator release cycle so the next cycle can begin,
-# re-seeds the normal release-cycle handoff for the new current/next pair, and runs
-# the CEO boundary health check to keep the next cycle from stalling silently.
+# re-seeds the normal release-cycle handoff for the new current/next pair, reconciles
+# shipped truth for the release that just deployed, and runs the CEO boundary health
+# check to keep the next cycle from stalling silently.
 #
 # Idempotent — safe to re-run.
 
@@ -91,7 +92,25 @@ if team_release_ids:
     pushed_dir.mkdir(parents=True, exist_ok=True)
     marker = pushed_dir / f"{combined_key}.pushed"
     marker_preexisting = marker.exists()
-    if not marker_preexisting:
+    current_matches_latest_advance = True
+    for team in sorted(coord_teams, key=lambda t: t['id']):
+        team_id = team['id']
+        current_rid = team_release_ids.get(team_id, "")
+        latest_advance_sentinel = pushed_dir / f"{team_id}.advanced"
+        if not latest_advance_sentinel.exists():
+            current_matches_latest_advance = False
+            break
+        latest_advanced = latest_advance_sentinel.read_text(encoding='utf-8').strip()
+        if current_rid != latest_advanced:
+            current_matches_latest_advance = False
+            break
+
+    if not marker_preexisting and current_matches_latest_advance:
+        print(
+            "MARKER skipped: current release_ids already match the latest advanced "
+            "pair; no new coordinated push detected"
+        )
+    elif not marker_preexisting:
         marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
         print(f"MARKER written: {marker.name}")
     else:
@@ -114,6 +133,13 @@ if team_release_ids:
                 print(stdout)
         else:
             print(f"SEED {team_id}: release-cycle-start.sh queued current/next handoff")
+
+    def reconcile_runtime_boundary(team_id: str, current_release: str, next_release: str) -> None:
+        (runtime_dir / f"{team_id}.release_id").write_text(current_release + "\n", encoding='utf-8')
+        (runtime_dir / f"{team_id}.next_release_id").write_text(next_release + "\n", encoding='utf-8')
+        (runtime_dir / f"{team_id}.started_at").write_text(
+            datetime.now(timezone.utc).isoformat() + "\n", encoding='utf-8'
+        )
 
     # Step 3 — advance each team's release_id to next_release_id.
     # Runs unconditionally (not tied to marker creation) so a re-run of this
@@ -143,10 +169,21 @@ if team_release_ids:
         # Idempotency: if this exact pushed pair was already advanced, skip.
         pair_advance_sentinel = pushed_dir / f"{combined_key}.{team_id}.advanced"
         latest_advance_sentinel = pushed_dir / f"{team_id}.advanced"
+        if not marker_preexisting and current_matches_latest_advance:
+            sentinel_val = latest_advance_sentinel.read_text(encoding='utf-8').strip()
+            seeded_next = next_release_id_after(sentinel_val, team_id, today)
+            reconcile_runtime_boundary(team_id, sentinel_val, seeded_next)
+            print(f"SKIP {team_id}: current release already reflects latest advance {sentinel_val}")
+            seed_handoff(team_id, sentinel_val, seeded_next)
+            continue
         if pair_advance_sentinel.exists():
             sentinel_val = pair_advance_sentinel.read_text(encoding='utf-8').strip()
+            seeded_next = next_release_id_after(sentinel_val, team_id, today)
+            reconcile_runtime_boundary(team_id, sentinel_val, seeded_next)
             print(f"SKIP {team_id}: pushed pair already advanced to {sentinel_val}")
-            seed_handoff(team_id, current_rid, new_current)
+            # Re-seed from the already-advanced release, not from the stale
+            # current->next pair that originally triggered the push.
+            seed_handoff(team_id, sentinel_val, seeded_next)
             continue
         # Manual rerun safety: if we had to create the push marker in this run and
         # the proposed advancement target already equals the last advancement target,
@@ -159,8 +196,12 @@ if team_release_ids:
         if not marker_preexisting and latest_advance_sentinel.exists():
             sentinel_val = latest_advance_sentinel.read_text(encoding='utf-8').strip()
             if new_current == sentinel_val:
+                seeded_next = next_release_id_after(sentinel_val, team_id, today)
+                reconcile_runtime_boundary(team_id, sentinel_val, seeded_next)
                 print(f"SKIP {team_id}: release_id already advanced to {sentinel_val}")
-                seed_handoff(team_id, current_rid, new_current)
+                # Re-seed from the already-advanced release so retries do not
+                # restore the stale pre-push release_id into runtime state.
+                seed_handoff(team_id, sentinel_val, seeded_next)
                 continue
         new_next = next_release_id_after(new_current, team_id, today)
         (runtime_dir / f"{team_id}.release_id").write_text(new_current + "\n", encoding='utf-8')
@@ -188,8 +229,34 @@ if team_release_ids:
         )
         if archived:
             print(f"ARCHIVE {pm_agent}: {', '.join(archived)}")
+
+    reconcile_failures = []
+    for team in sorted(coord_teams, key=lambda t: t['id']):
+        team_id = team['id']
+        release_id = team_release_ids.get(team_id, "").strip()
+        if not release_id:
+            continue
+        print(f"RECONCILE {team_id}: reconciling shipped truth for {release_id}")
+        result = subprocess.run(
+            ['python3', str(root / 'scripts' / 'release-reconcile-shipped.py'), team_id, release_id],
+            capture_output=True,
+            text=True,
+            cwd=str(root),
+        )
+        if result.stdout.strip():
+            print(result.stdout.strip())
+        if result.returncode != 0:
+            if result.stderr.strip():
+                print(result.stderr.strip())
+            reconcile_failures.append((team_id, release_id, result.returncode))
 else:
     print("WARNING: no active team releases found — nothing to push")
+    reconcile_failures = []
+
+if reconcile_failures:
+    for team_id, release_id, code in reconcile_failures:
+        print(f"WARN {team_id}: release reconciliation failed for {release_id} (exit {code})")
+    raise SystemExit(1)
 PY
 
 echo
@@ -213,7 +280,7 @@ for pushed_rid in $(cat "${ROOT_DIR}"/tmp/release-cycle-active/*.release_id 2>/d
     if [ ! -d "${AUDIT_ITEM}" ]; then
         mkdir -p "${AUDIT_ITEM}"
         SITE=$(echo "${pushed_rid}" | sed 's/^[0-9]*-//;s/-release-[a-z0-9]*$//')
-        cat > "${AUDIT_ITEM}/item.md" <<ITEMEOF
+        cat > "${AUDIT_ITEM}/command.md" <<ITEMEOF
 # Gate R5 Production Audit — ${pushed_rid}
 
 **Trigger:** Automated — dispatched by post-coordinated-push.sh immediately after production push.
@@ -235,6 +302,7 @@ Review output for regressions. If clean, mark this item done. If issues found, c
 - ROI: 90
 - Rationale: R5 is the only post-push regression check; a 6h delay (as in release-r) leaves production issues undetected.
 ITEMEOF
+        cp "${AUDIT_ITEM}/command.md" "${AUDIT_ITEM}/README.md"
         echo "GATE-R5: dispatched audit item for ${pushed_rid} → ${AUDIT_ITEM}"
     else
         echo "GATE-R5: audit item already exists for ${pushed_rid}, skipping"

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-alchemist
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 20260409-dungeoncrawler-release-f
 - Dev owner: dev-dungeoncrawler
@@ -41,3 +41,7 @@ Model `infused_reagents_pool` as a per-day integer on the character record (comp
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-f.

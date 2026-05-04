@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-athletics-actions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - Priority: P1
 - PM owner: pm-dungeoncrawler
@@ -38,3 +38,7 @@ Implement all Athletics (Str) skill action handlers: Climb, Force Open, Grapple,
 - CSRF expectations: all POST/PATCH routes require `_csrf_request_header_mode: TRUE`
 - Input validation: action results (grabbed/prone/restrained) are server-computed from dice roll + modifiers; not client-asserted
 - PII/logging constraints: no PII logged; gameplay action logs (character id, action key, target id, degree of success) only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

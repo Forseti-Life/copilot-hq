@@ -50,6 +50,32 @@ mkdir -p "$INBOX_DIR" "$OUTBOX_DIR" "$ART_DIR"
 # Allow inbox to be a symlink to a shared queue; resolve to the real directory.
 INBOX_DIR="$(readlink -f "$INBOX_DIR" 2>/dev/null || echo "$INBOX_DIR")"
 
+normalize_flat_inbox_files() {
+  local inbox_dir="$1"
+  [ -d "$inbox_dir" ] || return 0
+
+  find "$inbox_dir" -mindepth 1 -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null \
+    | while IFS= read -r -d '' item_file; do
+        local stem item_dir readme_path legacy_name
+        stem="$(basename "$item_file" .md)"
+        [ -n "$stem" ] || continue
+        item_dir="$inbox_dir/$stem"
+        mkdir -p "$item_dir" 2>/dev/null || continue
+        if [ ! -f "$item_dir/roi.txt" ]; then
+          printf '%s\n' "1" > "$item_dir/roi.txt" 2>/dev/null || true
+        fi
+        readme_path="$item_dir/README.md"
+        if [ -e "$readme_path" ]; then
+          legacy_name="legacy-$(basename "$item_file")"
+          readme_path="$item_dir/$legacy_name"
+        fi
+        mv "$item_file" "$readme_path" 2>/dev/null || cp "$item_file" "$readme_path"
+        [ -f "$item_file" ] && rm -f "$item_file" 2>/dev/null || true
+      done
+}
+
+normalize_flat_inbox_files "$INBOX_DIR"
+
 # Archive an inbox item folder to artifacts reliably (avoid failures on existing dest).
 archive_inbox_item() {
   local src="$1" name="$2" dest_dir="$3"
@@ -433,13 +459,13 @@ CTX_MODULE="$(printf '%s' "$ctx" | awk -F'\t' '{print $3}')"
 # Record exec start time for tool-written outbox fallback detection.
 _EXEC_START_TS="$(date +%s)"
 
-PROMPT="You are the agent '${AGENT_ID}'.\n\nYou have access to the canonical HQ/Forseti monorepo worktree:\n- /home/ubuntu/forseti.life\n\nYou have one inbox item folder: ${inbox_item}.\n\nYou have full read/write tool access (--allow-all) to all files in that worktree. You MAY and SHOULD use tools (bash, edit, create) to directly write files within your owned scope — especially your own seat instructions file: org-chart/agents/instructions/${AGENT_ID}.instructions.md. The executor writes the outbox text response; you are responsible for any other file changes (instruction refreshes, artifacts, code) via direct tool calls. Do NOT claim filesystem permission problems (\"Permission denied\", \"can't write files\") unless you verified it with a command and can show the exact error output.\n\nOUTBOX OUTPUT RULE (CRITICAL — executor will fail if violated):\nYour outbox update MUST be your FINAL TEXT RESPONSE (the last text you print). Do NOT create or write any outbox file using tools. The executor captures your text response from stdout and writes it to the outbox for you. Writing the outbox as a file via tools will cause the executor to see an empty response and quarantine this inbox item.\n\nTask: Write a concise outbox update in markdown using this required structure:\n\n- Status: done | in_progress | blocked | needs-info\n- Summary: <one paragraph>\n\nThe first two lines MUST be exactly:\n- Status: ...\n- Summary: ...\n(no bold, no extra punctuation)\n\n## Next actions\n- ...\n\n## Blockers\n- If blocked/needs-info, be explicit.\n\n## Needs from CEO\n- If blocked/needs-info, list exactly what you need (missing context, resources, clarification, URLs, acceptance criteria, credentials, etc.)\n\nIf Status is blocked or needs-info, you MUST also include:\n\n## Decision needed\n- <the decision you need from supervisor/CEO>\n\n## Recommendation\n- <what you recommend and why>\n\nIf the request is unclear, set Status: needs-info and list the clarifying questions under \"Needs from CEO\".\n\nDO NOT claim you executed code changes unless you actually did."
+PROMPT="You are the agent '${AGENT_ID}'.\n\nYou have access to the canonical HQ/Forseti monorepo worktree:\n- /home/ubuntu/forseti.life\n\nYou have one inbox item folder: ${inbox_item}.\n\nYou have full read/write tool access (--allow-all) to all files in that worktree. You MAY and SHOULD use tools (bash, edit, create) to directly write files within your owned scope — especially your own seat instructions file: org-chart/agents/instructions/${AGENT_ID}.instructions.md. The executor writes the outbox text response; you are responsible for any other file changes (instruction refreshes, artifacts, code) via direct tool calls. Do NOT claim filesystem permission problems (\"Permission denied\", \"can't write files\") unless you verified it with a command and can show the exact error output.\n\nOUTBOX OUTPUT RULE (CRITICAL — executor will fail if violated):\nYour outbox update MUST be your FINAL TEXT RESPONSE (the last text you print). Do NOT create or write any outbox file using tools. The executor captures your text response from stdout and writes it to the outbox for you. Writing the outbox as a file via tools will cause the executor to see an empty response and quarantine this inbox item.\n\nTask: Write a concise outbox update in markdown using this required structure:\n\n- Status: done | in_progress | blocked | needs-info\n- Summary: <one paragraph>\n\nThe first two lines MUST be exactly:\n- Status: ...\n- Summary: ...\n(no bold, no extra punctuation)\n\n## Next actions\n- ...\n\n## Blockers\n- If blocked/needs-info, be explicit.\n\n## Needs from <Supervisor|CEO|Board>\n- If blocked/needs-info, choose the closest valid heading and list exactly what you need (missing context, resources, clarification, URLs, acceptance criteria, credentials, etc.)\n\nIf Status is blocked or needs-info, you MUST also include:\n\n## Decision needed\n- <the decision you need from supervisor/CEO>\n\n## Recommendation\n- <what you recommend and why>\n\nIf the request is unclear, set Status: needs-info and list the clarifying questions under the matching \"Needs from ...\" heading.\n\nDO NOT claim you executed code changes unless you actually did."
 
 PROMPT+="\n\nGit rule (required when you change code):\n- If you modify any tracked repo files, you MUST run: git status, git diff (or summary), then git add + git commit.\n- Include the commit hash(es) in your outbox update.\n- Do NOT push unless explicitly assigned as the release operator."
 
 PROMPT+="\n\nEscalation heading rule: when blocked/needs-info, put your ask under ONE of these headings (pick the closest):\n- ## Needs from Supervisor\n- ## Needs from CEO\n- ## Needs from Board\n(Use Supervisor by default; CEO only if your supervisor is CEO; Board only if you are CEO escalating to the human owner.)"
 
-PROMPT+="\n\nNeeds-info validity rule (CRITICAL): If you set Status: needs-info, the '## Needs from CEO' (or '## Needs from Supervisor') section MUST contain at least one specific, non-N/A item. A needs-info outbox with an empty or N/A-only Needs section is a malformed response — the orchestrator will flag it as a phantom blocker and it will NOT be routed to a supervisor. If you have no actual needs, set Status: done or Status: blocked with a specific blocker. Never use needs-info as a hedge."
+PROMPT+="\n\nNeeds-info validity rule (CRITICAL): If you set Status: needs-info, the matching '## Needs from Supervisor', '## Needs from CEO', or '## Needs from Board' section MUST contain at least one specific, non-N/A item. A needs-info outbox with an empty or N/A-only Needs section is a malformed response — the orchestrator will flag it as a phantom blocker and it will NOT be routed to a supervisor. If you have no actual needs, set Status: done or Status: blocked with a specific blocker. Never use needs-info as a hedge."
 
 PROMPT+="\n\n## ROI estimate\n- ROI: <integer 1-infinity>\n- Rationale: <1-3 sentences>\n\nROI guidance: higher ROI = higher org value/urgency/leverage. Use ROI to prioritize next actions and to justify escalations/delegations. Be reasonable relative to your current queue (avoid inflating everything)."
 

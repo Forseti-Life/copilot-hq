@@ -3,7 +3,7 @@
 - Work item id: dc-gmg-subsystems
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Define a `SubsystemSession` entity with a `subsystem_type` enum (chase/influence
 - Book: gmg, Chapter: ch04
 - REQs: 2732, 2733, 2734, 2735, 2736, 2737
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

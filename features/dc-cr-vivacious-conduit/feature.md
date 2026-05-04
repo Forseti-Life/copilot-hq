@@ -3,7 +3,7 @@
 - Work item id: dc-cr-vivacious-conduit
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry feat (level 9) that hooks into the short-rest/exploration-mode healing 
 - CSRF expectations: all POST/PATCH requests in rest, downtime, and healing flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: bonus healing uses the character's Constitution modifier and half level; no client-supplied healing values accepted.
 - PII/logging constraints: no PII logged; log character_id, con_mod, level, bonus_healing only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

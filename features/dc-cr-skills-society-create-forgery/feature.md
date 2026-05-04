@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-society-create-forgery
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-d
 20260412-dungeoncrawler-release-d
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement Society (Int) skill action handlers — Create Forgery, Decipher Writi
 - Book: core, Chapter: ch04
 - REQs: 1731, 1732, 1733, 1734, 1735, 1736, 1737, 1738
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

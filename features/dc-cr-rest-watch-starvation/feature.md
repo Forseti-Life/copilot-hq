@@ -3,7 +3,7 @@
 - Work item id: dc-cr-rest-watch-starvation
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-d
 20260412-dungeoncrawler-release-d
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement the rest, watch rotation, and starvation/thirst subsystem — recoveri
 - Book: core, Chapter: ch10
 - REQs: 2346, 2347, 2348, 2349
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-lore-earn-income
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Lore skills are dynamic sub-skills keyed by topic (e.g., "Academia Lore", "Under
 - Book: core, Chapter: ch04, ch10
 - REQs: 1579, 1580, 1581, 1582, 1685, 1686, 1687, 2326
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

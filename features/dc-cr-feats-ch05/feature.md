@@ -3,7 +3,7 @@
 - Work item id: dc-cr-feats-ch05
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-d
 20260412-dungeoncrawler-release-d
 - PM owner: pm-dungeoncrawler
@@ -42,3 +42,7 @@ Define a `Feat` entity with fields: id, name, feat_type (ancestry/class/general/
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

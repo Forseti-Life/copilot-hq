@@ -3,7 +3,7 @@
 - Work item id: dc-cr-fey-fellowship
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -31,3 +31,7 @@ Ancestry feat node in `dungeoncrawler_content` (Gnome, level 1). Adds two passiv
 
 ## Security acceptance criteria
 - Security AC exemption: static data content only — no new routes, no user input, no PII. Data added to CharacterManager.php constants.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-e.

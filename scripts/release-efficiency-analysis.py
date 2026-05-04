@@ -120,6 +120,57 @@ def outbox_status(path: pathlib.Path) -> str:
     return ""
 
 
+def read_text(path: pathlib.Path) -> str:
+    try:
+        return path.read_text(errors="ignore")
+    except OSError:
+        return ""
+
+
+def code_review_verdict(path: pathlib.Path) -> str:
+    """Return APPROVE/REJECT-style verdict text when present."""
+    text = read_text(path)
+    for line in text.splitlines():
+        m = re.match(r"^\s*(?:[-*]\s*)?(?:\*\*)?verdict(?:\*\*)?\s*:\s*(.+)", line, re.IGNORECASE)
+        if m:
+            verdict = m.group(1).strip().lower().replace("*", "")
+            return re.split(r"[\s–—-]+", verdict, maxsplit=1)[0]
+    return ""
+
+
+def code_review_completed(path: pathlib.Path) -> bool:
+    status = outbox_status(path)
+    verdict = code_review_verdict(path)
+    return status in ("done", "approved", "approve") or verdict in ("approve", "approved", "reject", "rejected")
+
+
+def file_mentions_release_or_features(path: pathlib.Path, release_id: str, feature_ids: list[str]) -> bool:
+    if release_id in path.name or any(fid in path.name for fid in feature_ids):
+        return True
+    text = read_text(path)
+    if release_id and release_id in text:
+        return True
+    return any(fid in text for fid in feature_ids)
+
+
+def adjacent_release_ids(release_id: str) -> list[str]:
+    """Return immediately adjacent single-letter release IDs when derivable."""
+    m = re.match(r"^(.*-release-)([a-z])$", release_id or "")
+    if not m:
+        return []
+    prefix, label = m.groups()
+    alpha = "abcdefghijklmnopqrstuvwxyz"
+    idx = alpha.find(label)
+    if idx == -1:
+        return []
+    neighbors: list[str] = []
+    if idx > 0:
+        neighbors.append(prefix + alpha[idx - 1])
+    if idx < len(alpha) - 1:
+        neighbors.append(prefix + alpha[idx + 1])
+    return neighbors
+
+
 def is_canonical_outbox(path: pathlib.Path) -> bool:
     """Treat transcript-like markdown as noise; only count actual outbox artifacts."""
     try:
@@ -298,10 +349,9 @@ def agent_outbox_files_for_release(agent: str, release_id: str,
         return []
     hits = []
     for f in sorted(outbox.glob("*.md")):
-        if release_id in f.name:
-            hits.append(f)
+        if not is_canonical_outbox(f):
             continue
-        if any(fid in f.name for fid in feature_ids):
+        if file_mentions_release_or_features(f, release_id, feature_ids):
             hits.append(f)
     return hits
 
@@ -698,13 +748,33 @@ def main() -> int:
 
     # Code review gate
     cr_files = agent_outbox_files_for_release("agent-code-review", release_id, feature_ids)
-    cr_done = sum(1 for f in cr_files if outbox_status(f) in ("done", "approved", "approve"))
+    cr_done = sum(1 for f in cr_files if code_review_completed(f))
     cr_total = len(cr_files)
     if cr_total == 0:
-        emit(WARN, "Code review gate: no agent-code-review sessions found for this release")
+        adjacent_hits: list[pathlib.Path] = []
+        for adjacent_release_id in adjacent_release_ids(release_id):
+            adjacent_hits.extend(
+                f for f in agent_outbox_files_for_release("agent-code-review", adjacent_release_id, [])
+                if code_review_completed(f)
+            )
+        adjacent_hits = sorted({f for f in adjacent_hits})
+        if adjacent_hits:
+            names = ", ".join(f.name for f in adjacent_hits[:3])
+            emit(
+                WARN,
+                f"Code review gate: no direct evidence for {release_id}; found adjacent-release review artifact(s) "
+                f"({names}) — possible off-by-one release dispatch/evidence mismatch",
+            )
+        else:
+            emit(WARN, "Code review gate: no agent-code-review sessions found for this release")
     elif cr_done == 0:
-        emit(FAIL, f"Code review gate: {cr_total} session(s) dispatched but none completed "
-             f"(all quarantined/needs-info) — code shipped without review")
+        quarantined = sum(1 for f in cr_files if outbox_status(f) in ("needs-info", "blocked"))
+        if quarantined == cr_total:
+            emit(FAIL, f"Code review gate: {cr_total} session(s) dispatched but all are quarantined/needs-info "
+                 f"— code shipped without review")
+        else:
+            emit(FAIL, f"Code review gate: {cr_total} session(s) dispatched but none completed "
+                 f"(no approve/reject verdict found) — code shipped without review")
     else:
         emit(PASS, f"Code review gate: {cr_done}/{cr_total} review(s) completed")
 

@@ -4,7 +4,7 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 
@@ -36,3 +36,7 @@ Implement a shared `KnowledgeAcquisitionService` with three distinct action hand
 - Book: core, Chapter: ch04
 - REQs: 1574, 1575, 1576, 1577, 1578, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

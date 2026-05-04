@@ -3,7 +3,7 @@
 - Work item id: dc-cr-equipment-ch06
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 - PM owner: pm-dungeoncrawler
@@ -42,3 +42,7 @@ Define an `Item` base entity with fields: id, name, price_cp, bulk, rarity, trai
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

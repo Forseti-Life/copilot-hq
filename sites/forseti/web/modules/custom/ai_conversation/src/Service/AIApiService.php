@@ -7,7 +7,6 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\user\UserDataInterface;
 use Drupal\ai_conversation\Traits\ConfigurableLoggingTrait;
 
 /**
@@ -46,23 +45,6 @@ class AIApiService {
   protected $promptManager;
 
   /**
-   * The AI conversation storage service.
-   *
-   * @var \Drupal\ai_conversation\Service\AIConversationStorageService
-   */
-  protected $storage;
-
-  /**
-   * @var \Drupal\ai_conversation\Service\OllamaApiService|null
-   */
-  protected $ollamaService;
-
-  /**
-   * @var \Drupal\user\UserDataInterface|null
-   */
-  protected $userData;
-
-  /**
    * Maximum number of recent messages to keep (configurable).
    *
    * @var int
@@ -86,26 +68,17 @@ class AIApiService {
   /**
    * Constructs a new AIApiService object.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, EntityTypeManagerInterface $entity_type_manager, PromptManager $prompt_manager = NULL, AIConversationStorageService $storage = NULL, OllamaApiService $ollama_service = NULL, UserDataInterface $user_data = NULL) {
+  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, EntityTypeManagerInterface $entity_type_manager, PromptManager $prompt_manager = NULL) {
     $this->configFactory = $config_factory;
     $this->logger = $logger_factory->get('ai_conversation');
     $this->entityTypeManager = $entity_type_manager;
-    $this->ollamaService = $ollama_service;
-    $this->userData = $user_data;
-
+    
     // Inject PromptManager or create one if not provided (for backwards compatibility)
     if ($prompt_manager) {
       $this->promptManager = $prompt_manager;
     } else {
       // Fallback for contexts where DI isn't available
       $this->promptManager = \Drupal::service('ai_conversation.prompt_manager');
-    }
-
-    // Inject storage service or resolve lazily for backwards compatibility.
-    if ($storage) {
-      $this->storage = $storage;
-    } else {
-      $this->storage = \Drupal::service('ai_conversation.storage');
     }
     
     // Load configuration.
@@ -126,51 +99,6 @@ class AIApiService {
       'us.anthropic.claude-3-5-haiku-20241022-v1:0',
     ];
     return array_values(array_unique(array_merge([$primary], $fallbacks)));
-  }
-
-  /**
-   * Resolves the effective provider for the given uid.
-   * Resolution order: user preference → org default → 'bedrock' fallback.
-   *
-   * @return array ['provider' => 'bedrock'|'ollama', 'model' => string|NULL]
-   */
-  public function resolveProvider(int $uid): array {
-    // Check user preference via user.data service.
-    $ud = $this->userData ?? \Drupal::service('user.data');
-    $user_provider = $ud->get('ai_conversation', $uid, 'ai_provider');
-    $user_model    = $ud->get('ai_conversation', $uid, 'ai_model');
-
-    if (!empty($user_provider) && in_array($user_provider, ['bedrock', 'ollama'], TRUE)) {
-      // Validate Ollama is actually configured before honoring user pref.
-      if ($user_provider === 'ollama') {
-        $ollama = $this->ollamaService ?? \Drupal::service('ai_conversation.ollama_api_service');
-        if (!$ollama->isConfigured()) {
-          // Fall through to org default.
-          $user_provider = NULL;
-          $user_model    = NULL;
-        }
-      }
-    }
-    else {
-      $user_provider = NULL;
-      $user_model    = NULL;
-    }
-
-    if ($user_provider !== NULL) {
-      return ['provider' => $user_provider, 'model' => $user_model ?: NULL];
-    }
-
-    // Use org default.
-    $provider_config = $this->configFactory->get('ai_conversation.provider_settings');
-    $org_provider = $provider_config->get('default_provider') ?: 'bedrock';
-    if ($org_provider === 'ollama') {
-      $ollama = $this->ollamaService ?? \Drupal::service('ai_conversation.ollama_api_service');
-      if (!$ollama->isConfigured()) {
-        $org_provider = 'bedrock';
-      }
-    }
-
-    return ['provider' => $org_provider, 'model' => NULL];
   }
 
   /**
@@ -199,83 +127,27 @@ class AIApiService {
       $this->checkAndUpdateSummary($conversation);
 
       $config = $this->configFactory->get('ai_conversation.settings');
+      $bedrock = $this->buildBedrockClient();
+      $models_to_try = $this->getModelFallbacks();
+      $model = $models_to_try[0];
 
       // Build the optimized conversation context (summary + recent messages).
       $context = $this->buildOptimizedContext($conversation, $message);
-
+      
       // Estimate input tokens.
       $input_tokens = $this->estimateTokens($context);
 
+      // Get max tokens from config.
+      $max_tokens = $config->get('max_tokens') ?: 50000;
+
       // Get system prompt from PromptManager with optional dynamic content from node 10
       $system_prompt = $this->promptManager->getSystemPrompt(10);
-
+      
       // Debug logging for system prompt
       $this->logInfo('System prompt length: @length, First 100 chars: @preview', [
         '@length' => strlen($system_prompt ?? ''),
         '@preview' => substr($system_prompt ?? 'EMPTY', 0, 100),
       ]);
-
-      // Resolve provider: user preference → org default → bedrock fallback (AC-3).
-      $uid = (int) \Drupal::currentUser()->id();
-      $resolved = $this->resolveProvider($uid);
-      $effective_provider = $resolved['provider'];
-      $effective_model    = $resolved['model'];
-
-      $this->logInfo('Effective AI provider: @provider', ['@provider' => $effective_provider]);
-
-      // --- Ollama path (AC-4) ---
-      if ($effective_provider === 'ollama') {
-        $ollama = $this->ollamaService ?? \Drupal::service('ai_conversation.ollama_api_service');
-        $ollama_models = $ollama->getAvailableModels();
-        $ollama_model  = ($effective_model && in_array($effective_model, $ollama_models, TRUE))
-          ? $effective_model
-          : ($ollama_models[0] ?? 'llama3');
-
-        try {
-          $start_time = microtime(TRUE);
-          $ollama_result = $ollama->chat(
-            $ollama_model,
-            [['role' => 'user', 'content' => $context]],
-            (string) ($system_prompt ?? '')
-          );
-          $ai_response = $ollama_result['text'];
-          $model = $ollama_result['model'];
-          $duration_ms = (int) ((microtime(TRUE) - $start_time) * 1000);
-          $output_tokens = $this->estimateTokens($ai_response);
-          $this->updateTokenCount($conversation, $input_tokens + $output_tokens);
-          $this->trackApiUsage([
-            'module' => 'ai_conversation',
-            'operation' => 'chat_message',
-            'model_id' => 'ollama/' . $model,
-            'input_tokens' => $input_tokens,
-            'output_tokens' => $output_tokens,
-            'stop_reason' => 'stop',
-            'duration_ms' => $duration_ms,
-            'context_data' => [
-              'conversation_id' => $conversation->id(),
-              'conversation_title' => $conversation->getTitle(),
-            ],
-            'success' => TRUE,
-            'prompt' => $context,
-            'response' => $ai_response,
-          ]);
-          return $ai_response;
-        }
-        catch (\RuntimeException $e) {
-          // AC-5: provider unreachable → fall back to Bedrock.
-          $this->logError('Ollama unreachable (@msg), falling back to Bedrock.', ['@msg' => $e->getMessage()]);
-          // Set a flag so the response can surface a banner (AC-5).
-          \Drupal::messenger()->addWarning(t('Your selected AI provider (Ollama) is currently unavailable. Falling back to the default provider.'));
-          $effective_provider = 'bedrock';
-        }
-      }
-
-      // --- Bedrock path (existing logic, unchanged) ---
-      $bedrock = $this->buildBedrockClient();
-      $models_to_try = $this->getModelFallbacks();
-      $model = $models_to_try[0];
-
-      $max_tokens = $config->get('max_tokens') ?: 50000;
 
       // Build the request body.
       $request_body = [
@@ -299,12 +171,11 @@ class AIApiService {
 
       $start_time = microtime(true);
 
-      // Try each model in fallback order until one succeeds.
+      // Try models in fallback order.
       $last_exception = NULL;
       $response = NULL;
       foreach ($models_to_try as $candidate_model) {
         try {
-          $this->logInfo('Attempting Bedrock call with model: @model', ['@model' => $candidate_model]);
           $response = $bedrock->invokeModel([
             'modelId' => $candidate_model,
             'body' => json_encode($request_body),
@@ -313,7 +184,7 @@ class AIApiService {
           $last_exception = NULL;
           break;
         } catch (\Aws\Exception\AwsException $e) {
-          $this->logError('Model @model failed (@code), trying next fallback. Error: @msg', [
+          $this->logError('Model @model failed (@code), trying next. Error: @msg', [
             '@model' => $candidate_model,
             '@code' => $e->getAwsErrorCode(),
             '@msg' => $e->getMessage(),
@@ -321,7 +192,6 @@ class AIApiService {
           $last_exception = $e;
         }
       }
-
       if ($last_exception !== NULL) {
         throw $last_exception;
       }
@@ -573,6 +443,8 @@ class AIApiService {
    */
   public function trackApiUsage(array $params) {
     try {
+      $connection = \Drupal::database();
+      
       // Calculate estimated cost based on model-specific pricing
       $model_id = $params['model_id'] ?? '';
       $pricing = $this->getModelPricing($model_id);
@@ -613,21 +485,23 @@ class AIApiService {
         'context_data' => isset($params['context_data']) ? json_encode($params['context_data']) : NULL,
       ];
       
-      // Add debugging fields if they exist (schema guard via storage service).
-      if ($this->storage->usageTableHasField('success')) {
+      // Add debugging fields if they exist
+      if ($connection->schema()->fieldExists('ai_conversation_api_usage', 'success')) {
         $fields['success'] = $success ? 1 : 0;
       }
-      if ($this->storage->usageTableHasField('error_message')) {
+      if ($connection->schema()->fieldExists('ai_conversation_api_usage', 'error_message')) {
         $fields['error_message'] = $params['error_message'] ?? NULL;
       }
-      if ($this->storage->usageTableHasField('prompt_preview')) {
-        $fields['prompt_preview'] = mb_substr((string) $full_prompt, 0, 250);
+      if ($connection->schema()->fieldExists('ai_conversation_api_usage', 'prompt_preview')) {
+        $fields['prompt_preview'] = mb_substr((string) $full_prompt, 0, 490);
       }
-      if ($this->storage->usageTableHasField('response_preview')) {
-        $fields['response_preview'] = mb_substr((string) $full_response, 0, 250);
+      if ($connection->schema()->fieldExists('ai_conversation_api_usage', 'response_preview')) {
+        $fields['response_preview'] = mb_substr((string) $full_response, 0, 490);
       }
       
-      $this->storage->insertUsageRecord($fields);
+      $connection->insert('ai_conversation_api_usage')
+        ->fields($fields)
+        ->execute();
         
       if ($success) {
         $this->logInfo('📊 API usage tracked: @module/@operation - @input_tokens in + @output_tokens out = $@cost', [
@@ -704,35 +578,9 @@ class AIApiService {
       }
       
       // No cache hit - proceed with API call
-      $config = $this->configFactory->get('ai_conversation.settings');
-      $aws_access_key = $config->get('aws_access_key_id') ?: getenv('AWS_ACCESS_KEY_ID');
-      $aws_secret_key = $config->get('aws_secret_access_key') ?: getenv('AWS_SECRET_ACCESS_KEY');
-      $aws_region = $config->get('aws_region') ?: 'us-east-1';
-
-      $sdk_config = [
-        'region' => $aws_region,
-        'version' => 'latest',
-      ];
-      
-      if (!empty($aws_access_key) && !empty($aws_secret_key)) {
-        $sdk_config['credentials'] = [
-          'key' => $aws_access_key,
-          'secret' => $aws_secret_key,
-        ];
-      }
-
-      $sdk = new \Aws\Sdk($sdk_config);
-      $bedrock = $sdk->createBedrockRuntime();
-      
-      $model_id = $options['model_id'] ?? \Drupal::config('ai_conversation.settings')->get('aws_model') ?: 'us.anthropic.claude-sonnet-4-6';
+      $bedrock = $this->buildBedrockClient();
+      $model_id = $options['model_id'] ?? $this->getModelFallbacks()[0];
       $max_tokens = $options['max_tokens'] ?? 8000;
-      
-      // 🔍 DEBUG: Log exact max_tokens being sent to Bedrock
-      $this->logInfo('📤 Sending to Bedrock: max_tokens=@max_tokens, model=@model, prompt_chars=@prompt_chars', [
-        '@max_tokens' => $max_tokens,
-        '@model' => $model_id,
-        '@prompt_chars' => strlen($prompt),
-      ]);
       
       $request_body = [
         'anthropic_version' => 'bedrock-2023-05-31',
@@ -758,15 +606,6 @@ class AIApiService {
 
       $duration_ms = (int)((microtime(TRUE) - $start_time) * 1000);
       $result = json_decode($response['body']->getContents(), TRUE);
-      
-      // 🔍 DEBUG: Log the full response metadata from Bedrock
-      $usage = $result['usage'] ?? [];
-      $this->logInfo('📥 Bedrock Response: input_tokens_actual=@input, output_tokens_actual=@output, stop_reason=@stop, duration_ms=@duration', [
-        '@input' => $usage['inputTokens'] ?? 'N/A',
-        '@output' => $usage['outputTokens'] ?? 'N/A',
-        '@stop' => $result['stop_reason'] ?? 'unknown',
-        '@duration' => $duration_ms,
-      ]);
       
       if (isset($result['content'][0]['text'])) {
         $ai_response = $result['content'][0]['text'];
@@ -867,7 +706,36 @@ class AIApiService {
    *   Array with response data if found, NULL otherwise.
    */
   private function getCachedApiResponse(string $module, string $operation, array $context_data) {
-    return $this->storage->findCachedResponse($module, $operation, $context_data);
+    $connection = \Drupal::database();
+    
+    // Build WHERE clauses for context_data matching
+    $query = $connection->select('ai_conversation_api_usage', 'u')
+      ->fields('u', ['response_preview', 'stop_reason', 'timestamp', 'input_tokens', 'output_tokens'])
+      ->condition('module', $module)
+      ->condition('operation', $operation)
+      ->condition('success', 1)
+      ->orderBy('timestamp', 'DESC')
+      ->range(0, 1);
+    
+    // Add JSON_EXTRACT conditions for each context field
+    // JSON_EXTRACT handles both numeric and string values correctly
+    foreach ($context_data as $key => $value) {
+      $query->where("JSON_EXTRACT(context_data, '$.$key') = :value_$key", [":value_$key" => $value]);
+    }
+    
+    $result = $query->execute()->fetchAssoc();
+    
+    if ($result && !empty($result['response_preview'])) {
+      return [
+        'response' => $result['response_preview'],
+        'stop_reason' => $result['stop_reason'],
+        'timestamp' => $result['timestamp'],
+        'input_tokens' => $result['input_tokens'],
+        'output_tokens' => $result['output_tokens'],
+      ];
+    }
+    
+    return NULL;
   }
 
   /**
@@ -887,8 +755,21 @@ class AIApiService {
    *   Number of cached responses cleared.
    */
   public function clearCachedResponse(string $module, string $operation, array $context_data) {
-    $count = $this->storage->deleteCachedResponses($module, $operation, $context_data);
-
+    $connection = \Drupal::database();
+    
+    // Build delete query matching the context
+    $query = $connection->delete('ai_conversation_api_usage')
+      ->condition('module', $module)
+      ->condition('operation', $operation);
+    
+    // Add JSON_EXTRACT conditions for each context field
+    // JSON_EXTRACT handles both numeric and string values correctly
+    foreach ($context_data as $key => $value) {
+      $query->where("JSON_EXTRACT(context_data, '$.$key') = :value_$key", [":value_$key" => $value]);
+    }
+    
+    $count = $query->execute();
+    
     if ($count > 0) {
       $this->logInfo('🗑️ Cleared @count cached GenAI response(s) for @module/@operation', [
         '@count' => $count,
@@ -896,7 +777,7 @@ class AIApiService {
         '@operation' => $operation,
       ]);
     }
-
+    
     return $count;
   }
 
@@ -1047,7 +928,6 @@ class AIApiService {
     try {
       $bedrock = $this->buildBedrockClient();
       $models_to_try = $this->getModelFallbacks();
-
       $request_body = json_encode([
         'anthropic_version' => 'bedrock-2023-05-31',
         'max_tokens' => 20000,
@@ -1063,14 +943,9 @@ class AIApiService {
           $last_exception = NULL;
           break;
         } catch (\Aws\Exception\AwsException $e) {
-          $this->logError('Summary model @model failed, trying next. Error: @msg', [
-            '@model' => $candidate_model,
-            '@msg' => $e->getMessage(),
-          ]);
           $last_exception = $e;
         }
       }
-
       if ($last_exception !== NULL) {
         throw $last_exception;
       }
@@ -1078,13 +953,10 @@ class AIApiService {
       if (isset($result['content'][0]['text'])) {
         return $result['content'][0]['text'];
       }
-
       throw new \Exception('Unexpected API response format');
-      
+
     } catch (\Exception $e) {
-      $this->logError('Error generating summary: @message', [
-        '@message' => $e->getMessage(),
-      ]);
+      $this->logError('Error generating summary: @message', ['@message' => $e->getMessage()]);
       return 'Summary generation failed.';
     }
   }
@@ -1182,34 +1054,6 @@ class AIApiService {
    */
   public function testConnection() {
     try {
-      $config = $this->configFactory->get('ai_conversation.settings');
-      $aws_access_key = $config->get('aws_access_key_id') ?: getenv('AWS_ACCESS_KEY_ID');
-      $aws_secret_key = $config->get('aws_secret_access_key') ?: getenv('AWS_SECRET_ACCESS_KEY');
-      $aws_region = $config->get('aws_region') ?: getenv('AWS_DEFAULT_REGION') ?: 'us-east-1';
-
-      // Check if credentials are configured
-      if (empty($aws_access_key) || empty($aws_secret_key)) {
-        return [
-          'success' => FALSE,
-          'message' => 'AWS credentials not configured',
-          'details' => 'Please set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables or configure them in the form above.',
-        ];
-      }
-
-      $sdk_config = [
-        'region' => $aws_region,
-        'version' => 'latest',
-        'http' => [
-          'timeout' => 15,
-          'connect_timeout' => 10,
-        ],
-      ];
-
-      $sdk_config['credentials'] = [
-        'key' => $aws_access_key,
-        'secret' => $aws_secret_key,
-      ];
-
       $bedrock = $this->buildBedrockClient();
       $models_to_try = $this->getModelFallbacks();
       $model = $models_to_try[0];
@@ -1225,60 +1069,21 @@ class AIApiService {
               'content' => 'Hello'
             ]
           ]
-        ]),
-        '@http' => [
-          'timeout' => 15,
-          'connect_timeout' => 10,
-        ],
+        ])
       ]);
 
       $result = json_decode($response['body']->getContents(), true);
       
       if (isset($result['content'][0]['text'])) {
-        return [
-          'success' => TRUE,
-          'message' => 'AWS Bedrock connection successful',
-          'model' => $model,
-        ];
+        return ['success' => TRUE, 'message' => 'AWS Bedrock connection successful', 'model' => $model];
       } else {
-        return [
-          'success' => FALSE,
-          'message' => 'AWS Bedrock connection failed',
-          'details' => 'Unexpected API response format',
-        ];
+        return ['success' => FALSE, 'message' => 'Unexpected API response'];
       }
 
-    } catch (\Aws\Exception\AwsException $e) {
-      // AWS-specific exceptions
-      return [
-        'success' => FALSE,
-        'message' => 'AWS Bedrock connection failed',
-        'details' => $e->getAwsErrorMessage() ?: $e->getMessage(),
-      ];
-    } catch (\GuzzleHttp\Exception\ConnectException $e) {
-      // Connection timeout
-      return [
-        'success' => FALSE,
-        'message' => 'AWS Bedrock connection timeout',
-        'details' => 'Could not connect to AWS Bedrock. Check your region and network connectivity.',
-      ];
-    } catch (\GuzzleHttp\Exception\RequestException $e) {
-      // Request timeout or other HTTP errors
-      return [
-        'success' => FALSE,
-        'message' => 'AWS Bedrock request failed',
-        'details' => $e->getMessage(),
-      ];
     } catch (\Exception $e) {
-      // Generic exception
-      return [
-        'success' => FALSE,
-        'message' => 'AWS Bedrock connection error',
-        'details' => $e->getMessage(),
-      ];
+      return ['success' => FALSE, 'message' => 'AWS Bedrock connection failed: ' . $e->getMessage()];
     }
   }
-
 
   /**
    * Get conversation statistics.
@@ -1341,7 +1146,7 @@ class AIApiService {
       ]);
       
       $suggestion->save();
-
+      
       $this->logInfo('Created community suggestion: @title (nid: @nid)', [
         '@title' => $title,
         '@nid' => $suggestion->id(),
@@ -1351,6 +1156,57 @@ class AIApiService {
       
     } catch (\Exception $e) {
       $this->logError('Failed to create community suggestion: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+      return NULL;
+    }
+  }
+
+  /**
+   * Create a community suggestion from in-game context (no conversation node).
+   *
+   * Used by the dungeoncrawler room chat pipeline where suggestions originate
+   * from the GM reply rather than an ai_conversation node.
+   *
+   * @param string $summary
+   *   AI-generated summary of the suggestion.
+   * @param string $original_message
+   *   The original user message containing the suggestion.
+   * @param string $category
+   *   The suggestion category.
+   * @param array $context
+   *   Optional context: campaign_id, room_id, character_id.
+   *
+   * @return \Drupal\node\NodeInterface|null
+   *   The created suggestion node or NULL on failure.
+   */
+  public function createBacklogSuggestion(string $summary, string $original_message, string $category, array $context = []) {
+    try {
+      $user = \Drupal::currentUser();
+      $title = mb_strlen($summary) > 100 ? mb_substr($summary, 0, 97) . '...' : $summary;
+
+      $suggestion = Node::create([
+        'type'                     => 'community_suggestion',
+        'title'                    => $title,
+        'uid'                      => $user->id(),
+        'status'                   => TRUE,
+        'field_suggestion_summary' => ['value' => $summary, 'format' => 'plain_text'],
+        'field_original_message'   => ['value' => $original_message, 'format' => 'plain_text'],
+        'field_suggestion_category' => $category,
+        'field_suggestion_status'  => 'new',
+      ]);
+      $suggestion->save();
+
+      $this->logInfo('Backlog suggestion created from game: @title (nid: @nid, campaign: @cid)', [
+        '@title' => $title,
+        '@nid'   => $suggestion->id(),
+        '@cid'   => $context['campaign_id'] ?? 'unknown',
+      ]);
+
+      return $suggestion;
+    }
+    catch (\Exception $e) {
+      $this->logError('Failed to create backlog suggestion from game: @message', [
         '@message' => $e->getMessage(),
       ]);
       return NULL;

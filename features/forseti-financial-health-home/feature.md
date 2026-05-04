@@ -4,7 +4,7 @@
 - Group: finance-home
 - Group Title: Finance Home
 - Group Sort: 1
-- Status: done
+- Status: shipped
 - Website: forseti.life
 - Module: institutional_management (MVP host)
 - Release: 20260412-forseti-release-l
@@ -48,3 +48,7 @@ Give Forseti a dedicated in-product institutional finance home where leadership 
 - Current real-world MVP content would show GitHub usage expense as source-backed `0.00`, AWS expense as blocked, and income/cash as blocked or unconfirmed.
 - Future versions may move from markdown-derived rendering to a structured JSON/API feed if the finance system matures beyond markdown as the book of record.
 - Related accountant artifact: `sessions/accountant-forseti/artifacts/20260413-accounting-home-proposal.md`
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

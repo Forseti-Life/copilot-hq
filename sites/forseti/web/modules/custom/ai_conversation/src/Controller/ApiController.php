@@ -42,7 +42,7 @@ class ApiController extends ControllerBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('ai_conversation.ai_api_service'),
+      $container->get('ai_conversation.ai_api'),
       $container->get('current_user')
     );
   }

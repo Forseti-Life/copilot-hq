@@ -78,3 +78,133 @@ def test_empty_release_self_cert_counts_as_gate2_evidence(tmp_path):
     assert "empty-release-self-cert" in result.stdout
     assert "PM signoff (pm-forseti): found" in result.stdout
     assert "All checks PASSED — release cycle is healthy" in result.stdout
+
+
+def test_in_progress_feature_with_needs_info_dev_outbox_fails_health(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    feature_dir = root / "features" / "forseti-langgraph-console-admin"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text(
+        "\n".join(
+            [
+                "# Feature Brief",
+                "",
+                "- Work item id: forseti-langgraph-console-admin",
+                "- Website: forseti.life",
+                "- Status: in_progress",
+                f"- Release: {release_id}",
+                "- Dev owner: dev-forseti",
+                "- QA owner: qa-forseti",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    dev_outbox = root / "sessions" / "dev-forseti" / "outbox"
+    dev_outbox.mkdir(parents=True)
+    (dev_outbox / "20260420-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: needs-info\n- Summary: Awaiting clarification.\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "dev outbox unresolved" in result.stdout
+    assert "status=needs-info" in result.stdout
+
+
+def test_in_progress_feature_prefers_latest_matching_dev_outbox(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    feature_dir = root / "features" / "forseti-langgraph-console-admin"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text(
+        "\n".join(
+            [
+                "# Feature Brief",
+                "",
+                "- Work item id: forseti-langgraph-console-admin",
+                "- Website: forseti.life",
+                "- Status: in_progress",
+                f"- Release: {release_id}",
+                "- Dev owner: dev-forseti",
+                "- QA owner: qa-forseti",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    dev_outbox = root / "sessions" / "dev-forseti" / "outbox"
+    dev_outbox.mkdir(parents=True)
+    (dev_outbox / "20260420-164124-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: needs-info\n- Summary: Awaiting clarification.\n",
+        encoding="utf-8",
+    )
+    (dev_outbox / "20260420-172644-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: done\n- Summary: Implemented.\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "dev outbox: 20260420-172644-impl-forseti-langgraph-console-admin.md status=done" in result.stdout
+    assert "needs-info" not in result.stdout
+
+
+def test_advanced_release_done_feature_fails_reconciliation_health(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    (root / "tmp" / "auto-push-dispatched").mkdir(parents=True)
+    (root / "tmp" / "auto-push-dispatched" / "forseti.advanced").write_text(
+        release_id + "\n",
+        encoding="utf-8",
+    )
+
+    feature_dir = root / "features" / "forseti-langgraph-console-admin"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text(
+        "\n".join(
+            [
+                "# Feature Brief",
+                "",
+                "- Work item id: forseti-langgraph-console-admin",
+                "- Website: forseti.life",
+                "- Status: done",
+                f"- Release: {release_id}",
+                "- Dev owner: dev-forseti",
+                "- QA owner: qa-forseti",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "still has unreconciled done features" in result.stdout
+    assert "forseti-langgraph-console-admin" in result.stdout
+
+
+def test_push_marker_detected_from_auto_push_dispatched(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
+    (root / "tmp" / "auto-push-dispatched" / f"{release_id}.pushed").write_text(
+        "2026-04-18T12:30:00+00:00\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"Push marker exists: {release_id}.pushed" in result.stdout

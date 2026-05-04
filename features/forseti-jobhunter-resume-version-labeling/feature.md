@@ -8,7 +8,7 @@
 - Group: profile-resume
 - Group Title: Profile & Resume
 - Group Sort: 8
-- Status: done
+- Status: shipped
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -76,3 +76,7 @@ Verify: submit two resumes with the same label → both save successfully; warni
 - Controller must verify `jobhunter_job_seeker_resumes.job_seeker_id` belongs to `currentUser()->id()` before updating label/notes
 - Version label and notes stored as plain text; Twig auto-escaping on display (no `|raw`)
 - Resume content (extracted text) must NOT be included in any label-update log entry; log only `uid` and `resume_id`
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

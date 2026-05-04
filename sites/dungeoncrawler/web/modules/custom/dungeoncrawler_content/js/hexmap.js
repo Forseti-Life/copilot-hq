@@ -10,6 +10,7 @@ import { HexmapStateSync } from './HexmapStateSync.js';
 import { GameCoordinator } from './game-coordinator/GameCoordinator.js';
 import { ChatSessionApi } from './ChatSessionApi.js';
 import { SpriteService } from './SpriteService.js';
+import { StateManager } from './StateManager.js';
 
 // Ensure Drupal and once are available
 /* global Drupal, once, PIXI */
@@ -143,6 +144,7 @@ import { SpriteService } from './SpriteService.js';
       this.setupActionFooterToggle();
       this.setupFullscreenToggle();
       this.cacheElements();
+      this.setupCharacterSheetEmbedResize();
       this.setupPartyRailHandlers();
       this.setupChatLog();
       this.setupChannelTabs();
@@ -428,6 +430,49 @@ import { SpriteService } from './SpriteService.js';
           }
         });
       });
+    }
+
+    setupCharacterSheetEmbedResize() {
+      const iframe = this.elements.characterSheetEmbed;
+      if (!iframe || iframe.dataset.resizeBound === 'true') {
+        return;
+      }
+
+      iframe.dataset.resizeBound = 'true';
+
+      const resizeIframe = () => {
+        try {
+          const doc = iframe.contentDocument;
+          if (!doc) {
+            return;
+          }
+
+          const body = doc.body;
+          const html = doc.documentElement;
+          const height = Math.max(
+            body ? body.scrollHeight : 0,
+            body ? body.offsetHeight : 0,
+            html ? html.clientHeight : 0,
+            html ? html.scrollHeight : 0,
+            html ? html.offsetHeight : 0
+          );
+
+          if (height > 0) {
+            iframe.style.height = `${height + 24}px`;
+          }
+        } catch (error) {
+          // Same-origin expected; ignore resize failures if the frame is not ready.
+        }
+      };
+
+      iframe.addEventListener('load', () => {
+        resizeIframe();
+        window.requestAnimationFrame(resizeIframe);
+        window.setTimeout(resizeIframe, 150);
+        window.setTimeout(resizeIframe, 500);
+      });
+
+      window.addEventListener('resize', resizeIframe);
     }
 
     /**
@@ -1134,6 +1179,8 @@ import { SpriteService } from './SpriteService.js';
       if (this.elements.characterSheetLegacy) {
         this.elements.characterSheetLegacy.style.display = 'none';
       }
+
+      window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }
 
     /**
@@ -2203,94 +2250,6 @@ import { SpriteService } from './SpriteService.js';
    * StateManager - Centralized state management.
    * Provides a single source of truth for application state.
    */
-  class StateManager {
-    constructor() {
-      this.state = {
-        // Selection state
-        selectedEntity: null,
-        selectedHex: null,
-        hoveredHex: null,
-        
-        // Movement state
-        movementRange: null,
-        movementRangeOverlay: null,
-        
-        // Combat state
-        combatActive: false,
-        serverCombatMode: false,
-        attackTarget: null,
-        
-        // Drag state
-        draggedObject: null,
-        
-        // Flags
-        assetsLoaded: false,
-        showCoordinates: false,
-        showGrid: true
-      };
-      
-      this.listeners = {};
-    }
-
-    /**
-     * Get state value.
-     */
-    get(key) {
-      return this.state[key];
-    }
-
-    /**
-     * Set state value and notify listeners.
-     */
-    set(key, value) {
-      const oldValue = this.state[key];
-      this.state[key] = value;
-      
-      // Notify listeners
-      if (this.listeners[key]) {
-        this.listeners[key].forEach(callback => callback(value, oldValue));
-      }
-    }
-
-    /**
-     * Subscribe to state changes.
-     */
-    subscribe(key, callback) {
-      if (!this.listeners[key]) {
-        this.listeners[key] = [];
-      }
-      this.listeners[key].push(callback);
-      
-      // Return unsubscribe function
-      return () => {
-        this.listeners[key] = this.listeners[key].filter(cb => cb !== callback);
-      };
-    }
-
-    /**
-     * Reset all state to defaults.
-     */
-    reset() {
-      this.state = {
-        selectedEntity: null,
-        selectedHex: null,
-        hoveredHex: null,
-        movementRange: null,
-        movementRangeOverlay: null,
-        combatActive: false,
-        serverCombatMode: false,
-        attackTarget: null,
-        draggedObject: null,
-        assetsLoaded: false,
-        showCoordinates: false,
-        showGrid: true,
-        showFog: true,
-        fogOverlay: null,
-        visibleHexes: null
-      };
-    }
-  }
-
   /**
    * Hex map behavior.
    */

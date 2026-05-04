@@ -3,7 +3,7 @@
 - Work item id: dc-cr-environment-terrain
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 - PM owner: pm-dungeoncrawler
@@ -44,3 +44,7 @@ Terrain type is stored on each grid cell in the `EncounterMap` entity as an enum
 - REQs: 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361,
          2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

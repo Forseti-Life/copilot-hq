@@ -393,3 +393,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260423-1776962948-impl-dungeoncrawler-pf2e-automation-validation — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260423-1776962948-impl-dungeoncrawler-pf2e-automation-validation.md)
 - [ ] 20260424-001221-qa-findings-dungeoncrawler-7 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7.md)
 - [ ] 20260424-001221-qa-findings-dungeoncrawler-7-retry-1776995175 — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260424-001221-qa-findings-dungeoncrawler-7-retry-1776995175.md)
+- [ ] 20260504-unblocked-dungeoncrawler-content-push-repo-ready — targeted regression check (see dev outbox: sessions/dev-dungeoncrawler/outbox/20260504-unblocked-dungeoncrawler-content-push-repo-ready.md)

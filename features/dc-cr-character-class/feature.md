@@ -3,7 +3,7 @@
 - Work item id: dc-cr-character-class
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260406-dungeoncrawler-release-next
 - Priority: high (core pillar of character building; defines proficiencies, HP/level, class features, and class feats — required for character creation workflow)
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Content type: `character_class` with fields for key ability, hit points per leve
 - CSRF expectations: all POST/PATCH routes require `_csrf_request_header_mode: TRUE`
 - Input validation: entity field types enforced at Drupal entity layer; no raw free-text user input stored without sanitization
 - PII/logging constraints: no PII logged; gameplay action logs (character id, action type) only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260406-dungeoncrawler-release-next.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-npc-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260411-dungeoncrawler-release-b
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -41,3 +41,7 @@ Content type: `npc` with fields for name, role (ally/contact/merchant/villain/ne
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260411-dungeoncrawler-release-b.

@@ -8,7 +8,7 @@
 - Group: discovery
 - Group Title: Job Discovery & Search
 - Group Sort: 4
-- Status: done
+- Status: shipped
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -71,3 +71,7 @@ Verify: delete user's preferences row; trigger a search; confirm all configured 
 - Controller verifies `uid = currentUser()->id()` on all reads/writes; no uid accepted from URL
 - `source_prefs_json` values validated against an allowlist of known source names before storage; unknown source names are rejected with HTTP 422 to prevent injection of arbitrary source keys
 - No preference values logged to watchdog at debug severity; log only `uid` and operation type (save/reset)
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

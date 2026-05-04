@@ -3,7 +3,7 @@
 - Work item id: dc-ui-map-first-player-shell
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P1
 - PM owner: pm-dungeoncrawler
@@ -41,3 +41,7 @@ Treat the existing Drupal + Pixi route as the stable platform boundary. Rework `
 ## Roadmap section
 
 - Roadmap: Dungeoncrawler UI modernization
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

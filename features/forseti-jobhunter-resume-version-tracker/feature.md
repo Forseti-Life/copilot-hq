@@ -8,7 +8,7 @@
 - Group: profile-resume
 - Group Title: Profile & Resume
 - Group Sort: 9
-- Status: done
+- Status: shipped
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -70,3 +70,7 @@ Verify: POST with a `submitted_resume_id` owned by a different uid → HTTP 403;
 - Controller verifies both `jobhunter_applications.uid` and the resume record's `job_seeker_id`/`uid` match `currentUser()->id()` before any update
 - No resume content (full text) rendered in the "where used" list — show resume name and type only to minimize PII surface
 - No PII (resume content, job titles) logged to watchdog at debug severity
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

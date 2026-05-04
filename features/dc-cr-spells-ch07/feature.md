@@ -3,7 +3,7 @@
 - Work item id: dc-cr-spells-ch07
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P1
 - Release: 
 20260412-dungeoncrawler-release-r
@@ -29,6 +29,8 @@ Implement the spell catalog — covering all CRB spells (levels 1–10) with ful
 Define a `Spell` entity with fields: id, name, rank (1-10 for spells, 0 for cantrips), traditions[], cast_time, components[] (verbal/somatic/material/focus), range, area, targets, duration, save_type, effect_text, heightened_entries[]. `HeightenedEntry` is a sub-entity with rank_delta and modified_fields (JSON diff). `CantripHeighteningService` auto-computes the effective rank as `ceil(caster_level / 2)`. Implement a bulk import for ~400 CRB spells from structured JSON; ensure traditions is an array to support multi-tradition spells.
 
 ## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-r.
 
 - 2026-04-19: Unit test coverage added for all SpellCatalogService AC items (32 tests/77 assertions): cantrip auto-heightening, focus spell effective rank, focus pool cap, heightened entries (specific and cumulative), spontaneous caster heightening gate, innate spell daily usage, cast time phase validation, spell data model validation. Also fixed a bug in resetInnateSpells() where `?? []` in a foreach-by-reference expression caused writes to never propagate back to entity_state. Commit: 32a01152c.
 

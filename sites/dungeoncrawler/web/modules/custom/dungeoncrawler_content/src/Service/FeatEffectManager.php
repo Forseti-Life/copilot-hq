@@ -810,24 +810,6 @@ class FeatEffectManager {
           $effects['applied_feats'][] = $feat_id;
           break;
 
-        case 'ceaseless-shadows':
-          $effects['derived_adjustments']['flags']['ceaseless_shadows_no_cover_req'] = TRUE;
-          $effects['conditional_modifiers']['movement'][] = [
-            'id' => 'ceaseless-shadows',
-            'rule' => 'hide_sneak_no_cover_requirement',
-            'context' => 'Hide and Sneak',
-          ];
-          $effects['conditional_modifiers']['movement'][] = [
-            'id' => 'ceaseless-shadows-cover-upgrade',
-            'rule' => 'creature_cover_upgrade',
-            'lesser_to_full' => TRUE,
-            'full_to_greater' => TRUE,
-            'context' => 'Creature-based cover only',
-          ];
-          $effects['notes'][] = 'Ceaseless Shadows: Can Hide and Sneak without cover or concealment. Creatures grant upgraded cover (lesser→full, full→greater).';
-          $effects['applied_feats'][] = $feat_id;
-          break;
-
         case 'general-training':
           $this->addSelectionGrant(
             $effects,
@@ -1730,6 +1712,24 @@ class FeatEffectManager {
         $effects['derived_adjustments']['flags']['halfling_resolve_emotion_save_upgrade'] = TRUE;
         $effects['derived_adjustments']['flags']['halfling_resolve_active'] = TRUE;
         $effects['notes'][] = 'Halfling Resolve: success on emotion saves upgrades to critical success. If Gutsy Halfling is active, critical failures on emotion saves become failures.';
+        break;
+
+      case 'ceaseless-shadows':
+        // AC: Ceaseless Shadows (Feat 13, prereq: Distracting Shadows) — halfling
+        // no longer requires cover/concealment for Hide or Sneak. Creatures grant
+        // upgraded cover: lesser → full (can Take Cover), full → greater.
+        $effects['derived_adjustments']['flags']['ceaseless_shadows_hide_sneak_no_cover'] = TRUE;
+        $effects['derived_adjustments']['flags']['ceaseless_shadows_creature_cover_upgrade'] = TRUE;
+        $effects['notes'][] = 'Ceaseless Shadows: Hide/Sneak do not require cover or concealment. Creature-granted cover is upgraded (lesser→full, full→greater). Prerequisite: Distracting Shadows.';
+        break;
+
+      case 'halfling-weapon-expertise':
+        // AC: Halfling Weapon Expertise (Feat 13, prereq: Halfling Weapon Familiarity) —
+        // when class grants expert+ proficiency in weapons, also cascade that proficiency
+        // to sling, halfling sling staff, shortsword, and all halfling weapons where the
+        // character is at least trained.
+        $effects['derived_adjustments']['flags']['halfling_weapon_expertise_proficiency_cascade'] = TRUE;
+        $effects['notes'][] = 'Halfling Weapon Expertise: Class weapon proficiency advances (expert+) cascade to sling, halfling sling staff, shortsword, and all halfling weapons (trained only). Prerequisite: Halfling Weapon Familiarity.';
         break;
     }
 

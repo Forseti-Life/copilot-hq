@@ -3,7 +3,7 @@
 - Work item id: dc-cr-human-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -52,3 +52,7 @@ Create the human ancestry record using the same ancestry data model as dwarf/elf
 - All read endpoints (GET ancestry data) use `_csrf_token: FALSE`.
 - Anonymous users receive 403 on all character write paths.
 - Character data is scoped to the owning user's session; no cross-character data exposure.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

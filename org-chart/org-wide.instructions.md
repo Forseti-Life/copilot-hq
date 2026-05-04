@@ -42,6 +42,19 @@ When starting a new site/product, the CEO must ensure these exist before delegat
 - **No silent blocking**: if you cannot proceed, explicitly mark `Status: blocked` or `Status: needs-info` and state exactly what you need.
 - **Write up-chain**: requests for clarification/resources must be written explicitly (not implied).
 
+## Outbox contract (required)
+- The first two lines of every outbox update must be exactly:
+  - `- Status: <done|in_progress|blocked|needs-info>`
+  - `- Summary: <one-line or one-paragraph machine-consumable summary>`
+- If `Status` is `blocked` or `needs-info`, include exactly one matching escalation heading:
+  - `## Needs from Supervisor`
+  - `## Needs from CEO`
+  - `## Needs from Board`
+- `needs-info` is valid only when that `Needs from ...` section contains at least one specific, non-`N/A` request.
+- For blocked/needs-info updates, also include:
+  - `## Decision needed`
+  - `## Recommendation`
+
 ## Chain of command (required)
 - **Escalations follow the reporting chain** in `org-chart/org-chart.yaml`.
 	- Individual contributors (BA/Dev/QA/Security/etc.) escalate to their **supervisor**.

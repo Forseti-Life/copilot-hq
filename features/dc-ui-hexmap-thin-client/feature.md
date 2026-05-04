@@ -3,7 +3,7 @@
 - Work item id: dc-ui-hexmap-thin-client
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P1
 - PM owner: pm-dungeoncrawler
@@ -45,3 +45,7 @@ Keep Pixi rendering and chat UX in the browser, but draw a hard line around auth
 ## Roadmap section
 
 - Roadmap: Dungeoncrawler UI modernization
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

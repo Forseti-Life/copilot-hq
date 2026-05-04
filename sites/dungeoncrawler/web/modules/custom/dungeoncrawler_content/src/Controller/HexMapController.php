@@ -92,6 +92,7 @@ class HexMapController extends ControllerBase {
       }
     }
 
+    $campaign_name = $this->loadCampaignName($launch_context);
     $dungeon_payload = $this->loadDungeonPayload($launch_context);
     $dungeon_payload = $this->adjustBarCounterPlacements($dungeon_payload);
     $dungeon_payload = $this->composeLongTableSegments($dungeon_payload);
@@ -117,6 +118,8 @@ class HexMapController extends ControllerBase {
 
     return [
       '#theme' => 'hexmap_demo',
+      '#title' => $campaign_name,
+      '#campaign_name' => $campaign_name,
       '#launch_context' => $launch_context,
       '#dungeon_payload' => $dungeon_payload,
       '#is_admin' => $is_admin,
@@ -138,6 +141,33 @@ class HexMapController extends ControllerBase {
         'contexts' => ['url.query_args:campaign_id', 'url.query_args:character_id', 'url.query_args:dungeon_level_id', 'url.query_args:map_id', 'url.query_args:room_id', 'url.query_args:next_room_id', 'url.query_args:start_q', 'url.query_args:start_r'],
       ],
     ];
+  }
+
+  /**
+   * Load the current campaign name for the page title.
+   *
+   * @param array $launch_context
+   *   Current launch context query values.
+   *
+   * @return string
+   *   Campaign name when available, otherwise a safe fallback title.
+   */
+  protected function loadCampaignName(array $launch_context): string {
+    $campaign_id = (int) ($launch_context['campaign_id'] ?? 0);
+    if ($campaign_id <= 0) {
+      return 'Game UI';
+    }
+
+    $campaign_name = $this->database->select('dc_campaigns', 'c')
+      ->fields('c', ['name'])
+      ->condition('id', $campaign_id)
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+
+    return is_string($campaign_name) && $campaign_name !== ''
+      ? $campaign_name
+      : 'Game UI';
   }
 
   /**

@@ -4,7 +4,7 @@
 - Type: extend
 - Module: dungeoncrawler_content
 - Priority: P1
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - Dependencies: dc-cr-skill-system, dc-cr-character-leveling
 
@@ -36,3 +36,7 @@ Implement `SkillModifierCalculator.compute(character, skill)` that aggregates bo
 - Book: core, Chapter: ch04, ch10
 - REQs: 1553, 1554, 1556, 1563, 1564, 1566, 1567, 1568, 1600, 2321, 2323
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

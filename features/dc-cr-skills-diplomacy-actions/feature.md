@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-diplomacy-actions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -44,3 +44,7 @@ NPC attitude is a 5-step enum stored on the `NpcRelationship` entity keyed by (c
 - REQs: 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677,
          1678, 1679, 1680, 1681, 1682, 1683, 2327, 2330
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

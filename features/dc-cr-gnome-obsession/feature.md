@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gnome-obsession
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-j
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry feat that grants a free Lore skill selection at level 1 plus auto-advan
 - CSRF expectations: all POST/PATCH requests in feat selection and level-up flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: chosen Lore skill must be a valid Lore specialization; milestone upgrades apply only at levels 2, 7, and 15.
 - PII/logging constraints: no PII logged; log character_id, chosen_lore, proficiency_rank_changes only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-j.

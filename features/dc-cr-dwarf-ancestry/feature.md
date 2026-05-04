@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarf-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-s
 - Priority: P2 (extends ancestry-system with specific stat block; all deps now satisfied — ancestry-system ✓, clan-dagger shipped ✓, heritage-system ✓)
 - PM owner: pm-dungeoncrawler
@@ -48,3 +48,7 @@ QA preflight revealed API gaps: `AncestryController::buildAncestryItem()` omitte
 Fix: Extended both methods in `AncestryController.php` to expose these fields conditionally.
 Unit test coverage: `AncestryControllerTest.php` — 12 tests / 92 assertions; all pass.
 Commit: `35e4b2cea`
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-s.

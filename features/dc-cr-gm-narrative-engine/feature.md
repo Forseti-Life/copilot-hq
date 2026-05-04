@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gm-narrative-engine
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260411-dungeoncrawler-release-b
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -44,3 +44,7 @@ AI prompt pipeline: system prompt includes active adventure context (current sce
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260411-dungeoncrawler-release-b.

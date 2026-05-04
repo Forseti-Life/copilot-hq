@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-champion
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release:
 20260409-dungeoncrawler-release-e
 - QA owner: qa-dungeoncrawler
@@ -40,3 +40,7 @@ Store `cause` (Paladin/Liberator/Redeemer) and `deity_id` as required fields on 
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-e.

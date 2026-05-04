@@ -3,7 +3,7 @@
 - Work item id: dc-b3-bestiary3
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-q
 - Feature type: enhancement
 - Priority: P3
@@ -47,6 +47,8 @@ See `features/dc-b3-bestiary3/01-acceptance-criteria.md`.
 - `web/modules/custom/dungeoncrawler_content/tests/src/Functional/ContentSeederCommandsTest.php` - verify `dc:import-creatures` imports Bestiary 3 content idempotently when new JSON files are present.
 
 ## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-q.
 
 - 2026-04-19: Import pipeline and source filter complete — `ContentRegistry::importContentFromJson()` now accepts a `$source_filter` parameter to scope imports to a single bestiary pack; `dc:import-creatures --source=b3` added to drush command; `GET /api/creatures?source=b3` now validates source against allow-list and returns HTTP 400 for unknown values; `content/creatures/bestiary3/` mount point created with README specifying content pack format. Commit: 465e29843. All pipeline AC met pending operator content pack delivery.
 

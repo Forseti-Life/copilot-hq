@@ -3,7 +3,7 @@
 - Work item id: dc-cr-first-world-adept
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-i
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry feat (level 9) that adds faerie fire (2nd level, 1/day) and invisibilit
 - CSRF expectations: all POST/PATCH requests in feat-selection and spellcasting flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: only `faerie fire` and `invisibility` are granted; both are stored as 2nd-level primal innate spells with a once-per-day use counter managed server-side.
 - PII/logging constraints: no PII logged; log character_id, feat_id, spell_ids_granted only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-i.

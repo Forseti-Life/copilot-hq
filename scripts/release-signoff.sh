@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT_DIR"
 
 PRODUCT_TEAMS_JSON="org-chart/products/product-teams.json"
@@ -179,6 +179,65 @@ CERT
     echo "BLOCKED: PM signoff requires Gate 2 QA APPROVE before it can be issued." >&2
     exit 1
   fi
+fi
+
+# Release metadata guard: if a release candidate change list exists for this release,
+# every listed feature must have an exact Release: <release_id> match in feature.md.
+metadata_tmp="$(mktemp)"
+set +e
+python3 - "$ROOT_DIR" "$release_id" <<'PY' >"$metadata_tmp" 2>&1
+from pathlib import Path
+import re
+import sys
+
+root = Path(sys.argv[1])
+release_id = sys.argv[2].strip()
+change_lists = sorted(root.glob(f"sessions/*/artifacts/release-candidates/{release_id}/01-change-list.md"))
+if not change_lists:
+    raise SystemExit(0)
+
+feature_heading = re.compile(r'^###\s+([A-Za-z0-9._-]+)\s*$')
+release_line = re.compile(r'^-\s+Release:\s*(.*?)\s*$', re.MULTILINE | re.IGNORECASE)
+errors = []
+seen = set()
+
+for change_list in change_lists:
+    for raw_line in change_list.read_text(encoding='utf-8', errors='ignore').splitlines():
+        match = feature_heading.match(raw_line.strip())
+        if not match:
+            continue
+        feature_id = match.group(1).strip()
+        if feature_id in seen:
+            continue
+        seen.add(feature_id)
+        feature_md = root / 'features' / feature_id / 'feature.md'
+        if not feature_md.is_file():
+            errors.append(f"{feature_id}: feature brief missing (listed in {change_list.relative_to(root)})")
+            continue
+        text = feature_md.read_text(encoding='utf-8', errors='ignore')
+        release_match = release_line.search(text)
+        feature_release = release_match.group(1).strip() if release_match else ''
+        if feature_release != release_id:
+            shown = feature_release if feature_release else '(blank)'
+            errors.append(f"{feature_id}: Release field is '{shown}', expected '{release_id}'")
+
+if errors:
+    for err in errors:
+        print(f"ERROR: release metadata mismatch — {err}")
+    raise SystemExit(1)
+PY
+metadata_status=$?
+set -e
+metadata_check="$(cat "$metadata_tmp")"
+rm -f "$metadata_tmp"
+if [ "$metadata_status" -ne 0 ]; then
+  echo "$metadata_check" >&2
+  echo "BLOCKED: PM signoff requires release-bound features to carry exact Release: ${release_id} metadata." >&2
+  exit 1
+fi
+
+if [ -n "$metadata_check" ]; then
+  echo "$metadata_check"
 fi
 
 # Stale orchestrator artifact check: if an existing signoff was written by the orchestrator

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-halfling-heritage-hillock
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -40,3 +40,7 @@ Implements the Hillock Halfling heritage: when the character regains HP overnigh
 - CSRF expectations: all POST/PATCH healing and rest actions require `_csrf_request_header_mode: TRUE`.
 - Input validation: bonus healing equals character level and applies only on overnight recovery or Treat Wounds; clients cannot inject arbitrary bonus values.
 - PII/logging constraints: no PII logged; log character_id, recovery_source, base_healing, bonus_healing only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-halfling-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-l
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -37,3 +37,7 @@ Content type `ancestry` entry for halfling. Heritage entries: gutsy halfling, hi
 - CSRF expectations: all POST/PATCH requests in character creation and ancestry-selection flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: halfling HP, size, speed, luck, and keen-eyes bonuses are server-defined values; clients cannot override ancestry stats or passive ancestry traits.
 - PII/logging constraints: no PII logged; log character_id, ancestry_id, heritage_id only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-l.

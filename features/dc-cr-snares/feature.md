@@ -5,7 +5,7 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: shipped
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -26,6 +26,8 @@ Implement the snare crafting and placement system — snare types (Alarm/Hamperi
 `SnareEntity` stores: snare_type enum, placed_square (grid coordinate), creator_id, trigger_DC (Perception to detect), and effect payload. `PlaceSnareAction` is an exploration-phase activity consuming 1 `SnareItem` from inventory and placing a `SnareEntity` on the map. During encounter movement resolution, `SnareDetectionService` checks if a moving creature enters a snared square; if not detected, trigger the snare effect (alarm/slow/mark/damage) via the appropriate condition/damage handler. Snare Crafting feat grants access to the place-snare action; Rangers get it for free at level 1.
 
 ## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-r.
 
 - 2026-04-19: Surfaced the existing quick-craft snare handler through `DowntimePhaseHandler::getAvailableActions()` so `craft_snare` now appears in downtime action menus instead of remaining a legal-but-hidden intent.
 - 2026-04-19: Added focused unit coverage for snare placement and trigger behavior in `MagicItemService`, covering feat gating, occupied-square rejection, persisted snare metadata, and alarm-snare trigger resolution.

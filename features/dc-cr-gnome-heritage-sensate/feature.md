@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gnome-heritage-sensate
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -31,3 +31,7 @@ Heritage node in `dungeoncrawler_content`. Adds imprecise scent sense with 30-ft
 
 ## Security acceptance criteria
 - Security AC exemption: static data content only — no new routes, no user input, no PII. Data added to CharacterManager.php constants.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-d.

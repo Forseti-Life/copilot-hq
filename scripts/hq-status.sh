@@ -24,6 +24,19 @@ pid_status() {
   fi
 }
 
+legacy_agent_exec_status() {
+  local pidfile="$1"
+  local pid=""
+  if [ -f "$pidfile" ]; then
+    pid="$(cat "$pidfile" 2>/dev/null || true)"
+  fi
+  if [[ "$pid" =~ ^[0-9]+$ ]] && ps -p "$pid" >/dev/null 2>&1; then
+    printf '%-18s %s (pid %s)\n' "Legacy agent exec:" "running — unexpected" "$pid"
+  else
+    printf '%-18s %s\n' "Legacy agent exec:" "stopped (expected; orchestrator-managed)"
+  fi
+}
+
 count_glob() {
   shopt -s nullglob
   local arr=( $1 )
@@ -86,7 +99,10 @@ agent_pending_inbox_count() {
     echo 0
     return
   fi
-  find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null | wc -l | awk '{print $1}'
+  {
+    find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null
+    find "$dir" -mindepth 1 -maxdepth 1 -type f -name "*.md" 2>/dev/null
+  } | wc -l | awk '{print $1}'
 }
 
 agent_next_inbox() {
@@ -98,7 +114,10 @@ agent_next_inbox() {
     return
   fi
   local next
-  next=$(find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null | sed 's|.*/||' | sort | head -n 1 || true)
+  next="$({
+    find "$dir" -mindepth 1 -maxdepth 1 -type d ! -name "_archived" 2>/dev/null | sed 's|.*/||'
+    find "$dir" -mindepth 1 -maxdepth 1 -type f -name "*.md" 2>/dev/null | sed 's|.*/||; s/\.md$//'
+  } | sort | head -n 1 || true)"
   echo "${next:--}"
 }
 
@@ -129,7 +148,7 @@ pid_status "CEO loop" ".ceo-inbox-loop.pid"
 pid_status "Inbox loop" ".inbox-loop.pid"
 
 pid_status "Orchestrator" ".orchestrator-loop.pid"
-pid_status "Agent exec" ".agent-exec-loop.pid"
+legacy_agent_exec_status ".agent-exec-loop.pid"
 pid_status "CEO ops" ".ceo-ops-loop.pid"
 pid_status "CEO health" ".ceo-health-loop.pid"
 pid_status "Publisher loop" ".publish-forseti-agent-tracker-loop.pid"

@@ -24,12 +24,20 @@ class TestReleaseCycleHandoff(unittest.TestCase):
             control = root / "tmp" / "release-cycle-control.json"
             (root / "org-chart" / "products").mkdir(parents=True)
             (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True)
+            (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True)
             control.write_text('{"enabled": true}\n', encoding="utf-8")
 
             (root / "org-chart" / "products" / "product-teams.json").write_text(
                 json.dumps(
                     {
                         "teams": [
+                            {
+                                "id": "forseti",
+                                "pm_agent": "pm-forseti",
+                                "active": True,
+                                "release_preflight_enabled": True,
+                                "coordinated_release_default": True,
+                            },
                             {
                                 "id": "dungeoncrawler",
                                 "pm_agent": "pm-dungeoncrawler",
@@ -48,8 +56,23 @@ class TestReleaseCycleHandoff(unittest.TestCase):
             (root / "tmp" / "release-cycle-active" / "dungeoncrawler.next_release_id").write_text(
                 "20260412-dungeoncrawler-release-f\n", encoding="utf-8"
             )
+            (root / "tmp" / "release-cycle-active" / "forseti.release_id").write_text(
+                "20260412-forseti-release-q\n", encoding="utf-8"
+            )
+            (root / "tmp" / "release-cycle-active" / "forseti.next_release_id").write_text(
+                "20260412-forseti-release-r\n", encoding="utf-8"
+            )
             (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-dungeoncrawler-release-e.md").write_text(
                 "# signoff\n", encoding="utf-8"
+            )
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260412-forseti-release-q.md").write_text(
+                "# cross-signoff\n", encoding="utf-8"
+            )
+            (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260412-forseti-release-q.md").write_text(
+                "# signoff\n", encoding="utf-8"
+            )
+            (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260412-dungeoncrawler-release-e.md").write_text(
+                "# cross-signoff\n", encoding="utf-8"
             )
 
             old_root = run.REPO_ROOT
@@ -71,7 +94,7 @@ class TestReleaseCycleHandoff(unittest.TestCase):
                 run._run = old_run
 
             self.assertEqual(calls, [], "Signed-off release must not auto-advance before push")
-            team = log[0]["teams"][0]
+            team = next(team for team in log[0]["teams"] if team["team"] == "dungeoncrawler")
             self.assertEqual(team["action"], "signed_off_waiting_push")
             self.assertEqual(team["current"], "20260412-dungeoncrawler-release-e")
             self.assertEqual(team["next"], "20260412-dungeoncrawler-release-f")

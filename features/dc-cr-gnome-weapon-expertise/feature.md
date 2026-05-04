@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gnome-weapon-expertise
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-j
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry feat (level 13) that registers a passive listener on the "class weapon 
 - CSRF expectations: all POST/PATCH requests in level-up and proficiency-update flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: cascade applies only to glaive, kukri, and trained gnome weapons when a class feature grants expert-or-higher weapon proficiency.
 - PII/logging constraints: no PII logged; log character_id, source_class_feature, affected_weapons, new_proficiency_rank only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-j.

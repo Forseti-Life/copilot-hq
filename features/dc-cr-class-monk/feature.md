@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-monk
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release:
 20260409-dungeoncrawler-release-e
 - Dev owner: dev-dungeoncrawler
@@ -41,3 +41,7 @@ Implement Monk class mechanics — Powerful Fist, Flurry of Blows, Ki tradition,
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-e.

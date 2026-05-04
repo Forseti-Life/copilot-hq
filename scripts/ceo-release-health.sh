@@ -20,7 +20,8 @@
 # Exit 0 = all checks pass. Exit 1 = at least one FAIL.
 #
 set -euo pipefail
-cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+cd "$ROOT_DIR"
 
 FIX_MODE=0
 RELEASE_START_GRACE_SECONDS="${RELEASE_START_GRACE_SECONDS:-14400}"
@@ -48,8 +49,30 @@ find_gate2_evidence() {
   local qa_outbox="$1"
   local release_id="$2"
   [ -d "$qa_outbox" ] || return 0
-  find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null \
+  find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*gate2-aggregate-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null \
     | xargs grep -l "$release_id" 2>/dev/null | head -1 || true
+}
+
+find_feature_outbox() {
+  local outbox_dir="$1"
+  local feat_name="$2"
+  [ -d "$outbox_dir" ] || return 0
+  find "$outbox_dir" -maxdepth 1 -type f -name "*.md" 2>/dev/null \
+    | while IFS= read -r f; do
+        basename "$f"
+      done \
+    | grep "$feat_name" \
+    | sort \
+    | tail -1 || true
+}
+
+outbox_status() {
+  local file="$1"
+  [ -f "$file" ] || return 0
+  grep -im1 '^\- Status:' "$file" 2>/dev/null \
+    | sed 's/^- Status: *//I' \
+    | tr '[:upper:]' '[:lower:]' \
+    | tr -d '\r' || true
 }
 
 echo
@@ -249,9 +272,16 @@ PY
       elif [ "$STATUS" = "in_progress" ]; then
         # Check for dev outbox (implementation)
         DEV_AGENT="dev-$TEAM"
-        HAS_IMPL="$(ls "sessions/${DEV_AGENT}/outbox/" 2>/dev/null | grep "$FEAT_NAME" | head -1 || true)"
+        HAS_IMPL="$(find_feature_outbox "sessions/${DEV_AGENT}/outbox" "$FEAT_NAME")"
         if [ -n "$HAS_IMPL" ]; then
-          pass "  feature: $FEAT_NAME (status=$STATUS, dev outbox: $HAS_IMPL)"
+          IMPL_STATUS="$(outbox_status "sessions/${DEV_AGENT}/outbox/$HAS_IMPL")"
+          if [ "$IMPL_STATUS" = "done" ] || [ "$IMPL_STATUS" = "approved" ] || [ "$IMPL_STATUS" = "approve" ]; then
+            pass "  feature: $FEAT_NAME (status=$STATUS, dev outbox: $HAS_IMPL status=$IMPL_STATUS)"
+          else
+            fail "  feature: $FEAT_NAME (status=$STATUS, dev outbox unresolved: $HAS_IMPL status=${IMPL_STATUS:-unknown})"
+            FEATURES_WAITING_FOR_IMPL=$((FEATURES_WAITING_FOR_IMPL + 1))
+            FEATURES_NOT_DONE+=("$FEAT_NAME")
+          fi
         else
           if [ "$IN_RELEASE_GRACE" = "1" ]; then
             warn "  feature: $FEAT_NAME (status=$STATUS, no dev outbox yet — release still within startup grace)"
@@ -308,7 +338,37 @@ PY
     info "Run: bash scripts/release-signoff.sh $TEAM $RELEASE_ID"
   fi
 
-  # 6. Orphaned features — in_progress on a stale/closed release (Python for speed)
+  # 6. Shipment reconciliation drift on the latest advanced release
+  echo
+  ADVANCED_SENTINEL="tmp/auto-push-dispatched/${TEAM}.advanced"
+  if [ -f "$ADVANCED_SENTINEL" ]; then
+    ADVANCED_RELEASE_ID="$(cat "$ADVANCED_SENTINEL" | tr -d '[:space:]')"
+    if [ -n "$ADVANCED_RELEASE_ID" ]; then
+      UNRECONCILED_DONE=()
+      while IFS= read -r FEAT_DIR; do
+        [ -d "$FEAT_DIR" ] || continue
+        FM="$FEAT_DIR/feature.md"
+        [ -f "$FM" ] || continue
+        TEXT="$(cat "$FM")"
+        if ! echo "$TEXT" | grep -qE "^-\s+Release:\s*${ADVANCED_RELEASE_ID}\s*$"; then
+          continue
+        fi
+        STATUS="$(echo "$TEXT" | grep -E '^-\s+Status:' | head -1 | sed 's/^-\s*Status:\s*//')"
+        if [ "$STATUS" = "done" ]; then
+          UNRECONCILED_DONE+=("$(basename "$FEAT_DIR")")
+        fi
+      done < <(find features -maxdepth 1 -mindepth 1 -type d 2>/dev/null)
+
+      if [ "${#UNRECONCILED_DONE[@]}" -gt 0 ]; then
+        fail "[$TEAM] Advanced release ${ADVANCED_RELEASE_ID} still has unreconciled done features: ${UNRECONCILED_DONE[*]}"
+        info "Run the Stage 7 reconciler or re-run post-coordinated-push.sh to materialize done -> shipped."
+      else
+        pass "[$TEAM] Latest advanced release ${ADVANCED_RELEASE_ID} has no unreconciled done features"
+      fi
+    fi
+  fi
+
+  # 7. Orphaned features — in_progress on a stale/closed release (Python for speed)
   echo
   ORPHAN_RESULTS="$(python3 - features "$TEAM" "$RELEASE_ID" <<'PY'
 import pathlib, sys, re
@@ -419,7 +479,7 @@ hr
 
 SORTED_IDS="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | tr '\n' '_' | sed 's/_$//')"
 PUSH_MARKER_KEY="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | paste -sd '__')"
-PUSH_MARKER="tmp/release-cycle-active/${PUSH_MARKER_KEY}.pushed"
+PUSH_MARKER="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.pushed"
 
 if [ -f "$PUSH_MARKER" ]; then
   warn "Push marker exists: $PUSH_MARKER_KEY.pushed — coordinated push was already dispatched"

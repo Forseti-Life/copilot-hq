@@ -3,7 +3,7 @@
 - Work item id: dc-ui-sidebar-drawers
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-n
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -41,3 +41,7 @@ Retain the existing panel content and DOM hooks, but move them into a single-pri
 ## Roadmap section
 
 - Roadmap: Dungeoncrawler UI modernization
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-n.

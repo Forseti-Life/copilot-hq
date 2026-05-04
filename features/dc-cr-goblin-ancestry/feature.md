@@ -3,7 +3,7 @@
 - Work item id: dc-cr-goblin-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry data node (dungeoncrawler_content content type) with HP 6, size Small, 
 - CSRF expectations: all POST/PATCH requests in character creation and ancestry-selection flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: ancestry boosts/flaw, size, speed, and ancestry traits are server-defined enum/data values; players cannot submit arbitrary ancestry stats.
 - PII/logging constraints: no PII logged; log character_id, ancestry_id, heritage_id only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-l.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-acrobatics-actions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Route all four actions through a shared `AcrobaticsActionHandler` that injects t
 - Book: core, Chapter: ch04
 - REQs: 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-deception-actions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement all Deception (Cha) skill action handlers — Create a Diversion, Fein
 - Book: core, Chapter: ch04
 - REQs: 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

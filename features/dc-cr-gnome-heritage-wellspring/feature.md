@@ -3,7 +3,7 @@
 - Work item id: dc-cr-gnome-heritage-wellspring
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -36,3 +36,7 @@ Heritage node in `dungeoncrawler_content`. Requires a `wellspring_tradition` fie
 - CSRF expectations: all POST/PATCH routes in character creation flow require `_csrf_request_header_mode: TRUE`.
 - Input validation: tradition must be one of {arcane, divine, occult}; cantrip ID must exist in the chosen tradition's cantrip list; tradition override at feat-acquisition time validated server-side.
 - PII/logging constraints: no PII logged; log character_id, heritage_id, tradition_selected, cantrip_selected only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-j.

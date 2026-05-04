@@ -3,7 +3,7 @@
 - Work item id: dc-cr-first-world-magic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -36,3 +36,7 @@ Ancestry feat node in `dungeoncrawler_content` (Gnome, level 1). Player selects 
 - CSRF expectations: all POST/PATCH routes in character creation/feat flow require `_csrf_request_header_mode: TRUE`.
 - Input validation: selected cantrip ID must exist in the primal cantrip list; Wellspring tradition override only applied when character has Wellspring Gnome heritage (validated server-side at acquisition); no free-form input accepted.
 - PII/logging constraints: no PII logged; log character_id, feat_id, cantrip_selected only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-i.

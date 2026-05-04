@@ -9,7 +9,7 @@
 - Group Title: Console Routes & UI
 - Group Sort: 5
 - Status: in_progress
-- Release: 20260412-forseti-release-q
+- Release: 20260412-forseti-release-r
 - Feature type: enhancement
 - PM owner: pm-forseti
 - Dev owner: dev-forseti
@@ -27,6 +27,11 @@ The LangGraph Console Admin section (`/langgraph-console/admin`) provides operat
 - Full audit trail of all console mutations for compliance and troubleshooting
 - Real-time visibility into system health and agent execution state
 - Permission matrix for controlling which roles can access which console sections
+
+## Deferred decision
+
+- 2026-05-04: Deferred out of `20260412-forseti-release-q` and returned to `ready` for `20260412-forseti-release-r`.
+- Reason: the current dev outbox for release-q remains `needs-info`, while `forseti-langgraph-console-observe` has a completed dev outbox. Deferring admin keeps the active release internally consistent and aligns with the original dev recommendation to ship Observe first and move Admin to the next cycle.
 
 ## Acceptance criteria
 

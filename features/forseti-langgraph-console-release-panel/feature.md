@@ -8,7 +8,7 @@
 - Group: console-ui
 - Group Title: Console Routes & UI
 - Group Sort: 3
-- Status: done
+- Status: shipped
 - Release: 20260411-forseti-release-b
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -57,3 +57,7 @@ The LangGraph Console has a `/langgraph-console/release` section that currently 
 - Feature count: `glob(COPILOT_HQ_ROOT . '/features/*/feature.md')` + `grep` for `Status: in_progress` + `Website: <site>`.
 - Hours elapsed: `time() - filemtime(COPILOT_HQ_ROOT . '/tmp/release-cycle-active/<site>.started_at')` / 3600.
 - PM signoff check: `file_exists(COPILOT_HQ_ROOT . '/sessions/pm-<site>/artifacts/release-signoffs/<release_id>.md')`.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260411-forseti-release-b.

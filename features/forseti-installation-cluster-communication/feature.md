@@ -4,7 +4,7 @@
 - Group: cluster-comm
 - Group Title: Cluster Communication
 - Group Sort: 1
-- Status: done
+- Status: shipped
 - Website: forseti.life
 - Module: forseti_cluster (new)
 - Release: 20260412-forseti-release-l
@@ -60,3 +60,7 @@ Allow any Forseti installation to register trusted peer installations and exchan
 - CSRF expectations: Admin UI actions (peer approval, trust elevation, policy changes) use Drupal Form API or confirm_form() with CSRF token; REST/JSON API endpoints use token-based auth (not cookie-based), so CSRF is not applicable for those endpoints.
 - Input validation requirements: All incoming peer messages validated against a strict schema before processing; untrusted peer-supplied data is sanitized before storage or display; capability advertisements are allowlisted, not open-ended.
 - PII/logging constraints: Peer identity and handshake metadata stored in private config or environment variables, not public synced config; watchdog logs record handshake events but not raw key material; no user PII transmitted between installations unless explicitly operator-approved.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

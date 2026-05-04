@@ -1217,12 +1217,59 @@ class ClineProvider(RuntimeProvider):
 
 def _release_cycle_step(log: List[Any]) -> None:
     """Delegate to release_cycle module."""
+    _setup_runtime_modules()
     release_cycle.run_release_cycle_step(log, REPO_ROOT)
 
 
 def _coordinated_push_step(log: List[Any]) -> None:
     """Delegate to release_cycle module."""
+    _setup_runtime_modules()
     release_cycle.run_coordinated_push_step(log, REPO_ROOT)
+
+
+def _setup_runtime_modules() -> None:
+    """Wire shared orchestrator modules to the live runtime helpers/state."""
+    dispatch.setup(
+        repo_root=REPO_ROOT,
+        signoff_reminder_state=REPO_ROOT / "tmp" / "orchestrator-stagnation" / "signoff_reminder_dispatch",
+        proactive_signoff_state=REPO_ROOT / "tmp" / "orchestrator-stagnation" / "proactive_signoff_dispatch",
+        release_close_state_dir=REPO_ROOT / "tmp" / "orchestrator-stagnation",
+    )
+    release_cycle._run = _run
+    release_cycle._emit_event = _emit_event
+    release_cycle._release_cycle_control_state = _release_cycle_control_state
+    release_cycle._dispatch_signoff_reminders = dispatch._dispatch_signoff_reminders
+    release_cycle._dispatch_gate2_auto_approve = dispatch._dispatch_gate2_auto_approve
+    release_cycle._dispatch_proactive_awaiting_signoff = dispatch._dispatch_proactive_awaiting_signoff
+
+
+def _count_site_features_for_release(site: str, rid: str) -> int:
+    """Compatibility wrapper preserving release guard semantics in run.py."""
+    return dispatch._count_site_features_for_release(site, rid)
+
+
+def _scope_activate_nudge_feature_count(site: str, rid: str) -> int:
+    """Keep the activated-scope counter explicit in this runtime module."""
+    feature_count = _count_site_features_for_release(site, rid)
+    return feature_count
+
+
+def _feature_gap_needs_dev_dispatch(dev_has_inbox: bool, dev_has_outbox: bool) -> bool:
+    """Feature GAP-A dispatch depends only on missing Dev coverage."""
+    if not dev_has_inbox and not dev_has_outbox:
+        return True
+    return False
+
+
+def _feature_level_dev_owner(feature_text: str, fallback_dev_agent: str) -> str:
+    """Parse the feature-level Dev owner: field while preserving fallback behavior."""
+    dev_agent = fallback_dev_agent
+    m = re.search(r"^-\s+Dev owner:\s*(.+)$", feature_text, re.MULTILINE)
+    if m:
+        parsed = m.group(1).strip()
+        if parsed:
+            dev_agent = parsed
+    return dev_agent
 
 
 def _make_provider(name: str) -> RuntimeProvider:
@@ -1287,13 +1334,7 @@ def main() -> None:
 
     provider = _make_provider(args.provider)
     
-    # Initialize dispatch module with required paths
-    dispatch.setup(
-        repo_root=REPO_ROOT,
-        signoff_reminder_state=REPO_ROOT / "tmp" / "orchestrator-stagnation" / "signoff_reminder_dispatch",
-        proactive_signoff_state=REPO_ROOT / "tmp" / "orchestrator-stagnation" / "proactive_signoff_dispatch",
-        release_close_state_dir=REPO_ROOT / "tmp" / "orchestrator-stagnation",
-    )
+    _setup_runtime_modules()
     
     effective_agent_cap = max(0, int(args.agent_cap))
     if args.non_ceo_cap is not None:

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-crafting-actions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement Crafting (Int) skill action handlers — Craft (downtime), Identify Ma
 - Book: core, Chapter: ch04, ch10
 - REQs: 1644 (partial), 1645–1656 (Craft/Repair/Identify Alchemy actions), 2325
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

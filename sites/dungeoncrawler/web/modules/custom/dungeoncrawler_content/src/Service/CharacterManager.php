@@ -951,8 +951,11 @@ class CharacterManager {
         'benefit' => 'When you succeed on a saving throw against an emotion effect, treat it as a critical success. If you also have the Gutsy Halfling heritage, critical failures on emotion saving throws become failures instead.',
         'special' => ['save_success_upgrade' => ['effect_type' => 'emotion', 'success_to_crit' => TRUE], 'gutsy_resolve_interaction' => TRUE]],
       ['id' => 'ceaseless-shadows', 'name' => 'Ceaseless Shadows', 'level' => 13, 'traits' => ['Halfling'], 'prerequisites' => 'Distracting Shadows',
-        'prerequisite_distracting_shadows' => TRUE,
-        'benefit' => 'You excel at going unnoticed, especially among a crowd. You no longer need to have cover or be concealed to Hide or Sneak. If you would have lesser cover from creatures, you gain cover and can Take Cover, and if you would have cover from creatures, you gain greater cover.'],
+        'benefit' => 'You no longer need cover or concealment to Hide or Sneak. When creatures would grant you lesser cover, you gain full cover instead and can Take Cover against those creatures. When creatures would grant you full cover, you gain greater cover instead.',
+        'special' => ['hide_sneak_no_cover_required' => TRUE, 'creature_cover_upgrade' => ['lesser_to_full' => TRUE, 'full_to_greater' => TRUE]]],
+      ['id' => 'halfling-weapon-expertise', 'name' => 'Halfling Weapon Expertise', 'level' => 13, 'traits' => ['Halfling'], 'prerequisites' => 'Halfling Weapon Familiarity',
+        'benefit' => 'Whenever you gain a class feature that grants you expert or greater proficiency in a given weapon or weapons, you also gain that proficiency in the sling, halfling sling staff, shortsword, and all halfling weapons in which you are trained.',
+        'special' => ['proficiency_cascade' => ['weapon_groups' => 'halfling_weapons', 'min_proficiency' => 'expert', 'apply_to_trained_only' => TRUE]]],
     ],
     'Catfolk' => [
       ['id' => 'catfolk-lore', 'name' => 'Catfolk Lore', 'level' => 1, 'traits' => ['Catfolk'], 'prerequisites' => '',

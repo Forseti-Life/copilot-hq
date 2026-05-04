@@ -8,7 +8,7 @@
 - Group: contacts-companies
 - Group Title: Contacts & Companies
 - Group Sort: 3
-- Status: done
+- Status: shipped
 - Release: 20260412-forseti-release-l
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -71,3 +71,7 @@ Verify: POST with `culture_fit_score=11` → 422 response with validation error 
 - `research_links_json` field stored as plain JSON string; URLs must be validated as valid HTTP/HTTPS URLs before storage (no javascript: or data: URIs)
 - Notes field stored as plain text; Twig auto-escaping on display (no `|raw`)
 - Research links rendered as anchor tags with `rel="noopener noreferrer"` and `target="_blank"` to prevent tab-napping
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

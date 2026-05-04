@@ -87,3 +87,37 @@ def test_dev_outbox_files_ignore_transcript_noise(tmp_path):
     files = mod.dev_outbox_files_for_feature("dc-cr-dwarf-ancestry", "dev-dungeoncrawler")
 
     assert [f.name for f in files] == ["20260410-021500-implement-dc-cr-dwarf-ancestry.md"]
+
+
+def test_code_review_completed_accepts_embedded_verdict(tmp_path):
+    mod = _load_module()
+    artifact = tmp_path / "20260420-code-review-dungeoncrawler-20260412-dungeoncrawler-release-r.md"
+    artifact.write_text(
+        "- Status: needs-info\n\n## CEO Code Review Verdict (2026-04-20)\n\n**VERDICT: APPROVE** — clear for ship.\n",
+        encoding="utf-8",
+    )
+
+    assert mod.code_review_verdict(artifact).startswith("approve")
+    assert mod.code_review_completed(artifact) is True
+
+
+def test_agent_outbox_files_for_release_matches_body_references(tmp_path):
+    mod = _load_module()
+    root = tmp_path / "hq"
+    mod.ROOT = root
+
+    outbox = root / "sessions" / "agent-code-review" / "outbox"
+    outbox.mkdir(parents=True)
+    review = outbox / "20260420-manual-cr-generic.md"
+    review.write_text(
+        "# Manual CR\n\n- Status: done\n- Release: 20260412-dungeoncrawler-release-s\n- Feature: dc-cr-dwarf-ancestry\n",
+        encoding="utf-8",
+    )
+
+    files = mod.agent_outbox_files_for_release(
+        "agent-code-review",
+        "20260412-dungeoncrawler-release-s",
+        ["dc-cr-dwarf-ancestry"],
+    )
+
+    assert [f.name for f in files] == ["20260420-manual-cr-generic.md"]

@@ -11,10 +11,12 @@ SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "post-coordinated-pus
 BOUNDARY_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "ceo-release-boundary-health.sh"
 RELEASE_CYCLE_START = Path(__file__).resolve().parents[2] / "scripts" / "release-cycle-start.sh"
 HELPER_MODULE = Path(__file__).resolve().parents[2] / "scripts" / "lib" / "release_cycle_helpers.py"
+RECONCILE_SCRIPT = Path(__file__).resolve().parents[2] / "scripts" / "release-reconcile-shipped.py"
 assert SCRIPT.exists(), f"Script not found: {SCRIPT}"
 assert BOUNDARY_SCRIPT.exists(), f"Script not found: {BOUNDARY_SCRIPT}"
 assert RELEASE_CYCLE_START.exists(), f"Script not found: {RELEASE_CYCLE_START}"
 assert HELPER_MODULE.exists(), f"Script not found: {HELPER_MODULE}"
+assert RECONCILE_SCRIPT.exists(), f"Script not found: {RECONCILE_SCRIPT}"
 
 _TEAMS_JSON = {
     "teams": [
@@ -80,6 +82,24 @@ def _make_root(tmp: Path, *, signoffs_done: bool = True) -> Path:
     stub = scripts_dir / "release-signoff.sh"
     stub.write_text("#!/usr/bin/env bash\nexit 0\n")
     stub.chmod(0o755)
+    pre_push = scripts_dir / "pre-push-validation.sh"
+    pre_push.write_text("#!/usr/bin/env bash\nexit 0\n")
+    pre_push.chmod(0o755)
+    gate2_backstop = scripts_dir / "gate2-clean-audit-backstop.py"
+    gate2_backstop.write_text("#!/usr/bin/env python3\nraise SystemExit(0)\n")
+    gate2_backstop.chmod(0o755)
+    reconcile = scripts_dir / "release-reconcile-shipped.py"
+    reconcile.write_text(
+        "#!/usr/bin/env python3\n"
+        "import os, sys\n"
+        "log = os.environ.get('RECONCILE_LOG', '').strip()\n"
+        "if log:\n"
+        "    with open(log, 'a', encoding='utf-8') as fh:\n"
+        "        fh.write(f\"{sys.argv[1]}|{sys.argv[2]}\\n\")\n"
+        "print(f\"RECONCILED {sys.argv[1]}: {sys.argv[2]}\")\n"
+        "raise SystemExit(0)\n"
+    )
+    reconcile.chmod(0o755)
     shutil.copy2(BOUNDARY_SCRIPT, scripts_dir / "ceo-release-boundary-health.sh")
     shutil.copy2(RELEASE_CYCLE_START, scripts_dir / "release-cycle-start.sh")
     shutil.copy2(HELPER_MODULE, lib_dir / "release_cycle_helpers.py")
@@ -157,7 +177,10 @@ class TestReleaseIdAdvancement:
                 f"{team_id}: idempotency violated — release_id changed on second run"
             )
         assert any(
-            f"SKIP {t}: release_id already advanced" in result.stdout
+            (
+                f"SKIP {t}: release_id already advanced" in result.stdout
+                or f"SKIP {t}: current release already reflects latest advance" in result.stdout
+            )
             for t in ("forseti", "dungeoncrawler")
         ), f"Expected SKIP message for idempotent second run; got:\n{result.stdout}"
 
@@ -189,6 +212,36 @@ class TestReleaseIdAdvancement:
             pair_sentinel = pushed_dir / f"{current_pair}.{team_id}.advanced"
             assert pair_sentinel.exists(), f"{team_id}: expected pair sentinel {pair_sentinel}"
             assert pair_sentinel.read_text().strip() == advanced_rid
+
+    def test_existing_pair_sentinel_repairs_stale_runtime_state(self, tmp_path):
+        """Re-running after an already-advanced pair should restore runtime state from sentinels."""
+        root = _make_root(tmp_path)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        active = root / "tmp" / "release-cycle-active"
+        pushed_dir = root / "tmp" / "auto-push-dispatched"
+        pushed_dir.mkdir(parents=True)
+
+        current_pair = "__".join(
+            [
+                f"{today}-dungeoncrawler-release-b",
+                f"{today}-forseti-release-b",
+            ]
+        )
+        (pushed_dir / f"{current_pair}.pushed").write_text("2026-04-17T01:04:19+00:00\n")
+        for team_id in ("forseti", "dungeoncrawler"):
+            advanced_rid = f"{today}-{team_id}-release-c"
+            (pushed_dir / f"{current_pair}.{team_id}.advanced").write_text(advanced_rid + "\n")
+            (pushed_dir / f"{team_id}.advanced").write_text(advanced_rid + "\n")
+
+        result = _run(root)
+        assert result.returncode == 0, result.stderr
+
+        for team_id in ("forseti", "dungeoncrawler"):
+            current = (active / f"{team_id}.release_id").read_text().strip()
+            nxt = (active / f"{team_id}.next_release_id").read_text().strip()
+            assert current == f"{today}-{team_id}-release-c"
+            assert nxt == f"{today}-{team_id}-release-d"
+            assert f"SKIP {team_id}: pushed pair already advanced to {today}-{team_id}-release-c" in result.stdout
 
     def test_missing_next_release_id_file_warns_and_skips(self, tmp_path):
         """If next_release_id file is absent, warns and skips that team but exits 0."""
@@ -334,3 +387,29 @@ class TestReleaseIdAdvancement:
 
         for path in keep_items:
             assert path.is_dir(), f"non-stale item should remain in inbox: {path}"
+
+    def test_invokes_release_reconciliation_for_shipped_release_ids(self, tmp_path):
+        """Post-push should reconcile shipped truth for the release IDs that just deployed."""
+        root = _make_root(tmp_path)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        reconcile_log = root / "reconcile.log"
+
+        result = subprocess.run(
+            ["bash", str(SCRIPT)],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            env={
+                "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "HQ_ROOT_DIR": str(root),
+                "RECONCILE_LOG": str(reconcile_log),
+            },
+        )
+
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert reconcile_log.is_file()
+        calls = reconcile_log.read_text(encoding="utf-8").strip().splitlines()
+        assert calls == [
+            f"dungeoncrawler|{today}-dungeoncrawler-release-b",
+            f"forseti|{today}-forseti-release-b",
+        ]

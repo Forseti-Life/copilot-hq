@@ -3,7 +3,7 @@
 - Work item id: dc-som-secrets-of-magic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-p
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -35,3 +35,7 @@ Implement Secrets of Magic content — Magus and Summoner classes, the Spellstri
 - CSRF expectations: all POST/PATCH class/eidolon routes require `_csrf_request_header_mode: TRUE`
 - Input validation: Hybrid Study and Eidolon subclass enums validated server-side; Spellstrike state (charged/uncharged) computed server-side
 - PII/logging constraints: no PII logged; character id + eidolon id + action type only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-p.

@@ -3,7 +3,7 @@
 - Work item id: dc-gam-gods-magic
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-m
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -38,3 +38,7 @@ Content type: `deity` with fields: `name`, `alignment`, `edicts[]`, `anathema[]`
 - CSRF expectations: all POST/PATCH character deity-selection routes require `_csrf_request_header_mode: TRUE`
 - Input validation: deity FK validated against allowed catalog entries; domain selections validated against deity's permitted domains
 - PII/logging constraints: no PII logged; character id + deity id + domain selection only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-m.

@@ -8,7 +8,7 @@
 - Group: application
 - Group Title: Application Management
 - Group Sort: 5
-- Status: done
+- Status: shipped
 - Release: 20260411-forseti-release-b
 - Feature type: enhancement
 - PM owner: pm-forseti
@@ -55,3 +55,7 @@ Job applications have time-sensitive windows: application deadlines, follow-up d
 - Prefer adding nullable `deadline_date DATE NULL` and `follow_up_date DATE NULL` columns to `jobhunter_saved_jobs` via `hook_update_N` if feasible. If a separate table is cleaner, Dev decides and documents.
 - Urgency calculation: PHP `\DateTime::diff()` comparison at render time — no cron, no cache.
 - Pattern: follow `forseti-jobhunter-application-notes` for the POST form + ownership guard.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260411-forseti-release-b.

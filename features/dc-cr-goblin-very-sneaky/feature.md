@@ -3,7 +3,7 @@
 - Work item id: dc-cr-goblin-very-sneaky
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -41,3 +41,7 @@ Implements the Goblin ancestry Feat 1 "Very Sneaky": characters can move 5 feet 
 - CSRF expectations: all POST/PATCH requests for encounter or exploration actions require `_csrf_request_header_mode: TRUE`.
 - Input validation: movement bonus and end-of-turn visibility logic are server-calculated; clients cannot self-assert cover/concealment outcomes.
 - PII/logging constraints: no PII logged; log character_id, action_type, stealth_result, visibility_state only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-l.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-nature-command-animal
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement Nature (Wis) skill action handlers — Command an Animal, Identify Mag
 - Book: core, Chapter: ch04
 - REQs: 1705, 1706, 1707, 1708, 1709, 1710, 1711, 1712, 1713, 1714
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

@@ -4,7 +4,7 @@
 - Group: safety-tools
 - Group Title: Safety Tools
 - Group Sort: 1
-- Status: done
+- Status: shipped
 - Website: forseti.life
 - Module: community_incident_report (new)
 - Release: 20260412-forseti-release-l
@@ -50,3 +50,7 @@ Allow authenticated Forseti users to submit safety observations so that communit
 - CSRF expectations: Report submission form uses Drupal Form API with built-in CSRF token validation; no raw POST endpoints.
 - Input validation requirements: All user-submitted fields are validated/sanitized via Drupal Form API validators; address text field is plain text (no HTML); description field is filtered_html or plain_text; image upload capped at 5MB with MIME type whitelist (jpg/png/gif/webp only).
 - PII/logging constraints: Author uid is stored on node but not exposed in public listing beyond display name; IP addresses are not logged beyond Drupal watchdog defaults; photo EXIF metadata is stripped on upload.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-forseti-release-l.

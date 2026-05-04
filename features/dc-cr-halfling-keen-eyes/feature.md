@@ -3,7 +3,7 @@
 - Work item id: dc-cr-halfling-keen-eyes
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -40,3 +40,7 @@ Implements the Halfling ancestry trait "Keen Eyes": all halflings gain a +2 circ
 - CSRF expectations: all POST/PATCH action requests that use Seek or targeting flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: Seek bonus and flat-check reductions are computed from ancestry state and target visibility states; clients cannot self-assert reduced DCs.
 - PII/logging constraints: no PII logged; log character_id, action_type, target_visibility_state, applied_modifier only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-l.

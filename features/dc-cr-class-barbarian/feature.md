@@ -3,7 +3,7 @@
 - Work item id: dc-cr-class-barbarian
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 20260409-dungeoncrawler-release-f
 - Dev owner: dev-dungeoncrawler
@@ -37,3 +37,7 @@ Character class entity fields: `class_key = 'barbarian'`, `key_ability = 'str'`,
 - CSRF expectations: all POST/PATCH routes require `_csrf_request_header_mode: TRUE`
 - Input validation: instinct enum validated server-side; rage state (active/cooldown) stored as character session field, not free-text
 - PII/logging constraints: no PII logged; gameplay action logs (character id, action type) only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-f.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-treasure-by-level
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release:
 20260412-dungeoncrawler-release-e
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement `TreasureByLevelTable` as a static lookup (party_level → {total_gp, 
 - Book: core, Chapter: ch10
 - REQs: 2340, 2341, 2342, 2343, 2344, 2345
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-e.

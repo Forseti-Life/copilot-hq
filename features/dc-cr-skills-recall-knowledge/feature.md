@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-recall-knowledge
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - Priority: P1
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement the generic Recall Knowledge action resolving across all relevant skil
 - Book: core, Chapter: ch04, ch10
 - REQs: 1591, 1592, 1593, 1594, 2329
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

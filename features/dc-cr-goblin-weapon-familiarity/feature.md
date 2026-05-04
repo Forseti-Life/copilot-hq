@@ -3,7 +3,7 @@
 - Work item id: dc-cr-goblin-weapon-familiarity
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -40,3 +40,7 @@ Implements the Goblin ancestry Feat 1 "Goblin Weapon Familiarity": goblin charac
 - CSRF expectations: all POST/PATCH requests in character creation and feat-selection flows require `_csrf_request_header_mode: TRUE`.
 - Input validation: weapon unlocks must be validated against the goblin weapon tag set; proficiency remap applies only to characters with this feat and never broadens access to non-goblin weapons.
 - PII/logging constraints: no PII logged; log character_id, feat_id, granted_weapon_proficiencies only.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-l.

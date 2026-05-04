@@ -3,7 +3,7 @@
 - Work item id: dc-cr-familiar
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 - Priority: P2
 - PM owner: pm-dungeoncrawler
@@ -40,3 +40,7 @@ Content type: `familiar` with base stat fields and a list of selectable familiar
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

@@ -40,6 +40,31 @@ def _emit_event(event_type: str) -> None:
     pass
 
 
+def _read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+
+
+def _code_review_verdict(text: str) -> str:
+    for line in text.splitlines():
+        m = re.match(r"^\s*(?:[-*]\s*)?(?:\*\*)?verdict(?:\*\*)?\s*:\s*(.+)", line, re.IGNORECASE)
+        if m:
+            verdict = m.group(1).strip().lower().replace("*", "")
+            return re.split(r"[\s–—-]+", verdict, maxsplit=1)[0]
+    return ""
+
+
+def _outbox_mentions_release_or_features(path: Path, release_id: str, feature_ids: List[str]) -> bool:
+    if release_id in path.name or any(fid in path.name for fid in feature_ids):
+        return True
+    content = _read_text(path)
+    if release_id in content:
+        return True
+    return any(fid in content for fid in feature_ids)
+
+
 def _release_cycle_control_state() -> Dict[str, Any]:
     """Read release cycle control state (imported from run.py context)."""
     # This will be passed in or imported from run.py
@@ -496,19 +521,17 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
         done_statuses = {"done", "approved", "approve"}
         review_done = False
         for f in cr_outbox.glob("*.md"):
-            if release_id not in f.name and not any(fid in f.name for fid in feature_ids):
+            if not _outbox_mentions_release_or_features(f, release_id, feature_ids):
                 continue
-            try:
-                content = f.read_text(encoding="utf-8", errors="ignore")
-                m = re.search(r"^-\s*Status:\s*(\S+)", content, re.MULTILINE | re.IGNORECASE)
-                if m and m.group(1).lower() in done_statuses:
-                    review_done = True
-                    break
-                if "verdict: approve" in content.lower() or "verdict: approved" in content.lower():
-                    review_done = True
-                    break
-            except OSError:
-                pass
+            content = _read_text(f)
+            m = re.search(r"^-\s*Status:\s*(\S+)", content, re.MULTILINE | re.IGNORECASE)
+            verdict = _code_review_verdict(content)
+            if m and m.group(1).lower() in done_statuses:
+                review_done = True
+                break
+            if verdict in {"approve", "approved", "reject", "rejected"}:
+                review_done = True
+                break
 
         if review_done:
             log.append({"step": "code_review_gate", "release": release_id, "status": "verified"})
@@ -545,7 +568,7 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
 
 
 def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
-    """Auto-deploy when one or more coordinated team PMs have signed off their release."""
+    """Auto-deploy only after every coordinated team PM has signed off its release."""
     release_control = _release_cycle_control_state()
     if not bool(release_control.get("enabled", True)):
         log.append({
@@ -599,11 +622,17 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
         signoff_file = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
         team_ready[team_id] = signoff_file.exists()
 
-    any_ready = any(team_ready.get(e["team_id"], False) for e in required)
-    if not any_ready:
+    all_ready = all(team_ready.get(e["team_id"], False) for e in required)
+    if not all_ready:
         not_ready = [e["team_id"] for e in required if not team_ready.get(e["team_id"], False)]
-        log.append({"step": "coordinated_push", "status": "waiting", "not_ready": not_ready,
-                    "team_releases": team_release_ids})
+        signed_teams = [e["team_id"] for e in required if team_ready.get(e["team_id"], False)]
+        log.append({
+            "step": "coordinated_push",
+            "status": "waiting",
+            "not_ready": not_ready,
+            "signed_teams": signed_teams,
+            "team_releases": team_release_ids,
+        })
         return
 
     signed_teams = [e["team_id"] for e in required if team_ready.get(e["team_id"], False)]

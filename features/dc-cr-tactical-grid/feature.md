@@ -3,7 +3,7 @@
 - Work item id: dc-cr-tactical-grid
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release:
 20260409-dungeoncrawler-release-e
 - Dev owner: dev-dungeoncrawler
@@ -39,3 +39,7 @@ Grid model: 2D coordinate system (x, y) where each unit = 1 square = 5 feet. Cre
 ## Roadmap section
 
 - Roadmap: Core Rulebook
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-e.

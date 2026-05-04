@@ -3,7 +3,7 @@
 - Work item id: dc-cr-skills-performance-perform
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-d
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement Performance (Cha) skill actions — Perform and Earn Income — includ
 - Book: core, Chapter: ch04
 - REQs: 1716, 1717, 1718, 1719, 1720
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-d.

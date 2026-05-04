@@ -1,51 +1,49 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-16 during PROJ-009 candidate extract implementation
+> Last updated: 2026-05-04 during hexmap UI evaluation
 
 ---
 
 ## Currently Working On
 
-Continuing `PROJ-009` open-source readiness by moving from freeze planning to
-implementation for the first public code candidate, `drupal-ai-conversation`.
-
-This slice is focused on:
-- building a curated sanitized extract path for a standalone public candidate
-- avoiding risky in-place production behavior changes just to satisfy packaging
-- turning the refreshed candidate-local audit into an actual candidate artifact
+Completed the simplified three-tab Dungeoncrawler `/hexmap` shell.
 
 ### Current state
 
-- New planning artifact:
-  - `dashboards/open-source/drupal-ai-conversation-freeze-plan-2026-04.md`
-- `features/forseti-open-source-initiative/feature.md` now reflects the current
-  gate more accurately:
-  - current-tree config-sync credential removal is treated as already done
-  - the remaining blockers are candidate-local sanitization, external AWS
-    rotation confirmation, history/private-path cleanup, freeze packaging, and
-    validation evidence
-  - the immediate-next-action path now points at the first-candidate freeze
-    workflow instead of stale pre-audit steps
-- Verified runtime truth still remains:
-  - public release is blocked
-  - `drupal-ai-conversation` is still the first code candidate
-  - curated/extracted repos remain the publication model
+- Replaced the old hexmap shell with a three-tab interface containing:
+  - map
+  - chat
+  - character sheet
+- Applied the shell changes in both tracked module copies:
+  - `sites/dungeoncrawler/web/modules/custom/dungeoncrawler_content/`
+  - `dungeoncrawler-pf2e/web/modules/custom/dungeoncrawler_content/`
+- Confirmed the production Drupal root at `/var/www/html/dungeoncrawler`
+  already reflects those file changes.
+- Cleared production Drupal cache successfully with:
+  - `/var/www/html/dungeoncrawler/vendor/bin/drush cr`
+- Verified the live route now serves tabbed markup with `game-tab-map`,
+  `game-tab-chat`, `game-tab-character`, and hidden chat/character tab panels.
 
 ### Key decisions
 
-1. Treat the next architect-critical planning gap as the first-candidate freeze
-   plan, not more repo-family theory.
-2. Keep candidate-local sanitization, repo-wide security/governance cleanup,
-   freeze packaging, and QA validation as separate gates.
-3. Use the PM gate, dev audit, BA packaging brief, and QA validation plan as the
-   shared source of truth for the next execution slice.
+1. Reuse the existing map, chat, and character DOM hooks instead of rewriting
+   the runtime.
+2. Remove the old shell structure at the Twig layer first, since that delivers
+   the requested UX fastest with the least risk to gameplay behavior.
+3. Keep the non-map tab panels in the DOM but hidden so existing chat and
+   character hydration logic continues working without deeper JS refactors.
 
 ### Next actions
 
-1. Clear the `drupal-ai-conversation` candidate-local NO-GO findings and freeze
-   the packaging decision for the first public extract.
-2. Confirm external AWS credential rotation and finish the remaining
-   security/private-path controls required for safe publication.
-3. Freeze one sanitized candidate packet and hand that exact artifact to QA for
-   Gate 2 validation.
+1. If desired, trim the hidden tab panel content further (for example, reduce
+   the character sheet density or simplify the chat sub-tabs).
+2. Fix the BrowserTestBase harness to use a reachable base URL instead of
+   `http://localhost:8080`, then rerun the functional suite.
+
+### Verification notes
+
+- Live route verified at `https://dungeoncrawler.forseti.life/hexmap`
+- Functional PHPUnit run reached the suite but failed for environment reasons:
+  the BrowserTestBase harness is configured to hit `http://localhost:8080`,
+  which is not serving in this environment

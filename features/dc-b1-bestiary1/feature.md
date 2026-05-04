@@ -3,7 +3,7 @@
 - Work item id: dc-b1-bestiary1
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260409-dungeoncrawler-release-f
 - Priority: P3
 - PM owner: pm-dungeoncrawler
@@ -38,3 +38,7 @@ Content type: `creature` with full stat block fields: `level`, `rarity` (enum), 
 - CSRF expectations: any POST/PATCH creature import or override routes require `_csrf_request_header_mode: TRUE`
 - Input validation: stat block fields validated against defined types and ranges; no free-text rule injection; import pipeline sanitizes all text fields
 - PII/logging constraints: no PII logged; creature id + encounter id + action type only
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-f.

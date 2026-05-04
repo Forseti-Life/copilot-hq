@@ -3,7 +3,7 @@
 - Work item id: dc-cr-encounter-creature-xp-table
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 - Dev owner: dev-dungeoncrawler
@@ -42,3 +42,7 @@ Implement `CreatureXpCalculator.compute(creature_level, party_level)` using the 
 - Book: core, Chapter: ch10
 - REQs: 2312, 2314, 2315, 2316, 2317
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.

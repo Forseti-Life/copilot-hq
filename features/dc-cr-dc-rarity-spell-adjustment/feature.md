@@ -4,7 +4,7 @@
 - Type: extend
 - Module: dungeoncrawler_content
 - Priority: P1
-- Status: done
+- Status: shipped
 - Release: 20260408-dungeoncrawler-release-f
 - Dependencies: dc-cr-encounter-rules, dc-cr-spellcasting
 
@@ -36,3 +36,7 @@ Implement `DcAdjustmentService.compute(base_dc, rarity, spell_rank_delta)` as a 
 - Book: core, Chapter: ch10
 - REQs: 2320, 2321, 2322, 2328
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260408-dungeoncrawler-release-f.

@@ -1,4 +1,5 @@
 import os
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,74 @@ import orchestrator.run as run
 
 
 class TestReleaseCycleControl(unittest.TestCase):
+    def test_coordinated_push_waits_for_all_signoffs(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            active = root / "tmp" / "release-cycle-active"
+            active.mkdir(parents=True, exist_ok=True)
+            (root / "org-chart" / "products").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
+            (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
+
+            teams = {
+                "teams": [
+                    {
+                        "id": "forseti",
+                        "site": "forseti.life",
+                        "pm_agent": "pm-forseti",
+                        "qa_agent": "qa-forseti",
+                        "active": True,
+                        "release_preflight_enabled": True,
+                        "coordinated_release_default": True,
+                    },
+                    {
+                        "id": "dungeoncrawler",
+                        "site": "dungeoncrawler.forseti.life",
+                        "pm_agent": "pm-dungeoncrawler",
+                        "qa_agent": "qa-dungeoncrawler",
+                        "active": True,
+                        "release_preflight_enabled": True,
+                        "coordinated_release_default": True,
+                    },
+                ]
+            }
+            (root / "org-chart" / "products" / "product-teams.json").write_text(
+                json.dumps(teams),
+                encoding="utf-8",
+            )
+            (active / "forseti.release_id").write_text("20260420-forseti-release-q\n", encoding="utf-8")
+            (active / "dungeoncrawler.release_id").write_text("20260420-dungeoncrawler-release-s\n", encoding="utf-8")
+            (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260420-forseti-release-q.md").write_text(
+                "# signoff\n",
+                encoding="utf-8",
+            )
+
+            old_root = run.REPO_ROOT
+            old_run = run._run
+            run.REPO_ROOT = root
+            calls = []
+
+            def fake_run(cmd, timeout=0):
+                calls.append(cmd)
+                return 0, ""
+
+            run._run = fake_run
+            try:
+                log = []
+                run._coordinated_push_step(log)
+            finally:
+                run.REPO_ROOT = old_root
+                run._run = old_run
+
+            self.assertEqual(calls, [])
+            self.assertEqual(len(log), 1)
+            self.assertEqual(log[0]["step"], "coordinated_push")
+            self.assertEqual(log[0]["status"], "waiting")
+            self.assertEqual(log[0]["signed_teams"], ["forseti"])
+            self.assertEqual(log[0]["not_ready"], ["dungeoncrawler"])
+            self.assertFalse(any((root / "tmp" / "auto-push-dispatched").glob("*.pushed")))
+
     def test_release_cycle_step_skips_when_control_disabled(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

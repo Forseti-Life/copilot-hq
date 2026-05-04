@@ -4,7 +4,7 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: shipped
 - Release:
 
 20260409-dungeoncrawler-release-e
@@ -34,3 +34,7 @@ Model runes as child entities of `WeaponItem`/`ArmorItem` with fields: rune_type
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260409-dungeoncrawler-release-e.

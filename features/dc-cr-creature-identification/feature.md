@@ -3,7 +3,7 @@
 - Work item id: dc-cr-creature-identification
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260410-dungeoncrawler-release-b
 20260410-dungeoncrawler-release-b
 - PM owner: pm-dungeoncrawler
@@ -43,3 +43,7 @@ Implement creature identification via Recall Knowledge — resolving checks agai
 - Book: core, Chapter: ch10
 - REQs: 2329, 2331
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-04: Reconciled to shipped after coordinated push for 20260410-dungeoncrawler-release-b.
