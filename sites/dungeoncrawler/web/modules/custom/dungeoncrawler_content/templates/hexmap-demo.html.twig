@@ -11,7 +11,7 @@
 #}
 
 <div class="hexmap-container" id="hexmap-container"{% if is_admin %} data-admin="1"{% endif %}>
-  <div class="game-shell">
+  <div class="game-shell" data-game-shell>
     <div class="game-shell__tabs" role="tablist" aria-label="{{ 'Game tabs'|t }}">
       <button
         class="game-shell__tab game-shell__tab--active"
@@ -364,35 +364,4 @@
 
   {# Legacy sidebar/debug/info shell intentionally removed for the temporary three-tab game UI. #}
 
-  <script>
-  (function () {
-    var tabs = document.querySelectorAll('[data-game-tab]');
-    var panels = document.querySelectorAll('.game-shell__panel');
-    if (!tabs.length || !panels.length) {
-      return;
-    }
-
-    function activateTab(tabId) {
-      tabs.forEach(function (tab) {
-        var active = tab.dataset.gameTab === tabId;
-        tab.classList.toggle('game-shell__tab--active', active);
-        tab.setAttribute('aria-selected', active ? 'true' : 'false');
-      });
-
-      panels.forEach(function (panel) {
-        var active = panel.id === 'game-panel-' + tabId;
-        panel.classList.toggle('game-shell__panel--active', active);
-        panel.hidden = !active;
-      });
-
-      window.dispatchEvent(new Event('resize'));
-    }
-
-    tabs.forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        activateTab(this.dataset.gameTab);
-      });
-    });
-  })();
-  </script>
 </div>

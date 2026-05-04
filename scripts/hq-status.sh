@@ -24,6 +24,19 @@ pid_status() {
   fi
 }
 
+expected_stopped_status() {
+  local name="$1" pidfile="$2" reason="$3"
+  local pid=""
+  if [ -f "$pidfile" ]; then
+    pid="$(cat "$pidfile" 2>/dev/null || true)"
+  fi
+  if [[ "$pid" =~ ^[0-9]+$ ]] && ps -p "$pid" >/dev/null 2>&1; then
+    printf '%-18s %s (pid %s)\n' "$name:" "running — unexpected" "$pid"
+  else
+    printf '%-18s %s\n' "$name:" "stopped (expected; $reason)"
+  fi
+}
+
 legacy_agent_exec_status() {
   local pidfile="$1"
   local pid=""
@@ -144,16 +157,16 @@ printf 'HQ status @ %s\n\n' "$(now_iso)"
 
 printf '%-18s %s\n\n' "Org enabled:" "$(./scripts/is-org-enabled.sh 2>/dev/null || echo false)"
 
-pid_status "CEO loop" ".ceo-inbox-loop.pid"
-pid_status "Inbox loop" ".inbox-loop.pid"
+expected_stopped_status "CEO loop" ".ceo-inbox-loop.pid" "legacy; orchestrator-managed"
+expected_stopped_status "Inbox loop" ".inbox-loop.pid" "legacy; orchestrator-managed"
 
 pid_status "Orchestrator" ".orchestrator-loop.pid"
 legacy_agent_exec_status ".agent-exec-loop.pid"
-pid_status "CEO ops" ".ceo-ops-loop.pid"
-pid_status "CEO health" ".ceo-health-loop.pid"
-pid_status "Publisher loop" ".publish-forseti-agent-tracker-loop.pid"
+expected_stopped_status "CEO ops" ".ceo-ops-loop.pid" "legacy; orchestrator-managed"
+expected_stopped_status "CEO health" ".ceo-health-loop.pid" "legacy; orchestrator-managed"
+expected_stopped_status "Publisher loop" ".publish-forseti-agent-tracker-loop.pid" "handled by orchestrator tick"
 pid_status "Checkpoint" ".auto-checkpoint-loop.pid"
-pid_status "Improve round" ".improvement-round-loop.pid"
+expected_stopped_status "Improve round" ".improvement-round-loop.pid" "disabled legacy loop"
 
 echo
 read ceo pm total < <(queue_counts)
