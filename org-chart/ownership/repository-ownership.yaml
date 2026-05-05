@@ -61,12 +61,12 @@ repositories:
     local_path: "/home/ubuntu/forseti.life/dungeoncrawler-pf2e"
     website_scope: "dungeoncrawler"
     product_team: "dungeoncrawler"
-    repo_type: "submodule"
+    repo_type: "standalone"
     owning_pm: "pm-dungeoncrawler"
     owning_dev: "dev-dungeoncrawler"
     owning_qa: "qa-dungeoncrawler"
     owning_security: "sec-analyst-dungeoncrawler"
-    notes: "Canonical editable Dungeoncrawler product repo. The live Apache site serves /var/www/html/dungeoncrawler/web; its Dungeoncrawler-owned module/theme/config paths now delegate to this repo through the sites/dungeoncrawler compatibility bridge."
+    notes: "Canonical editable Dungeoncrawler product repo. It is intentionally decoupled from copilot-hq submodule tracking so Dungeoncrawler product work lands in a single Git history. The live Apache site serves /var/www/html/dungeoncrawler/web; its Dungeoncrawler-owned module/theme/config paths now delegate to this repo through the sites/dungeoncrawler compatibility bridge."
 
   dungeoncrawler-tester-push:
     github: "Forseti-Life/dungeoncrawler-tester"

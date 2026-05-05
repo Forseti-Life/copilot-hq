@@ -20,6 +20,7 @@ Rule:
 - Live Drupal web root: `/var/www/html/dungeoncrawler/web`
 - Canonical editable product repo: `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`
 - Compatibility bridge path in main repo: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
+- `dungeoncrawler-pf2e` is a standalone product repo on this host; Dungeoncrawler product changes should land there without requiring a matching `copilot-hq` submodule-pointer commit.
 - Apache serves the live site from `/var/www/html/dungeoncrawler/web`, with these top-level paths symlinked back into `sites/dungeoncrawler`:
   - `web/modules/custom`
   - `web/themes/custom`

@@ -45,7 +45,7 @@ Linked to: Release Cycle End-to-End Validation (Phase 8)
 | 2 | copilot-hq | main | github.com/Forseti-Life/copilot-hq | PENDING |
 | 3 | dungeoncrawler-content | submodule-existing | github.com/Forseti-Life/dungeoncrawler-content | PENDING |
 | 4 | dungeoncrawler-content-push | push-clone-dup | github.com/Forseti-Life/dungeoncrawler-content | PENDING |
-| 5 | dungeoncrawler-pf2e | submodule-existing | github.com/Forseti-Life/dungeoncrawler-pf2e | PENDING |
+| 5 | dungeoncrawler-pf2e | standalone-checkout | github.com/Forseti-Life/dungeoncrawler-pf2e | PENDING |
 | 6 | dungeoncrawler-tester-push | push-clone | github.com/Forseti-Life/dungeoncrawler-tester | PENDING |
 | 7 | forseti-agent-evaluation | submodule-new | github.com/Forseti-Life/forseti-agent-evaluation | PENDING |
 | 8 | forseti-cluster-push | push-clone | github.com/Forseti-Life/forseti-cluster | PENDING |
@@ -293,4 +293,3 @@ This validation is **Phase 8** of the release cycle validation:
 **Finding:** Code review gate: 1 session(s) dispatched but all are quarantined/needs-info — code shipped without review
 
 **Status:** 🔴 Open — review and assign fix
-

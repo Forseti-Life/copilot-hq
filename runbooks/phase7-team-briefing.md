@@ -202,7 +202,7 @@ git pull --recurse-submodules
    - How it affects your release timeline
 
 4. **Orchestrator routes it** → dev-dungeoncrawler inbox
-5. **Team executes** → changes go into dungeoncrawler-pf2e submodule
+5. **Team executes** → changes go into the standalone `dungeoncrawler-pf2e` product repo
 6. **You benefit** when your coordinated release includes their changes
 
 See `runbooks/coordination-policy.md` for details.

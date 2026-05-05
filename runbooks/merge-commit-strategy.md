@@ -3,14 +3,15 @@
 **Owner:** `ceo-copilot-2`  
 **Effective Date:** 2026-04-23  
 **Last Updated:** 2026-04-23  
-**Authority:** Org-wide + CEO (applies to all merges in this repo and all 20 submodules)
+**Authority:** Org-wide + CEO (applies to all merges in this repo and all coordinated product repos)
 
 ---
 
 ## Executive Summary
 
-This repo (`keithaumiller/forseti.life`) is a **unified monorepo with 20 coordinated submodules**, containing:
-- **20 Git submodules** (10 existing + 10 new as of 2026-04-23)
+This repo (`keithaumiller/forseti.life`) is a **unified monorepo with coordinated submodules plus explicitly decoupled product checkouts**, containing:
+- **Coordinated Git submodules** for shared platform repos
+- **Standalone product checkouts** where independent product history is intentional
 - **3 independent push clones** in `/root/` (not coordinated)
 - **Multiple concurrent teams** (pm-forseti, qa-forseti, dev-forseti, pm-dungeoncrawler, pm-infra, etc.)
 - **Multi-layered instructions** (org-wide → role → site → seat)
@@ -539,4 +540,3 @@ If a merge fails or loses data:
 | Date | Author | Change |
 |---|---|---|
 | 2026-04-23 | ceo-copilot-2 | Initial audit & documentation (v1.0) — formalized merge/commit strategy, added pre-merge safety gate, documented conflict scenarios, updated .gitignore rules |
-

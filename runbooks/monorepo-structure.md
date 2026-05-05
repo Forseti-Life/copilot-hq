@@ -9,9 +9,9 @@
 
 ## Overview
 
-Forseti.Life operates as a **unified monorepo with 20 coordinated submodules** plus 3 independent push clones in `/root/`. This document describes the architecture, rationale, and operational procedures.
+Forseti.Life operates as a **unified monorepo with coordinated submodules** plus a small set of independent product checkouts and push clones. This document describes the architecture, rationale, and operational procedures.
 
-**Key Principle:** All product repositories are version-locked via single atomic commits in the main repository, enabling coordinated releases across the entire platform.
+**Key Principle:** Shared platform repos are version-locked in the main repository where appropriate, while explicitly decoupled product repos can operate on their own release cadence when that better fits production ownership.
 
 ---
 
@@ -21,15 +21,17 @@ Forseti.Life operates as a **unified monorepo with 20 coordinated submodules** p
 
 ```
 /home/ubuntu/forseti.life/
-├── .git/                          (Shared root for all 20 submodules)
-├── .gitmodules                    (Tracks all 20 submodules)
+├── .git/                          (Shared root for copilot-hq tracked content)
+├── .gitmodules                    (Tracks coordinated submodules owned by copilot-hq)
 ├── copilot-hq/                    (Control plane: orchestration, releases, governance)
 │   ├── orchestrator/              (Release automation, agent dispatch)
 │   ├── org-chart/                 (Instructions, org structure, decision matrix)
 │   └── sessions/                  (Session state, artifacts, inbox/outbox)
 │
-├── ─────── EXISTING SUBMODULES (10) ───────
-├── dungeoncrawler-pf2e/           (PF2E product repo checkout; not the live Apache docroot)
+├── ─────── INDEPENDENT PRODUCT CHECKOUTS ───────
+├── dungeoncrawler-pf2e/           (Standalone PF2E product repo checkout; not tracked as a copilot-hq submodule)
+│
+├── ─────── EXISTING SUBMODULES ───────
 ├── dungeoncrawler-content/        (Shared content; symlinked in /root/)
 ├── forseti-shared-modules/        (Shared utilities, common functions)
 ├── forseti-devops/                (Infrastructure, deployment, scripts)

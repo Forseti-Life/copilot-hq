@@ -1,9 +1,6 @@
 [submodule "dungeoncrawler-content"]
 path = dungeoncrawler-content
 url = https://github.com/Forseti-Life/dungeoncrawler-content.git
-[submodule "dungeoncrawler-pf2e"]
-path = dungeoncrawler-pf2e
-url = https://github.com/Forseti-Life/dungeoncrawler-pf2e.git
 [submodule "forseti-devops"]
 path = forseti-devops
 url = https://github.com/Forseti-Life/forseti-devops.git

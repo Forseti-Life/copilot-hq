@@ -1,18 +1,21 @@
 # CEO Coordination Policy (Products + Repository Ownership)
 
 **Last Updated:** 2026-04-23  
-**Scope:** Cross-product coordination, submodule governance, release management
+**Scope:** Cross-product coordination, repository governance, release management
 
 ## Core Principle: Product-Based Separation
 
-Work streams are separated by **product** (now submodules in the unified monorepo). Each product has its own team context, priorities, and release schedule, but all are coordinated via the main repository's R1-R4 release gates.
+Work streams are separated by **product**. Many products are coordinated as submodules in the unified monorepo, while selected product repos can remain standalone when that better matches ownership and deployment needs. Releases are still coordinated through the main repository's R1-R4 gates where applicable.
 
-## Repository Structure (20 Submodules)
+## Repository Structure
 
-The monorepo contains 20 coordinated submodules:
+The monorepo contains coordinated submodules plus independent product repos:
 
-**Existing (10):**
-- dungeoncrawler-pf2e, dungeoncrawler-content, forseti-shared-modules, forseti-devops, forseti-meshd, forseti-mobile, forseti-docs, forseti-platform-specs, forseti-job-hunter, h3-geolocation
+**Standalone product repos on this host:**
+- dungeoncrawler-pf2e
+
+**Coordinated submodules:**
+- dungeoncrawler-content, forseti-shared-modules, forseti-devops, forseti-meshd, forseti-mobile, forseti-docs, forseti-platform-specs, forseti-job-hunter, h3-geolocation
 
 **New (10):**
 - forseti-safety-content, forseti-safety-calculator, forseti-content, forseti-community-incident-report, forseti-company-research, forseti-nfr, forseti-copilot-agent-tracker, forseti-institutional-management, forseti-jobhunter-tester, forseti-agent-evaluation
