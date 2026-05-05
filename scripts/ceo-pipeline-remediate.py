@@ -198,6 +198,21 @@ def _inbox_has_pending_signoff_reminder(agent: str, release_id: str) -> bool:
     return False
 
 
+def _inbox_has_pending_gate2_followup(agent: str, release_id: str) -> bool:
+    """Return True if any inbox item for this agent already references this release_id as a gate2-followup."""
+    inbox = ROOT / "sessions" / agent / "inbox"
+    if not inbox.exists():
+        return False
+    release_slug = _slug(release_id)
+    for item_dir in inbox.iterdir():
+        if not item_dir.is_dir():
+            continue
+        name = item_dir.name
+        if "gate2-followup" in name and release_slug in name:
+            return True
+    return False
+
+
 def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cross_signoff: bool) -> bool:
     # Guard 1: artifact already written — signoff is done, no dispatch needed.
     if _has_signoff(agent, release_id):
@@ -230,6 +245,10 @@ def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cr
 
 
 def _queue_gate2_followup(team: Team, release_id: str, features: list[str]) -> bool:
+    if _has_gate2_approve(team.qa_agent, release_id):
+        return False
+    if _inbox_has_pending_gate2_followup(team.qa_agent, release_id):
+        return False
     slug = _slug(release_id)
     features_md = "\n".join(f"- `{name}`" for name in features) if features else "- No features detected"
     body = (

@@ -10,7 +10,7 @@
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 7984–8283
 - Category: game-mechanic
-- Release: 20260412-dungeoncrawler-release-s
+- Release: 20260412-dungeoncrawler-release-t
 - Created: 2026-04-14
 
 ## Goal
@@ -35,4 +35,3 @@ Implements the Halfling Resolve ancestry feat (Feat 9): when a halfling rolls a 
 ## Security acceptance criteria
 
 - Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
-

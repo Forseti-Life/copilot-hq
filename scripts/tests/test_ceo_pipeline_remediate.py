@@ -266,6 +266,33 @@ def test_skips_signoff_reminder_when_stale_inbox_item_exists(tmp_path):
     assert new_reminders == [], f"Unexpected new signoff-reminder items: {new_reminders}"
 
 
+def test_skips_gate2_followup_when_stale_inbox_item_exists(tmp_path):
+    """Guard gate2-followup dedup across DATE_PREFIX changes."""
+    root = _make_root(tmp_path)
+
+    (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-impl-dc-feature-a.md").write_text(
+        "dc-feature implemented\n", encoding="utf-8"
+    )
+
+    stale_item = (
+        root / "sessions" / "qa-dungeoncrawler" / "inbox"
+        / "20260418-gate2-followup-20260412-dungeoncrawler-release-j"
+    )
+    stale_item.mkdir(parents=True)
+    (stale_item / "README.md").write_text("stale gate2 followup\n", encoding="utf-8")
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    qa_dc_items = [
+        p.name
+        for p in (root / "sessions" / "qa-dungeoncrawler" / "inbox").iterdir()
+        if p.is_dir()
+    ]
+    new_followups = [n for n in qa_dc_items if "gate2-followup" in n and "20260418" not in n]
+    assert new_followups == [], f"Unexpected new gate2-followup items: {new_followups}"
+
+
 def test_skips_signoff_reminder_when_artifact_exists(tmp_path):
     """Guard 1: if the signoff artifact is already present, no inbox item should be created."""
     root = _make_root(tmp_path)

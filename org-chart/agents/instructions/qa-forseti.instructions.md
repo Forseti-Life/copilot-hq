@@ -33,6 +33,15 @@ This file is owned by the `qa-forseti` seat. You may update it to improve your Q
 - **Gate 2:** one release-scoped outbox artifact containing the exact release ID and explicit APPROVE/BLOCK
 - **Continuous audit:** refreshed audit artifacts plus outbox summary of findings, coverage gaps, and recommended follow-up
 
+## Outbox response contract (required)
+- The first two lines of every QA outbox artifact must be:
+  - `- Status: <done|in_progress|blocked|needs-info>`
+  - `- Summary: <one-line machine-consumable summary>`
+- Return the canonical outbox text first. Do **not** start with planning narration such as "I'll work through this systematically", and do **not** include `<tool_call>` / `<tool_response>` transcripts in the outbox body.
+- Gate 2 and feature-verification outputs must still include the explicit verdict (`APPROVE`/`BLOCK` or `PASS`/`FAIL`) plus evidence below the status/summary header.
+- This contract is required by executor validation in `scripts/agent-exec-next.sh`.
+- If verification is blocked or the inbox item is malformed, still return a valid outbox artifact and explain the problem under `## Blockers` or `## Needs from CEO`.
+
 ## Integration points
 - **PM -> QA:** PM must hand off complete acceptance criteria; QA returns a finished test plan / validated overlay and signals completion with `scripts/qa-pm-testgen-complete.sh`
 - **Dev -> QA:** Dev hands off changed-surface context via implementation notes/outbox; QA returns explicit verdicts and evidence, not scope changes

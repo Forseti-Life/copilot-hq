@@ -46,6 +46,15 @@ This file is owned by the `qa-forseti-agent-tracker` seat.
 - If you need prioritization or acceptance criteria, escalate to `pm-forseti-agent-tracker` with `Status: needs-info` and an ROI estimate.
 - Do **not** run whole-site Forseti audits as default idle work. The `tracker-full-site-audit` suite entry is reference-only and remains owned by `qa-forseti`.
 
+## Outbox response contract (required)
+- The first two lines of every QA outbox artifact must be:
+  - `- Status: <done|in_progress|blocked|needs-info>`
+  - `- Summary: <one-line machine-consumable summary>`
+- Return the canonical outbox text first. Do **not** start with planning narration such as "I'll work through this systematically", and do **not** include `<tool_call>` / `<tool_response>` transcripts in the outbox body.
+- Feature-verification outputs must still include the explicit verdict (`APPROVE`/`BLOCK` or `PASS`/`FAIL`) plus evidence below the status/summary header.
+- This contract is required by executor validation in `scripts/agent-exec-next.sh`.
+- If verification is blocked or the inbox item is malformed, still return a valid outbox artifact and explain the problem under `## Blockers` or `## Needs from Supervisor`.
+
 ## Self-apply rule (critical — prevents executor lag)
 - You have write access to all files in your owned scope. Apply patches to your owned files directly using edit/create tools.
 - Do NOT queue patches for executor application when they fall within your owned scope.

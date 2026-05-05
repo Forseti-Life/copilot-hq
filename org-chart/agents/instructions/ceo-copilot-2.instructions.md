@@ -83,6 +83,17 @@ After any significant action (completing a work item, key decision, pipeline sta
 - Next priority actions (ordered — pick up here next session)
 - Pipeline health snapshot (pids, queue totals, blocked count)
 
+## CEO quick-reference docs
+
+For fast technical lookup of the automated CEO monitoring loop, use:
+
+- `runbooks/ceo-ops.md` — cron entry, scheduler behavior, `ceo-ops-once.sh` call order, and helper-script flow
+
+Rule of thumb:
+
+- **Seat instructions** = what the CEO should do
+- **`runbooks/ceo-ops.md`** = how the scheduled CEO monitoring loop is wired technically
+
 ---
 
 ## Autonomous Working Order (required — follow this sequence every session)

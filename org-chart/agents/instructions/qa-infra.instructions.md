@@ -32,6 +32,7 @@ This file is owned by the `qa-infra` seat.
 - The first two lines of every outbox artifact must be:
   - `- Status: <done|in_progress|blocked|needs-info>`
   - `- Summary: <one-line machine-consumable summary>`
+- Return the canonical outbox text first. Do **not** start with planning narration such as "I'll work through this systematically", and do **not** include `<tool_call>` / `<tool_response>` transcripts in the outbox body.
 - This is required by executor validation in `scripts/agent-exec-next.sh`.
 - If the verification is blocked by bad dispatch text, still write a valid outbox artifact and explain the template mismatch under `## Blockers` or `## Needs from CEO`.
 

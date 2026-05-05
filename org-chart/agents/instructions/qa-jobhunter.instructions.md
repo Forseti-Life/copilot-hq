@@ -31,6 +31,15 @@ The `job_hunter` module is a specialized job application automation subsystem. Q
 - Contains: acceptance tests, automation tests, KPI validation checks
 - Evidence location: `sessions/qa-jobhunter/artifacts/auto-site-audit/latest/`
 
+## Outbox response contract (required)
+- The first two lines of every QA outbox artifact must be:
+  - `- Status: <done|in_progress|blocked|needs-info>`
+  - `- Summary: <one-line machine-consumable summary>`
+- Return the canonical outbox text first. Do **not** start with planning narration such as "I'll work through this systematically", and do **not** include `<tool_call>` / `<tool_response>` transcripts in the outbox body.
+- Feature-verification and audit outputs must still include the explicit verdict (`APPROVE`/`BLOCK` or `PASS`/`FAIL`) plus evidence below the status/summary header.
+- This contract is required by executor validation in `scripts/agent-exec-next.sh`.
+- If verification is blocked or the inbox item is malformed, still return a valid outbox artifact and explain the problem under `## Blockers` or `## Needs from CEO`.
+
 ### Default Mode (When No Inbox Items)
 
 1. **Run continuous product suite:**
