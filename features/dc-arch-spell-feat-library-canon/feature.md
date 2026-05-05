@@ -3,7 +3,7 @@
 - Work item id: dc-arch-spell-feat-library-canon
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: planned
+- Status: in_progress
 - Release:
 - Feature type: architecture
 - PM owner: pm-dungeoncrawler
@@ -167,5 +167,7 @@ Do not attempt to flip every reader/writer in one pass.
 - Roadmap: Data model modernization
 
 ## Latest updates
+
+- 2026-05-05: Handed off to QA for test generation (pm-qa-handoff.sh)
 
 - 2026-05-05: Created planned migration feature after architecture review confirmed spells are split across DB + service layers and feats remain code-constant-backed.
