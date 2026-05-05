@@ -642,7 +642,6 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
             continue
 
         check_code_review_gate({team_id: rid}, log, repo_root)
-        marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
 
         write_release_notes(rid, slug, [entry], repo_root, pm_agent)
 
@@ -651,6 +650,18 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
             timeout=60,
         )
         print(f"TEAM-PUSH: {team_id} {rid} deploy rc={rc}")
+        if rc != 0:
+            log.append({
+                "step": "coordinated_push",
+                "status": "push_failed",
+                "team_id": team_id,
+                "release_id": rid,
+                "deploy_rc": rc,
+                "deploy_output": out,
+            })
+            continue
+
+        marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
 
         today = datetime.now(timezone.utc).strftime("%Y%m%d")
         drupal_web_root = str(entry.get("site_audit", {}).get("drupal_web_root", "")).strip()

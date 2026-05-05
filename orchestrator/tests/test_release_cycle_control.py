@@ -9,7 +9,7 @@ import orchestrator.run as run
 
 
 class TestReleaseCycleControl(unittest.TestCase):
-    def test_coordinated_push_waits_for_all_signoffs(self):
+    def test_coordinated_push_dispatches_ready_team_independently(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             active = root / "tmp" / "release-cycle-active"
@@ -69,13 +69,16 @@ class TestReleaseCycleControl(unittest.TestCase):
                 run.REPO_ROOT = old_root
                 run._run = old_run
 
-            self.assertEqual(calls, [])
+            self.assertEqual(
+                calls,
+                [["gh", "workflow", "run", "deploy.yml", "--repo", "keithaumiller/forseti.life", "--ref", "main"]],
+            )
             self.assertEqual(len(log), 1)
             self.assertEqual(log[0]["step"], "coordinated_push")
-            self.assertEqual(log[0]["status"], "waiting")
-            self.assertEqual(log[0]["signed_teams"], ["forseti"])
-            self.assertEqual(log[0]["not_ready"], ["dungeoncrawler"])
-            self.assertFalse(any((root / "tmp" / "auto-push-dispatched").glob("*.pushed")))
+            self.assertEqual(log[0]["status"], "pushed")
+            self.assertEqual(log[0]["pushed"][0]["team_id"], "forseti")
+            self.assertEqual(log[0]["waiting_teams"], ["dungeoncrawler"])
+            self.assertTrue((root / "tmp" / "auto-push-dispatched" / "20260420-forseti-release-q.pushed").exists())
 
     def test_release_cycle_step_skips_when_control_disabled(self):
         with tempfile.TemporaryDirectory() as td:
@@ -117,6 +120,56 @@ class TestReleaseCycleControl(unittest.TestCase):
                     }
                 ],
             )
+
+    def test_failed_push_does_not_write_marker(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            active = root / "tmp" / "release-cycle-active"
+            active.mkdir(parents=True, exist_ok=True)
+            (root / "org-chart" / "products").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
+            (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
+
+            teams = {
+                "teams": [
+                    {
+                        "id": "dungeoncrawler",
+                        "site": "dungeoncrawler.forseti.life",
+                        "pm_agent": "pm-dungeoncrawler",
+                        "qa_agent": "qa-dungeoncrawler",
+                        "active": True,
+                        "release_preflight_enabled": True,
+                        "coordinated_release_default": True,
+                    },
+                ]
+            }
+            (root / "org-chart" / "products" / "product-teams.json").write_text(
+                json.dumps(teams),
+                encoding="utf-8",
+            )
+            (active / "dungeoncrawler.release_id").write_text("20260420-dungeoncrawler-release-s\n", encoding="utf-8")
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260420-dungeoncrawler-release-s.md").write_text(
+                "# signoff\n",
+                encoding="utf-8",
+            )
+
+            old_root = run.REPO_ROOT
+            old_run = run._run
+            run.REPO_ROOT = root
+
+            def fake_run(cmd, timeout=0):
+                return 1, "gh auth missing"
+
+            run._run = fake_run
+            try:
+                log = []
+                run._coordinated_push_step(log)
+            finally:
+                run.REPO_ROOT = old_root
+                run._run = old_run
+
+            assert not (root / "tmp" / "auto-push-dispatched" / "20260420-dungeoncrawler-release-s.pushed").exists()
+            assert any(entry.get("status") == "push_failed" for entry in log), log
 
     def test_coordinated_push_skips_when_control_disabled(self):
         with tempfile.TemporaryDirectory() as td:

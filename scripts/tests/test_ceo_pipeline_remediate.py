@@ -152,7 +152,7 @@ def test_queues_release_and_sla_followups(tmp_path):
     assert not any("signoff-reminder-20260412-forseti-release-i" in name for name in pm_forseti_items)
     assert not any("signoff-reminder-20260412-dungeoncrawler-release-j" in name for name in pm_forseti_items)
     assert not any("signoff-reminder-20260412-dungeoncrawler-release-j" in name for name in pm_dc_items)
-    assert any("signoff-reminder-20260412-forseti-release-i" in name for name in pm_dc_items)
+    assert not any("signoff-reminder-20260412-forseti-release-i" in name for name in pm_dc_items)
     assert any("release-cleanup-dungeoncrawler-orphans" in name for name in pm_dc_items)
     assert any("sla-outbox-lag-dev-dungeoncrawler-20260412-old" in name for name in pm_dc_items)
     assert not any("gate2-followup-20260412-forseti-release-i" in name for name in qa_forseti_items)
@@ -174,7 +174,7 @@ def test_skips_signoff_and_gate2_until_dev_outbox_exists(tmp_path):
     assert any("release-cleanup-dungeoncrawler-orphans" in name for name in pm_dc_items)
 
 
-def test_cross_signoff_waits_for_owner_signoff(tmp_path):
+def test_does_not_queue_cross_team_signoff_reminders(tmp_path):
     root = _make_root(tmp_path)
     (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-impl-dc-feature-a.md").write_text(
         "dc-feature-a implemented\n",

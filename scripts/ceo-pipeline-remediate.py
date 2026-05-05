@@ -213,7 +213,7 @@ def _inbox_has_pending_gate2_followup(agent: str, release_id: str) -> bool:
     return False
 
 
-def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cross_signoff: bool) -> bool:
+def _queue_signoff_reminder(agent: str, target_team: str, release_id: str) -> bool:
     # Guard 1: artifact already written — signoff is done, no dispatch needed.
     if _has_signoff(agent, release_id):
         return False
@@ -230,14 +230,11 @@ def _queue_signoff_reminder(agent: str, target_team: str, release_id: str, *, cr
         f"Release `{release_id}` is blocked because your PM signoff is missing.\n\n"
         f"Run:\n```bash\n{command}\n```\n"
     )
-    if cross_signoff:
-        body += "This is a coordinated cross-team co-sign requirement.\n"
-    else:
-        body += "This is the owning PM signoff for the active release.\n"
+    body += "This is the owning PM signoff for the active release.\n"
     return _write_item(
         agent,
         f"{DATE_PREFIX}-signoff-reminder-{slug}",
-        9 if not cross_signoff else 8,
+        9,
         title,
         body,
         f"`{command}` then `bash scripts/release-signoff-status.sh {release_id}`",
@@ -326,30 +323,10 @@ def remediate_release_blockers() -> int:
         if all_impl_ready and not has_gate2:
             created += int(_queue_gate2_followup(team, release_id, features))
         if all_impl_ready and has_gate2 and not has_owner_signoff:
-            created += int(_queue_signoff_reminder(team.pm_agent, team.team_id, release_id, cross_signoff=False))
+            created += int(_queue_signoff_reminder(team.pm_agent, team.team_id, release_id))
         orphaned = _orphaned_features(team.team_id, release_id)
         if orphaned:
             created += int(_queue_orphan_cleanup(team, release_id, orphaned))
-
-    for signing_team, signing_release_id in release_map:
-        for target_team, target_release_id in release_map:
-            if signing_team.team_id == target_team.team_id:
-                continue
-            target_features = _features_for_release(target_release_id)
-            target_ready = (
-                _all_features_have_dev_outbox(target_team.team_id, target_features)
-                and _has_gate2_approve(target_team.qa_agent, target_release_id)
-                and _has_signoff(target_team.pm_agent, target_release_id)
-            )
-            if target_ready and not _has_signoff(signing_team.pm_agent, target_release_id):
-                created += int(
-                    _queue_signoff_reminder(
-                        signing_team.pm_agent,
-                        target_team.team_id,
-                        target_release_id,
-                        cross_signoff=True,
-                    )
-                )
     return created
 
 

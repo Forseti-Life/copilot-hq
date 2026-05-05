@@ -29,7 +29,7 @@ Forseti.Life operates as a **unified monorepo with 20 coordinated submodules** p
 │   └── sessions/                  (Session state, artifacts, inbox/outbox)
 │
 ├── ─────── EXISTING SUBMODULES (10) ───────
-├── dungeoncrawler-pf2e/           (PF2E assistant content & engine)
+├── dungeoncrawler-pf2e/           (PF2E product repo checkout; not the live Apache docroot)
 ├── dungeoncrawler-content/        (Shared content; symlinked in /root/)
 ├── forseti-shared-modules/        (Shared utilities, common functions)
 ├── forseti-devops/                (Infrastructure, deployment, scripts)
@@ -101,6 +101,26 @@ Each submodule has its own `.git` directory but shares the parent's git manageme
 ---
 
 ## Operational Model
+
+### DungeonCrawler host layout
+
+On this host, the live DungeonCrawler site is served from:
+
+```bash
+/var/www/html/dungeoncrawler/web
+```
+
+The live docroot symlinks these paths back into the main repo:
+
+```bash
+/var/www/html/dungeoncrawler/web/modules/custom -> /home/ubuntu/forseti.life/sites/dungeoncrawler/web/modules/custom
+/var/www/html/dungeoncrawler/web/themes/custom  -> /home/ubuntu/forseti.life/sites/dungeoncrawler/web/themes/custom
+/var/www/html/dungeoncrawler/config/sync        -> /home/ubuntu/forseti.life/sites/dungeoncrawler/config/sync
+```
+
+Operational implication:
+- `sites/dungeoncrawler` is the canonical on-host source for live custom code and config.
+- `dungeoncrawler-pf2e` is a separate nested product checkout, not the live website root.
 
 ### For Developers
 
@@ -300,4 +320,3 @@ This 20-submodule model replaces:
 - `runbooks/coordination-policy.md` — Cross-team coordination rules
 - `org-chart/DECISION_OWNERSHIP_MATRIX.md` — Who decides what
 - `.gitmodules` — Current submodule configuration
-

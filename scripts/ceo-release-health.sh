@@ -418,13 +418,12 @@ PY
 
 done <<<"$COORDINATED_TEAMS"
 
-# ── Cross-team signoffs ───────────────────────────────────────────────────────
+# ── Independent push matrix ───────────────────────────────────────────────────
 echo
 hr
-echo "  Cross-team signoff matrix"
+echo "  Independent push matrix"
 hr
 
-# For each coordinated team, each OTHER team's PM must have signed off on it
 TEAMS_LIST=()
 RELEASE_MAP=()
 while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT; do
@@ -434,75 +433,58 @@ while IFS=$'\t' read -r TEAM PM_AGENT QA_AGENT; do
   RELEASE_MAP+=("$TEAM:$PM_AGENT:$QA_AGENT:$RID")
 done <<<"$COORDINATED_TEAMS"
 
-for SIGNING_ENTRY in "${RELEASE_MAP[@]:-}"; do
-  [ -n "$SIGNING_ENTRY" ] || continue
-  SIGNING_TEAM="${SIGNING_ENTRY%%:*}"
-  REST="${SIGNING_ENTRY#*:}"
-  SIGNING_PM="${REST%%:*}"
+for ENTRY in "${RELEASE_MAP[@]:-}"; do
+  [ -n "$ENTRY" ] || continue
+  TEAM="${ENTRY%%:*}"
+  REST="${ENTRY#*:}"
+  PM="${REST%%:*}"
   REST="${REST#*:}"
-  SIGNING_QA="${REST%%:*}"
-  SIGNING_RID="${REST##*:}"
-  [ -n "$SIGNING_RID" ] || continue
+  QA="${REST%%:*}"
+  RID="${REST##*:}"
+  [ -n "$RID" ] || continue
 
-  for TARGET_ENTRY in "${RELEASE_MAP[@]:-}"; do
-    [ -n "$TARGET_ENTRY" ] || continue
-    TARGET_TEAM="${TARGET_ENTRY%%:*}"
-    TARGET_REST="${TARGET_ENTRY#*:}"
-    TARGET_PM="${TARGET_REST%%:*}"
-    TARGET_REST="${TARGET_REST#*:}"
-    TARGET_QA="${TARGET_REST%%:*}"
-    TARGET_RID="${TARGET_REST##*:}"
-    [ "$SIGNING_TEAM" = "$TARGET_TEAM" ] && continue  # skip self
-    [ -n "$TARGET_RID" ] || continue
-
-    CROSS_FILE="sessions/${SIGNING_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
-    TARGET_OWNER_SIGNOFF="sessions/${TARGET_PM}/artifacts/release-signoffs/${TARGET_RID}.md"
-    TARGET_GATE2="$(find_gate2_evidence "sessions/${TARGET_QA}/outbox" "$TARGET_RID")"
-    if [ ! -f "$TARGET_OWNER_SIGNOFF" ]; then
-      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (owner PM signoff missing)"
-    elif [ -z "$TARGET_GATE2" ]; then
-      warn "$SIGNING_PM co-sign for $TARGET_RID not yet applicable (Gate 2 evidence missing)"
-    elif [ -f "$CROSS_FILE" ]; then
-      pass "$SIGNING_PM co-signed $TARGET_RID"
-    else
-      fail "$SIGNING_PM has NOT co-signed $TARGET_RID"
-      info "Run: bash scripts/release-signoff.sh $TARGET_TEAM $TARGET_RID  (as $SIGNING_PM)"
-    fi
-  done
+  PM_SIGNOFF="sessions/${PM}/artifacts/release-signoffs/${RID}.md"
+  PUSH_MARKER="tmp/auto-push-dispatched/${RID}.pushed"
+  TARGET_GATE2="$(find_gate2_evidence "sessions/${QA}/outbox" "$RID")"
+  if [ -f "$PUSH_MARKER" ]; then
+    warn "[$TEAM] push already dispatched (${RID}.pushed)"
+  elif [ -f "$PM_SIGNOFF" ] && [ -n "$TARGET_GATE2" ]; then
+    pass "[$TEAM] push eligible independently on next orchestrator tick"
+  elif [ ! -f "$PM_SIGNOFF" ]; then
+    info "[$TEAM] push waiting on owning PM signoff"
+  else
+    warn "[$TEAM] push waiting on Gate 2 evidence"
+  fi
 done
 
 # ── Push readiness ────────────────────────────────────────────────────────────
 echo
 hr
-echo "  Coordinated push readiness"
+echo "  Independent push readiness"
 hr
 
-SORTED_IDS="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | tr '\n' '_' | sed 's/_$//')"
-PUSH_MARKER_KEY="$(echo "$ALL_RELEASE_IDS" | tr ' ' '\n' | sort | grep -v '^$' | paste -sd '__')"
-PUSH_MARKER="tmp/auto-push-dispatched/${PUSH_MARKER_KEY}.pushed"
+READY_COUNT=0
+for ENTRY in "${RELEASE_MAP[@]:-}"; do
+  [ -n "$ENTRY" ] || continue
+  TEAM="${ENTRY%%:*}"
+  REST="${ENTRY#*:}"
+  PM="${REST%%:*}"
+  REST="${REST#*:}"
+  QA="${REST%%:*}"
+  RID="${REST##*:}"
+  [ -n "$RID" ] || continue
+  [ -f "sessions/${PM}/artifacts/release-signoffs/${RID}.md" ] || continue
+  TARGET_GATE2="$(find_gate2_evidence "sessions/${QA}/outbox" "$RID")"
+  [ -n "$TARGET_GATE2" ] || continue
+  READY_COUNT=$((READY_COUNT + 1))
+done
 
-if [ -f "$PUSH_MARKER" ]; then
-  warn "Push marker exists: $PUSH_MARKER_KEY.pushed — coordinated push was already dispatched"
-  info "If deploy didn't run, check deploy.yml above. Delete marker to re-trigger: rm \"$PUSH_MARKER\""
+if [ "$READY_COUNT" -gt 0 ] && [ "$FAILURES" -eq 0 ]; then
+  pass "${READY_COUNT} team release(s) independently eligible for push"
+elif [ "$READY_COUNT" -gt 0 ]; then
+  warn "${READY_COUNT} team release(s) have local signoff/gate readiness, but FAIL items remain above"
 else
-  # Check if all signoffs are present
-  ALL_SIGNED=1
-  for ENTRY in "${RELEASE_MAP[@]:-}"; do
-    [ -n "$ENTRY" ] || continue
-    TEAM="${ENTRY%%:*}"
-    REST="${ENTRY#*:}"
-    PM="${REST%%:*}"
-    RID="${REST##*:}"
-    [ -n "$RID" ] || { ALL_SIGNED=0; continue; }
-    [ -f "sessions/${PM}/artifacts/release-signoffs/${RID}.md" ] || { ALL_SIGNED=0; break; }
-  done
-  if [ "$ALL_SIGNED" = "1" ] && [ "$FAILURES" -eq 0 ]; then
-    pass "All signoffs present — coordinated push will fire on next orchestrator tick"
-  elif [ "$ALL_SIGNED" = "1" ]; then
-    warn "All PM signoffs present but there are FAIL items above — resolve before push"
-  else
-    info "Push not yet ready — waiting on signoffs listed above"
-  fi
+  info "No team releases are independently push-ready yet"
 fi
 
 # ── Feature backlog health ────────────────────────────────────────────────────

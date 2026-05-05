@@ -218,3 +218,4 @@ This file is a running list of targeted regression checks derived from completed
 - [ ] 20260423-1776962948-impl-h3-geolocation-automation-validation — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-1776962948-impl-h3-geolocation-automation-validation.md)
 - [ ] 20260423-syshealth-tailoring-queue-errors — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260423-syshealth-tailoring-queue-errors.md)
 - [ ] 20260504-172724-impl-forseti-langgraph-console-admin — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260504-172724-impl-forseti-langgraph-console-admin.md)
+- [ ] 20260505-complete-forseti-langgraph-console-admin-per-board — targeted regression check (see dev outbox: sessions/dev-forseti/outbox/20260505-complete-forseti-langgraph-console-admin-per-board.md)
