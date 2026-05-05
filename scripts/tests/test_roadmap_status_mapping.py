@@ -46,3 +46,22 @@ def test_dungeoncrawler_roadmap_restores_feature_flow_inventory():
     assert "getReleaseCycleSnapshot" in resolver
     assert "Done but not shipped" in template
     assert "Queued feature backlog" in template
+
+
+def test_dungeoncrawler_controller_uses_pipeline_status_for_linked_requirements():
+    controller = (
+        ROOT
+        / "dungeoncrawler-pf2e"
+        / "web"
+        / "modules"
+        / "custom"
+        / "dungeoncrawler_content"
+        / "src"
+        / "Controller"
+        / "RoadmapController.php"
+    ).read_text(encoding="utf-8")
+
+    assert "resolveRoadmapStatus" in controller
+    assert "'display_status'  => $display_requirement_status" in controller
+    assert "'status_label'    => self::STATUS_LABELS[$display_requirement_status]" in controller
+    assert "$totals[$display_requirement_status]++;" in controller
