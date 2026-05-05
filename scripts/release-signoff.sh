@@ -85,26 +85,13 @@ if [ -z "$qa_agent" ]; then
   qa_agent="qa-${team_id}"
 fi
 
-ts="$(date -Iseconds)"
-dir="sessions/${pm_agent}/artifacts/release-signoffs"
-mkdir -p "$dir" 2>/dev/null || true
-
-slug="$(printf '%s' "$release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | cut -c1-80)"
-out_file="${dir}/${slug}.md"
-
-# Gate 2 guard: require QA APPROVE evidence before writing PM signoff artifact.
-# For cross-team co-sign scenarios: the release_id may belong to a different team
-# (e.g., dungeoncrawler PM signing a forseti release). In that case the APPROVE evidence
-# lives in the OWNING team's qa outbox, not the signing team's. We check both.
-gate2_approved=0
-
-# Determine owning team's QA agent by matching release_id against all team IDs/aliases.
-owning_qa_agent="$(python3 - "$PRODUCT_TEAMS_JSON" "$release_id" <<'PY'
+# Independent release ownership guard: the signing site/team must own the release ID.
+if ! owner_lookup="$(python3 - "$PRODUCT_TEAMS_JSON" "$release_id" <<'PY'
 import json
 import sys
 
 cfg_path = sys.argv[1]
-release_id_arg = sys.argv[2].lower()
+release_id_arg = (sys.argv[2] or '').strip().lower()
 
 with open(cfg_path, 'r', encoding='utf-8') as fh:
     data = json.load(fh)
@@ -114,8 +101,8 @@ best_len = 0
 for team in (data.get('teams') or []):
     if not team.get('active', False):
         continue
-    team_id = str(team.get('id') or '').lower()
-    aliases = [str(a).lower() for a in (team.get('aliases') or [])]
+    team_id = str(team.get('id') or '').strip().lower()
+    aliases = [str(a).strip().lower() for a in (team.get('aliases') or []) if str(a).strip()]
     candidates = [team_id] + aliases
     for cand in candidates:
         if cand and cand in release_id_arg and len(cand) > best_len:
@@ -123,11 +110,37 @@ for team in (data.get('teams') or []):
             best_team = team
 
 if best_team:
-    print(str(best_team.get('qa_agent') or '').strip())
-else:
-    print('')
+    print(
+        f"{str(best_team.get('id') or '').strip()}\t"
+        f"{str(best_team.get('pm_agent') or '').strip()}\t"
+        f"{str(best_team.get('qa_agent') or '').strip()}"
+    )
 PY
-)"
+  2>&1)"; then
+  echo "$owner_lookup" >&2
+  exit 2
+fi
+
+IFS=$'\t' read -r owning_team_id owning_pm_agent owning_qa_agent <<<"$owner_lookup"
+if [ -n "$owning_team_id" ] && [ "$owning_team_id" != "$team_id" ]; then
+  echo "ERROR: release '${release_id}' belongs to team '${owning_team_id}', not '${team_id}'." >&2
+  echo "Cross-team PM co-signs are no longer allowed; each product team ships independently." >&2
+  exit 2
+fi
+
+if [ -n "$owning_qa_agent" ]; then
+  qa_agent="$owning_qa_agent"
+fi
+
+ts="$(date -Iseconds)"
+dir="sessions/${pm_agent}/artifacts/release-signoffs"
+mkdir -p "$dir" 2>/dev/null || true
+
+slug="$(printf '%s' "$release_id" | tr -cs 'A-Za-z0-9._-' '-' | sed 's/^-//;s/-$//' | cut -c1-80)"
+out_file="${dir}/${slug}.md"
+
+# Gate 2 guard: require QA APPROVE evidence before writing PM signoff artifact.
+gate2_approved=0
 
 qa_outbox="sessions/${qa_agent}/outbox"
 _check_gate2_in() {
@@ -140,12 +153,6 @@ _check_gate2_in() {
 
 if _check_gate2_in "$qa_outbox"; then
   gate2_approved=1
-elif [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ]; then
-  owning_qa_outbox="sessions/${owning_qa_agent}/outbox"
-  if _check_gate2_in "$owning_qa_outbox"; then
-    gate2_approved=1
-    echo "INFO: Gate 2 APPROVE found in owning team QA outbox (${owning_qa_agent}) for cross-team co-sign"
-  fi
 fi
 
 if [ "$gate2_approved" -ne 1 ]; then
@@ -172,9 +179,6 @@ CERT
   else
     echo "ERROR: Gate 2 APPROVE evidence not found for release '${release_id}'" >&2
     echo "  Searched: ${qa_outbox}/ for files containing both '${release_id}' and 'APPROVE'" >&2
-    if [ -n "$owning_qa_agent" ] && [ "$owning_qa_agent" != "$qa_agent" ]; then
-      echo "  Also searched: sessions/${owning_qa_agent}/outbox/ (owning team QA for cross-team co-sign)" >&2
-    fi
     echo "  If this release shipped zero features, re-run with --empty-release to self-certify." >&2
     echo "BLOCKED: PM signoff requires Gate 2 QA APPROVE before it can be issued." >&2
     exit 1
@@ -267,78 +271,11 @@ I confirm the PM-level gates for this site are satisfied for this release id:
 - Dev provided commit hash(es) + rollback steps.
 - QA provided verification evidence and APPROVE (or explicit documented risk acceptance).
 
-If this is part of a coordinated release, the release operator must wait for all required PM signoffs configured in org-chart/products/product-teams.json before the official push.
+This team release ships independently; no cross-team PM co-sign or shared release operator is required.
 MD
 
 echo "SIGNED_OFF: ${pm_agent} ${release_id} -> ${out_file}"
-
-# After recording signoff, check if ALL coordinated PMs have now signed.
-# If yes, queue a push-ready inbox item for the release operator (pm-forseti).
-python3 - "$PRODUCT_TEAMS_JSON" "$release_id" "$slug" "$ROOT_DIR" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-cfg_path, release_id, slug, root = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-root = Path(root)
-
-with open(cfg_path, 'r', encoding='utf-8') as fh:
-    data = json.load(fh)
-
-teams = [t for t in (data.get('teams') or []) if t.get('active') and t.get('coordinated_release_default')]
-if len(teams) < 2:
-    sys.exit(0)
-
-all_signed = all(
-    (root / 'sessions' / t['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{slug}.md").exists()
-    for t in teams
-)
-if not all_signed:
-    unsigned = [t['pm_agent'] for t in teams
-                if not (root / 'sessions' / t['pm_agent'] / 'artifacts' / 'release-signoffs' / f"{slug}.md").exists()]
-    print(f"INFO: coordinated push not yet ready — unsigned: {', '.join(unsigned)}")
-    sys.exit(0)
-
-# All signed — queue push-ready item for pm-forseti (release operator per DECISION_OWNERSHIP_MATRIX)
-import datetime
-ts = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-item_id = f"{ts}-push-ready-{slug[:40]}"
-inbox_dir = root / 'sessions' / 'pm-forseti' / 'inbox' / item_id
-outbox_file = root / 'sessions' / 'pm-forseti' / 'outbox' / f"{item_id}.md"
-
-if inbox_dir.exists() or outbox_file.exists():
-    print(f"INFO: push-ready item already exists for pm-forseti ({item_id})")
-    sys.exit(0)
-
-# Check if any push-ready item for this release already exists
-inbox_root = root / 'sessions' / 'pm-forseti' / 'inbox'
-needle = f"-push-ready-{slug[:30]}"
-for p in (inbox_root.iterdir() if inbox_root.exists() else []):
-    if p.is_dir() and needle in p.name:
-        print(f"INFO: push-ready item already queued for pm-forseti: {p.name}")
-        sys.exit(0)
-
-inbox_dir.mkdir(parents=True, exist_ok=True)
-(inbox_dir / 'roi.txt').write_text('200\n', encoding='utf-8')
-signers = ', '.join(f"{t['pm_agent']} ({t['site']})" for t in teams)
-cmd = f"""# Push ready: {release_id}
-
-All required PM signoffs recorded for coordinated release `{release_id}`.
-
-## Signed off by
-{signers}
-
-## Required action
-As release operator, proceed with the official push:
-1. Verify: `bash scripts/release-signoff-status.sh {release_id}`
-2. Push per `runbooks/shipping-gates.md` Gate 4.
-3. **Advance team release cycles**: `bash scripts/post-coordinated-push.sh`
-   (Files each coordinated team's own release signoff so their cycle can advance.)
-4. Complete post-push steps (config import, smoke test, SLA report update).
-"""
-(inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
-print(f"INFO: ALL PMs signed — queued push-ready item for pm-forseti: {item_id}")
-PY
+echo "INFO: independent team push now depends only on ${pm_agent} signoff and ${qa_agent} Gate 2 evidence."
 
 # ── Board email notification ──────────────────────────────────────────────────
 # Load board.conf if present (provides BOARD_EMAIL, HQ_FROM_EMAIL, HQ_SITE_NAME)
@@ -390,7 +327,7 @@ _email_html="<!DOCTYPE html>
 
   <!-- Header -->
   <div style=\"background:#1a7f37;padding:20px 24px;\">
-    <h1 style=\"color:#fff;margin:0;font-size:18px;\">🚀 Coordinated Release Ready for Operator Push</h1>
+    <h1 style=\"color:#fff;margin:0;font-size:18px;\">🚀 Team Release Signed Off</h1>
     <p style=\"color:#d1fae5;margin:4px 0 0;font-size:13px;\">${HQ_SITE_NAME}</p>
   </div>
 
@@ -403,7 +340,7 @@ _email_html="<!DOCTYPE html>
       </tr>
       <tr>
         <td style=\"padding:6px 0;color:#57606a;font-size:13px;\">Status</td>
-        <td style=\"padding:6px 0;\"><span style=\"background:#1a7f37;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">ALL PMs SIGNED OFF</span></td>
+        <td style=\"padding:6px 0;\"><span style=\"background:#1a7f37;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600;\">PM SIGNED OFF</span></td>
       </tr>
       <tr>
         <td style=\"padding:6px 0;color:#57606a;font-size:13px;\">Site</td>
@@ -415,17 +352,17 @@ _email_html="<!DOCTYPE html>
 
     <div style=\"margin-top:24px;padding:16px;background:#f6f8fa;border-radius:6px;border-left:3px solid #1a7f37;\">
       <p style=\"margin:0 0 8px;font-weight:600;color:#1f2328;\">Board note</p>
-      <p style=\"margin:0;color:#57606a;font-size:13px;\">This notification is informational unless you are personally acting as the release operator (<code>pm-forseti</code>) for this push.</p>
+      <p style=\"margin:0;color:#57606a;font-size:13px;\">This release now moves independently through the owning PM lane; no cross-team operator handoff is required.</p>
     </div>
 
     <div style=\"margin-top:16px;padding:16px;background:#f6f8fa;border-radius:6px;border-left:3px solid #0969da;\">
-      <p style=\"margin:0 0 8px;font-weight:600;color:#1f2328;\">Operator action (<code>pm-forseti</code>)</p>
-      <p style=\"margin:0;color:#57606a;font-size:13px;\">Verify, push, and advance the release cycle:</p>
+      <p style=\"margin:0 0 8px;font-weight:600;color:#1f2328;\">Owning PM action (<code>${pm_agent}</code>)</p>
+      <p style=\"margin:0;color:#57606a;font-size:13px;\">The orchestrator may trigger the deploy on the next tick; after deployment, advance only this team's release cycle:</p>
       <ol style=\"margin:8px 0 0;padding-left:20px;color:#57606a;font-size:13px;\">
         <li>Check status: <code>bash scripts/release-signoff-status.sh ${release_id}</code></li>
-        <li>Push per <strong>runbooks/shipping-gates.md</strong> Gate 4</li>
-        <li>Advance cycles: <code>bash scripts/post-coordinated-push.sh</code></li>
-        <li>Run post-push steps (config import, smoke test, SLA report)</li>
+        <li>Watch for deploy trigger / completion in GitHub Actions</li>
+        <li>Advance only this team's cycle: <code>bash scripts/post-coordinated-push.sh ${team_id} ${release_id}</code></li>
+        <li>Run post-push steps (config import, smoke test, SLA report) for <code>${site}</code></li>
       </ol>
     </div>
 
@@ -440,7 +377,7 @@ _email_html="<!DOCTYPE html>
 </div>
 </body></html>"
 
-printf "To: %s\nFrom: %s\nSubject: [%s] FYI: coordinated release ready for operator push: %s\nContent-Type: text/html; charset=UTF-8\nMIME-Version: 1.0\n\n%s\n" \
+printf "To: %s\nFrom: %s\nSubject: [%s] FYI: team release signed off: %s\nContent-Type: text/html; charset=UTF-8\nMIME-Version: 1.0\n\n%s\n" \
   "$BOARD_EMAIL" "$HQ_FROM_EMAIL" "$HQ_SITE_NAME" "$release_id" "$_email_html" \
   | /usr/sbin/sendmail -t \
   && echo "INFO: Board notification sent to ${BOARD_EMAIL}" \

@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# post-coordinated-push.sh — Auto-advance each team's release cycle after a coordinated push.
+# post-coordinated-push.sh — Auto-advance release cycles after a push.
 #
-# Usage: bash scripts/post-coordinated-push.sh
+# Usage:
+#   bash scripts/post-coordinated-push.sh
+#   bash scripts/post-coordinated-push.sh <team-id> [release-id]
 #
-# Run this immediately after the coordinated git push completes (Gate 4).
-# It records a team-scoped release signoff for every coordinated team that has an
-# active release in tmp/release-cycle-active/ but has not yet been signed off.
-# This advances each team's orchestrator release cycle so the next cycle can begin,
-# re-seeds the normal release-cycle handoff for the new current/next pair, reconciles
-# shipped truth for the release that just deployed, and runs the CEO boundary health
-# check to keep the next cycle from stalling silently.
+# Run this immediately after a production push completes (Gate 4).
+# With no args it preserves the legacy all-teams behavior.
+# With <team-id>, it advances only that team's release lane.
 #
 # Idempotent — safe to re-run.
 
 set -euo pipefail
 ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+TEAM_SCOPE="${1:-}"
+RELEASE_SCOPE="${2:-}"
 
 TEAMS_JSON="${ROOT_DIR}/org-chart/products/product-teams.json"
 RUNTIME_DIR="${ROOT_DIR}/tmp/release-cycle-active"
@@ -37,12 +37,14 @@ fi
 echo "✅ Pre-push validation passed"
 echo "=== post-coordinated-push: advancing team release cycles ==="
 
-python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" <<'PY'
+python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "$TEAM_SCOPE" "$RELEASE_SCOPE" <<'PY'
 import sys, subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 teams_json, runtime_dir, root = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+team_scope = (sys.argv[4] or "").strip()
+release_scope = (sys.argv[5] or "").strip()
 sys.path.insert(0, str(root / "scripts" / "lib"))
 from release_cycle_helpers import (  # noqa: E402
     archive_stale_pm_release_items,
@@ -52,6 +54,11 @@ from release_cycle_helpers import (  # noqa: E402
 )
 
 coord_teams = coordinated_teams(teams_json)
+if team_scope:
+    coord_teams = [team for team in coord_teams if team.get("id") == team_scope]
+    if not coord_teams:
+        print(f"ERROR: unknown or unmanaged team scope: {team_scope}")
+        raise SystemExit(2)
 
 team_release_ids = {}
 
@@ -65,6 +72,9 @@ for team in sorted(coord_teams, key=lambda t: t['id']):
         continue
 
     release_id = rid_file.read_text().strip()
+    if release_scope and release_id != release_scope:
+        print(f"SKIP {team_id}: active release {release_id} does not match requested {release_scope}")
+        continue
     team_release_ids[team_id] = release_id
     signoff = root / 'sessions' / pm_agent / 'artifacts' / 'release-signoffs' / f"{release_id}.md"
 
@@ -85,7 +95,6 @@ for team in sorted(coord_teams, key=lambda t: t['id']):
         print(f"DONE {team_id}: {release_id} signed off")
 
 # Step 2 — write the orchestrator marker file so _coordinated_push_step() does not re-deploy.
-# The marker key matches the combined_key built in orchestrator/run.py _coordinated_push_step().
 if team_release_ids:
     combined_key = combined_release_marker_key(team_release_ids, coord_teams)
     pushed_dir = root / 'tmp' / 'auto-push-dispatched'

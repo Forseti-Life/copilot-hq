@@ -21,90 +21,71 @@ if [ ! -f "$PRODUCT_TEAMS_JSON" ]; then
   exit 2
 fi
 
-if ! rows="$(python3 - "$PRODUCT_TEAMS_JSON" <<'PY'
+if ! owner_row="$(python3 - "$PRODUCT_TEAMS_JSON" "$release_id" <<'PY'
 import json
 import sys
 
 with open(sys.argv[1], 'r', encoding='utf-8') as fh:
-    data = json.load(fh)
+  data = json.load(fh)
+
+release_id = (sys.argv[2] or '').strip().lower()
+best_team = None
+best_len = 0
 
 for team in (data.get('teams') or []):
     if not team.get('active', False):
         continue
-    if not team.get('coordinated_release_default', False):
-        continue
-    team_id = str(team.get('id') or '').strip()
-    pm_agent = str(team.get('pm_agent') or '').strip()
-    if not team_id or not pm_agent:
-        continue
-    print(f"{team_id}\t{pm_agent}")
+    team_id = str(team.get('id') or '').strip().lower()
+    aliases = [str(a).strip().lower() for a in (team.get('aliases') or []) if str(a).strip()]
+    candidates = [team_id] + aliases
+    for cand in candidates:
+        if cand and cand in release_id and len(cand) > best_len:
+            best_len = len(cand)
+            best_team = team
+
+if best_team:
+    print(f"{str(best_team.get('id') or '').strip()}\t{str(best_team.get('pm_agent') or '').strip()}")
 PY
   2>&1)"; then
-  echo "$rows" >&2
+  echo "$owner_row" >&2
   exit 2
 fi
 
-if [ -z "$rows" ]; then
-  echo "ERROR: no coordinated-release PM seats configured in $PRODUCT_TEAMS_JSON" >&2
+if [ -z "$owner_row" ]; then
+  echo "ERROR: could not infer owning team for release '${release_id}' from $PRODUCT_TEAMS_JSON" >&2
   exit 2
 fi
 
-ready=true
-required_count=0
-rows_with_status=""
-while IFS=$'\t' read -r team_id pm_agent; do
-  [ -n "$team_id" ] || continue
-  [ -n "$pm_agent" ] || continue
-  required_count=$((required_count + 1))
-  signoff_file="sessions/${pm_agent}/artifacts/release-signoffs/${slug}.md"
-  has_signoff=false
-  if [ -f "$signoff_file" ]; then
-    has_signoff=true
-  else
-    ready=false
-  fi
-  rows_with_status+="${team_id}"$'\t'"${pm_agent}"$'\t'"${signoff_file}"$'\t'"${has_signoff}"$'\n'
-done <<<"$rows"
+IFS=$'\t' read -r owner_team_id owner_pm_agent <<<"$owner_row"
+signoff_file="sessions/${owner_pm_agent}/artifacts/release-signoffs/${slug}.md"
+ready=false
+if [ -f "$signoff_file" ]; then
+  ready=true
+fi
 
 if [ "${fmt:-}" = "--json" ]; then
-  python3 - "$release_id" "$slug" "$ready" "$rows_with_status" <<'PY'
+  python3 - "$release_id" "$slug" "$ready" "$owner_team_id" "$owner_pm_agent" "$signoff_file" <<'PY'
 import json
 import sys
 
-release_id, slug, ready, rows = sys.argv[1:]
-
-required = []
-for line in rows.splitlines():
-  parts = line.split('\t')
-  if len(parts) != 4:
-    continue
-  team_id, pm_agent, signoff_file, has_signoff = parts
-  required.append(
-    {
-      "team_id": team_id,
-      "pm_agent": pm_agent,
-      "signoff_file": signoff_file,
-      "signed_off": (has_signoff == "true"),
-    }
-  )
+release_id, slug, ready, owner_team_id, owner_pm_agent, signoff_file = sys.argv[1:]
+required = [{
+  "team_id": owner_team_id,
+  "pm_agent": owner_pm_agent,
+  "signoff_file": signoff_file,
+  "signed_off": (ready == "true"),
+}]
 
 out = {
   "release_id": release_id,
   "slug": slug,
+  "owner_team_id": owner_team_id,
+  "owner_pm_agent": owner_pm_agent,
   "required_pm_signoffs": required,
-  "required_count": len(required),
-  "signed_off_count": sum(1 for r in required if r["signed_off"]),
+  "required_count": 1,
+  "signed_off_count": 1 if ready == "true" else 0,
   "ready_for_official_push": (ready == "true"),
 }
-
-# Backward-compatible keys for legacy consumers when those seats are present.
-for r in required:
-  if r["pm_agent"] == "pm-forseti":
-    out["pm_forseti_signed_off"] = r["signed_off"]
-    out["pm_forseti_file"] = r["signoff_file"]
-  if r["pm_agent"] == "pm-dungeoncrawler":
-    out["pm_dungeoncrawler_signed_off"] = r["signed_off"]
-    out["pm_dungeoncrawler_file"] = r["signoff_file"]
 
 print(json.dumps(out))
 PY
@@ -112,11 +93,9 @@ PY
 fi
 
 echo "Release id: ${release_id}"
-echo "- required coordinated PM signoffs: ${required_count}"
-while IFS=$'\t' read -r team_id pm_agent signoff_file has_signoff; do
-  [ -n "$team_id" ] || continue
-  printf '%s\n' "- ${team_id} (${pm_agent}) signoff: ${has_signoff} (${signoff_file})"
-done <<<"$rows_with_status"
+echo "- required PM signoffs: 1"
+echo "- owner team: ${owner_team_id}"
+echo "- ${owner_team_id} (${owner_pm_agent}) signoff: ${ready} (${signoff_file})"
 echo "- ready for official push:   ${ready}"
 
 if [ "$ready" != true ]; then

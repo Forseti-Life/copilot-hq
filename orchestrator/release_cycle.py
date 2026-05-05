@@ -489,9 +489,15 @@ def run_release_cycle_step(log: List[Any], repo_root: Path) -> None:
 
 # ── Coordinated push step ─────────────────────────────────────────────────────
 
-def write_release_notes(release_id: str, slug: str, required: List[Dict[str, Any]], repo_root: Path) -> None:
-    """Auto-generate 05-release-notes.md in pm-forseti's release-candidates dir."""
-    rc_dir = repo_root / "sessions" / "pm-forseti" / "artifacts" / "release-candidates" / slug
+def write_release_notes(
+    release_id: str,
+    slug: str,
+    required: List[Dict[str, Any]],
+    repo_root: Path,
+    pm_agent: str,
+) -> None:
+    """Auto-generate 05-release-notes.md for the owning PM's release-candidate dir."""
+    rc_dir = repo_root / "sessions" / pm_agent / "artifacts" / "release-candidates" / slug
     notes_file = rc_dir / "05-release-notes.md"
     if notes_file.exists():
         return
@@ -568,7 +574,7 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
 
 
 def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
-    """Auto-deploy only after every coordinated team PM has signed off its release."""
+    """Auto-deploy each release independently once its owning PM has signed off."""
     release_control = _release_cycle_control_state()
     if not bool(release_control.get("enabled", True)):
         log.append({
@@ -596,6 +602,8 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
                 "team_id": team.get("id", ""),
                 "pm_agent": pm_agent,
                 "qa_agent": team.get("qa_agent", ""),
+                "site": team.get("site", ""),
+                "site_audit": team.get("site_audit", {}) or {},
             })
 
     if not required:
@@ -603,140 +611,117 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
 
     active_dir = repo_root / "tmp" / "release-cycle-active"
 
-    team_release_ids: Dict[str, str] = {}
-    team_ready: Dict[str, bool] = {}
+    pushed_dir = repo_root / "tmp" / "auto-push-dispatched"
+    pushed_dir.mkdir(parents=True, exist_ok=True)
+    waiting_teams: List[str] = []
+    already_pushed: List[Dict[str, Any]] = []
+    pushed: List[Dict[str, Any]] = []
 
     for entry in required:
         team_id = entry["team_id"]
         pm_agent = entry["pm_agent"]
         release_id_file = active_dir / f"{team_id}.release_id"
         if not release_id_file.exists():
-            team_ready[team_id] = False
+            waiting_teams.append(team_id)
             continue
+
         rid = release_id_file.read_text(encoding="utf-8").strip()
         if not rid:
-            team_ready[team_id] = False
+            waiting_teams.append(team_id)
             continue
-        team_release_ids[team_id] = rid
+
         slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
         signoff_file = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
-        team_ready[team_id] = signoff_file.exists()
+        if not signoff_file.exists():
+            waiting_teams.append(team_id)
+            continue
 
-    all_ready = all(team_ready.get(e["team_id"], False) for e in required)
-    if not all_ready:
-        not_ready = [e["team_id"] for e in required if not team_ready.get(e["team_id"], False)]
-        signed_teams = [e["team_id"] for e in required if team_ready.get(e["team_id"], False)]
+        marker = pushed_dir / f"{slug}.pushed"
+        if marker.exists():
+            already_pushed.append({"team_id": team_id, "release_id": rid, "marker": marker.name})
+            continue
+
+        check_code_review_gate({team_id: rid}, log, repo_root)
+        marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
+
+        write_release_notes(rid, slug, [entry], repo_root, pm_agent)
+
+        rc, out = _run(
+            ["gh", "workflow", "run", "deploy.yml", "--repo", "keithaumiller/forseti.life", "--ref", "main"],
+            timeout=60,
+        )
+        print(f"TEAM-PUSH: {team_id} {rid} deploy rc={rc}")
+
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        drupal_web_root = str(entry.get("site_audit", {}).get("drupal_web_root", "")).strip()
+        drupal_root = str(Path(drupal_web_root).parent) if drupal_web_root else ""
+        audit_filter = str(entry.get("site_audit", {}).get("filter", "")).strip() or team_id
+
+        item_id = f"{today}-post-push-{slug}"
+        inbox_dir = repo_root / "sessions" / pm_agent / "inbox" / item_id
+        outbox_file = repo_root / "sessions" / pm_agent / "outbox" / f"{item_id}.md"
+        if not inbox_dir.exists() and not outbox_file.exists():
+            inbox_dir.mkdir(parents=True, exist_ok=True)
+            (inbox_dir / "roi.txt").write_text("85\n")
+            config_step = "Record any required config/cache follow-up in your outbox."
+            if drupal_root:
+                config_step = (
+                    f"```bash\ncd {drupal_root} && vendor/bin/drush config:import -y && vendor/bin/drush cr\n```"
+                )
+            (inbox_dir / "command.md").write_text(
+                f"# Post-push steps: {team_id} release\n\n"
+                f"The {team_id} deploy for `{rid}` was triggered automatically after PM signoff.\n\n"
+                "## 1. Wait for deploy workflow to finish\n"
+                "```bash\ngh run list --repo keithaumiller/forseti.life --workflow deploy.yml --limit 3\n```\n\n"
+                "## 2. Production config import / cache rebuild\n"
+                f"{config_step}\n\n"
+                "## 3. Advance this team's release cycle\n"
+                f"```bash\nbash scripts/post-coordinated-push.sh {team_id} {rid}\n```\n\n"
+                "## 4. Gate R5 — post-release production QA\n"
+                f"```bash\nALLOW_PROD_QA=1 bash scripts/site-audit-run.sh {audit_filter}\n```\n\n"
+                "Record clean/unclean signal in your outbox.\n"
+            )
+
+        push_notif_id = f"{today}-push-triggered-{slug}"
+        push_notif_inbox = repo_root / "sessions" / pm_agent / "inbox" / push_notif_id
+        push_notif_outbox = repo_root / "sessions" / pm_agent / "outbox" / f"{push_notif_id}.md"
+        if not push_notif_inbox.exists() and not push_notif_outbox.exists():
+            push_notif_inbox.mkdir(parents=True, exist_ok=True)
+            (push_notif_inbox / "roi.txt").write_text("50\n")
+            (push_notif_inbox / "README.md").write_text(
+                f"# Push Triggered: {team_id} release\n\n"
+                f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n"
+                f"- Status: push triggered\n"
+                f"- Release: `{rid}`\n"
+                f"- Team: `{team_id}`\n"
+                f"- GitHub deploy workflow was triggered (rc={rc})\n\n"
+                f"See inbox item `{item_id}` for post-push steps.\n"
+            )
+
+        pushed.append({"team_id": team_id, "release_id": rid, "marker": marker.name, "deploy_rc": rc})
+
+    if pushed:
         log.append({
             "step": "coordinated_push",
-            "status": "waiting",
-            "not_ready": not_ready,
-            "signed_teams": signed_teams,
-            "team_releases": team_release_ids,
+            "status": "pushed",
+            "pushed": pushed,
+            "already_pushed": already_pushed,
+            "waiting_teams": waiting_teams,
+        })
+        _emit_event("coordinated-push-done")
+        return
+
+    if already_pushed:
+        log.append({
+            "step": "coordinated_push",
+            "status": "already_pushed",
+            "already_pushed": already_pushed,
+            "waiting_teams": waiting_teams,
         })
         return
 
-    signed_teams = [e["team_id"] for e in required if team_ready.get(e["team_id"], False)]
-    waiting_teams = [e["team_id"] for e in required if not team_ready.get(e["team_id"], False)]
-
-    combined_key = "__".join(
-        re.sub(r"[^A-Za-z0-9._-]", "-", team_release_ids[e["team_id"]])
-        for e in sorted(required, key=lambda x: x["team_id"])
-    )[:120]
-
-    pushed_dir = repo_root / "tmp" / "auto-push-dispatched"
-    pushed_dir.mkdir(parents=True, exist_ok=True)
-    marker = pushed_dir / f"{combined_key}.pushed"
-
-    if marker.exists():
-        log.append({"step": "coordinated_push", "status": "already_pushed", "marker": combined_key})
-        return
-
-    check_code_review_gate(team_release_ids, log, repo_root)
-
-    marker.write_text(datetime.now(timezone.utc).isoformat() + "\n")
-
-    canonical_release_id = sorted(team_release_ids.values())[0]
-    canonical_slug = re.sub(r"[^A-Za-z0-9._-]", "-", canonical_release_id)[:80]
-
-    write_release_notes(canonical_release_id, canonical_slug, required, repo_root)
-
-    rc, out = _run(
-        ["gh", "workflow", "run", "deploy.yml",
-         "--repo", "keithaumiller/forseti.life", "--ref", "main"],
-        timeout=60,
-    )
-    print(f"COORDINATED-PUSH: {combined_key} deploy rc={rc} (signed={signed_teams} waiting={waiting_teams})")
-
-    today = datetime.now(timezone.utc).strftime("%Y%m%d")
-    item_id = f"{today}-post-push-{canonical_slug}"
-    inbox_dir = repo_root / "sessions" / "pm-forseti" / "inbox" / item_id
-    outbox_file = repo_root / "sessions" / "pm-forseti" / "outbox" / f"{item_id}.md"
-    if not inbox_dir.exists() and not outbox_file.exists():
-        inbox_dir.mkdir(parents=True, exist_ok=True)
-        (inbox_dir / "roi.txt").write_text("85\n")
-        all_ids_text = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
-        (inbox_dir / "command.md").write_text(
-            f"# Post-push steps: coordinated release\n\n"
-            f"The coordinated release deploy was triggered automatically.\n\n"
-            f"## Releases shipped\n{all_ids_text}\n\n"
-            "## 1. Wait for deploy workflow to finish\n"
-            "```bash\ngh run list --repo keithaumiller/forseti.life --workflow deploy.yml --limit 3\n```\n\n"
-            "## 2. Import config on production\n"
-            "```bash\ncd /var/www/html/forseti && vendor/bin/drush config:import -y && vendor/bin/drush cr\n```\n\n"
-            "## 3. Gate R5 — post-release production QA\n"
-            "Trigger a production audit for each product (requires ALLOW_PROD_QA=1):\n"
-            "```bash\nALLOW_PROD_QA=1 bash scripts/site-full-audit.py forseti\n```\n"
-            "Record clean/unclean signal in your outbox.\n\n"
-            f"Canonical release id: `{canonical_release_id}`\n"
-        )
-
-    for entry in required:
-        team_id = entry["team_id"]
-        pm_agent = entry["pm_agent"]
-        rid = team_release_ids.get(team_id, "")
-        if not rid:
-            continue
-        slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
-        signoff_path = repo_root / "sessions" / pm_agent / "artifacts" / "release-signoffs" / f"{slug}.md"
-        if not signoff_path.exists():
-            signoff_path.parent.mkdir(parents=True, exist_ok=True)
-            signoff_path.write_text(
-                f"# Release Signoff: {rid}\n\n"
-                f"- Status: approved\n"
-                f"- Signed by: orchestrator (coordinated push {combined_key})\n"
-                f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n\n"
-                f"This release was shipped as part of a coordinated push.\n"
-            )
-            print(f"COORDINATED-PUSH: wrote signoff {rid} for {team_id}/{pm_agent}")
-
-    today_notif = datetime.now(timezone.utc).strftime("%Y%m%d")
-    push_notif_id = f"{today_notif}-push-triggered-{canonical_slug}"
-    push_notif_inbox = repo_root / "sessions" / "pm-forseti" / "inbox" / push_notif_id
-    push_notif_outbox = repo_root / "sessions" / "pm-forseti" / "outbox" / f"{push_notif_id}.md"
-    if not push_notif_inbox.exists() and not push_notif_outbox.exists():
-        push_notif_inbox.mkdir(parents=True, exist_ok=True)
-        (push_notif_inbox / "roi.txt").write_text("50\n")
-        releases_shipped = "\n".join(f"  - {tid}: `{rid}`" for tid, rid in sorted(team_release_ids.items()))
-        (push_notif_inbox / "README.md").write_text(
-            f"# Push Triggered: Coordinated Release\n\n"
-            f"- Timestamp: {datetime.now(timezone.utc).isoformat()}\n"
-            f"- Status: push triggered\n\n"
-            f"## Releases Shipped\n{releases_shipped}\n\n"
-            f"## Status\n"
-            f"- Signed teams: {', '.join(sorted(signed_teams))}\n"
-            f"- Waiting teams: {', '.join(sorted(waiting_teams))}\n"
-            f"- GitHub deploy workflow was triggered (rc={rc})\n\n"
-            f"See inbox item `{today_notif}-post-push-{canonical_slug}` for post-release steps.\n"
-        )
-        print(f"COORDINATED-PUSH: notified pm-forseti that push was triggered for {canonical_slug}")
-
     log.append({
         "step": "coordinated_push",
-        "status": "pushed",
-        "marker": combined_key,
-        "team_releases": team_release_ids,
-        "signed_teams": signed_teams,
+        "status": "waiting",
         "waiting_teams": waiting_teams,
-        "deploy_rc": rc,
     })
-    _emit_event("coordinated-push-done")
