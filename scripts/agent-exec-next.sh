@@ -859,15 +859,9 @@ bedrock_site_for_context() {
   esac
 }
 
-run_bedrock() {
+run_bedrock_raw() {
   local prompt="$1"
   local py
-  local contract
-  contract=$'Return plain markdown only.\n'
-  contract+=$'The first line must be exactly "- Status: <value>".\n'
-  contract+=$'The second line must be exactly "- Summary: <value>".\n'
-  contract+=$'Do not emit tool calls, tool responses, XML, JSON, or analysis preambles.\n'
-  contract+=$'If you need to continue investigating, use "- Status: in_progress" and summarize the next concrete step.\n\n'
   if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
     py="$ROOT_DIR/llm/.venv/bin/python3"
   elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ]; then
@@ -878,7 +872,96 @@ run_bedrock() {
   [ -n "$py" ] || return 0
   "$py" "$BEDROCK_RUNNER" \
     --session "$SESSION_ID" \
-    --prompt "${contract}${prompt}" 2>&1 || true
+    --prompt "$prompt" 2>&1 || true
+}
+
+bedrock_extract_bash_request() {
+  local response="$1"
+  python3 -c '
+import re
+import sys
+
+text = sys.stdin.read()
+match = re.search(r"<<TOOL:bash>>\s*(.*?)\s*<<ENDTOOL>>", text, re.IGNORECASE | re.DOTALL)
+if match:
+    sys.stdout.write(match.group(1).strip())
+' <<<"$response"
+}
+
+bedrock_execute_bash() {
+  local command="$1"
+  local output exit_code limit
+  limit="${BEDROCK_TOOL_OUTPUT_LIMIT_BYTES:-20000}"
+
+  if printf '%s' "$command" | grep -qE '\$\{[^}]*@P\}|\$\{![^}]+\}|(^|[^[:alnum:]_])eval($|[^[:alnum:]_])'; then
+    exit_code=97
+    output="Rejected unsafe shell metaprogramming construct in requested command."
+  else
+    if command -v timeout >/dev/null 2>&1; then
+      output="$(cd "$ROOT_DIR" && timeout -k "${BEDROCK_TOOL_TIMEOUT_KILL_SEC:-5}" "${BEDROCK_TOOL_TIMEOUT_SEC:-120}" bash -lc "$command" 2>&1)"
+      exit_code=$?
+    else
+      output="$(cd "$ROOT_DIR" && bash -lc "$command" 2>&1)"
+      exit_code=$?
+    fi
+  fi
+
+  if [ "${#output}" -gt "$limit" ] 2>/dev/null; then
+    output="${output:0:$limit}
+[output truncated]"
+  fi
+
+  cat <<EOF
+Tool result for bash:
+\`\`\`bash
+$command
+\`\`\`
+Exit code: $exit_code
+\`\`\`
+$output
+\`\`\`
+
+If you need another live tool action, respond ONLY with:
+<<TOOL:bash>>
+<command>
+<<ENDTOOL>>
+
+Otherwise output the final outbox markdown now.
+EOF
+}
+
+run_bedrock() {
+  local prompt="$1"
+  local contract response tool_cmd tool_turn max_turns current_prompt
+  max_turns="${BEDROCK_TOOL_MAX_TURNS:-12}"
+  tool_turn=0
+  contract=$'Return plain markdown only unless you need a live bash tool action.\n'
+  contract+=$'This execution HAS live mediated bash access rooted at /home/ubuntu/forseti.life.\n'
+  contract+=$'When you need shell/file access, respond ONLY with:\n'
+  contract+=$'<<TOOL:bash>>\n<command>\n<<ENDTOOL>>\n'
+  contract+=$'The executor will run the command and return stdout/stderr for the next turn.\n'
+  contract+=$'Do not invent file reads when a bash command could verify them.\n'
+  contract+=$'When you are done investigating, output ONLY the final markdown outbox.\n'
+  contract+=$'The first line must be exactly "- Status: <value>".\n'
+  contract+=$'The second line must be exactly "- Summary: <value>".\n'
+  contract+=$'Do not emit XML, JSON, tool wrappers, or analysis preambles in the final outbox.\n'
+  contract+=$'If you need to continue investigating after one or more tool calls, use "- Status: in_progress" only in your final outbox.\n\n'
+  current_prompt="${contract}${prompt}"
+
+  while true; do
+    response="$(run_bedrock_raw "$current_prompt")"
+    tool_cmd="$(bedrock_extract_bash_request "$response")"
+    if [ -z "$(printf '%s' "$tool_cmd" | tr -d ' \t\r\n')" ]; then
+      printf '%s\n' "$response"
+      return 0
+    fi
+    tool_turn=$((tool_turn + 1))
+    if [ "$tool_turn" -gt "$max_turns" ]; then
+      current_prompt=$'You have exceeded the maximum allowed tool turns for this execution.\nOutput the final outbox markdown now with Status: blocked and explain which remaining evidence still needs inspection.'
+      continue
+    fi
+    current_prompt="$(bedrock_execute_bash "$tool_cmd")"
+  done
 }
 
 run_primary_backend() {
