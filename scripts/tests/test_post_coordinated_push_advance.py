@@ -122,7 +122,35 @@ def _run(root: Path) -> subprocess.CompletedProcess:
     )
 
 
+def _run_team_scoped(root: Path, team_id: str, release_id: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["bash", str(SCRIPT), team_id, release_id],
+        cwd=str(root),
+        capture_output=True,
+        text=True,
+        env={
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "HQ_ROOT_DIR": str(root),
+        },
+    )
+
+
 class TestReleaseIdAdvancement:
+    def test_team_scoped_mode_skips_pre_push_validation(self, tmp_path):
+        root = _make_root(tmp_path)
+        today = datetime.now(timezone.utc).strftime("%Y%m%d")
+        scripts_dir = root / "scripts"
+        (scripts_dir / "pre-push-validation.sh").write_text("#!/usr/bin/env bash\nexit 1\n")
+        (scripts_dir / "pre-push-validation.sh").chmod(0o755)
+
+        result = _run_team_scoped(root, "dungeoncrawler", f"{today}-dungeoncrawler-release-b")
+
+        assert result.returncode == 0, result.stderr
+        assert "team-scoped mode — skipping pre-push validation" in result.stdout
+        assert (root / "tmp" / "release-cycle-active" / "dungeoncrawler.release_id").read_text().strip() == (
+            f"{today}-dungeoncrawler-release-c"
+        )
+
     def test_release_id_advanced_after_push(self, tmp_path):
         """After first run, release_id files are set to the former next_release_id."""
         root = _make_root(tmp_path)

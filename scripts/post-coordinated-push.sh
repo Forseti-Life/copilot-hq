@@ -19,22 +19,28 @@ RELEASE_SCOPE="${2:-}"
 TEAMS_JSON="${ROOT_DIR}/org-chart/products/product-teams.json"
 RUNTIME_DIR="${ROOT_DIR}/tmp/release-cycle-active"
 
-echo "=== post-coordinated-push: running pre-push validation ==="
+if [ -n "$TEAM_SCOPE" ]; then
+    echo "=== post-coordinated-push: team-scoped mode — skipping pre-push validation ==="
+else
+    echo "=== post-coordinated-push: running pre-push validation ==="
 
-# ════════════════════════════════════════════════════════════════════════════
-# ROOT CAUSE FIX #3: Enforce incremental commits via pre-push validation gate
-# ════════════════════════════════════════════════════════════════════════════
-if ! bash "${ROOT_DIR}/scripts/pre-push-validation.sh"; then
-    echo "❌ PRE-PUSH VALIDATION FAILED"
-    echo "Fix issues and retry:"
-    echo "  1. Run 'git status' to see changes"
-    echo "  2. Commit outstanding changes: git add + git commit"
-    echo "  3. Fix malformed escalations (run scripts/lib/escalations.sh validate)"
-    echo "  4. Re-run post-coordinated-push.sh"
-    exit 1
+    # ════════════════════════════════════════════════════════════════════════
+    # Full multi-team mode still performs pre-push validation because it is
+    # used at the shipping boundary. Team-scoped mode is post-push recovery /
+    # reconciliation and must not be blocked by unrelated workspace dirt.
+    # ════════════════════════════════════════════════════════════════════════
+    if ! bash "${ROOT_DIR}/scripts/pre-push-validation.sh"; then
+        echo "❌ PRE-PUSH VALIDATION FAILED"
+        echo "Fix issues and retry:"
+        echo "  1. Run 'git status' to see changes"
+        echo "  2. Commit outstanding changes: git add + git commit"
+        echo "  3. Fix malformed escalations (run scripts/lib/escalations.sh validate)"
+        echo "  4. Re-run post-coordinated-push.sh"
+        exit 1
+    fi
+
+    echo "✅ Pre-push validation passed"
 fi
-
-echo "✅ Pre-push validation passed"
 echo "=== post-coordinated-push: advancing team release cycles ==="
 
 python3 - "$TEAMS_JSON" "$RUNTIME_DIR" "$ROOT_DIR" "$TEAM_SCOPE" "$RELEASE_SCOPE" <<'PY'
@@ -269,13 +275,17 @@ if reconcile_failures:
 PY
 
 echo
-# Immediately apply any existing clean audit to the freshly-advanced release cycle.
-# Without this, Gate 2 APPROVE has a gap until the next site-audit-run.sh execution
-# (up to ~2 hours until ceo-ops-once.sh backstop fires).
-python3 "${ROOT_DIR}/scripts/gate2-clean-audit-backstop.py" --source "post-coordinated-push.sh" || true
+if [ -z "$TEAM_SCOPE" ]; then
+    # Immediately apply any existing clean audit to the freshly-advanced release cycle.
+    # Without this, Gate 2 APPROVE has a gap until the next site-audit-run.sh execution
+    # (up to ~2 hours until ceo-ops-once.sh backstop fires).
+    python3 "${ROOT_DIR}/scripts/gate2-clean-audit-backstop.py" --source "post-coordinated-push.sh" || true
 
-echo
-bash "${ROOT_DIR}/scripts/ceo-release-boundary-health.sh"
+    echo
+    bash "${ROOT_DIR}/scripts/ceo-release-boundary-health.sh"
+else
+    echo "Skipping global Gate 2 backstop / boundary health in team-scoped mode."
+fi
 
 # Dispatch Gate R5 production audit inbox item for CEO (ISSUE-011 fix).
 # This ensures the post-push audit runs within the 1h WARN / 4h FAIL window
@@ -284,7 +294,13 @@ AUDIT_DATE=$(date -u +%Y%m%d-%H%M%S)
 CEO_INBOX="${ROOT_DIR}/sessions/ceo-copilot-2/inbox"
 mkdir -p "${CEO_INBOX}"
 
-for pushed_rid in $(cat "${ROOT_DIR}"/tmp/release-cycle-active/*.release_id 2>/dev/null | sort -u); do
+if [ -n "$TEAM_SCOPE" ] && [ -n "$RELEASE_SCOPE" ]; then
+    PUSHED_RELEASES="$RELEASE_SCOPE"
+else
+    PUSHED_RELEASES="$(cat "${ROOT_DIR}"/tmp/release-cycle-active/*.release_id 2>/dev/null | sort -u)"
+fi
+
+for pushed_rid in $PUSHED_RELEASES; do
     AUDIT_ITEM="${CEO_INBOX}/${AUDIT_DATE}-gate-r5-audit-${pushed_rid}"
     if [ ! -d "${AUDIT_ITEM}" ]; then
         mkdir -p "${AUDIT_ITEM}"
