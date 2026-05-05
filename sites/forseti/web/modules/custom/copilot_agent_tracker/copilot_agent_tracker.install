@@ -229,64 +229,6 @@ function copilot_agent_tracker_schema(): array {
     ],
   ];
 
-  $schema['copilot_agent_tracker_audit'] = [
-    'description' => 'Audit log for all console mutations (settings changes, permission updates, navigation config, etc.) for compliance and troubleshooting.',
-    'fields' => [
-      'id' => [
-        'type' => 'serial',
-        'not null' => TRUE,
-      ],
-      'timestamp' => [
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'Unix timestamp of the action.',
-      ],
-      'operator_id' => [
-        'type' => 'int',
-        'not null' => TRUE,
-        'description' => 'Drupal user ID who performed the action.',
-      ],
-      'action' => [
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'description' => 'Action type: settings_changed, permission_updated, navigation_updated, team_assignment_changed.',
-      ],
-      'resource_id' => [
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => FALSE,
-        'description' => 'Resource identifier (e.g., drift_threshold, section_visibility).',
-      ],
-      'before_value' => [
-        'type' => 'text',
-        'size' => 'big',
-        'not null' => FALSE,
-        'description' => 'Previous value (JSON serialized if needed).',
-      ],
-      'after_value' => [
-        'type' => 'text',
-        'size' => 'big',
-        'not null' => FALSE,
-        'description' => 'New value (JSON serialized if needed).',
-      ],
-      'csrf_verified' => [
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'description' => 'Whether CSRF token was verified (1=yes, 0=no).',
-      ],
-    ],
-    'primary key' => ['id'],
-    'indexes' => [
-      'timestamp' => ['timestamp'],
-      'operator_id' => ['operator_id'],
-      'action' => ['action'],
-      'resource_id' => ['resource_id'],
-    ],
-  ];
-
   return $schema;
 }
 
@@ -301,7 +243,6 @@ function copilot_agent_tracker_uninstall(): void {
     'copilot_agent_tracker_events',
     'copilot_agent_tracker_replies',
     'copilot_agent_tracker_inbox_resolutions',
-    'copilot_agent_tracker_audit',
   ] as $table) {
     if ($schema->tableExists($table)) {
       $schema->dropTable($table);
@@ -431,20 +372,3 @@ function copilot_agent_tracker_update_8006(): void {
     ]);
   }
 }
-
-/**
- * Create audit log table for console mutations (Phase 7: Admin & Configuration).
- */
-function copilot_agent_tracker_update_8007(): void {
-  $schema = copilot_agent_tracker_schema();
-  $spec = $schema['copilot_agent_tracker_audit'] ?? NULL;
-  if (!$spec) {
-    return;
-  }
-  $db = \Drupal::database();
-  $schema_handler = $db->schema();
-  if (!$schema_handler->tableExists('copilot_agent_tracker_audit')) {
-    $schema_handler->createTable('copilot_agent_tracker_audit', $spec);
-  }
-}
-

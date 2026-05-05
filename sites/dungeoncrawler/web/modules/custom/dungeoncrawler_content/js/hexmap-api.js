@@ -85,13 +85,4 @@ export default {
     // Expected payload: { encounterId, actorId, actionType, actionCost?, targetId?, interactionType?, targetHex?, message? }
     return postJson('/api/combat/action', payload);
   },
-
-  async navigate(payload) {
-    const campaignId = payload?.campaignId;
-    if (!campaignId) {
-      throw new Error('campaignId is required for navigation');
-    }
-
-    return postJson(`/api/campaign/${campaignId}/hexmap/navigate`, payload);
-  },
 };

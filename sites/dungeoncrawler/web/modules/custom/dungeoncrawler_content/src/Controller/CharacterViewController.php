@@ -373,19 +373,14 @@ class CharacterViewController extends ControllerBase {
 
     $sheet_markup = (string) \Drupal::service('renderer')->renderRoot($build);
     $module_path = '/' . \Drupal::service('extension.list.module')->getPath('dungeoncrawler_content');
-    $module_fs_path = DRUPAL_ROOT . $module_path;
-    $css_path = $module_fs_path . '/css/character-sheet.css';
-    $js_path = $module_fs_path . '/js/character-sheet.js';
-    $css_version = file_exists($css_path) ? (string) filemtime($css_path) : '1';
-    $js_version = file_exists($js_path) ? (string) filemtime($js_path) : '1';
-    $css_url = $module_path . '/css/character-sheet.css?v=' . $css_version;
-    $js_url = $module_path . '/js/character-sheet.js?v=' . $js_version;
+    $css_url = $module_path . '/css/character-sheet.css';
+    $js_url = $module_path . '/js/character-sheet.js';
 
     $html = '<!doctype html><html lang="en"><head>'
       . '<meta charset="utf-8">'
       . '<meta name="viewport" content="width=device-width, initial-scale=1">'
       . '<link rel="stylesheet" href="' . $css_url . '">'
-      . '<style>html,body{margin:0;padding:0;background:#0f172a;color:#e5eefc;} .dc-character-sheet{margin:0;padding:16px;color:#e5eefc;}</style>'
+      . '<style>html,body{margin:0;padding:0;background:#0f172a;} .dc-character-sheet{margin:0;padding:16px;}</style>'
       . '</head><body>' . $sheet_markup
       . '<script src="' . $js_url . '"></script>'
       . '</body></html>';

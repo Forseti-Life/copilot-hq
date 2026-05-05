@@ -8,8 +8,6 @@ use Drupal\dungeoncrawler_content\Service\GeneratedImageRepository;
 use Drupal\dungeoncrawler_content\Service\QuestTrackerService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -73,9 +71,6 @@ class HexMapController extends ControllerBase {
       'start_q' => (int) ($query->get('start_q') ?? 0),
       'start_r' => (int) ($query->get('start_r') ?? 0),
       'persist_template' => (string) ($query->get('persist_template') ?? ''),
-      '_room_id_provided' => $query->has('room_id') && (string) ($query->get('room_id') ?? '') !== '',
-      '_start_q_provided' => $query->has('start_q'),
-      '_start_r_provided' => $query->has('start_r'),
     ];
 
     // Determine admin status for shell gating (debug panels, dev controls).
@@ -97,22 +92,31 @@ class HexMapController extends ControllerBase {
       }
     }
 
-    $launch_context = $this->applyPersistedLaunchContext($launch_context);
-    unset(
-      $launch_context['_room_id_provided'],
-      $launch_context['_start_q_provided'],
-      $launch_context['_start_r_provided']
-    );
+    $dungeon_payload = $this->loadDungeonPayload($launch_context);
+    $dungeon_payload = $this->adjustBarCounterPlacements($dungeon_payload);
+    $dungeon_payload = $this->composeLongTableSegments($dungeon_payload);
+    $dungeon_payload = $this->adjustLongTableSegmentPlacements($dungeon_payload);
+    $dungeon_payload = $this->removeNorthernLongTableDuplicates($dungeon_payload);
+    $dungeon_payload = $this->injectRoomTemplateItemEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->injectRoomBarkeepEntity($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->injectRoomNpcEntities($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
+    if ($this->shouldPersistTemplateChanges($launch_context)) {
+      $this->persistDungeonTemplatePayload($dungeon_payload, $launch_context);
+    }
 
-    $campaign_name = $this->loadCampaignName($launch_context);
-    $dungeon_payload = $this->buildHexmapPayload($launch_context);
+    $dungeon_payload = $this->injectCampaignCharacterEntities($dungeon_payload, $launch_context);
     $launch_character = $this->loadLaunchCharacterSummary($launch_context);
     $quest_summary = $this->loadQuestSummary($launch_context);
+    $dungeon_payload = $this->injectQuestItemEntities($dungeon_payload, $quest_summary);
+    $dungeon_payload = $this->attachEntityPortraitUrls($dungeon_payload, $launch_context);
+    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
+
+    // Bootstrap NPC psychology profiles for all NPCs in the active room.
+    $this->ensureRoomNpcPsychologyProfiles($dungeon_payload, $launch_context);
 
     return [
       '#theme' => 'hexmap_demo',
-      '#title' => $campaign_name,
-      '#campaign_name' => $campaign_name,
       '#launch_context' => $launch_context,
       '#dungeon_payload' => $dungeon_payload,
       '#is_admin' => $is_admin,
@@ -137,389 +141,6 @@ class HexMapController extends ControllerBase {
   }
 
   /**
-   * Server-authoritative direct room navigation for hexmap connection clicks.
-   */
-  public function navigate(int $campaign_id, Request $request): JsonResponse {
-    $account = $this->currentUser();
-    $is_admin = in_array('administrator', $account->getRoles(), TRUE)
-      || (int) $account->id() === 1;
-
-    if (!$is_admin) {
-      $campaign_uid = $this->database->select('dc_campaigns', 'c')
-        ->fields('c', ['uid'])
-        ->condition('id', $campaign_id)
-        ->execute()
-        ->fetchField();
-      if ($campaign_uid === FALSE || (int) $campaign_uid !== (int) $account->id()) {
-        return new JsonResponse([
-          'success' => FALSE,
-          'error' => 'You do not own this campaign.',
-        ], 403);
-      }
-    }
-
-    $payload = json_decode($request->getContent(), TRUE);
-    if (!is_array($payload)) {
-      return new JsonResponse(['success' => FALSE, 'error' => 'Invalid JSON payload'], 400);
-    }
-
-    $character_id = (int) ($payload['characterId'] ?? 0);
-    $current_room_id = (string) ($payload['currentRoomId'] ?? '');
-    $map_id = (string) ($payload['mapId'] ?? '');
-    $connection_id = (string) ($payload['connectionId'] ?? '');
-    $target_hex = is_array($payload['targetHex'] ?? NULL) ? $payload['targetHex'] : NULL;
-
-    if ($character_id <= 0) {
-      return new JsonResponse(['success' => FALSE, 'error' => 'characterId is required'], 400);
-    }
-    if ($current_room_id === '') {
-      return new JsonResponse(['success' => FALSE, 'error' => 'currentRoomId is required'], 400);
-    }
-    if ($connection_id === '' && (!is_array($target_hex) || !isset($target_hex['q'], $target_hex['r']))) {
-      return new JsonResponse(['success' => FALSE, 'error' => 'connectionId or targetHex is required'], 400);
-    }
-
-    $launch_context = [
-      'campaign_id' => $campaign_id,
-      'character_id' => $character_id,
-      'map_id' => $map_id,
-      'room_id' => $current_room_id,
-      'start_q' => 0,
-      'start_r' => 0,
-    ];
-
-    $dungeon_payload = $this->buildHexmapPayload($launch_context);
-    $connection = $this->resolveRequestedNavigationConnection($dungeon_payload, $current_room_id, $connection_id, $target_hex);
-
-    if ($connection === NULL) {
-      return new JsonResponse([
-        'success' => FALSE,
-        'error' => 'Connection not found for the requested room transition.',
-      ], 404);
-    }
-
-    if (($connection['is_passable'] ?? TRUE) === FALSE) {
-      return new JsonResponse([
-        'success' => FALSE,
-        'error' => 'That connection is not passable.',
-      ], 409);
-    }
-
-    if (($connection['from_room'] ?? '') === $current_room_id) {
-      $target_room_id = (string) ($connection['to_room'] ?? '');
-      $entry_hex = [
-        'q' => (int) ($connection['to_hex']['q'] ?? 0),
-        'r' => (int) ($connection['to_hex']['r'] ?? 0),
-      ];
-    }
-    else {
-      $target_room_id = (string) ($connection['from_room'] ?? '');
-      $entry_hex = [
-        'q' => (int) ($connection['from_hex']['q'] ?? 0),
-        'r' => (int) ($connection['from_hex']['r'] ?? 0),
-      ];
-    }
-
-    if ($target_room_id === '') {
-      return new JsonResponse([
-        'success' => FALSE,
-        'error' => 'Unable to resolve a destination room for that connection.',
-      ], 409);
-    }
-
-    $this->persistNavigatedCharacterPosition($campaign_id, $character_id, $target_room_id, $entry_hex);
-
-    $target_context = $launch_context;
-    $target_context['room_id'] = $target_room_id;
-    $target_context['start_q'] = $entry_hex['q'];
-    $target_context['start_r'] = $entry_hex['r'];
-
-    $target_payload = $this->buildHexmapPayload($target_context);
-
-    return new JsonResponse([
-      'success' => TRUE,
-      'data' => $this->buildNavigationPayloadFromDungeon($target_payload, $target_room_id, $entry_hex),
-    ]);
-  }
-
-  /**
-   * Build the live hexmap payload using the same pipeline as the page render.
-   */
-  protected function buildHexmapPayload(array $launch_context): array {
-    $dungeon_payload = $this->loadDungeonPayload($launch_context);
-    $dungeon_payload = $this->adjustBarCounterPlacements($dungeon_payload);
-    $dungeon_payload = $this->composeLongTableSegments($dungeon_payload);
-    $dungeon_payload = $this->adjustLongTableSegmentPlacements($dungeon_payload);
-    $dungeon_payload = $this->removeNorthernLongTableDuplicates($dungeon_payload);
-    $dungeon_payload = $this->injectRoomTemplateItemEntities($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->injectRoomBarkeepEntity($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->injectRoomNpcEntities($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
-    if ($this->shouldPersistTemplateChanges($launch_context)) {
-      $this->persistDungeonTemplatePayload($dungeon_payload, $launch_context);
-    }
-
-    $quest_summary = $this->loadQuestSummary($launch_context);
-    $dungeon_payload = $this->injectCampaignCharacterEntities($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->injectQuestItemEntities($dungeon_payload, $quest_summary);
-    $dungeon_payload = $this->attachEntityPortraitUrls($dungeon_payload, $launch_context);
-    $dungeon_payload = $this->ensurePayloadObjectOrientations($dungeon_payload);
-    $this->ensureRoomNpcPsychologyProfiles($dungeon_payload, $launch_context);
-
-    return $dungeon_payload;
-  }
-
-  /**
-   * Resolve the clicked/passable room connection from the authoritative payload.
-   */
-  protected function resolveRequestedNavigationConnection(array $dungeon_payload, string $current_room_id, string $connection_id = '', ?array $target_hex = NULL): ?array {
-    $connections = is_array($dungeon_payload['connections'] ?? NULL) ? $dungeon_payload['connections'] : [];
-    foreach ($connections as $connection) {
-      if (!is_array($connection)) {
-        continue;
-      }
-
-      $touches_room = (($connection['from_room'] ?? '') === $current_room_id)
-        || (($connection['to_room'] ?? '') === $current_room_id);
-      if (!$touches_room) {
-        continue;
-      }
-
-      if ($connection_id !== '' && (string) ($connection['connection_id'] ?? '') === $connection_id) {
-        return $connection;
-      }
-
-      if ($target_hex !== NULL) {
-        $from_match = (($connection['from_room'] ?? '') === $current_room_id)
-          && (int) ($connection['from_hex']['q'] ?? 0) === (int) $target_hex['q']
-          && (int) ($connection['from_hex']['r'] ?? 0) === (int) $target_hex['r'];
-        $to_match = (($connection['to_room'] ?? '') === $current_room_id)
-          && (int) ($connection['to_hex']['q'] ?? 0) === (int) $target_hex['q']
-          && (int) ($connection['to_hex']['r'] ?? 0) === (int) $target_hex['r'];
-        if ($from_match || $to_match) {
-          return $connection;
-        }
-      }
-    }
-
-    return NULL;
-  }
-
-  /**
-   * Build the client navigation payload from the normalized dungeon payload.
-   */
-  protected function buildNavigationPayloadFromDungeon(array $dungeon_payload, string $target_room_id, array $entry_hex): array {
-    $room = is_array($dungeon_payload['rooms'][$target_room_id] ?? NULL) ? $dungeon_payload['rooms'][$target_room_id] : [];
-
-    $entities = [];
-    foreach (($dungeon_payload['entities'] ?? []) as $entity) {
-      if (($entity['placement']['room_id'] ?? '') === $target_room_id) {
-        $entities[] = $entity;
-      }
-    }
-
-    $connections = [];
-    foreach (($dungeon_payload['connections'] ?? []) as $connection) {
-      if (($connection['from_room'] ?? '') === $target_room_id || ($connection['to_room'] ?? '') === $target_room_id) {
-        $connections[] = $connection;
-      }
-    }
-
-    return [
-      'target_room_id' => $target_room_id,
-      'destination' => (string) ($room['name'] ?? $target_room_id),
-      'room' => $room,
-      'entities' => $entities,
-      'connections' => $connections,
-      'entry_hex' => [
-        'q' => (int) ($entry_hex['q'] ?? 0),
-        'r' => (int) ($entry_hex['r'] ?? 0),
-      ],
-    ];
-  }
-
-  /**
-   * Persist the active campaign character position for server-authoritative travel.
-   */
-  protected function persistNavigatedCharacterPosition(int $campaign_id, int $character_id, string $room_id, array $entry_hex): void {
-    $query = $this->database->select('dc_campaign_characters', 'cc')
-      ->fields('cc', ['id'])
-      ->condition('campaign_id', $campaign_id);
-
-    $character_match = $query->orConditionGroup()
-      ->condition('character_id', $character_id)
-      ->condition('id', $character_id)
-      ->condition('instance_id', sprintf('pc-%d-%d', $campaign_id, $character_id));
-
-    $record_id = $query
-      ->condition($character_match)
-      ->orderBy('updated', 'DESC')
-      ->orderBy('id', 'DESC')
-      ->range(0, 1)
-      ->execute()
-      ->fetchField();
-
-    if ($record_id === FALSE) {
-      return;
-    }
-
-    $this->database->update('dc_campaign_characters')
-      ->fields([
-        'location_type' => 'room',
-        'location_ref' => $room_id,
-        'last_room_id' => $room_id,
-        'position_q' => (int) ($entry_hex['q'] ?? 0),
-        'position_r' => (int) ($entry_hex['r'] ?? 0),
-        'updated' => time(),
-      ])
-      ->condition('id', (int) $record_id)
-      ->execute();
-  }
-
-  /**
-   * Prefer persisted campaign-character room/hex when launch URL omitted them.
-   */
-  protected function applyPersistedLaunchContext(array $launch_context): array {
-    $campaign_id = (int) ($launch_context['campaign_id'] ?? 0);
-    $character_id = (int) ($launch_context['character_id'] ?? 0);
-    if ($campaign_id <= 0 || $character_id <= 0) {
-      return $launch_context;
-    }
-
-    $record = $this->loadCampaignCharacterRecord($campaign_id, $character_id);
-    if (!$record) {
-      return $launch_context;
-    }
-
-    $persisted_room_id = $this->resolveCampaignCharacterRoomId($record);
-    $effective_room_id = (string) ($launch_context['room_id'] ?? '');
-    $has_room_override = !empty($launch_context['_room_id_provided']);
-    $has_start_q_override = !empty($launch_context['_start_q_provided']);
-    $has_start_r_override = !empty($launch_context['_start_r_provided']);
-
-    if (!$has_room_override && $effective_room_id === '' && $persisted_room_id !== '') {
-      $launch_context['room_id'] = $persisted_room_id;
-      $effective_room_id = $persisted_room_id;
-    }
-
-    if ($persisted_room_id !== '' && $effective_room_id === $persisted_room_id) {
-      if (!$has_start_q_override && $record['position_q'] !== NULL && $record['position_q'] !== '') {
-        $launch_context['start_q'] = (int) $record['position_q'];
-      }
-      if (!$has_start_r_override && $record['position_r'] !== NULL && $record['position_r'] !== '') {
-        $launch_context['start_r'] = (int) $record['position_r'];
-      }
-    }
-
-    return $launch_context;
-  }
-
-  /**
-   * Load the active campaign-character record used for hydration and resume.
-   */
-  protected function loadCampaignCharacterRecord(int $campaign_id, int $character_id): ?array {
-    if ($campaign_id <= 0 || $character_id <= 0) {
-      return NULL;
-    }
-
-    $fields = [
-      'id',
-      'character_id',
-      'instance_id',
-      'name',
-      'level',
-      'ancestry',
-      'class',
-      'hp_current',
-      'hp_max',
-      'armor_class',
-      'type',
-      'character_data',
-      'location_type',
-      'location_ref',
-      'last_room_id',
-      'position_q',
-      'position_r',
-    ];
-
-    $query = $this->database->select('dc_campaign_characters', 'cc')
-      ->fields('cc', $fields)
-      ->condition('campaign_id', $campaign_id);
-
-    $character_match = $query->orConditionGroup()
-      ->condition('character_id', $character_id)
-      ->condition('id', $character_id)
-      ->condition('instance_id', sprintf('pc-%d-%d', $campaign_id, $character_id));
-
-    $record = $query
-      ->condition($character_match)
-      ->orderBy('updated', 'DESC')
-      ->orderBy('id', 'DESC')
-      ->range(0, 1)
-      ->execute()
-      ->fetchAssoc();
-
-    if ($record) {
-      return $record;
-    }
-
-    $record = $this->database->select('dc_campaign_characters', 'cc')
-      ->fields('cc', $fields)
-      ->condition('id', $character_id)
-      ->orderBy('updated', 'DESC')
-      ->range(0, 1)
-      ->execute()
-      ->fetchAssoc();
-
-    return $record ?: NULL;
-  }
-
-  /**
-   * Resolve the persisted room id for a campaign character.
-   */
-  protected function resolveCampaignCharacterRoomId(array $record): string {
-    $location_type = strtolower((string) ($record['location_type'] ?? ''));
-    $location_ref = (string) ($record['location_ref'] ?? '');
-    if ($location_type === 'room' && $location_ref !== '') {
-      return $location_ref;
-    }
-
-    $last_room_id = (string) ($record['last_room_id'] ?? '');
-    if ($last_room_id !== '') {
-      return $last_room_id;
-    }
-
-    return $location_ref;
-  }
-
-  /**
-   * Load the current campaign name for the page title.
-   *
-   * @param array $launch_context
-   *   Current launch context query values.
-   *
-   * @return string
-   *   Campaign name when available, otherwise a safe fallback title.
-   */
-  protected function loadCampaignName(array $launch_context): string {
-    $campaign_id = (int) ($launch_context['campaign_id'] ?? 0);
-    if ($campaign_id <= 0) {
-      return 'Game UI';
-    }
-
-    $campaign_name = $this->database->select('dc_campaigns', 'c')
-      ->fields('c', ['name'])
-      ->condition('id', $campaign_id)
-      ->range(0, 1)
-      ->execute()
-      ->fetchField();
-
-    return is_string($campaign_name) && $campaign_name !== ''
-      ? $campaign_name
-      : 'Game UI';
-  }
-
-  /**
    * Load lightweight launch character summary for UI hydration.
    *
    * @param array $launch_context
@@ -536,7 +157,33 @@ class HexMapController extends ControllerBase {
       return [];
     }
 
-    $record = $this->loadCampaignCharacterRecord($campaign_id, $character_id);
+    $query = $this->database->select('dc_campaign_characters', 'cc')
+      ->fields('cc', ['id', 'character_id', 'name', 'level', 'ancestry', 'class', 'hp_current', 'hp_max', 'armor_class', 'character_data'])
+      ->condition('campaign_id', $campaign_id);
+
+    $character_match = $query->orConditionGroup()
+      ->condition('character_id', $character_id)
+      ->condition('id', $character_id)
+      ->condition('instance_id', sprintf('pc-%d-%d', $campaign_id, $character_id));
+
+    $record = $query
+      ->condition($character_match)
+      ->orderBy('updated', 'DESC')
+      ->orderBy('id', 'DESC')
+      ->range(0, 1)
+      ->execute()
+      ->fetchAssoc();
+
+    if (!$record) {
+      // Fallback to canonical library/fact character record by direct ID.
+      $record = $this->database->select('dc_campaign_characters', 'cc')
+        ->fields('cc', ['id', 'character_id', 'name', 'level', 'ancestry', 'class', 'hp_current', 'hp_max', 'armor_class', 'character_data'])
+        ->condition('id', $character_id)
+        ->orderBy('updated', 'DESC')
+        ->range(0, 1)
+        ->execute()
+        ->fetchAssoc();
+    }
 
     if (!$record) {
       return [
@@ -840,7 +487,23 @@ class HexMapController extends ControllerBase {
       return $dungeon_payload;
     }
 
-    $record = $this->loadCampaignCharacterRecord($campaign_id, $launch_character_id);
+    // Load only the selected player character for this campaign.
+    $query = $this->database->select('dc_campaign_characters', 'cc')
+      ->fields('cc', ['id', 'character_id', 'instance_id', 'name', 'level', 'ancestry', 'class', 'hp_current', 'hp_max', 'armor_class', 'type', 'character_data'])
+      ->condition('campaign_id', $campaign_id);
+
+    $character_match = $query->orConditionGroup()
+      ->condition('character_id', $launch_character_id)
+      ->condition('id', $launch_character_id)
+      ->condition('instance_id', sprintf('pc-%d-%d', $campaign_id, $launch_character_id));
+
+    $record = $query
+      ->condition($character_match)
+      ->orderBy('updated', 'DESC')
+      ->orderBy('id', 'DESC')
+      ->range(0, 1)
+      ->execute()
+      ->fetchObject();
 
     if (!$record) {
       return $dungeon_payload;
@@ -870,12 +533,12 @@ class HexMapController extends ControllerBase {
     }
 
 
-    $char_data = json_decode((string) ($record['character_data'] ?? '{}'), TRUE);
+    $char_data = json_decode((string) ($record->character_data ?? '{}'), TRUE);
     if (!is_array($char_data)) {
       $char_data = [];
     }
 
-    $name = (string) (($record['name'] ?? '') ?: ($char_data['name'] ?? sprintf('Character %d', (int) ($record['id'] ?? 0))));
+    $name = (string) ($record->name ?: ($char_data['name'] ?? sprintf('Character %d', $record->id)));
 
     $hex_q = $start_q;
     $hex_r = $start_r;
@@ -896,15 +559,15 @@ class HexMapController extends ControllerBase {
 
     $occupied[$hex_q . ',' . $hex_r] = TRUE;
 
-    $hp_max = (int) (($record['hp_max'] ?? 0) ?: ($char_data['hp']['max'] ?? $char_data['calculated_stats']['max_hp'] ?? 20));
-    $hp_current = (int) (($record['hp_current'] ?? 0) ?: ($char_data['hp']['current'] ?? $hp_max));
-    $armor_class = (int) (($record['armor_class'] ?? 0) ?: ($char_data['ac'] ?? $char_data['calculated_stats']['ac'] ?? 10));
+    $hp_max = (int) ($record->hp_max ?: ($char_data['hp']['max'] ?? $char_data['calculated_stats']['max_hp'] ?? 20));
+    $hp_current = (int) ($record->hp_current ?: ($char_data['hp']['current'] ?? $hp_max));
+    $armor_class = (int) ($record->armor_class ?: ($char_data['ac'] ?? $char_data['calculated_stats']['ac'] ?? 10));
 
     $dungeon_payload['entities'][] = [
       'entity_type' => 'player_character',
-      'instance_id' => ($record['instance_id'] ?? '') ?: sprintf('pc-%d-%d', $campaign_id, (int) ($record['id'] ?? 0)),
+      'instance_id' => $record->instance_id ?: sprintf('pc-%d-%d', $campaign_id, $record->id),
       'entity_ref' => [
-        'content_id' => ($record['instance_id'] ?? '') ?: sprintf('char-%d', (int) ($record['id'] ?? 0)),
+        'content_id' => $record->instance_id ?: sprintf('char-%d', $record->id),
       ],
       'placement' => [
         'room_id' => $room_id,
@@ -918,7 +581,7 @@ class HexMapController extends ControllerBase {
           'display_name' => $name,
           'name' => $name,
           'team' => 'player',
-          'character_id' => (int) (($record['character_id'] ?? 0) ?: ($record['id'] ?? 0)),
+          'character_id' => (int) $record->id,
           'stats' => [
             'maxHp' => $hp_max,
             'currentHp' => $hp_current,

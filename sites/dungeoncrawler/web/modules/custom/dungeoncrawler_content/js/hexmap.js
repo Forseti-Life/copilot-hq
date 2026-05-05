@@ -6,12 +6,10 @@
 // Import ECS modules
 import { EntityManager, PositionComponent, RenderComponent, IdentityComponent, EntityType, RenderSystem, MovementComponent, StatsComponent, MovementSystem, MovementMode, ActionsComponent, ActionType, ActionCost, CombatComponent, Team, TurnManagementSystem, CombatState, CombatSystem, AttackResult } from './ecs/index.js';
 import combatApi from './hexmap-api.js';
-import { HexmapNavigation } from './HexmapNavigation.js';
 import { HexmapStateSync } from './HexmapStateSync.js';
 import { GameCoordinator } from './game-coordinator/GameCoordinator.js';
 import { ChatSessionApi } from './ChatSessionApi.js';
 import { SpriteService } from './SpriteService.js';
-import { StateManager } from './StateManager.js';
 
 // Ensure Drupal and once are available
 /* global Drupal, once, PIXI */
@@ -145,7 +143,6 @@ import { StateManager } from './StateManager.js';
       this.setupActionFooterToggle();
       this.setupFullscreenToggle();
       this.cacheElements();
-      this.setupCharacterSheetEmbedResize();
       this.setupPartyRailHandlers();
       this.setupChatLog();
       this.setupChannelTabs();
@@ -431,49 +428,6 @@ import { StateManager } from './StateManager.js';
           }
         });
       });
-    }
-
-    setupCharacterSheetEmbedResize() {
-      const iframe = this.elements.characterSheetEmbed;
-      if (!iframe || iframe.dataset.resizeBound === 'true') {
-        return;
-      }
-
-      iframe.dataset.resizeBound = 'true';
-
-      const resizeIframe = () => {
-        try {
-          const doc = iframe.contentDocument;
-          if (!doc) {
-            return;
-          }
-
-          const body = doc.body;
-          const html = doc.documentElement;
-          const height = Math.max(
-            body ? body.scrollHeight : 0,
-            body ? body.offsetHeight : 0,
-            html ? html.clientHeight : 0,
-            html ? html.scrollHeight : 0,
-            html ? html.offsetHeight : 0
-          );
-
-          if (height > 0) {
-            iframe.style.height = `${height + 24}px`;
-          }
-        } catch (error) {
-          // Same-origin expected; ignore resize failures if the frame is not ready.
-        }
-      };
-
-      iframe.addEventListener('load', () => {
-        resizeIframe();
-        window.requestAnimationFrame(resizeIframe);
-        window.setTimeout(resizeIframe, 150);
-        window.setTimeout(resizeIframe, 500);
-      });
-
-      window.addEventListener('resize', resizeIframe);
     }
 
     /**
@@ -1180,8 +1134,6 @@ import { StateManager } from './StateManager.js';
       if (this.elements.characterSheetLegacy) {
         this.elements.characterSheetLegacy.style.display = 'none';
       }
-
-      window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }
 
     /**
@@ -1792,15 +1744,111 @@ import { StateManager } from './StateManager.js';
      */
     handleNavigationResult(nav) {
       const hexmap = this.stateManager?.hexmap;
-      if (!hexmap || typeof hexmap.applyAuthoritativeNavigation !== 'function') {
-        console.error('[Navigation] hexmap navigation reconciliation is unavailable');
+      if (!hexmap || !hexmap.dungeonData) {
+        console.error('[Navigation] hexmap or dungeonData not available');
         return;
       }
 
-      const targetRoomId = nav?.target_room_id || '';
-      const destinationLabel = nav?.destination || nav?.room?.name || targetRoomId;
-      this.appendChatLine('System', `🗺️ Traveling to ${destinationLabel}...`, 'system');
-      hexmap.applyAuthoritativeNavigation(nav);
+      const targetRoomId = nav.target_room_id;
+      const newRoom = nav.room;
+      const newEntities = nav.entities || [];
+      const newConnections = nav.connections || [];
+      const entryHex = nav.entry_hex || { q: 0, r: 0 };
+
+      console.log('[Navigation] Transitioning to:', targetRoomId, nav.destination);
+
+      // 1. Inject the new room into dungeonData.rooms (keyed by room_id).
+      if (newRoom && targetRoomId) {
+        hexmap.dungeonData.rooms[targetRoomId] = newRoom;
+      }
+
+      // 2. Append new entities to dungeonData.entities.
+      if (!Array.isArray(hexmap.dungeonData.entities)) {
+        hexmap.dungeonData.entities = [];
+      }
+      for (const entity of newEntities) {
+        // Avoid duplicates by instance_id.
+        const existingIdx = hexmap.dungeonData.entities.findIndex(
+          (e) => (e.instance_id || e.entity_instance_id) === (entity.instance_id || entity.entity_instance_id)
+        );
+        if (existingIdx === -1) {
+          hexmap.dungeonData.entities.push(entity);
+        }
+      }
+
+      // 3. Append new connections to dungeonData.connections.
+      if (!Array.isArray(hexmap.dungeonData.connections)) {
+        hexmap.dungeonData.connections = [];
+      }
+      for (const conn of newConnections) {
+        // Avoid duplicate connections.
+        const connId = conn.connection_id || `${conn.from_room}_${conn.to_room}`;
+        const exists = hexmap.dungeonData.connections.some(
+          (c) => (c.connection_id || `${c.from_room}_${c.to_room}`) === connId
+        );
+        if (!exists) {
+          hexmap.dungeonData.connections.push(conn);
+        }
+      }
+
+      // 4. Move the selected player entity to the new room entry hex.
+      const selectedEntity = hexmap.stateManager?.get('selectedEntity');
+      if (selectedEntity && Array.isArray(hexmap.dungeonData.entities)) {
+        const entityRef = selectedEntity.dcEntityRef;
+        for (const de of hexmap.dungeonData.entities) {
+          const deRef = de.instance_id || de.entity_instance_id;
+          if (deRef === entityRef || (selectedEntity.dcCharacterId && de?.state?.metadata?.character_id == selectedEntity.dcCharacterId)) {
+            de.placement = {
+              room_id: targetRoomId,
+              hex: { q: Number(entryHex.q), r: Number(entryHex.r) },
+            };
+            break;
+          }
+        }
+
+        // Also move ally NPCs to adjacent hexes.
+        const allyNpcs = hexmap.dungeonData.entities.filter(
+          (e) => e.entity_type === 'npc' && e?.state?.metadata?.team === 'ally'
+        );
+        const offsets = [{ q: 1, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 1 }, { q: 0, r: -1 }, { q: 1, r: -1 }, { q: -1, r: 1 }];
+        allyNpcs.forEach((npc, i) => {
+          const offset = offsets[i % offsets.length];
+          npc.placement = {
+            room_id: targetRoomId,
+            hex: { q: Number(entryHex.q) + offset.q, r: Number(entryHex.r) + offset.r },
+          };
+        });
+
+        // Persist entity position to server.
+        const campaignId = hexmap.resolveCampaignId();
+        if (campaignId && entityRef) {
+          fetch(`/api/campaign/${campaignId}/entity/${entityRef}/move`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ room_id: targetRoomId, q: Number(entryHex.q), r: Number(entryHex.r) }),
+          }).catch((err) => console.warn('[Navigation] Entity move persist failed:', err));
+        }
+
+        // Deselect before room switch.
+        hexmap.deselectEntity();
+      }
+
+      // 5. Show travel notification in chat.
+      this.appendChatLine('System', `🗺️ Traveling to ${nav.destination || newRoom?.name || targetRoomId}...`, 'system');
+
+      // 6. Switch to the new room (triggers full re-render, chat reload, banner).
+      hexmap.setActiveRoom(targetRoomId);
+
+      // 7. Re-select the player entity in the new room.
+      const newPlayerEntity = hexmap.findLaunchPlayerEntity();
+      if (newPlayerEntity) {
+        hexmap.selectEntity(newPlayerEntity);
+        if (hexmap.launchCharacter) {
+          hexmap.uiManager?.showLaunchCharacter?.(hexmap.launchCharacter);
+        }
+      }
+
+      console.log('[Navigation] Room switch complete:', targetRoomId);
     }
 
     appendChatLine(speaker, message, type = 'npc') {
@@ -2155,6 +2203,94 @@ import { StateManager } from './StateManager.js';
    * StateManager - Centralized state management.
    * Provides a single source of truth for application state.
    */
+  class StateManager {
+    constructor() {
+      this.state = {
+        // Selection state
+        selectedEntity: null,
+        selectedHex: null,
+        hoveredHex: null,
+        
+        // Movement state
+        movementRange: null,
+        movementRangeOverlay: null,
+        
+        // Combat state
+        combatActive: false,
+        serverCombatMode: false,
+        attackTarget: null,
+        
+        // Drag state
+        draggedObject: null,
+        
+        // Flags
+        assetsLoaded: false,
+        showCoordinates: false,
+        showGrid: true
+      };
+      
+      this.listeners = {};
+    }
+
+    /**
+     * Get state value.
+     */
+    get(key) {
+      return this.state[key];
+    }
+
+    /**
+     * Set state value and notify listeners.
+     */
+    set(key, value) {
+      const oldValue = this.state[key];
+      this.state[key] = value;
+      
+      // Notify listeners
+      if (this.listeners[key]) {
+        this.listeners[key].forEach(callback => callback(value, oldValue));
+      }
+    }
+
+    /**
+     * Subscribe to state changes.
+     */
+    subscribe(key, callback) {
+      if (!this.listeners[key]) {
+        this.listeners[key] = [];
+      }
+      this.listeners[key].push(callback);
+      
+      // Return unsubscribe function
+      return () => {
+        this.listeners[key] = this.listeners[key].filter(cb => cb !== callback);
+      };
+    }
+
+    /**
+     * Reset all state to defaults.
+     */
+    reset() {
+      this.state = {
+        selectedEntity: null,
+        selectedHex: null,
+        hoveredHex: null,
+        movementRange: null,
+        movementRangeOverlay: null,
+        combatActive: false,
+        serverCombatMode: false,
+        attackTarget: null,
+        draggedObject: null,
+        assetsLoaded: false,
+        showCoordinates: false,
+        showGrid: true,
+        showFog: true,
+        fogOverlay: null,
+        visibleHexes: null
+      };
+    }
+  }
+
   /**
    * Hex map behavior.
    */
@@ -2264,9 +2400,6 @@ import { StateManager } from './StateManager.js';
       this.applyLaunchContext();
       this.initQuestData();
 
-      // [THIN-CLIENT: map navigation adapter] Initialize room-transition seam.
-      this.navigationRuntime = new HexmapNavigation(this);
-
       // [THIN-CLIENT: state adapter] Initialize and start server-state polling.
       this.stateSync = new HexmapStateSync(this);
       this.stateSync.start();
@@ -2337,9 +2470,6 @@ import { StateManager } from './StateManager.js';
 
       this.stateSync?.stop();
       this.stateSync = null;
-
-      this.navigationRuntime?.destroy?.();
-      this.navigationRuntime = null;
 
       // Cleanup Game Coordinator.
       if (this.gameCoordinator) {
@@ -4669,54 +4799,6 @@ import { StateManager } from './StateManager.js';
      */
     resolveActiveRoomId: function () {
       return this.activeRoomId || this.stateManager.get('activeRoomId') || this.launchContext?.room_id || null;
-    },
-
-    syncLaunchContextUrl: function (roomId, entryHex) {
-      const destination = {
-        q: Number(entryHex?.q || 0),
-        r: Number(entryHex?.r || 0),
-      };
-
-      if (this.launchContext && typeof this.launchContext === 'object') {
-        this.launchContext.room_id = roomId;
-        this.launchContext.start_q = destination.q;
-        this.launchContext.start_r = destination.r;
-      }
-
-      if (!window.history?.replaceState) {
-        return;
-      }
-
-      const url = new URL(window.location.href);
-      url.searchParams.set('room_id', roomId);
-      url.searchParams.set('start_q', String(destination.q));
-      url.searchParams.set('start_r', String(destination.r));
-      url.searchParams.delete('next_room_id');
-      window.history.replaceState(window.history.state, '', url.toString());
-    },
-
-    mergeNavigationEntities: function (entities = []) {
-      this.navigationRuntime?.mergeNavigationEntities(entities);
-    },
-
-    mergeNavigationConnections: function (connections = []) {
-      this.navigationRuntime?.mergeNavigationConnections(connections);
-    },
-
-    updateSelectedEntityDungeonPlacement: function (roomId, entryHex) {
-      this.navigationRuntime?.updateSelectedEntityDungeonPlacement(roomId, entryHex);
-    },
-
-    finalizeRoomTransition: function (roomId, entryHex, metadata = {}) {
-      this.navigationRuntime?.finalizeRoomTransition(roomId, entryHex, metadata);
-    },
-
-    applyAuthoritativeNavigation: function (nav) {
-      return this.navigationRuntime?.applyAuthoritativeNavigation(nav) || false;
-    },
-
-    requestAuthoritativeNavigation: async function (connection, currentRoomId, targetHex) {
-      return this.navigationRuntime?.requestAuthoritativeNavigation(connection, currentRoomId, targetHex) || false;
     },
 
     /**
@@ -7137,11 +7219,92 @@ import { StateManager } from './StateManager.js';
         return false;
       }
 
-      this.requestAuthoritativeNavigation(
-        match,
-        this.activeRoomId,
-        { q: Number(q), r: Number(r) }
-      );
+      let nextRoomId = null;
+      let nextHex = null;
+
+      if (match.from_room === this.activeRoomId) {
+        nextRoomId = match.to_room;
+        nextHex = match.to_hex;
+      } else {
+        nextRoomId = match.from_room;
+        nextHex = match.from_hex;
+      }
+
+      // Move the selected player entity's dungeon placement to the destination room/hex
+      // so it persists across the room transition and re-renders in the new room.
+      const selectedEntity = this.stateManager.get('selectedEntity');
+      if (selectedEntity && Array.isArray(this.dungeonData?.entities)) {
+        const identity = selectedEntity.getComponent?.('IdentityComponent');
+        const combat = selectedEntity.getComponent?.('CombatComponent');
+        const isPlayer = combat?.isPlayerTeam ? combat.isPlayerTeam() : (combat?.team === Team.PLAYER || combat?.team === 'player');
+
+        if (isPlayer) {
+          const entityRef = selectedEntity.dcEntityRef;
+          // Update the dungeon payload entity placement to the new room.
+          for (const de of this.dungeonData.entities) {
+            const deRef = de.instance_id || de.entity_instance_id;
+            if (deRef === entityRef || (selectedEntity.dcCharacterId && de?.state?.metadata?.character_id == selectedEntity.dcCharacterId)) {
+              de.placement = {
+                room_id: nextRoomId,
+                hex: { q: Number(nextHex?.q || 0), r: Number(nextHex?.r || 0) },
+              };
+              break;
+            }
+          }
+
+          // Also move ally NPCs to the new room (adjacent hexes).
+          const npcEntities = this.dungeonData.entities.filter(e =>
+            e.entity_type === 'npc' && e?.state?.metadata?.team === 'ally'
+          );
+          const destQ = Number(nextHex?.q || 0);
+          const destR = Number(nextHex?.r || 0);
+          const offsets = [{ q: 1, r: 0 }, { q: -1, r: 0 }, { q: 0, r: 1 }, { q: 0, r: -1 }, { q: 1, r: -1 }, { q: -1, r: 1 }];
+          npcEntities.forEach((npc, i) => {
+            const offset = offsets[i % offsets.length];
+            npc.placement = {
+              room_id: nextRoomId,
+              hex: { q: destQ + offset.q, r: destR + offset.r },
+            };
+          });
+
+          // Persist entity position to server.
+          const campaignId = this.resolveCampaignId();
+          if (campaignId && entityRef) {
+            fetch(`/api/campaign/${campaignId}/entity/${entityRef}/move`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              body: JSON.stringify({ room_id: nextRoomId, q: Number(nextHex?.q || 0), r: Number(nextHex?.r || 0) }),
+            }).catch(err => console.warn('Entity move persist failed:', err));
+          }
+        }
+      }
+
+      // Deselect current entity before switching rooms (will be re-selected after render).
+      if (selectedEntity) {
+        this.deselectEntity();
+      }
+
+      this.setActiveRoom(nextRoomId);
+
+      const destinationHex = this.findHexByCoords(Number(nextHex?.q), Number(nextHex?.r));
+      if (destinationHex) {
+        const previousSelectedHex = this.stateManager.get('selectedHex');
+        if (previousSelectedHex && previousSelectedHex !== destinationHex) {
+          this.onHexOut(previousSelectedHex);
+        }
+        this.setSelectedHex(destinationHex);
+      }
+
+      // Re-select the player entity in the new room after re-render.
+      const newPlayerEntity = this.findLaunchPlayerEntity();
+      if (newPlayerEntity) {
+        this.selectEntity(newPlayerEntity);
+        if (this.uiManager && this.launchCharacter) {
+          this.uiManager.showLaunchCharacter(this.launchCharacter);
+        }
+      }
+
+      console.log('Transitioned room:', this.activeRoomId, 'via connection', match.connection_id);
       return true;
     },
 
