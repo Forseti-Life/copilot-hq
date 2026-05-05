@@ -5,3 +5,11 @@ waitingonkeith_autorefresh:
   dependencies:
     - core/drupal
     - core/once
+
+health-dashboard:
+  version: 1.x
+  js:
+    js/health-dashboard-refresh.js: {}
+  dependencies:
+    - core/drupal
+    - core/once

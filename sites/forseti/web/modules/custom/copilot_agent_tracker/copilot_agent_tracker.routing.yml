@@ -270,6 +270,15 @@ langgraph_console_admin_audit_log:
   requirements:
     _permission: 'administer console settings'
 
+langgraph_console_admin_audit_export:
+  path: '/langgraph-console/admin/audit-log/export'
+  defaults:
+    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::auditExport'
+    _title: 'Export Audit Log'
+  requirements:
+    _permission: 'administer console settings'
+  methods: [GET]
+
 langgraph_console_admin_health:
   path: '/langgraph-console/admin/health'
   defaults:

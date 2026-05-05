@@ -6,6 +6,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Database\Database;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * LangGraph Console Admin Controller — settings, audit log, health, permissions.
@@ -182,12 +183,59 @@ final class LangGraphConsoleAdminController extends ControllerBase {
   public function auditLog(): array {
     $db = Database::getConnection();
     $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $request = \Drupal::request();
+    $query_params = $request->query->all();
 
-    // Fetch audit entries (limit 100, newest first).
-    $query = $db->select('copilot_agent_tracker_audit', 'a')
-      ->fields('a')
-      ->orderBy('a.timestamp', 'DESC')
-      ->range(0, 100);
+    // Query builder with filters.
+    $query = $db->select('copilot_agent_tracker_audit', 'a')->fields('a');
+
+    // Apply filters from query params.
+    if (!empty($query_params['operator'])) {
+      $query->condition('a.operator_id', (int) $query_params['operator']);
+    }
+    if (!empty($query_params['action'])) {
+      $query->condition('a.action', $query_params['action']);
+    }
+    if (!empty($query_params['from'])) {
+      try {
+        $from_time = strtotime($query_params['from']);
+        if ($from_time) {
+          $query->condition('a.timestamp', date('Y-m-d H:i:s', $from_time), '>=');
+        }
+      } catch (\Exception $e) {
+        // Silently ignore invalid date.
+      }
+    }
+    if (!empty($query_params['to'])) {
+      try {
+        $to_time = strtotime($query_params['to']);
+        if ($to_time) {
+          $query->condition('a.timestamp', date('Y-m-d H:i:s', $to_time), '<=');
+        }
+      } catch (\Exception $e) {
+        // Silently ignore invalid date.
+      }
+    }
+    if (!empty($query_params['resource'])) {
+      $query->condition('a.resource_id', '%' . $db->escapeLike($query_params['resource']) . '%', 'LIKE');
+    }
+
+    // Get total count for pagination.
+    $count_query = $db->select('copilot_agent_tracker_audit', 'a');
+    $count_query->addExpression('COUNT(*)', 'cnt');
+    foreach ($query->conditions() as $condition) {
+      $count_query->condition($condition['field'], $condition['value'], $condition['operator'] ?? '=');
+    }
+    $total_count = $count_query->execute()->fetchField();
+
+    // Pagination setup (default 50 per page).
+    $per_page = 50;
+    $current_page = (int) ($query_params['page'] ?? 0);
+    $offset = $current_page * $per_page;
+
+    // Fetch filtered and paginated entries.
+    $query->orderBy('a.timestamp', 'DESC')
+      ->range($offset, $per_page);
 
     $entries = $query->execute()->fetchAll();
 
@@ -207,6 +255,28 @@ final class LangGraphConsoleAdminController extends ControllerBase {
       ];
     }
 
+    // Build pagination query string (preserve filters).
+    $pagination_query = array_filter($query_params, function ($k) {
+      return $k !== 'page';
+    }, ARRAY_FILTER_USE_KEY);
+
+    // Pagination links.
+    $pagination_html = '';
+    if ($current_page > 0) {
+      $prev_query = array_merge($pagination_query, ['page' => $current_page - 1]);
+      $pagination_html .= '<a href="' . \Drupal\Core\Url::fromRoute('copilot_agent_tracker.admin_audit_log', [], ['query' => $prev_query])->toString() . '">&larr; Previous</a> ';
+    }
+    if (($current_page + 1) * $per_page < $total_count) {
+      $next_query = array_merge($pagination_query, ['page' => $current_page + 1]);
+      $pagination_html .= '<a href="' . \Drupal\Core\Url::fromRoute('copilot_agent_tracker.admin_audit_log', [], ['query' => $next_query])->toString() . '">Next &rarr;</a>';
+    }
+
+    // Export CSV link.
+    $export_query = array_filter($query_params, function ($k) {
+      return $k !== 'page';
+    }, ARRAY_FILTER_USE_KEY);
+    $export_url = \Drupal\Core\Url::fromRoute('copilot_agent_tracker.admin_audit_export', [], ['query' => $export_query])->toString();
+
     $build = [
       '#type' => 'container',
       '#cache' => ['max-age' => 0],
@@ -218,13 +288,25 @@ final class LangGraphConsoleAdminController extends ControllerBase {
       'description' => [
         '#type' => 'html_tag',
         '#tag' => 'p',
-        '#value' => $this->t('All console mutations (settings changes, permission updates, navigation config). Last 100 entries shown.'),
+        '#value' => $this->t('All console mutations (settings changes, permission updates, navigation config). Showing @count of @total entries.', [
+          '@count' => count($rows),
+          '@total' => $total_count,
+        ]),
       ],
       'info' => [
         '#type' => 'html_tag',
         '#tag' => 'div',
         '#value' => $this->t('Note: Entries older than 30 days are purged daily.'),
         '#attributes' => ['style' => 'background: #e8f5e9; padding: 0.5rem; border: 1px solid #c8e6c9; border-radius: 4px; margin: 0.5rem 0 1rem 0;'],
+      ],
+      'filter_form' => [
+        '#type' => 'container',
+      ],
+      'export_link' => [
+        '#type' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => '<a href="' . $export_url . '" style="margin: 1rem 0; display: inline-block; padding: 0.5rem 1rem; background: #0066cc; color: white; text-decoration: none; border-radius: 4px;">📥 Export as CSV</a>',
+        '#attributes' => ['style' => 'margin-bottom: 1rem;'],
       ],
       'table' => [
         '#type' => 'table',
@@ -240,7 +322,17 @@ final class LangGraphConsoleAdminController extends ControllerBase {
         '#rows' => $rows,
         '#empty' => $this->t('No audit entries found.'),
       ],
+      'pagination' => [
+        '#type' => 'html_tag',
+        '#tag' => 'div',
+        '#value' => $pagination_html ?: '',
+        '#attributes' => ['style' => 'margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #ddd;'],
+      ],
     ];
+
+    // Include the filter form via form builder.
+    $form_builder = \Drupal::formBuilder();
+    $build['filter_form']['#children'] = $form_builder->getForm(\Drupal\copilot_agent_tracker\Form\AuditLogFilterForm::class);
 
     return $build;
   }
@@ -337,11 +429,65 @@ final class LangGraphConsoleAdminController extends ControllerBase {
           . '<li>' . $this->t('Feature Progress: @status (updated @time ago)', [
             '@status' => $health_data['feature_progress_fresh'] ? '<span style="color:green;">✓</span>' : '<span style="color:red;">✗</span>',
             '@time' => $health_data['feature_progress_age_text'],
-          ]) . '</li>',
+          ]) . '</li>'
+          . ($health_data['executor_failures_count'] > 0 ? '<li style="color:orange;"><strong>Executor errors detected: ' . $health_data['executor_failures_count'] . ' items</strong></li>' : ''),
           '#attributes' => ['style' => 'margin: 0.5rem 0; padding-left: 1.5rem;'],
         ],
       ],
+
+      'agents_section' => [
+        '#type' => 'container',
+        '#attributes' => ['style' => 'margin-top: 2rem;'],
+        'title' => [
+          '#type' => 'html_tag',
+          '#tag' => 'h2',
+          '#value' => $this->t('Agent Status Pool'),
+        ],
+      ],
     ];
+
+    // Build agent status table.
+    if (!empty($health_data['agents'])) {
+      $agent_rows = [];
+      foreach ($health_data['agents'] as $agent) {
+        $status_color = match($agent['status']) {
+          'working' => 'blue',
+          'error' => 'red',
+          default => 'green',
+        };
+        $status_icon = match($agent['status']) {
+          'working' => '●',
+          'error' => '✗',
+          default => '✓',
+        };
+
+        $agent_rows[] = [
+          $agent['seat_id'],
+          'forseti',
+          '<span style="color:' . $status_color . ';">' . $status_icon . ' ' . ucfirst($agent['status']) . '</span>',
+          $agent['inbox_size'],
+          $agent['last_modified'] ? $this->fmtAge(time() - $agent['last_modified']) : 'N/A',
+        ];
+      }
+
+      $build['agents_section']['table'] = [
+        '#type' => 'table',
+        '#header' => [
+          $this->t('Seat ID'),
+          $this->t('Module'),
+          $this->t('Status'),
+          $this->t('Inbox Size'),
+          $this->t('Last Modified'),
+        ],
+        '#rows' => $agent_rows,
+      ];
+    } else {
+      $build['agents_section']['empty'] = [
+        '#type' => 'html_tag',
+        '#tag' => 'p',
+        '#value' => $this->t('No agent inbox directories found.'),
+      ];
+    }
 
     return $build;
   }
@@ -419,13 +565,54 @@ final class LangGraphConsoleAdminController extends ControllerBase {
       }
     }
 
-    // Check feature progress freshness.
-    if (is_readable($progress_path)) {
-      $progress_mtime = @filemtime($progress_path);
-      if ($progress_mtime) {
-        $age_sec = time() - $progress_mtime;
-        $feature_progress_fresh = $age_sec < 3600; // 1 hour.
-        $feature_progress_age_text = $this->fmtAge($age_sec);
+    // Load per-agent status from sessions/*/inbox/ directories.
+    $agents = [];
+    $sessions_root = dirname(rtrim($hq_root, '/')) . '/sessions';
+    if (is_dir($sessions_root)) {
+      $agent_dirs = array_filter(glob($sessions_root . '/*'), 'is_dir');
+      foreach ($agent_dirs as $agent_dir) {
+        $agent_id = basename($agent_dir);
+        $inbox_dir = $agent_dir . '/inbox';
+
+        if (is_dir($inbox_dir)) {
+          $inbox_items = array_filter(glob($inbox_dir . '/*'), 'is_dir');
+          $inbox_count = count($inbox_items);
+
+          // Get most recent inbox item's last modified time.
+          $last_modified = 0;
+          foreach ($inbox_items as $item) {
+            $item_mtime = @filemtime($item);
+            if ($item_mtime > $last_modified) {
+              $last_modified = $item_mtime;
+            }
+          }
+
+          // Determine agent status: check for 'working' or 'error' indicators.
+          $agent_status = 'idle';
+          if ($inbox_count > 0) {
+            // Check most recent item for status file.
+            usort($inbox_items, function ($a, $b) {
+              return @filemtime($b) - @filemtime($a);
+            });
+            $latest_item = reset($inbox_items);
+            $command_file = $latest_item . '/command.md';
+            if (is_readable($command_file)) {
+              $command = @file_get_contents($command_file);
+              if (strpos($command, 'Status: blocked') !== FALSE) {
+                $agent_status = 'error';
+              } elseif ($inbox_count > 0) {
+                $agent_status = 'working';
+              }
+            }
+          }
+
+          $agents[] = [
+            'seat_id' => $agent_id,
+            'status' => $agent_status,
+            'inbox_size' => $inbox_count,
+            'last_modified' => $last_modified,
+          ];
+        }
       }
     }
 
@@ -438,7 +625,86 @@ final class LangGraphConsoleAdminController extends ControllerBase {
       'ticks_age_text' => $ticks_age_text,
       'feature_progress_fresh' => $feature_progress_fresh,
       'feature_progress_age_text' => $feature_progress_age_text,
+      'agents' => $agents,
+      'executor_failures_count' => count(array_filter(glob($hq_root . '/inbox/executor-failures/*'), 'is_file')),
     ];
+  }
+
+  /**
+   * Audit log CSV export endpoint.
+   */
+  public function auditExport(): Response {
+    $db = Database::getConnection();
+    $request = \Drupal::request();
+    $query_params = $request->query->all();
+
+    // Build same filtered query as auditLog().
+    $query = $db->select('copilot_agent_tracker_audit', 'a')->fields('a');
+
+    // Apply filters from query params.
+    if (!empty($query_params['operator'])) {
+      $query->condition('a.operator_id', (int) $query_params['operator']);
+    }
+    if (!empty($query_params['action'])) {
+      $query->condition('a.action', $query_params['action']);
+    }
+    if (!empty($query_params['from'])) {
+      try {
+        $from_time = strtotime($query_params['from']);
+        if ($from_time) {
+          $query->condition('a.timestamp', date('Y-m-d H:i:s', $from_time), '>=');
+        }
+      } catch (\Exception $e) {
+        // Silently ignore invalid date.
+      }
+    }
+    if (!empty($query_params['to'])) {
+      try {
+        $to_time = strtotime($query_params['to']);
+        if ($to_time) {
+          $query->condition('a.timestamp', date('Y-m-d H:i:s', $to_time), '<=');
+        }
+      } catch (\Exception $e) {
+        // Silently ignore invalid date.
+      }
+    }
+    if (!empty($query_params['resource'])) {
+      $query->condition('a.resource_id', '%' . $db->escapeLike($query_params['resource']) . '%', 'LIKE');
+    }
+
+    $query->orderBy('a.timestamp', 'DESC');
+    $entries = $query->execute()->fetchAll();
+
+    // Generate CSV.
+    $output = fopen('php://memory', 'r+');
+    fputcsv($output, ['Timestamp', 'Operator ID', 'Operator Name', 'Action', 'Resource ID', 'Before Value', 'After Value', 'CSRF Verified']);
+
+    foreach ($entries as $entry) {
+      $user = User::load($entry->operator_id);
+      $operator_name = $user ? $user->getDisplayName() : 'Unknown';
+
+      fputcsv($output, [
+        $entry->timestamp,
+        $entry->operator_id,
+        $operator_name,
+        $entry->action,
+        $entry->resource_id ?? '',
+        $entry->before_value ?? '',
+        $entry->after_value ?? '',
+        $entry->csrf_verified ? '1' : '0',
+      ]);
+    }
+
+    rewind($output);
+    $csv_content = stream_get_contents($output);
+    fclose($output);
+
+    $timestamp = date('Ymd-His');
+    $response = new Response($csv_content);
+    $response->headers->set('Content-Type', 'text/csv');
+    $response->headers->set('Content-Disposition', "attachment; filename=\"langgraph-audit-export-$timestamp.csv\"");
+
+    return $response;
   }
 
   /**
