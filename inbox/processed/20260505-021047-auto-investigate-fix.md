@@ -1,19 +1,3 @@
-# Command: auto-investigate-fix
-
-- Agent: ceo-copilot-2
-- Item: 20260505-needs-ceo-copilot-2-auto-investigate-fix
-- Work item: dungeoncrawler-auto-investigation
-- Status: pending
-- Supervisor: board
-- Created: 2026-05-05T02:11:48.949214+00:00
-
-## Decision needed
-- Review and action or escalate this command.
-
-## Recommendation
-- See command text below.
-
-## Command text
 # Command
 
 - created_at: 2026-05-05T02:10:47+00:00
@@ -63,4 +47,3 @@ Perfect. The implementation is complete and pushed. Now let me write the final o
 - Agent: dev-dungeoncrawler
 - Source inbox: /home/ubuntu/forseti.life/sessions/dev-dungeoncrawler/inbox/20260504-unblocked-dungeoncrawler-content-push-repo-ready
 - Generated: 2026-05-04T17:11:41+00:00
-
