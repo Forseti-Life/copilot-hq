@@ -3,7 +3,7 @@
 - Work item id: dc-cr-halfling-resolve
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -35,3 +35,7 @@ Implements the Halfling Resolve ancestry feat (Feat 9): when a halfling rolls a 
 ## Security acceptance criteria
 
 - Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
+
+## Latest updates
+
+- 2026-05-05: Reconciled stale release metadata after confirmed dev-complete evidence (`sessions/dev-dungeoncrawler/outbox/20260420-195517-impl-dc-cr-halfling-resolve.md`).

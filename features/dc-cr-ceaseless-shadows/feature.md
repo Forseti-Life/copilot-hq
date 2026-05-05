@@ -3,7 +3,7 @@
 - Work item id: dc-cr-ceaseless-shadows
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: done
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -36,3 +36,7 @@ Implements Ceaseless Shadows (Halfling Feat 13, prereq: Distracting Shadows): th
 ## Security acceptance criteria
 
 - Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
+
+## Latest updates
+
+- 2026-05-05: Reconciled stale release metadata after confirmed dev-complete evidence (`sessions/dev-dungeoncrawler/outbox/20260420-195520-impl-dc-cr-ceaseless-shadows.md`).

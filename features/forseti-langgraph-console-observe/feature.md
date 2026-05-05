@@ -8,8 +8,8 @@
 - Group: console-ui
 - Group Title: Console Routes & UI
 - Group Sort: 4
-- Status: in_progress
-- Release: 20260412-forseti-release-q
+- Status: planned
+- Release:
 - Feature type: enhancement
 - PM owner: pm-forseti
 - Dev owner: dev-forseti
@@ -159,6 +159,10 @@ curl -s -b admin_cookies.txt https://forseti.life/langgraph-console/observe/metr
 - **CSRF expectations:** All routes are GET-only (read-only). No state mutations. CSRF tokens not required.
 - **Input validation:** No direct user input to server. File path resolution uses `DashboardController::langgraphPath()` (env-var resolved, no user-controlled path segments). Tick JSON parsed from trusted local file; truncate/sanitize output before rendering in Twig (strip any tags, limit text length).
 - **PII/logging constraints:** Tick data may contain agent seat IDs and step results (could be logs/errors with PII). Do NOT log full tick data to Drupal watchdog. Render step result summaries truncated (max 120 chars) in admin-only context.
+
+## Latest updates
+
+- 2026-05-05: Reset from stale `in_progress` on closed `20260412-forseti-release-q`. Dev evidence for this feature did not produce a completed implementation handoff, so the feature was returned to the groomed backlog and unbound from the closed release.
 
 ## Dependencies
 
