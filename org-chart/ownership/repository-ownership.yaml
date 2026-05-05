@@ -66,7 +66,7 @@ repositories:
     owning_dev: "dev-dungeoncrawler"
     owning_qa: "qa-dungeoncrawler"
     owning_security: "sec-analyst-dungeoncrawler"
-    notes: "Separate product repo checkout. The live Apache site serves /var/www/html/dungeoncrawler/web and sources custom code/theme/config from /home/ubuntu/forseti.life/sites/dungeoncrawler."
+    notes: "Canonical editable Dungeoncrawler product repo. The live Apache site serves /var/www/html/dungeoncrawler/web; its Dungeoncrawler-owned module/theme/config paths now delegate to this repo through the sites/dungeoncrawler compatibility bridge."
 
   dungeoncrawler-tester-push:
     github: "Forseti-Life/dungeoncrawler-tester"

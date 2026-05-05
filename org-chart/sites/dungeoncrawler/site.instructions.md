@@ -18,17 +18,23 @@ Rule:
 ## Code roots (on this host)
 - Live Drupal docroot: `/var/www/html/dungeoncrawler`
 - Live Drupal web root: `/var/www/html/dungeoncrawler/web`
-- Live versioned custom-code/config source: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
-- Apache serves the live site from `/var/www/html/dungeoncrawler/web`, with these symlinked back into `sites/dungeoncrawler`:
+- Canonical editable product repo: `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`
+- Compatibility bridge path in main repo: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
+- Apache serves the live site from `/var/www/html/dungeoncrawler/web`, with these top-level paths symlinked back into `sites/dungeoncrawler`:
   - `web/modules/custom`
   - `web/themes/custom`
   - `config/sync`
-- `/home/ubuntu/forseti.life/dungeoncrawler-pf2e` is a separate product-repo checkout, not the live website root.
+- Inside `sites/dungeoncrawler`, the Dungeoncrawler-owned paths now delegate to `dungeoncrawler-pf2e`:
+  - `web/modules/custom/dungeoncrawler_content`
+  - `web/modules/custom/dungeoncrawler_tester`
+  - `web/themes/custom/dungeoncrawler`
+  - `config/sync`
 
 ## Working convention
-- Treat `/home/ubuntu/forseti.life/sites/dungeoncrawler` as the canonical source for live custom module, theme, and config changes on this host.
+- Make Dungeoncrawler product-code changes in `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`.
+- Treat `/home/ubuntu/forseti.life/sites/dungeoncrawler` as a compatibility/delegation path, not the primary authored source for Dungeoncrawler-owned assets.
 - Use `/var/www/html/dungeoncrawler` when commands must run against the full live Drupal install (for example `drush cr`).
-- Do not assume `dungeoncrawler-pf2e` and `sites/dungeoncrawler` are mirrored; verify before copying changes between them.
+- Do not add new Dungeoncrawler-owned code directly under `sites/dungeoncrawler`; route it into `dungeoncrawler-pf2e`.
 
 ## Product-wide rules
 - Keep work items logically separated from other websites.

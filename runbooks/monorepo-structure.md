@@ -119,8 +119,9 @@ The live docroot symlinks these paths back into the main repo:
 ```
 
 Operational implication:
-- `sites/dungeoncrawler` is the canonical on-host source for live custom code and config.
-- `dungeoncrawler-pf2e` is a separate nested product checkout, not the live website root.
+- `dungeoncrawler-pf2e` is the canonical editable product repo for Dungeoncrawler-owned code.
+- `sites/dungeoncrawler` remains a compatibility bridge inside the main repo.
+- The Dungeoncrawler-owned paths in `sites/dungeoncrawler` delegate to `dungeoncrawler-pf2e` via symlinked module/theme/config paths.
 
 ### For Developers
 
