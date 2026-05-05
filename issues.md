@@ -293,3 +293,61 @@ This validation is **Phase 8** of the release cycle validation:
 **Finding:** Code review gate: 1 session(s) dispatched but all are quarantined/needs-info — code shipped without review
 
 **Status:** 🔴 Open — review and assign fix
+
+---
+
+## Release Efficiency Findings — 20260412-dungeoncrawler-release-u — 2026-05-05
+
+> **Source:** `scripts/release-efficiency-analysis.py` — automated analysis.
+> 5 FAIL finding(s) detected. See below for details.
+
+### ISSUE-011 — Redundant dev passes: 1 feature(s) re-dispatched after already done —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Redundant dev passes: 1 feature(s) re-dispatched after already done — dc-cr-dwarf-heritage-ancient-blooded
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-012 — Shipping lag: 9.7d from dev-done to push (threshold: 72h)
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Shipping lag: 9.7d from dev-done to push (threshold: 72h)
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-013 — Gating agent(s) majority-quarantined: agent-code-review (1/1 = 100%) —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Gating agent(s) majority-quarantined: agent-code-review (1/1 = 100%) — release gates bypassed by executor failure
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-014 — Code review gate: 1 session(s) dispatched but all are quarantined/need
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** Code review gate: 1 session(s) dispatched but all are quarantined/needs-info — code shipped without review
+
+**Status:** 🔴 Open — review and assign fix
+
+### ISSUE-015 — CEO proxy load: 12 sessions doing dev/QA/PM work (dev=7, QA=4, PM=1) —
+
+**Severity:** High
+**Release:** 20260412-dungeoncrawler-release-u
+**Source:** release-efficiency-analysis.py
+
+**Finding:** CEO proxy load: 12 sessions doing dev/QA/PM work (dev=7, QA=4, PM=1) — executor broken or roles understaffed
+
+**Status:** 🔴 Open — review and assign fix
+

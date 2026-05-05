@@ -4,8 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 
-- PM owner: pm-dungeoncrawler
+- Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Advanced Player's Guide, Chapter 2 (Witch)

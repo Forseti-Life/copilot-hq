@@ -4,6 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
+- Release: 20260412-dungeoncrawler-release-u
 - Priority: P1 (primary gameplay loop; depends on dice and DC)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

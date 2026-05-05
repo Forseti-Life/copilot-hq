@@ -4,8 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
-- Release: 
-- Priority: P3
+- Release: 20260412-dungeoncrawler-release-u
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler

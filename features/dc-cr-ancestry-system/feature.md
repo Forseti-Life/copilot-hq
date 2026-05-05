@@ -5,8 +5,7 @@
 - Module: dungeoncrawler_content
 - Status: done
 - Priority: P0 (required dependency for character creation; enables ancestry feat trees and heritage selection downstream)
-- Release: 
-- PM owner: pm-dungeoncrawler
+- Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
 - Source: PF2E Core Rulebook (Fourth Printing), lines 1–300

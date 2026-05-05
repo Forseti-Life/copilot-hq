@@ -4,6 +4,7 @@
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
 - Status: done
+- Release: 20260412-dungeoncrawler-release-u
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler

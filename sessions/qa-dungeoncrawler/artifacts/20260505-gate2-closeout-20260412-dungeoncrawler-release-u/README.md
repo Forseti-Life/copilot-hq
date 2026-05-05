@@ -1,0 +1,1 @@
+Gate 2 closeout packet for Dungeoncrawler release-u after CEO re-scoped all done/not-shipped DC features into the active release. Review the bundled feature list and produce a real Gate 2 APPROVE or BLOCK artifact for this populated release.
