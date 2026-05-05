@@ -30,3 +30,5 @@ Do **not** block again on PM scope ambiguity. The scope decision has been made:
 - Write a canonical outbox.
 - `done` is valid only if the release-r scope is fully implemented.
 - If blocked, the blocker must be technical and specific — not a scope/ownership ambiguity.
+- Agent: dev-forseti
+- Status: pending

@@ -6,6 +6,7 @@
 // Import ECS modules
 import { EntityManager, PositionComponent, RenderComponent, IdentityComponent, EntityType, RenderSystem, MovementComponent, StatsComponent, MovementSystem, MovementMode, ActionsComponent, ActionType, ActionCost, CombatComponent, Team, TurnManagementSystem, CombatState, CombatSystem, AttackResult } from './ecs/index.js';
 import combatApi from './hexmap-api.js';
+import { HexmapNavigation } from './HexmapNavigation.js';
 import { HexmapStateSync } from './HexmapStateSync.js';
 import { GameCoordinator } from './game-coordinator/GameCoordinator.js';
 import { ChatSessionApi } from './ChatSessionApi.js';
@@ -2263,6 +2264,9 @@ import { StateManager } from './StateManager.js';
       this.applyLaunchContext();
       this.initQuestData();
 
+      // [THIN-CLIENT: map navigation adapter] Initialize room-transition seam.
+      this.navigationRuntime = new HexmapNavigation(this);
+
       // [THIN-CLIENT: state adapter] Initialize and start server-state polling.
       this.stateSync = new HexmapStateSync(this);
       this.stateSync.start();
@@ -2333,6 +2337,9 @@ import { StateManager } from './StateManager.js';
 
       this.stateSync?.stop();
       this.stateSync = null;
+
+      this.navigationRuntime?.destroy?.();
+      this.navigationRuntime = null;
 
       // Cleanup Game Coordinator.
       if (this.gameCoordinator) {
@@ -4689,195 +4696,27 @@ import { StateManager } from './StateManager.js';
     },
 
     mergeNavigationEntities: function (entities = []) {
-      if (!Array.isArray(entities) || !entities.length) {
-        return;
-      }
-
-      if (!Array.isArray(this.dungeonData.entities)) {
-        this.dungeonData.entities = [];
-      }
-
-      entities.forEach((entity) => {
-        if (!entity || typeof entity !== 'object') {
-          return;
-        }
-
-        const entityRef = entity.instance_id || entity.entity_instance_id;
-        const existingIdx = this.dungeonData.entities.findIndex(
-          (candidate) => (candidate.instance_id || candidate.entity_instance_id) === entityRef
-        );
-
-        if (existingIdx === -1) {
-          this.dungeonData.entities.push(entity);
-          return;
-        }
-
-        this.dungeonData.entities[existingIdx] = entity;
-      });
+      this.navigationRuntime?.mergeNavigationEntities(entities);
     },
 
     mergeNavigationConnections: function (connections = []) {
-      if (!Array.isArray(connections) || !connections.length) {
-        return;
-      }
-
-      if (!Array.isArray(this.dungeonData.connections)) {
-        this.dungeonData.connections = [];
-      }
-
-      connections.forEach((connection) => {
-        if (!connection || typeof connection !== 'object') {
-          return;
-        }
-
-        const connectionId = connection.connection_id || `${connection.from_room}_${connection.to_room}`;
-        const existingIdx = this.dungeonData.connections.findIndex(
-          (candidate) => (candidate.connection_id || `${candidate.from_room}_${candidate.to_room}`) === connectionId
-        );
-
-        if (existingIdx === -1) {
-          this.dungeonData.connections.push(connection);
-          return;
-        }
-
-        this.dungeonData.connections[existingIdx] = connection;
-      });
+      this.navigationRuntime?.mergeNavigationConnections(connections);
     },
 
     updateSelectedEntityDungeonPlacement: function (roomId, entryHex) {
-      const selectedEntity = this.stateManager?.get('selectedEntity');
-      if (!selectedEntity || !Array.isArray(this.dungeonData?.entities)) {
-        return;
-      }
-
-      const combat = selectedEntity.getComponent?.('CombatComponent');
-      const isPlayer = combat?.isPlayerTeam ? combat.isPlayerTeam() : (combat?.team === Team.PLAYER || combat?.team === 'player');
-      if (!isPlayer) {
-        return;
-      }
-
-      const destination = {
-        q: Number(entryHex?.q || 0),
-        r: Number(entryHex?.r || 0),
-      };
-      const entityRef = selectedEntity.dcEntityRef;
-
-      for (const entity of this.dungeonData.entities) {
-        const candidateRef = entity.instance_id || entity.entity_instance_id;
-        if (candidateRef === entityRef || (selectedEntity.dcCharacterId && entity?.state?.metadata?.character_id == selectedEntity.dcCharacterId)) {
-          entity.placement = {
-            room_id: roomId,
-            hex: destination,
-          };
-          break;
-        }
-      }
+      this.navigationRuntime?.updateSelectedEntityDungeonPlacement(roomId, entryHex);
     },
 
     finalizeRoomTransition: function (roomId, entryHex, metadata = {}) {
-      const destination = {
-        q: Number(entryHex?.q || 0),
-        r: Number(entryHex?.r || 0),
-      };
-      const selectedEntity = this.stateManager.get('selectedEntity');
-
-      this.syncLaunchContextUrl(roomId, destination);
-
-      if (selectedEntity) {
-        this.deselectEntity();
-      }
-
-      this.setActiveRoom(roomId);
-
-      const destinationHex = this.findHexByCoords(destination.q, destination.r);
-      if (destinationHex) {
-        const previousSelectedHex = this.stateManager.get('selectedHex');
-        if (previousSelectedHex && previousSelectedHex !== destinationHex) {
-          this.onHexOut(previousSelectedHex);
-        }
-        this.setSelectedHex(destinationHex);
-      }
-
-      const newPlayerEntity = this.findLaunchPlayerEntity();
-      if (newPlayerEntity) {
-        this.selectEntity(newPlayerEntity);
-        if (this.uiManager && this.launchCharacter) {
-          this.uiManager.showLaunchCharacter(this.launchCharacter);
-        }
-      }
-
-      if (typeof this.stateSync?.sync === 'function') {
-        this.stateSync.sync({ force: true, silent: true }).catch((err) => {
-          console.warn('[Navigation] Post-transition state sync failed:', err);
-        });
-      }
-
-      console.log('[Navigation] Room transition complete:', roomId, metadata);
+      this.navigationRuntime?.finalizeRoomTransition(roomId, entryHex, metadata);
     },
 
     applyAuthoritativeNavigation: function (nav) {
-      const targetRoomId = nav?.target_room_id || '';
-      if (!targetRoomId) {
-        console.warn('[Navigation] Missing target_room_id in navigation payload.', nav);
-        return false;
-      }
-
-      if (!this.dungeonData || typeof this.dungeonData !== 'object') {
-        this.dungeonData = {};
-      }
-      if (!this.dungeonData.rooms || typeof this.dungeonData.rooms !== 'object') {
-        this.dungeonData.rooms = {};
-      }
-
-      if (nav.room && typeof nav.room === 'object') {
-        this.dungeonData.rooms[targetRoomId] = nav.room;
-      }
-
-      this.mergeNavigationEntities(nav.entities || []);
-      this.mergeNavigationConnections(nav.connections || []);
-      this.updateSelectedEntityDungeonPlacement(targetRoomId, nav.entry_hex || null);
-      this.finalizeRoomTransition(targetRoomId, nav.entry_hex || null, {
-        source: 'server-navigation',
-        destination: nav.destination || null,
-      });
-
-      return true;
+      return this.navigationRuntime?.applyAuthoritativeNavigation(nav) || false;
     },
 
-    requestAuthoritativeNavigation: async function (connection, currentRoomId, targetHex, fallbackRoomId, fallbackEntryHex) {
-      const campaignId = this.resolveCampaignId();
-      const characterId = Number(this.launchContext?.character_id || 0);
-
-      if (!this.canUseServerCombatApi() || !campaignId || characterId <= 0) {
-        this.updateSelectedEntityDungeonPlacement(fallbackRoomId, fallbackEntryHex);
-        this.finalizeRoomTransition(fallbackRoomId, fallbackEntryHex, {
-          source: 'local-connection-fallback',
-          connectionId: connection?.connection_id || null,
-        });
-        return;
-      }
-
-      try {
-        const response = await combatApi.navigate({
-          campaignId,
-          characterId,
-          mapId: this.stateManager.get('mapId') || this.launchContext?.map_id || null,
-          currentRoomId,
-          connectionId: connection?.connection_id || null,
-          targetHex,
-        });
-        const navigation = response?.data || response;
-        if (!navigation || !navigation.target_room_id) {
-          throw new Error('Navigation response did not include a destination room.');
-        }
-
-        this.applyAuthoritativeNavigation(navigation);
-      } catch (err) {
-        console.error('[Navigation] Authoritative transition failed:', err);
-        if (this.uiManager?.appendChatLine) {
-          this.uiManager.appendChatLine('System', 'Unable to travel right now.', 'system');
-        }
-      }
+    requestAuthoritativeNavigation: async function (connection, currentRoomId, targetHex) {
+      return this.navigationRuntime?.requestAuthoritativeNavigation(connection, currentRoomId, targetHex) || false;
     },
 
     /**
@@ -7298,23 +7137,10 @@ import { StateManager } from './StateManager.js';
         return false;
       }
 
-      let nextRoomId = null;
-      let nextHex = null;
-
-      if (match.from_room === this.activeRoomId) {
-        nextRoomId = match.to_room;
-        nextHex = match.to_hex;
-      } else {
-        nextRoomId = match.from_room;
-        nextHex = match.from_hex;
-      }
-
       this.requestAuthoritativeNavigation(
         match,
         this.activeRoomId,
-        { q: Number(q), r: Number(r) },
-        nextRoomId,
-        nextHex
+        { q: Number(q), r: Number(r) }
       );
       return true;
     },

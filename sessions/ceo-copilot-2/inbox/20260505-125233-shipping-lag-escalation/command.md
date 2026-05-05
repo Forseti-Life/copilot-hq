@@ -22,3 +22,5 @@ bash scripts/hq-status.sh
 bash scripts/hq-blockers.sh
 ```
 Identify the blocking gate and clear it or authorize a bypass.
+- Agent: ceo-copilot-2
+- Status: pending
