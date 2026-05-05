@@ -59,11 +59,17 @@ find_feature_outbox() {
   [ -d "$outbox_dir" ] || return 0
   find "$outbox_dir" -maxdepth 1 -type f -name "*.md" 2>/dev/null \
     | while IFS= read -r f; do
-        basename "$f"
+        base="$(basename "$f")"
+        case "$base" in
+          *"$feat_name"*)
+            stat_key="$(stat -c '%Y' "$f" 2>/dev/null || echo 0)"
+            printf '%s\t%s\n' "$stat_key" "$base"
+            ;;
+        esac
       done \
-    | grep "$feat_name" \
-    | sort \
-    | tail -1 || true
+    | sort -n -k1,1 -k2,2 \
+    | tail -1 \
+    | cut -f2 || true
 }
 
 outbox_status() {

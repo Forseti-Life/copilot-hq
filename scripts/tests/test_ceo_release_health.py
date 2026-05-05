@@ -158,6 +158,51 @@ def test_in_progress_feature_prefers_latest_matching_dev_outbox(tmp_path):
     assert "needs-info" not in result.stdout
 
 
+def test_in_progress_feature_prefers_newer_matching_dev_outbox_by_mtime_not_name(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    feature_dir = root / "features" / "forseti-langgraph-console-admin"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text(
+        "\n".join(
+            [
+                "# Feature Brief",
+                "",
+                "- Work item id: forseti-langgraph-console-admin",
+                "- Website: forseti.life",
+                "- Status: in_progress",
+                f"- Release: {release_id}",
+                "- Dev owner: dev-forseti",
+                "- QA owner: qa-forseti",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    dev_outbox = root / "sessions" / "dev-forseti" / "outbox"
+    dev_outbox.mkdir(parents=True)
+    older = dev_outbox / "20260505-finish-forseti-langgraph-console-admin.md"
+    older.write_text(
+        "- Status: blocked\n- Summary: Earlier blocked attempt.\n",
+        encoding="utf-8",
+    )
+    newer = dev_outbox / "20260505-complete-forseti-langgraph-console-admin-per-board.md"
+    newer.write_text(
+        "- Status: done\n- Summary: Later completion.\n",
+        encoding="utf-8",
+    )
+    os.utime(older, (1_746_448_000, 1_746_448_000))
+    os.utime(newer, (1_746_451_200, 1_746_451_200))
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "dev outbox: 20260505-complete-forseti-langgraph-console-admin-per-board.md status=done" in result.stdout
+    assert "20260505-finish-forseti-langgraph-console-admin.md status=blocked" not in result.stdout
+
+
 def test_advanced_release_done_feature_fails_reconciliation_health(tmp_path):
     root = _make_root(tmp_path)
     release_id = "20260418-forseti-release-m"
@@ -207,4 +252,4 @@ def test_push_marker_detected_from_auto_push_dispatched(tmp_path):
     result = _run(root)
 
     assert result.returncode == 0, result.stdout + result.stderr
-    assert f"Push marker exists: {release_id}.pushed" in result.stdout
+    assert f"[forseti] push already dispatched ({release_id}.pushed)" in result.stdout
