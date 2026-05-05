@@ -49,5 +49,28 @@ llm/lib/__pycache__/
 sessions/**/artifacts/**/latest
 sessions/**/artifacts/**/latest.*
 
-# Standalone product checkouts that are intentionally not tracked by copilot-hq
+# Standalone product/module checkouts that are intentionally not tracked by copilot-hq
+/ai-conversation/
+/drupal-langgraph/
+/dungeoncrawler-content/
 /dungeoncrawler-pf2e/
+/forseti-agent-evaluation/
+/forseti-amisafe/
+/forseti-cluster/
+/forseti-community-incident-report/
+/forseti-company-research/
+/forseti-content/
+/forseti-copilot-agent-tracker/
+/forseti-devops/
+/forseti-docs/
+/forseti-institutional-management/
+/forseti-job-hunter/
+/forseti-jobhunter-tester/
+/forseti-meshd/
+/forseti-mobile/
+/forseti-nfr/
+/forseti-platform-specs/
+/forseti-safety-calculator/
+/forseti-safety-content/
+/forseti-shared-modules/
+/h3-geolocation/
