@@ -1,11 +1,10 @@
 {
-  "generated_at": "2026-05-05T10:26:07.340011+00:00",
+  "generated_at": "2026-05-05T10:36:48.742168+00:00",
   "parity_ok": false,
   "selected_agents": {
     "match": true,
     "actual": [
-      "pm-forseti",
-      "pm-dungeoncrawler"
+      "pm-forseti"
     ]
   },
   "steps": {
