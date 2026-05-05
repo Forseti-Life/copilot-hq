@@ -90,9 +90,11 @@ Run the suite(s) per the manifest and produce PASS/FAIL evidence (existing behav
 ### Type 3: gate2-followup-<release-id>  (release verification)
 When you receive a `gate2-followup` item:
 1. Check whether a Gate 2 artifact already exists for the active release ID
-2. If not, consolidate feature-level evidence and latest audit/suite results into one release decision
-3. Write exactly one release-scoped APPROVE or BLOCK artifact for the active release
-4. If BLOCKing or escalating, include `## Decision needed` and `## Recommendation`
+2. Treat the inbox bundle (`command.md`, `README.md`, `00-problem-statement.md`, `01-acceptance-criteria.md`, and any attached `evidence/` files) as the primary evidence packet for the decision
+3. If the bundle is sufficient, consolidate feature-level evidence and latest audit/suite results into one release decision from that packet
+4. If the bundle is not sufficient, explicitly list the missing evidence instead of assuming you can read arbitrary repo files or run live tools
+5. Write exactly one release-scoped APPROVE or BLOCK artifact for the active release
+6. If BLOCKing or escalating, include `## Decision needed` and `## Recommendation`
 
 ## Default mode
 - Your test-case source of truth (SoT) is the product suite manifest:

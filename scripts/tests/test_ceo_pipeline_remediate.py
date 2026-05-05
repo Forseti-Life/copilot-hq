@@ -174,6 +174,48 @@ def test_skips_signoff_and_gate2_until_dev_outbox_exists(tmp_path):
     assert any("release-cleanup-dungeoncrawler-orphans" in name for name in pm_dc_items)
 
 
+def test_gate2_followup_bundles_release_evidence(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "features" / "dc-feature-a" / "01-acceptance-criteria.md").write_text(
+        "# AC\n- route works\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-complete-dc-feature-a.md").write_text(
+        "- Status: done\n- Summary: implemented dc-feature-a\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "qa-dungeoncrawler" / "outbox" / "20260413-gate2-block-dc-release-j.md").write_text(
+        "- Status: blocked\n- Summary: prior block\n\n20260412-dungeoncrawler-release-j\nBLOCK\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    item = next(
+        p for p in (root / "sessions" / "qa-dungeoncrawler" / "inbox").iterdir()
+        if "gate2-followup-20260412-dungeoncrawler-release-j" in p.name
+    )
+    command = (item / "command.md").read_text(encoding="utf-8")
+    release_ac = (item / "01-acceptance-criteria.md").read_text(encoding="utf-8")
+    bundled_feature = (item / "evidence" / "dc-feature-a" / "feature.md").read_text(encoding="utf-8")
+    bundled_ac = (item / "evidence" / "dc-feature-a" / "01-acceptance-criteria.md").read_text(encoding="utf-8")
+    bundled_dev = (item / "evidence" / "dc-feature-a" / "dev-outbox.md").read_text(encoding="utf-8")
+    prior_qa = (item / "evidence" / "prior-qa-outbox.md").read_text(encoding="utf-8")
+
+    assert "Use the bundled inbox evidence as your primary working set." in command
+    assert "Do not assume additional repo-read or shell capabilities are available." in command
+    assert "Feature brief — dc-feature-a" in command
+    assert "Acceptance criteria — dc-feature-a" in command
+    assert "Latest dev outbox — dc-feature-a" in command
+    assert "Latest related QA outbox" in command
+    assert "Produce exactly one release-scoped QA verdict" in release_ac
+    assert "- Status: in_progress\n- Release: 20260412-dungeoncrawler-release-j\n" == bundled_feature
+    assert "# AC\n- route works\n" == bundled_ac
+    assert "- Status: done\n- Summary: implemented dc-feature-a\n" == bundled_dev
+    assert "prior block" in prior_qa
+
+
 def test_does_not_queue_cross_team_signoff_reminders(tmp_path):
     root = _make_root(tmp_path)
     (root / "sessions" / "dev-dungeoncrawler" / "outbox" / "20260413-impl-dc-feature-a.md").write_text(

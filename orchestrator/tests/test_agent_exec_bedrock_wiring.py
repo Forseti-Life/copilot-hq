@@ -12,6 +12,11 @@ class TestAgentExecBedrockWiring(unittest.TestCase):
         self.assertIn('"$py" "$BEDROCK_RUNNER"', source)
         self.assertNotIn('"$BEDROCK_ASSIST_SCRIPT" "$site"', source)
 
+    def test_prompt_does_not_unconditionally_promise_tool_access(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn("Do NOT assume live tool access.", source)
+        self.assertNotIn("You have full read/write tool access (--allow-all)", source)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

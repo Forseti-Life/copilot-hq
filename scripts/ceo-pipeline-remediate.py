@@ -134,9 +134,136 @@ def _has_gate2_approve(qa_agent: str, release_id: str) -> bool:
         return False
     for path in outbox.glob("*gate2-approve*.md"):
         text = path.read_text(encoding="utf-8", errors="ignore")
+        if "APPROVE filed automatically" in text:
+            continue
         if release_id in text and "APPROVE" in text:
             return True
     return False
+
+
+def _read_text(path: Path, limit: int = 16000) -> str:
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "\n\n[...truncated by ceo-pipeline-remediate.py...]\n"
+
+
+def _rel(path: Path) -> str:
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _latest_by_mtime(paths: list[Path]) -> Path | None:
+    if not paths:
+        return None
+    return max(paths, key=lambda p: p.stat().st_mtime)
+
+
+def _latest_feature_dev_outbox(team_id: str, feature_id: str) -> Path | None:
+    outbox = ROOT / "sessions" / f"dev-{team_id}" / "outbox"
+    if not outbox.exists():
+        return None
+    return _latest_by_mtime([path for path in outbox.glob("*.md") if feature_id in path.name])
+
+
+def _latest_release_qa_outbox(qa_agent: str, release_id: str, features: list[str]) -> Path | None:
+    outbox = ROOT / "sessions" / qa_agent / "outbox"
+    if not outbox.exists():
+        return None
+    matches: list[Path] = []
+    for path in outbox.glob("*.md"):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        if release_id in text:
+            matches.append(path)
+            continue
+        if any(feature_id in text or feature_id in path.name for feature_id in features):
+            matches.append(path)
+    return _latest_by_mtime(matches)
+
+
+def _markdown_bundle_section(title: str, path: Path) -> str:
+    text = _read_text(path).rstrip()
+    return (
+        f"### {title}\n"
+        f"- Source: `{_rel(path)}`\n\n"
+        f"````text\n{text}\n````\n"
+    )
+
+
+def _gate2_followup_extra_files(team: Team, release_id: str, features: list[str]) -> dict[str, str]:
+    feature_list = "\n".join(f"- `{feature_id}`" for feature_id in features) if features else "- None"
+    problem_statement = (
+        f"# Gate 2 problem statement — {release_id}\n\n"
+        f"The active release `{release_id}` is waiting on a real QA Gate 2 verdict for `{team.team_id}`.\n\n"
+        f"Scoped features:\n{feature_list}\n\n"
+        "Use the bundled inbox evidence as the primary working set. If it is sufficient, issue a release-scoped APPROVE or BLOCK verdict on the merits. "
+        "If the bundled evidence is still insufficient, say exactly what evidence is missing.\n"
+    )
+    release_criteria = (
+        f"# Gate 2 acceptance criteria — {release_id}\n\n"
+        f"- Produce exactly one release-scoped QA verdict for `{release_id}`.\n"
+        "- The outbox must begin with `- Status:` and `- Summary:`.\n"
+        "- The verdict must be explicit: `APPROVE` or `BLOCK`.\n"
+        "- The verdict must cite the bundled evidence below, not a vague reference to external files.\n"
+        "- If BLOCKing, list the concrete blocker(s) and the decision/recommendation.\n"
+    )
+
+    command_lines = [
+        "- command: |",
+        f"    Re-evaluate Gate 2 for active release `{release_id}`.",
+        "",
+        "    Use the bundled inbox evidence as your primary working set.",
+        "    Do not assume additional repo-read or shell capabilities are available.",
+        "",
+        "    Required actions:",
+        "    1. Review the bundled feature brief(s), acceptance criteria, and dev evidence.",
+        "    2. Review the bundled prior QA/Gate 2 evidence, if present.",
+        f"    3. Write exactly one release-scoped APPROVE or BLOCK verdict for `{release_id}`.",
+        "    4. Cite the bundled evidence directly in your verdict.",
+        "",
+        "## Bundled release evidence",
+        "",
+        f"### Scoped features\n{feature_list}",
+        "",
+    ]
+
+    extra_files: dict[str, str] = {
+        "00-problem-statement.md": problem_statement,
+        "01-acceptance-criteria.md": release_criteria,
+    }
+
+    for feature_id in features:
+        feature_dir = ROOT / "features" / feature_id
+        feature_md = feature_dir / "feature.md"
+        if feature_md.exists():
+            extra_files[f"evidence/{feature_id}/feature.md"] = _read_text(feature_md)
+            command_lines.append(_markdown_bundle_section(f"Feature brief — {feature_id}", feature_md))
+        ac_md = feature_dir / "01-acceptance-criteria.md"
+        if ac_md.exists():
+            extra_files[f"evidence/{feature_id}/01-acceptance-criteria.md"] = _read_text(ac_md)
+            command_lines.append(_markdown_bundle_section(f"Acceptance criteria — {feature_id}", ac_md))
+        test_plan = feature_dir / "03-test-plan.md"
+        if test_plan.exists():
+            extra_files[f"evidence/{feature_id}/03-test-plan.md"] = _read_text(test_plan)
+            command_lines.append(_markdown_bundle_section(f"Test plan — {feature_id}", test_plan))
+        verification = feature_dir / "04-verification-report.md"
+        if verification.exists():
+            extra_files[f"evidence/{feature_id}/04-verification-report.md"] = _read_text(verification)
+            command_lines.append(_markdown_bundle_section(f"Verification report — {feature_id}", verification))
+        dev_outbox = _latest_feature_dev_outbox(team.team_id, feature_id)
+        if dev_outbox is not None:
+            extra_files[f"evidence/{feature_id}/dev-outbox.md"] = _read_text(dev_outbox)
+            command_lines.append(_markdown_bundle_section(f"Latest dev outbox — {feature_id}", dev_outbox))
+
+    latest_qa = _latest_release_qa_outbox(team.qa_agent, release_id, features)
+    if latest_qa is not None:
+        extra_files["evidence/prior-qa-outbox.md"] = _read_text(latest_qa)
+        command_lines.append(_markdown_bundle_section("Latest related QA outbox", latest_qa))
+
+    extra_files["command.md"] = "\n".join(command_lines).rstrip() + "\n"
+    return extra_files
 
 
 def _has_signoff(pm_agent: str, release_id: str) -> bool:
@@ -151,6 +278,8 @@ def _write_item(
     body: str,
     verification: str,
     metadata: list[tuple[str, str]] | None = None,
+    acceptance_lines: list[str] | None = None,
+    extra_files: dict[str, str] | None = None,
 ) -> bool:
     item_dir = ROOT / "sessions" / agent / "inbox" / folder_name
     if item_dir.exists():
@@ -160,6 +289,11 @@ def _write_item(
     metadata_lines = ""
     if metadata:
         metadata_lines = "".join(f"- {key}: {value}\n" for key, value in metadata if value)
+    acceptance_lines = acceptance_lines or [
+        "Required follow-up is completed and documented in outbox with `- Status: done`",
+        "Verification command/output is included in the outbox update",
+    ]
+    acceptance_md = "\n".join(f"- {line}" for line in acceptance_lines)
 
     readme = f"""# {title}
 
@@ -173,13 +307,17 @@ def _write_item(
 {body}
 
 ## Acceptance criteria
-- Required follow-up is completed and documented in outbox with `- Status: done`
-- Verification command/output is included in the outbox update
+{acceptance_md}
 
 ## Verification
 - {verification}
 """
     (item_dir / "README.md").write_text(readme, encoding="utf-8")
+    if extra_files:
+        for rel_path, content in extra_files.items():
+            file_path = item_dir / rel_path
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(content, encoding="utf-8")
     return True
 
 
@@ -262,6 +400,12 @@ def _queue_gate2_followup(team: Team, release_id: str, features: list[str]) -> b
         f"Gate 2 follow-up: {release_id}",
         body,
         f"`bash scripts/ceo-release-health.sh` should show `[{team.team_id}] Gate 2 APPROVE` as PASS or a documented BLOCK outbox should exist",
+        acceptance_lines=[
+            f"Write exactly one release-scoped APPROVE or BLOCK verdict for `{release_id}`",
+            "Outbox begins with `- Status:` and `- Summary:`",
+            "Verdict cites the bundled evidence and any concrete blocker(s)",
+        ],
+        extra_files=_gate2_followup_extra_files(team, release_id, features),
     )
 
 
