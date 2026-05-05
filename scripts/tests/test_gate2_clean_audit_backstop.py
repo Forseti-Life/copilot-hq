@@ -66,22 +66,15 @@ def _run(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_writes_gate2_approve_for_clean_audit(tmp_path):
+def test_does_not_write_gate2_approve_for_clean_audit(tmp_path):
     root = _make_root(tmp_path)
     _write_findings(root, clean=True)
 
     result = _run(root, "--team", "dungeoncrawler", "--source", "pytest")
 
     assert result.returncode == 0, result.stderr
-    assert "FIXED dungeoncrawler" in result.stdout
-
-    outbox = root / "sessions" / "qa-dungeoncrawler" / "outbox"
-    approve_files = list(outbox.glob("*gate2-approve*.md"))
-    assert len(approve_files) == 1
-    content = approve_files[0].read_text(encoding="utf-8")
-    assert "20260413-dungeoncrawler-release-i" in content
-    assert "APPROVE" in content
-    assert "pytest" in content
+    assert "auto-filed Gate 2 approvals are retired" in result.stdout
+    assert not list((root / "sessions" / "qa-dungeoncrawler" / "outbox").glob("*gate2-approve*.md"))
 
 
 def test_skips_when_audit_not_clean(tmp_path):
@@ -106,20 +99,15 @@ def test_skips_when_config_drift_exists(tmp_path):
     assert not list((root / "sessions" / "qa-dungeoncrawler" / "outbox").glob("*gate2-approve*.md"))
 
 
-def test_queue_followup_when_backstop_intervenes(tmp_path):
+def test_queue_followup_flag_is_compatibility_only(tmp_path):
     root = _make_root(tmp_path)
     _write_findings(root, clean=True)
 
     result = _run(root, "--team", "dungeoncrawler", "--queue-followup", "--source", "ceo-ops-once.sh")
 
     assert result.returncode == 0, result.stderr
-    assert "queued CEO follow-up" in result.stdout
-
-    inbox_items = [p for p in (root / "sessions" / "ceo-copilot-2" / "inbox").iterdir() if p.is_dir()]
-    assert len(inbox_items) == 1
-    command = (inbox_items[0] / "command.md").read_text(encoding="utf-8")
-    assert "Root-cause review" in command
-    assert "20260413-dungeoncrawler-release-i" in command
+    assert "auto-filed Gate 2 approvals are retired" in result.stdout
+    assert not list((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())
 
 
 def test_existing_approve_is_idempotent(tmp_path):
@@ -134,6 +122,6 @@ def test_existing_approve_is_idempotent(tmp_path):
     result = _run(root, "--team", "dungeoncrawler", "--queue-followup")
 
     assert result.returncode == 0, result.stderr
-    assert "Gate 2 APPROVE already exists" in result.stdout
+    assert "auto-filed Gate 2 approvals are retired" in result.stdout
     assert len(list((root / "sessions" / "qa-dungeoncrawler" / "outbox").glob("*gate2-approve*.md"))) == 1
     assert not list((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())

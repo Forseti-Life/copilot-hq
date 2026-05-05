@@ -49,8 +49,19 @@ find_gate2_evidence() {
   local qa_outbox="$1"
   local release_id="$2"
   [ -d "$qa_outbox" ] || return 0
-  find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*gate2-aggregate-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null \
-    | xargs grep -l "$release_id" 2>/dev/null | head -1 || true
+  while IFS= read -r f; do
+    grep -q "$release_id" "$f" 2>/dev/null || continue
+    if [[ "$(basename "$f")" == *"empty-release-self-cert"* ]]; then
+      printf '%s\n' "$f"
+      return 0
+    fi
+    if grep -qi "APPROVE filed automatically" "$f" 2>/dev/null; then
+      continue
+    fi
+    printf '%s\n' "$f"
+    return 0
+  done < <(find "$qa_outbox" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*gate2-aggregate-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null)
+  return 0
 }
 
 find_feature_outbox() {

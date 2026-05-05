@@ -276,15 +276,9 @@ PY
 
 echo
 if [ -z "$TEAM_SCOPE" ]; then
-    # Immediately apply any existing clean audit to the freshly-advanced release cycle.
-    # Without this, Gate 2 APPROVE has a gap until the next site-audit-run.sh execution
-    # (up to ~2 hours until ceo-ops-once.sh backstop fires).
-    python3 "${ROOT_DIR}/scripts/gate2-clean-audit-backstop.py" --source "post-coordinated-push.sh" || true
-
-    echo
     bash "${ROOT_DIR}/scripts/ceo-release-boundary-health.sh"
 else
-    echo "Skipping global Gate 2 backstop / boundary health in team-scoped mode."
+    echo "Skipping global boundary health in team-scoped mode."
 fi
 
 # Dispatch Gate R5 production audit inbox item for CEO (ISSUE-011 fix).

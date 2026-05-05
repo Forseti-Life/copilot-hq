@@ -624,9 +624,6 @@ print("WROTE: findings-summary.md")
 print("WROTE: findings-summary.json")
 PY
 
-  if [ -n "${team_id:-}" ]; then
-    python3 scripts/gate2-clean-audit-backstop.py --team "${team_id}" --source "site-audit-run.sh" || true
-  fi
 }
 
 run_site() {

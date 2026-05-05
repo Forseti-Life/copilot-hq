@@ -57,9 +57,6 @@ set -e
 section "CEO inbox"
 find sessions/ceo-copilot-2/inbox -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort || true
 
-section "Clean-audit Gate 2 backstop"
-python3 ./scripts/gate2-clean-audit-backstop.py --source "ceo-ops-once.sh" --queue-followup || true
-
 section "Release/SLA remediation dispatch"
 python3 ./scripts/ceo-pipeline-remediate.py --source "ceo-ops-once.sh" || true
 

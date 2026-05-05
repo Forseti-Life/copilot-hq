@@ -110,3 +110,26 @@ def test_signoff_fails_when_change_list_feature_release_metadata_is_blank(tmp_pa
     assert result.returncode == 1, result.stdout + result.stderr
     assert "release metadata mismatch" in result.stderr
     assert "BLOCKED: PM signoff requires release-bound features" in result.stderr
+
+
+def test_signoff_rejects_auto_filed_gate2_artifact(tmp_path):
+    root, release_id = _make_root(tmp_path)
+    auto_gate2 = root / "sessions" / "qa-dungeoncrawler" / "outbox" / f"20260412-gate2-approve-{release_id}.md"
+    auto_gate2.write_text(
+        "\n".join(
+            [
+                f"# Gate 2 — QA Verification Report: {release_id} — APPROVE",
+                "",
+                f"- Release: {release_id}",
+                "- Status: done",
+                "- Summary: Clean site audit for dungeoncrawler is sufficient Gate 2 evidence. APPROVE filed automatically by site-audit-run.sh.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root, release_id)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Gate 2 APPROVE evidence not found" in result.stderr

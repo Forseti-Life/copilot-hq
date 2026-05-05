@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""Materialize Gate 2 APPROVE when the latest QA site audit is clean.
+"""Retired Gate 2 clean-audit backstop.
 
-Normal path:
-- site-audit-run.sh calls this immediately after writing findings-summary JSON/MD
-  so a clean audit produces Gate 2 APPROVE evidence without waiting on a human.
-
-Backstop path:
-- the adaptive CEO scheduler calls this through ceo-ops-once.sh; when the org is
-  degraded it can run every 10 minutes, otherwise it relaxes to the normal cadence.
-  heals any missed clean-audit approvals and creates a root-cause review item when
-  the backstop had to intervene.
+Clean site audits remain useful QA evidence, but they no longer auto-create
+release-scoped Gate 2 APPROVE artifacts. Gate 2 must come from an explicit QA
+verdict written by the owning QA seat after review of release evidence.
 """
 
 from __future__ import annotations
@@ -212,27 +206,14 @@ def remediate_team(team: Team, *, source: str, queue_followup: bool) -> str:
     release_id = _active_release_id(team.team_id)
     if not release_id:
         return f"SKIP {team.team_id}: no active release"
-
-    existing = _existing_gate2_approve(team.qa_agent, release_id)
-    if existing:
-        return f"SKIP {team.team_id}: Gate 2 APPROVE already exists ({existing.name})"
-
     findings_json = _latest_findings_json(team.qa_agent)
     summary = _load_findings_summary(findings_json)
     if not _is_clean_audit(summary):
         return f"SKIP {team.team_id}: latest QA audit is not clean"
-
-    approve_path = _write_gate2_approve(team, release_id, findings_json, source)
-    followup = None
-    if queue_followup:
-        followup = _queue_root_cause_followup(team, release_id, approve_path)
-
-    if followup:
-        return (
-            f"FIXED {team.team_id}: wrote {approve_path.name} and queued CEO follow-up "
-            f"({followup.name})"
-        )
-    return f"FIXED {team.team_id}: wrote {approve_path.name}"
+    return (
+        f"SKIP {team.team_id}: clean audit present for {release_id}, "
+        "but auto-filed Gate 2 approvals are retired; explicit QA verdict required"
+    )
 
 
 def _iter_selected_teams(all_teams: Iterable[Team], team_ids: set[str]) -> Iterable[Team]:
@@ -247,11 +228,11 @@ def _iter_selected_teams(all_teams: Iterable[Team], team_ids: set[str]) -> Itera
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--team", action="append", default=[], help="Limit to one or more team IDs")
-    parser.add_argument("--source", default="gate2-clean-audit-backstop", help="Source label written into the APPROVE artifact")
+    parser.add_argument("--source", default="gate2-clean-audit-backstop", help="Unused compatibility flag")
     parser.add_argument(
         "--queue-followup",
         action="store_true",
-        help="Queue a CEO root-cause review inbox item when this script had to intervene",
+        help="Unused compatibility flag",
     )
     args = parser.parse_args()
 
@@ -260,13 +241,10 @@ def main() -> int:
         print("SKIP: no active teams matched")
         return 0
 
-    changed = False
     for team in teams:
         result = remediate_team(team, source=args.source, queue_followup=args.queue_followup)
         print(result)
-        if result.startswith("FIXED "):
-            changed = True
-    return 0 if changed or teams else 0
+    return 0
 
 
 if __name__ == "__main__":

@@ -146,9 +146,18 @@ qa_outbox="sessions/${qa_agent}/outbox"
 _check_gate2_in() {
   local outbox_dir="$1"
   [ -d "$outbox_dir" ] || return 1
-  grep -rl "$release_id" "$outbox_dir/" 2>/dev/null \
-    | xargs grep -l "APPROVE" 2>/dev/null \
-    | grep -q .
+  while IFS= read -r f; do
+    grep -q "$release_id" "$f" 2>/dev/null || continue
+    grep -q "APPROVE" "$f" 2>/dev/null || continue
+    if [[ "$(basename "$f")" == *"empty-release-self-cert"* ]]; then
+      return 0
+    fi
+    if grep -qi "APPROVE filed automatically" "$f" 2>/dev/null; then
+      continue
+    fi
+    return 0
+  done < <(find "$outbox_dir" -maxdepth 1 \( -name "*gate2-approve*" -o -name "*gate2-aggregate-approve*" -o -name "*empty-release-self-cert*" \) -type f 2>/dev/null)
+  return 1
 }
 
 if _check_gate2_in "$qa_outbox"; then

@@ -253,3 +253,56 @@ def test_push_marker_detected_from_auto_push_dispatched(tmp_path):
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert f"[forseti] push already dispatched ({release_id}.pushed)" in result.stdout
+
+
+def test_auto_filed_gate2_artifact_does_not_count_as_gate2_evidence(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    feature_dir = root / "features" / "forseti-langgraph-console-admin"
+    feature_dir.mkdir(parents=True)
+    (feature_dir / "feature.md").write_text(
+        "\n".join(
+            [
+                "# Feature Brief",
+                "",
+                "- Work item id: forseti-langgraph-console-admin",
+                "- Website: forseti.life",
+                "- Status: in_progress",
+                f"- Release: {release_id}",
+                "- Dev owner: dev-forseti",
+                "- QA owner: qa-forseti",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    dev_outbox = root / "sessions" / "dev-forseti" / "outbox"
+    dev_outbox.mkdir(parents=True)
+    (dev_outbox / "20260420-172644-impl-forseti-langgraph-console-admin.md").write_text(
+        "- Status: done\n- Summary: Implemented.\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "qa-forseti" / "outbox" / f"20260418-gate2-approve-{release_id}.md").write_text(
+        "\n".join(
+            [
+                f"# Gate 2 — QA Verification Report: {release_id} — APPROVE",
+                "",
+                f"- Release: {release_id}",
+                "- Status: done",
+                "- Summary: Clean site audit for forseti is sufficient Gate 2 evidence. APPROVE filed automatically by site-audit-run.sh.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    signoff = root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / f"{release_id}.md"
+    if signoff.exists():
+        signoff.unlink()
+
+    result = _run(root)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Gate 2 evidence:" not in result.stdout
+    assert "PM signoff pending Gate 2 APPROVE" in result.stdout
