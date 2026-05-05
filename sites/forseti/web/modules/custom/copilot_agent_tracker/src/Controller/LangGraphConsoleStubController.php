@@ -1578,14 +1578,14 @@ final class LangGraphConsoleStubController extends ControllerBase {
   private function subObserveAlertsIncidents(array $sub, array $back): array {
     $incidents = [];
     $now = time();
-    $24h_ago = $now - (24 * 3600);
+    $twenty_four_hours_ago = $now - (24 * 3600);
 
     // Source 1: Executor failures
     $executor_failures_path = $this->hqPath('tmp/executor-failures');
     if (is_dir($executor_failures_path)) {
       $files = @glob($executor_failures_path . '/*.json') ?: [];
       foreach ($files as $file) {
-        if (filemtime($file) > $24h_ago) {
+        if (filemtime($file) > $twenty_four_hours_ago) {
           $data = $this->readJson($file);
           if (!empty($data)) {
             $incidents[] = [
@@ -1613,7 +1613,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
           foreach ($items as $item) {
             if ($item === '.' || $item === '..') continue;
             $cmd_file = $inbox_path . '/' . $item . '/command.md';
-            if (is_readable($cmd_file) && filemtime($cmd_file) > $24h_ago) {
+            if (is_readable($cmd_file) && filemtime($cmd_file) > $twenty_four_hours_ago) {
               $content = (string) file_get_contents($cmd_file);
               if (preg_match('/Status:\s*blocked/i', $content)) {
                 $summary = $item;
@@ -2313,6 +2313,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
         ],
       ],
     ];
+  }
   /**
    * Observe → Feature Progress subsection.
    *
@@ -2381,5 +2382,4 @@ final class LangGraphConsoleStubController extends ControllerBase {
       ],
     ]);
   }
-
-  
+}

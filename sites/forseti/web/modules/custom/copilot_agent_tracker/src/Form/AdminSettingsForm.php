@@ -148,7 +148,7 @@ class AdminSettingsForm extends FormBase {
 
     // Show success message.
     $this->messenger()->addStatus($this->t('Settings saved successfully.'));
-    $form_state->setRedirect('langgraph_console_admin_settings');
+    $form_state->setRedirect('copilot_agent_tracker.langgraph_console_admin_settings');
   }
 
   /**

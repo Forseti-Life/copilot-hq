@@ -137,7 +137,7 @@ class AdminNavigationForm extends FormBase {
     $this->logAuditEntries($new_prefs, $old_prefs, $values);
 
     $this->messenger()->addStatus($this->t('Navigation settings saved successfully.'));
-    $form_state->setRedirect('langgraph_console_admin_navigation');
+    $form_state->setRedirect('copilot_agent_tracker.langgraph_console_admin_navigation');
   }
 
   /**
