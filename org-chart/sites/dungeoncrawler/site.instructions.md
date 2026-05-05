@@ -24,15 +24,18 @@ Rule:
   - `web/modules/custom`
   - `web/themes/custom`
   - `config/sync`
-- Inside `sites/dungeoncrawler`, the Dungeoncrawler-owned paths now delegate to `dungeoncrawler-pf2e`:
+- Inside `sites/dungeoncrawler`, the current Dungeoncrawler site module/theme/config paths now delegate to `dungeoncrawler-pf2e`, including:
+  - `web/modules/custom/ai_conversation`
+  - `web/modules/custom/ai_conversation.backup`
+  - `web/modules/custom/copilot_agent_tracker`
   - `web/modules/custom/dungeoncrawler_content`
   - `web/modules/custom/dungeoncrawler_tester`
   - `web/themes/custom/dungeoncrawler`
   - `config/sync`
 
 ## Working convention
-- Make Dungeoncrawler product-code changes in `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`.
-- Treat `/home/ubuntu/forseti.life/sites/dungeoncrawler` as a compatibility/delegation path, not the primary authored source for Dungeoncrawler-owned assets.
+- Make Dungeoncrawler site/product-code changes in `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`.
+- Treat `/home/ubuntu/forseti.life/sites/dungeoncrawler` as a compatibility/delegation path, not the primary authored source for these delegated site assets.
 - Use `/var/www/html/dungeoncrawler` when commands must run against the full live Drupal install (for example `drush cr`).
 - Do not add new Dungeoncrawler-owned code directly under `sites/dungeoncrawler`; route it into `dungeoncrawler-pf2e`.
 
