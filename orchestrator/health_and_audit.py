@@ -181,7 +181,7 @@ def reap_stale_copilot_processes() -> Dict[str, Any]:
 
 # ── Gating agent quarantine detection ──────────────────────────────────────────
 
-_QUARANTINE_ESCALATE_COOLDOWN = 3600  # seconds between gating-agent quarantine escalations
+_QUARANTINE_ESCALATE_COOLDOWN = 28800  # seconds between gating-agent quarantine escalations (8h: prevent re-fire while awaiting Board decision)
 
 
 def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) -> None:
