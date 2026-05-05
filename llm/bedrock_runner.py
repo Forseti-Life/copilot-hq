@@ -37,8 +37,8 @@ def _build_messages(history: List[dict], prompt: str) -> List[dict]:
         content = str(msg.get("content") or "")
         if role not in {"user", "assistant"} or not content.strip():
             continue
-        messages.append({"role": role, "content": [{"text": content}]})
-    messages.append({"role": "user", "content": [{"text": prompt}]})
+        messages.append({"role": role, "content": [{"type": "text", "text": content}]})
+    messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
     return messages
 
 
