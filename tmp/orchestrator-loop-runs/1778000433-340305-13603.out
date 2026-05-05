@@ -62,10 +62,10 @@ BLOCKED: 8 agent(s) blocked
     
 (1 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
 [release-ready-to-close] 20260412-forseti-release-r — 24.3h old (threshold: 24h) → pm-forseti must decide
-EXECUTOR-HEALTH: 51 failures in 24h
-  - High failure rate (51 in 24h). Possible systemic issue.
+EXECUTOR-HEALTH: 50 failures in 24h
+  - High failure rate (50 in 24h). Possible systemic issue.
   - Majority of failures are systematic (not transient). Requires investigation.
-  - Agent pm-forseti has 34 failures. May need quarantine or debugging.
+  - Agent pm-forseti has 33 failures. May need quarantine or debugging.
   - Agent qa-forseti has 12 failures. May need quarantine or debugging.
 AUTO-HANDOFF: detected 1 HANDOFF-GAP state(s)
 tick: agents=ceo-copilot-2,pm-forseti
