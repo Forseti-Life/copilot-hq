@@ -64,6 +64,18 @@ find_gate2_evidence() {
   return 0
 }
 
+find_gate2_block() {
+  local qa_outbox="$1"
+  local release_id="$2"
+  [ -d "$qa_outbox" ] || return 0
+  while IFS= read -r f; do
+    grep -q "$release_id" "$f" 2>/dev/null || continue
+    printf '%s\n' "$f"
+    return 0
+  done < <(find "$qa_outbox" -maxdepth 1 -name "*gate2-block*" -type f 2>/dev/null)
+  return 0
+}
+
 find_feature_outbox() {
   local outbox_dir="$1"
   local feat_name="$2"
@@ -326,9 +338,12 @@ PY
   echo
   QA_OUTBOX="sessions/${QA_AGENT}/outbox"
   GATE2_FILE="$(find_gate2_evidence "$QA_OUTBOX" "$RELEASE_ID")"
+  GATE2_BLOCK_FILE="$(find_gate2_block "$QA_OUTBOX" "$RELEASE_ID")"
 
   if [ -n "$GATE2_FILE" ]; then
     pass "[$TEAM] Gate 2 evidence: $(basename "$GATE2_FILE")"
+  elif [ -n "$GATE2_BLOCK_FILE" ]; then
+    fail "[$TEAM] Gate 2 BLOCK: $(basename "$GATE2_BLOCK_FILE")"
   else
     if [ "$FEAT_COUNT" -eq 0 ]; then
       warn "[$TEAM] Gate 2 APPROVE not found (empty release — may need --empty-release flag)"

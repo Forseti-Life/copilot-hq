@@ -22,14 +22,14 @@ default: bedrock
 # Roles that require the strongest reasoning or architectural judgment stay on
 # Copilot. Structured/checklist-heavy seats default to Bedrock.
 #
-#   ceo, software-developer                  → copilot
-#   product-manager, tester                  → bedrock
+#   ceo, software-developer, tester          → copilot
+#   product-manager                          → bedrock
 #   business-analyst, security-analyst       → bedrock
 roles:
   ceo: copilot
   product-manager: bedrock
   software-developer: copilot
-  tester: bedrock
+  tester: copilot
   business-analyst: bedrock
   security-analyst: bedrock
 

@@ -862,14 +862,25 @@ run_bedrock() {
   local prompt="$1"
   local site
   local contract
+  local bedrock_output
+  local bedrock_err
   site="$(bedrock_site_for_context)"
   contract=$'Return plain markdown only.\n'
   contract+=$'The first line must be exactly "- Status: <value>".\n'
   contract+=$'The second line must be exactly "- Summary: <value>".\n'
   contract+=$'Do not emit tool calls, tool responses, XML, JSON, or analysis preambles.\n'
   contract+=$'If you need to continue investigating, use "- Status: in_progress" and summarize the next concrete step.\n\n'
-  BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}" \
-    "$BEDROCK_ASSIST_SCRIPT" "$site" "${contract}${prompt}" 2>/dev/null || true
+  bedrock_err="$(mktemp)"
+  bedrock_output="$(
+    BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}" \
+      "$BEDROCK_ASSIST_SCRIPT" "$site" "${contract}${prompt}" 2>"$bedrock_err" || true
+  )"
+  if [ -z "$(printf '%s' "$bedrock_output" | tr -d ' \t\r\n')" ] && [ -s "$bedrock_err" ]; then
+    cat "$bedrock_err"
+  else
+    printf '%s\n' "$bedrock_output"
+  fi
+  rm -f "$bedrock_err"
 }
 
 run_primary_backend() {

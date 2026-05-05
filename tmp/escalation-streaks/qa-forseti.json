@@ -1,5 +1,4 @@
 {
-  "last_superior_escalation": "20260504-172724-suite-activate-forseti-langgraph-console-admin",
-  "should_escalate": false,
-  "streak": 2
+  "last_superior_escalation": "20260505-gate2-followup-20260412-forseti-release-r",
+  "streak": 0
 }

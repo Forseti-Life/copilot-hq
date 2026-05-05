@@ -297,6 +297,9 @@ def test_auto_filed_gate2_artifact_does_not_count_as_gate2_evidence(tmp_path):
         + "\n",
         encoding="utf-8",
     )
+    empty_self_cert = root / "sessions" / "qa-forseti" / "outbox" / f"20260418-000000-empty-release-self-cert-{release_id}.md"
+    if empty_self_cert.exists():
+        empty_self_cert.unlink()
     signoff = root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / f"{release_id}.md"
     if signoff.exists():
         signoff.unlink()
@@ -306,3 +309,24 @@ def test_auto_filed_gate2_artifact_does_not_count_as_gate2_evidence(tmp_path):
     assert result.returncode == 1, result.stdout + result.stderr
     assert "Gate 2 evidence:" not in result.stdout
     assert "PM signoff pending Gate 2 APPROVE" in result.stdout
+
+
+def test_gate2_block_artifact_is_reported_explicitly(tmp_path):
+    root = _make_root(tmp_path)
+    release_id = "20260418-forseti-release-m"
+
+    signoff = root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / f"{release_id}.md"
+    if signoff.exists():
+        signoff.unlink()
+    self_cert = root / "sessions" / "qa-forseti" / "outbox" / f"20260418-000000-empty-release-self-cert-{release_id}.md"
+    if self_cert.exists():
+        self_cert.unlink()
+    (root / "sessions" / "qa-forseti" / "outbox" / f"20260418-gate2-block-{release_id}.md").write_text(
+        f"- Status: blocked\n- Summary: Gate 2 BLOCK for {release_id}.\n\n{release_id}\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert f"Gate 2 BLOCK: 20260418-gate2-block-{release_id}.md" in result.stdout
