@@ -1,3 +1,6 @@
+- Status: done
+- Completed: 2026-05-05T13:49:57Z
+
 # Shipping Lag Escalation — Release(s) Dev-Complete but Unshipped
 
 **Detected:** 2026-05-05T12:52:33.105760+00:00
