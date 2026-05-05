@@ -1,15 +1,14 @@
 {
-  "generated_at": "2026-05-05T13:58:29.239124+00:00",
+  "generated_at": "2026-05-05T14:08:10.093906+00:00",
   "parity_ok": false,
   "selected_agents": {
     "match": true,
     "actual": [
-      "ceo-copilot-2",
-      "pm-forseti"
+      "ceo-copilot-2"
     ]
   },
   "steps": {
-    "match": false,
+    "match": true,
     "expected": [
       "consume_replies",
       "dispatch_commands",
@@ -25,7 +24,6 @@
       "consume_replies",
       "dispatch_commands",
       "release_cycle",
-      "release_cycle",
       "coordinated_push",
       "pick_agents",
       "exec_agents",
@@ -35,7 +33,6 @@
     ]
   },
   "errors": [
-    "step consume_replies: rc=1",
-    "step order mismatch: expected=['consume_replies', 'dispatch_commands', 'release_cycle', 'coordinated_push', 'pick_agents', 'exec_agents', 'health_check', 'kpi_monitor', 'publish'] actual=['consume_replies', 'dispatch_commands', 'release_cycle', 'release_cycle', 'coordinated_push', 'pick_agents', 'exec_agents', 'health_check', 'kpi_monitor', 'publish']"
+    "step consume_replies: rc=1"
   ]
 }
