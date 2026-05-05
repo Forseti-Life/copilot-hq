@@ -10,6 +10,10 @@ If you are new here, start with:
 2. `runbooks/public-repo-positioning.md`
 3. `runbooks/orchestration.md`
 
+## Repository topology
+
+This repository is the HQ control plane. Product and module repositories that live alongside it under `/home/ubuntu/forseti.life/*` are maintained as **standalone sibling repositories**, not as gitlinks tracked by this repo.
+
 ## What this repo does
 
 This repository is the canonical control plane for:
