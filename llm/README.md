@@ -15,7 +15,9 @@ agent-exec-next.sh
       │
       ├─ model assigned + file present?
       │     YES → python3 llm/runner.py --session ... --model ... --prompt ...
-      │     NO  → selected backend (Copilot CLI by default, or Bedrock when configured)
+      │     NO  → selected live backend via HQ runner path
+      │            - Copilot CLI
+      │            - python3 llm/bedrock_runner.py --session ... --prompt ...
       │
       ▼
  outbox update written
@@ -36,8 +38,8 @@ agent-exec-next.sh
 | `agent-task-runner` | phi-3-mini | Structured output for build/test runs |
 
 Routing is defined in `routing.yaml`. If a local model is assigned but not yet
-downloaded, execution falls back to the selected agent backend (`HQ_AGENTIC_BACKEND`)
-— Copilot CLI by default (`auto`) or Bedrock when configured.
+downloaded, execution falls back to the selected live backend (`HQ_AGENTIC_BACKEND`)
+through the HQ executor/runtime path.
 
 ## Setup (new machine / fresh clone)
 
@@ -71,7 +73,8 @@ llm/
   model-manifest.yaml    # Available models: HF source, filename, size, task tags
   routing.yaml           # agent-id / role → model assignment
   requirements.txt       # Python package requirements (pip install -r)
-  runner.py              # Inference shim: --session, --model, --prompt → stdout
+  runner.py              # Local-model inference shim: --session, --model, --prompt → stdout
+  bedrock_runner.py      # Bedrock live runner using HQ session cache + direct API calls
   setup.sh               # Install deps, create venv, validate
   download-models.sh     # Pull GGUF models from Hugging Face Hub
   validate.sh            # Check environment, show routing table, optional test run

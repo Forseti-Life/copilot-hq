@@ -40,6 +40,7 @@ if [ -z "$COPILOT_BIN" ] && [ -x "$HOME/.npm-global/bin/copilot" ]; then
 fi
 BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/bedrock-assist.sh}"
 AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-auto}"
+BEDROCK_RUNNER="$ROOT_DIR/llm/bedrock_runner.py"
 
 INBOX_DIR="sessions/${AGENT_ID}/inbox"
 OUTBOX_DIR="sessions/${AGENT_ID}/outbox"
@@ -624,11 +625,11 @@ resolve_backend() {
       return 1
       ;;
     bedrock)
-      if [ -x "$BEDROCK_ASSIST_SCRIPT" ]; then
+      if [ -f "$BEDROCK_RUNNER" ]; then
         echo "bedrock"
         return 0
       fi
-      echo "ERROR: routing requested bedrock for ${AGENT_ID} but bedrock-assist is not executable: $BEDROCK_ASSIST_SCRIPT" >&2
+      echo "ERROR: routing requested bedrock for ${AGENT_ID} but Bedrock runner is missing: $BEDROCK_RUNNER" >&2
       return 1
       ;;
   esac
@@ -648,11 +649,11 @@ resolve_backend() {
       return 1
       ;;
     bedrock)
-      if [ -x "$BEDROCK_ASSIST_SCRIPT" ]; then
+      if [ -f "$BEDROCK_RUNNER" ]; then
         echo "bedrock"
         return 0
       fi
-      echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but script not executable: $BEDROCK_ASSIST_SCRIPT" >&2
+      echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but Bedrock runner is missing: $BEDROCK_RUNNER" >&2
       return 1
       ;;
     auto)
@@ -660,11 +661,11 @@ resolve_backend() {
         echo "copilot"
         return 0
       fi
-      if [ -x "$BEDROCK_ASSIST_SCRIPT" ]; then
+      if [ -f "$BEDROCK_RUNNER" ]; then
         echo "bedrock"
         return 0
       fi
-      echo "ERROR: no GenAI backend available (copilot missing, bedrock-assist missing)." >&2
+      echo "ERROR: no GenAI backend available (copilot missing, Bedrock runner missing)." >&2
       return 1
       ;;
     *)
@@ -860,27 +861,24 @@ bedrock_site_for_context() {
 
 run_bedrock() {
   local prompt="$1"
-  local site
+  local py
   local contract
-  local bedrock_output
-  local bedrock_err
-  site="$(bedrock_site_for_context)"
   contract=$'Return plain markdown only.\n'
   contract+=$'The first line must be exactly "- Status: <value>".\n'
   contract+=$'The second line must be exactly "- Summary: <value>".\n'
   contract+=$'Do not emit tool calls, tool responses, XML, JSON, or analysis preambles.\n'
   contract+=$'If you need to continue investigating, use "- Status: in_progress" and summarize the next concrete step.\n\n'
-  bedrock_err="$(mktemp)"
-  bedrock_output="$(
-    BEDROCK_OPERATION="hq_agent_exec_${AGENT_ID}" \
-      "$BEDROCK_ASSIST_SCRIPT" "$site" "${contract}${prompt}" 2>"$bedrock_err" || true
-  )"
-  if [ -z "$(printf '%s' "$bedrock_output" | tr -d ' \t\r\n')" ] && [ -s "$bedrock_err" ]; then
-    cat "$bedrock_err"
+  if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
+    py="$ROOT_DIR/llm/.venv/bin/python3"
+  elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ]; then
+    py="$LLM_PYTHON_BIN"
   else
-    printf '%s\n' "$bedrock_output"
+    py="$(command -v python3 2>/dev/null || true)"
   fi
-  rm -f "$bedrock_err"
+  [ -n "$py" ] || return 0
+  "$py" "$BEDROCK_RUNNER" \
+    --session "$SESSION_ID" \
+    --prompt "${contract}${prompt}" 2>&1 || true
 }
 
 run_primary_backend() {

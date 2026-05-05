@@ -18,3 +18,5 @@ Review output for regressions. If clean, mark this item done. If issues found, c
 ## Priority
 - ROI: 90
 - Rationale: R5 is the only post-push regression check; a 6h delay (as in release-r) leaves production issues undetected.
+- Agent: ceo-copilot-2
+- Status: pending
