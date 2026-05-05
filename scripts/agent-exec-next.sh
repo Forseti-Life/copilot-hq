@@ -499,7 +499,7 @@ PROMPT+="$(read_file "$inbox_item/06-risk-assessment.md")"
 # Per-agent Copilot session id.
 SESSION_FILE="$HOME/.copilot/wrappers/hq-${AGENT_ID}.session"
 mkdir -p "$(dirname "$SESSION_FILE")"
-if [ ! -f "$SESSION_FILE" ] || [ -z "$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')" ]; then
+rotate_executor_session() {
   if command -v uuidgen >/dev/null 2>&1; then
     uuidgen > "$SESSION_FILE"
   else
@@ -508,6 +508,9 @@ import uuid
 print(uuid.uuid4())
 PY
   fi
+}
+if [ ! -f "$SESSION_FILE" ] || [ -z "$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')" ]; then
+  rotate_executor_session
 fi
 SESSION_ID="$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')"
 
@@ -818,6 +821,29 @@ run_copilot() {
       _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_followup" 2>&1 || true)"
     fi
   fi
+  if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ] || ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
+    echo "WARN: ${AGENT_ID} response still unusable after follow-up; rotating session and retrying once" >&2
+    rotate_executor_session
+    SESSION_ID="$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')"
+    echo "DEBUG run_copilot: AGENT_ID=${AGENT_ID} RETRY_SESSION_ID=${SESSION_ID}" >&2
+    _throttle_copilot_api
+    if command -v timeout >/dev/null 2>&1; then
+      _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
+        "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
+    else
+      _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
+    fi
+    if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ] || ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
+      _throttle_copilot_api
+      local _retry_followup="Your previous response did not start with '- Status:'. The executor requires your outbox to begin with that line. Output ONLY the outbox markdown now — no prose, no tool calls. First line MUST be exactly: - Status: done (or blocked/in_progress/needs-info)."
+      if command -v timeout >/dev/null 2>&1; then
+        _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "120" \
+          "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_retry_followup" 2>&1 || true)"
+      else
+        _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_retry_followup" 2>&1 || true)"
+      fi
+    fi
+  fi
   printf '%s\n' "$_copilot_response"
 }
 
@@ -1094,9 +1120,16 @@ has_heading() {
 }
 
 qa_agent_for_context() {
-  # Best-effort mapping from site scope to QA seat.
+  # Best-effort mapping from module/site scope to QA seat.
   # If unknown, default to qa-infra.
   local website="${CTX_WEBSITE:-}"
+  local module="${CTX_MODULE:-}"
+  case "${website}:${module}" in
+    forseti.life:copilot_agent_tracker)
+      echo "qa-forseti-agent-tracker"
+      return 0
+      ;;
+  esac
   case "$website" in
     forseti.life)
       echo "qa-forseti"
@@ -1112,6 +1145,13 @@ qa_agent_for_context() {
 
 regression_checklist_path_for_context() {
   local website="${CTX_WEBSITE:-}"
+  local module="${CTX_MODULE:-}"
+  case "${website}:${module}" in
+    forseti.life:copilot_agent_tracker)
+      echo ""
+      return 0
+      ;;
+  esac
   if [ -z "$website" ] || [ "$website" = "*" ]; then
     echo ""
     return 0
@@ -1139,6 +1179,19 @@ regression_checklist_baseline_for_context() {
 
 qa_unit_test_step3_for_context() {
   local website="${CTX_WEBSITE:-}"
+  local module="${CTX_MODULE:-}"
+  case "${website}:${module}" in
+    forseti.life:copilot_agent_tracker)
+      cat <<'EOF'
+    3) Run tracker-scoped QA for this module:
+       - python3 scripts/qa-suite-validate.py
+       - Use qa-suites/products/forseti-agent-tracker/suite.json as the source of truth
+       - Run python3 qa-suites/products/forseti-agent-tracker/run-copilot-agent-tracker-tests.py when the changed surface needs functional coverage
+       - Run scripts/drupal-custom-routes-audit.py for tracker route/ACL verification as needed
+       - Do NOT run scripts/site-audit-run.sh unless explicitly delegated for cross-seat/site-wide verification
+EOF
+      ;;
+  esac
   case "$website" in
     infrastructure)
       cat <<'EOF'

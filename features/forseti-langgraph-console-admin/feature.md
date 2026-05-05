@@ -11,9 +11,9 @@
 - Status: in_progress
 - Release: 20260412-forseti-release-r
 - Feature type: enhancement
-- PM owner: pm-forseti
-- Dev owner: dev-forseti
-- QA owner: qa-forseti
+- PM owner: pm-forseti-agent-tracker
+- Dev owner: dev-forseti-agent-tracker
+- QA owner: qa-forseti-agent-tracker
 - Priority: P2
 - Source: LangGraph UI roadmap (PROJ-001, Phase 7: Admin & Configuration)
 

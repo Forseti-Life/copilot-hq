@@ -51,7 +51,7 @@ def test_routes_standard_qa_block_to_dev(tmp_path):
     outbox.mkdir(parents=True)
     (outbox / "20260414-standard-block.md").write_text(
         """- Status: done
-- Summary: QA verification complete. BLOCK.
+- Summary: Gate 2 — QA Verification Report complete. BLOCK.
 
 ## Next actions
 - Fix the failing implementation.
@@ -73,7 +73,7 @@ def test_skips_dev_routing_when_qa_outbox_explicitly_delegates(tmp_path):
     outbox.mkdir(parents=True)
     (outbox / "20260414-open-source-block.md").write_text(
         """- Status: done
-- Summary: QA verification complete. BLOCK.
+- Summary: Gate 2 — QA Verification Report complete. BLOCK.
 
 ## Next actions
 - Dev-open-source should remediate the blockers listed in the audit artifact.
@@ -88,3 +88,24 @@ def test_skips_dev_routing_when_qa_outbox_explicitly_delegates(tmp_path):
     inbox = root / "sessions" / "dev-infra" / "inbox" / "20260414-fix-from-qa-block-infrastructure"
     assert not inbox.exists()
     assert "explicit delegation" in result.stderr
+
+
+def test_does_not_route_non_gate2_block_to_dev(tmp_path):
+    root = _make_root(tmp_path)
+    outbox = root / "sessions" / "qa-infra" / "outbox"
+    outbox.mkdir(parents=True)
+    (outbox / "20260414-unit-test-surface.md").write_text(
+        """- Status: done
+- Summary: Targeted QA unit test complete. BLOCK.
+
+## Next actions
+- Re-run targeted verification once the missing evidence issue is resolved.
+""",
+        encoding="utf-8",
+    )
+
+    result = _run(root, "20260414-unit-test-surface")
+
+    assert result.returncode == 0, result.stderr
+    inbox = root / "sessions" / "dev-infra" / "inbox" / "20260414-fix-from-qa-block-infrastructure"
+    assert not inbox.exists()

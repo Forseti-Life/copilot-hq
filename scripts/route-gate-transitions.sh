@@ -133,8 +133,17 @@ if [[ "$AGENT" == qa-* ]]; then
 
     STATUS_LINE="$(printf '%s' "$OUTBOX_CONTENT" | grep -m1 '^- Status:' || true)"
 
-    # Pattern 1: QA BLOCK → Dev fix routing
-    if echo "$STATUS_LINE" | grep -qi "done" && printf '%s' "$OUTBOX_CONTENT" | grep -q "BLOCK"; then
+    # Pattern 1: Gate 2 BLOCK → Dev fix routing
+    # Guard: only fire on genuine Gate 2 aggregate BLOCK files.
+    # Unit-test and suite-activate outboxes may mention "BLOCK" but must NOT
+    # create a dev follow-on unless QA emitted a canonical verification report.
+    IS_GATE2_BLOCK=false
+    if echo "$OUTBOX_BASE" | grep -qi "gate2.block\|gate2-block"; then
+      IS_GATE2_BLOCK=true
+    elif printf '%s' "$OUTBOX_CONTENT" | grep -qi "Gate 2.*QA Verification Report"; then
+      IS_GATE2_BLOCK=true
+    fi
+    if echo "$STATUS_LINE" | grep -qi "done" && printf '%s' "$OUTBOX_CONTENT" | grep -q "BLOCK" && [ "$IS_GATE2_BLOCK" = "true" ]; then
       SKIP_DEV_ROUTING=false
       if printf '%s' "$OUTBOX_CONTENT" | grep -qiE 'No new Dev inbox items created|consumes the audit artifact directly'; then
         SKIP_DEV_ROUTING=true
