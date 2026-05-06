@@ -7,8 +7,14 @@ It exists to make multi-agent software delivery understandable and repeatable: w
 If you are new here, start with:
 
 1. `QUICKSTART.md`
-2. `runbooks/public-repo-positioning.md`
-3. `runbooks/orchestration.md`
+2. `forseti-docs/copilot-hq/runbooks/public-repo-positioning.md`
+3. `forseti-docs/copilot-hq/runbooks/orchestration.md`
+
+Canonical operational documentation for `copilot-hq` now lives in
+[`Forseti-Life/forseti-docs`](https://github.com/Forseti-Life/forseti-docs),
+under `copilot-hq/`. The local `runbooks/`, `knowledgebase/`, and
+`org-chart/ownership/` paths in this checkout are compatibility links into that
+docs repository.
 
 ## Repository topology
 
@@ -38,7 +44,9 @@ This repository is the canonical control plane for:
 ## Repo layout
 - `org-chart/` — organizational model (CEO → departments → delegated sessions)
 - `sessions/` — per-session folders (exports, summaries, artifacts)
-- `runbooks/` — how we run/close sessions consistently
+- `runbooks/` — compatibility link to `forseti-docs/copilot-hq/runbooks/`
+- `knowledgebase/` — compatibility link to `forseti-docs/copilot-hq/knowledgebase/`
+- `org-chart/ownership/` — compatibility link to `forseti-docs/copilot-hq/org-chart/ownership/`
 - `templates/` — standard templates for session summaries and handoffs
 - `scripts/` — helper scripts for exporting/sanitizing (optional)
 - `orchestrator/` — LangGraph runtime and execution graph
@@ -49,8 +57,8 @@ This repository is the canonical control plane for:
 
 For a clearer public-facing explanation of why this repo exists and how it relates to `forseti.life`, read:
 
-- `runbooks/public-repo-positioning.md`
-- `runbooks/private-public-dual-repo.md`
+- `forseti-docs/copilot-hq/runbooks/public-repo-positioning.md`
+- `forseti-docs/copilot-hq/runbooks/private-public-dual-repo.md`
 
 ## Quickstart
 
@@ -59,23 +67,23 @@ For a practical first-read path, startup script map, and full-stack orientation,
 - `QUICKSTART.md`
 
 ## Orchestration
-See `runbooks/orchestration.md` for the current end-to-end process flow (LangGraph orchestrator + systemd runtime + publishing).
+See `forseti-docs/copilot-hq/runbooks/orchestration.md` for the current end-to-end process flow (LangGraph orchestrator + systemd runtime + publishing).
 
 Production-master to local-worker control-plane:
 
-- `runbooks/production-master-dev-worker.md` — protocol, routing rules, mermaid diagrams, and implementation plan for production-dispatched local development work.
+- `forseti-docs/copilot-hq/runbooks/production-master-dev-worker.md` — protocol, routing rules, mermaid diagrams, and implementation plan for production-dispatched local development work.
 
 ## Technology stack
-See `runbooks/technology-stack.md` for a full map of the agentic system stack (queues, executors, local LLM layer, publishing, control plane, and observability).
+See `forseti-docs/copilot-hq/runbooks/technology-stack.md` for a full map of the agentic system stack (queues, executors, local LLM layer, publishing, control plane, and observability).
 
 ## Documentation index
 ### Process flows
-- `runbooks/release-cycle-process-flow.md` — release-cycle stages and progression rules.
-- `runbooks/product-team-onboarding.md` — standard onboarding process for adding new product teams.
-- `runbooks/orchestration.md` — end-to-end orchestration process.
-- `runbooks/session-lifecycle.md` — how sessions are started, managed, and closed.
-- `runbooks/session-monitoring.md` — session health and monitoring workflow.
-- `runbooks/coordinated-release.md` — coordinated release execution model.
+- `forseti-docs/copilot-hq/runbooks/release-cycle-process-flow.md` — release-cycle stages and progression rules.
+- `forseti-docs/copilot-hq/runbooks/product-team-onboarding.md` — standard onboarding process for adding new product teams.
+- `forseti-docs/copilot-hq/runbooks/orchestration.md` — end-to-end orchestration process.
+- `forseti-docs/copilot-hq/runbooks/session-lifecycle.md` — how sessions are started, managed, and closed.
+- `forseti-docs/copilot-hq/runbooks/session-monitoring.md` — session health and monitoring workflow.
+- `forseti-docs/copilot-hq/runbooks/coordinated-release.md` — coordinated release execution model.
 
 ### Dashboards
 - `dashboards/FEATURE_PROGRESS.md` — feature progress dashboard definitions and usage.
@@ -164,15 +172,15 @@ Public metadata and policies:
 - `SECURITY.md`
 
 Current release-prep artifacts:
-- `runbooks/publication-readiness-20260308.md`
-- `runbooks/history-secret-scan-20260308.txt`
-- `runbooks/public-release-gate-20260308.md`
+- `forseti-docs/copilot-hq/runbooks/publication-readiness-20260308.md`
+- `forseti-docs/copilot-hq/runbooks/history-secret-scan-20260308.txt`
+- `forseti-docs/copilot-hq/runbooks/public-release-gate-20260308.md`
 
 For a clear public-facing explanation of value proposition, purpose, and platform boundaries with `forseti.life`, see:
-- `runbooks/public-repo-positioning.md`
+- `forseti-docs/copilot-hq/runbooks/public-repo-positioning.md`
 
 For a practical private/public split, see:
-- `runbooks/private-public-dual-repo.md`
+- `forseti-docs/copilot-hq/runbooks/private-public-dual-repo.md`
 
 Automation scripts:
 - `scripts/setup-public-mirror.sh` (one-time mirror setup)
