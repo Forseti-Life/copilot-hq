@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json as _json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,7 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from orchestrator.release_prerequisites import ReleasePrerequisiteValidator
 
 
-def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
+def _run(cmd: List[str], *, timeout: int = 600, env: Optional[Dict[str, str]] = None) -> Tuple[int, str]:
     """Execute a shell command (imported from run.py context)."""
     import subprocess
     try:
@@ -21,6 +22,7 @@ def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
             stderr=subprocess.STDOUT,
             text=True,
             timeout=timeout,
+            env=env,
         )
         return proc.returncode, (proc.stdout or "").strip()
     except subprocess.TimeoutExpired:
@@ -69,6 +71,22 @@ def _release_cycle_control_state() -> Dict[str, Any]:
     """Read release cycle control state (imported from run.py context)."""
     # This will be passed in or imported from run.py
     return {"enabled": True}
+
+
+def _github_cli_env() -> Optional[Dict[str, str]]:
+    token = (os.environ.get("GH_TOKEN") or "").strip()
+    if not token:
+        token_file = Path("/home/ubuntu/github.token")
+        try:
+            if token_file.exists():
+                token = token_file.read_text(encoding="utf-8").strip()
+        except OSError:
+            token = ""
+    if not token:
+        return None
+    env = os.environ.copy()
+    env["GH_TOKEN"] = token
+    return env
 
 
 def _dispatch_signoff_reminders() -> None:
@@ -543,6 +561,23 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
             log.append({"step": "code_review_gate", "release": release_id, "status": "verified"})
             continue
 
+        # Check if a gate task for this release already exists in the CEO inbox
+        ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
+        gate_already_queued = any(
+            (ceo_inbox / item).is_dir() and release_id in item and "code-review-gate" in item
+            for item in (ceo_inbox.iterdir() if ceo_inbox.exists() else [])
+        )
+        
+        if gate_already_queued:
+            log.append({
+                "step": "code_review_gate",
+                "release": release_id,
+                "status": "pending",
+                "action": "gate_task_already_queued",
+            })
+            print(f"CODE-REVIEW-GATE: {release_id} — gate task already queued, skipping duplicate")
+            continue
+
         log.append({
             "step": "code_review_gate",
             "release": release_id,
@@ -552,7 +587,6 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
         print(f"CODE-REVIEW-GATE: {release_id} — no completed review found, dispatching CEO escalation")
 
         today = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-        ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
         item_dir = ceo_inbox / f"{today}-code-review-gate-{re.sub(r'[^A-Za-z0-9-]', '-', release_id)[:60]}"
         if not item_dir.exists():
             item_dir.mkdir(parents=True, exist_ok=True)
@@ -648,6 +682,7 @@ def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
         rc, out = _run(
             ["gh", "workflow", "run", "deploy.yml", "--repo", "keithaumiller/forseti.life", "--ref", "main"],
             timeout=60,
+            env=_github_cli_env(),
         )
         print(f"TEAM-PUSH: {team_id} {rid} deploy rc={rc}")
         if rc != 0:
