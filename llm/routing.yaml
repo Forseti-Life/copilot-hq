@@ -11,27 +11,24 @@
 #   - bedrock
 #
 # Local model routing remains available in the codebase, but HQ runtime policy
-# is to route seats between Copilot and Bedrock only.
+# is to route seats to Copilot by default. Bedrock remains an explicit/manual
+# override only and should not be selected automatically by orchestration.
 
 version: "1"
 
 # Org-wide fallback if no role or agent match.
-default: bedrock
+default: copilot
 
 # Role-based defaults.
-# Roles that require the strongest reasoning or architectural judgment stay on
-# Copilot. Structured/checklist-heavy seats default to Bedrock.
-#
-#   ceo, software-developer                  → copilot
-#   product-manager, tester                  → bedrock
-#   business-analyst, security-analyst       → bedrock
+# HQ orchestration should route all seats to Copilot unless a human/operator
+# explicitly selects another backend.
 roles:
   ceo: copilot
-  product-manager: bedrock
+  product-manager: copilot
   software-developer: copilot
-  tester: bedrock
-  business-analyst: bedrock
-  security-analyst: bedrock
+  tester: copilot
+  business-analyst: copilot
+  security-analyst: copilot
 
 # Agent-specific overrides.
 # Only list agents that need a DIFFERENT backend than their role default above.
@@ -41,8 +38,9 @@ agents:
   # follow-up recovery when the first draft is not a canonical outbox.
   agent-code-review: copilot
 
-  # Explore agents do summarization/reading, not primary implementation.
-  agent-explore: bedrock
-  agent-explore-forseti: bedrock
-  agent-explore-dungeoncrawler: bedrock
-  agent-explore-infra: bedrock
+  # Explore agents do summarization/reading, but should still use the default
+  # Copilot backend unless explicitly overridden by an operator.
+  agent-explore: copilot
+  agent-explore-forseti: copilot
+  agent-explore-dungeoncrawler: copilot
+  agent-explore-infra: copilot

@@ -129,14 +129,9 @@ Legacy loops (`ceo-inbox-loop`, `inbox-loop`, `ceo-health-loop`, `2-ceo-opsloop`
 - Deploy workflow behavior is idempotent: first deploy runs `scripts/setup.sh`; existing deploys run `scripts/verify-hq-runtime.sh --strict` and auto-run `scripts/setup.sh` only if verification fails.
 - Run `./scripts/verify-hq-runtime.sh --strict` after deploy.
 - Select agentic backend via `HQ_AGENTIC_BACKEND`:
-	- `auto` (default): prefer chat-capable Copilot CLI (`--resume` support); fallback to Bedrock assistant script when Copilot is missing or incompatible
-	- `copilot`: require chat-capable Copilot CLI (`--resume` support)
-	- `bedrock`: require Bedrock assistant script
-- Ensure `scripts/bedrock-assist.sh` is executable if using Bedrock path.
-- `scripts/1-copilot.sh` supports production fallback via `COPILOT_BEDROCK_FALLBACK=1` (default) when Copilot CLI is missing/incompatible.
-- `scripts/1-copilot.sh` now defaults Bedrock fallback to `scripts/hq-bedrock-chat.sh`, which injects internal HQ/CEO instructions context before model invocation.
-- Bedrock fallback chat continuity is enabled by default in `scripts/1-copilot.sh` using a dedicated rolling memory file per session and passing it to `scripts/hq-bedrock-chat.sh` (`HQ_BEDROCK_HISTORY_FILE`, `HQ_BEDROCK_HISTORY_LINES`).
-- In Bedrock fallback mode, persisted transcript/memory entries now strip wrapper banner/debug lines (for example `[hq-bedrock-chat]` and `[bedrock-assist]`) to keep saved session history clean.
+	- `copilot` (default): require chat-capable Copilot CLI (`--resume` support)
+	- `bedrock`: explicit/manual override only
+- HQ orchestration no longer auto-falls back to Bedrock; if Copilot is unavailable, fix the Copilot runtime or set an explicit override.
 - Validate org state with `./scripts/org-control.sh status --one-line` and runtime state with `./scripts/hq-automation.sh status`.
 
 ## How incidents are handled

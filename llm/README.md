@@ -34,7 +34,7 @@ agent-exec-next.sh
 | `qa-*` | phi-3-mini | Checklist evaluation, APPROVE/BLOCK |
 | `sec-analyst-*` | mistral-7b-instruct | Security checklists, structured findings |
 | `agent-code-review` | Copilot | Code review needs stronger repo reasoning and more reliable canonical outbox recovery |
-| `agent-explore-*` | phi-3-mini | Summarization, reading, exploration |
+| `agent-explore-*` | Copilot | Summarization, reading, exploration |
 | `agent-task-runner` | phi-3-mini | Structured output for build/test runs |
 
 Routing is defined in `routing.yaml`. If a local model is assigned but not yet
@@ -103,7 +103,7 @@ llm/
 
 Edit `routing.yaml` directly. Changes take effect on the next agent execution cycle —
 no restart required. If a model is unassigned or its file is missing, that agent
-automatically routes to the selected backend (`HQ_AGENTIC_BACKEND`: `auto|copilot|bedrock`).
+automatically routes to the selected backend (`HQ_AGENTIC_BACKEND`: `copilot|bedrock`).
 
 ## Session History
 

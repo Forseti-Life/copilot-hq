@@ -39,7 +39,7 @@ if [ -z "$COPILOT_BIN" ] && [ -x "$HOME/.npm-global/bin/copilot" ]; then
   COPILOT_BIN="$HOME/.npm-global/bin/copilot"
 fi
 BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/bedrock-assist.sh}"
-AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-auto}"
+AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-copilot}"
 BEDROCK_RUNNER="$ROOT_DIR/llm/bedrock_runner.py"
 
 INBOX_DIR="sessions/${AGENT_ID}/inbox"
@@ -656,20 +656,8 @@ resolve_backend() {
       echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but Bedrock runner is missing: $BEDROCK_RUNNER" >&2
       return 1
       ;;
-    auto)
-      if [ -n "$COPILOT_BIN" ]; then
-        echo "copilot"
-        return 0
-      fi
-      if [ -f "$BEDROCK_RUNNER" ]; then
-        echo "bedrock"
-        return 0
-      fi
-      echo "ERROR: no GenAI backend available (copilot missing, Bedrock runner missing)." >&2
-      return 1
-      ;;
     *)
-      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: auto|copilot|bedrock)" >&2
+      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: copilot|bedrock)" >&2
       return 1
       ;;
   esac
@@ -678,9 +666,8 @@ resolve_backend() {
 GENAI_BACKEND="$(resolve_backend)" || exit 1
 
 # Global concurrency guard: limit total concurrent agent executions across ALL
-# loops/processes on this host. Bedrock is less tolerant of bursty parallel
-# requests than Copilot, so default it to a smaller lane unless explicitly
-# overridden.
+# loops/processes on this host. Copilot is the default runtime lane; Bedrock
+# keeps a smaller lane only when explicitly selected.
 if [ -n "${AGENT_EXEC_MAX_CONCURRENT:-}" ]; then
   MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT}"
 elif [ "$GENAI_BACKEND" = "bedrock" ]; then

@@ -22,9 +22,7 @@ systemctl --user daemon-reload
 
 # Ensure runtime backend settings are visible to the user service manager.
 systemctl --user set-environment \
-  HQ_AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-auto}" \
-  BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/bedrock-assist.sh}" \
-  BEDROCK_MAX_TOKENS="${BEDROCK_MAX_TOKENS:-700}"
+  HQ_AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-copilot}"
 
 # Enable and start (or restart if already running).
 systemctl --user enable "$UNIT_NAME"
