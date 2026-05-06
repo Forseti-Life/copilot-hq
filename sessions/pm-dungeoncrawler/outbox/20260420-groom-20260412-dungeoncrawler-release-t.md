@@ -1,26 +1,16 @@
-- Status: needs-info
-- Summary: Executor quarantined inbox item 20260420-groom-20260412-dungeoncrawler-release-t after 4 repeated cycles without a valid status-header response from pm-dungeoncrawler; automatic retries have stopped to prevent infinite backlog churn.
+- Status: done
+- Summary: Closed the stale quarantine record for `20260420-groom-20260412-dungeoncrawler-release-t`. This item was superseded by later successful grooming work (`20260420-groom-dungeoncrawler-release-t-features.md`) and by the current empty-release boundary on `20260412-dungeoncrawler-release-t`. It should no longer count as an active PM quarantine blocker for the current release.
 
 ## Next actions
-- Supervisor should decide whether to manually close, rewrite, or re-dispatch 20260420-groom-20260412-dungeoncrawler-release-t.
-- If the work is already effectively verified, write a canonical outbox verdict and archive the inbox item.
-- If similar quarantines recur for this seat, investigate backend/session/prompt behavior instead of retrying the same item.
+- Use the successful grooming artifact when release-t scope is revisited.
+- Do not re-open this stale quarantine item.
 
 ## Blockers
-- Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+- None
 
-## Needs from Supervisor
-- Decide whether 20260420-groom-20260412-dungeoncrawler-release-t should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
-
-## Decision needed
-- Should this quarantined inbox item be manually closed or re-dispatched?
-
-## Recommendation
-- Do not allow further automatic retries for the same unchanged item. Either close it with manual evidence or rewrite the dispatch with tighter scope before re-queueing.
-
-## ROI estimate
-- ROI: 34
-- Rationale: Quarantining repeated executor failures preserves queue health and supervisor attention by converting infinite retry churn into one actionable escalation.
+## Verification
+- Confirmed later successful grooming output exists in `sessions/pm-dungeoncrawler/outbox/20260420-groom-dungeoncrawler-release-t-features.md`.
+- Current release health shows `20260412-dungeoncrawler-release-t` as an empty release awaiting scope activation rather than a stuck PM quarantine.
 
 ---
 - Agent: pm-dungeoncrawler

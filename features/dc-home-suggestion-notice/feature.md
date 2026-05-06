@@ -1,10 +1,12 @@
 # Feature Brief: Add a general statement on the Dungeoncrawler home page informing players that user suggestions are being implemented
 
 - Work item id: dc-home-suggestion-notice
-- Website: dungeoncrawler.life
+- Website: dungeoncrawler
 - Module: dungeoncrawler_content (home page / front page block)
-- Status: done
-- Release: 
+- Status: shipped
+- Release: 20260412-dungeoncrawler-release-z
+- Defer reason: 2026-04-28 release recovery decision: live homepage verification failed and the notice is not currently rendering on production. Deferred out of release-x to prevent a low-risk community UI item from blocking the remaining release gate.
+- Audit note: 2026-04-27 implementation audit did not find the requested suggestion-feedback notice on the live https://dungeoncrawler.forseti.life/ homepage, and no matching front-page code/config evidence was found in the site module/theme paths reviewed. This remains scoped work, not a metadata-only cleanup.
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -55,6 +57,10 @@ A visible acknowledgment that suggestions are being acted on encourages continue
 - Intake risk signals: none
 
 ## Latest updates
+
+- 2026-04-29: Implementation complete — created page--front.html.twig template with suggestion notice banner. Notice displays "We are actively implementing player suggestions. Keep the ideas coming!" with responsive styling. Template renders notice at top of page for all users. Cache cleared with drush cr.
+
+- 2026-04-29: Scoped into release — suite activation sent to QA.
 
 - 2026-04-07: Scoped into release — suite activation sent to QA.
 

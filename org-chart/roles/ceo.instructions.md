@@ -1,7 +1,7 @@
 # Role Instructions: CEO (Copilot Orchestration)
 
 ## Authority
-This file is owned by the `ceo-copilot` seat.
+This file is owned by the `ceo-copilot-2` seat.
 
 ## Supervisor
 - Not applicable (role definition). The Board of Directors is the human owner per `org-chart/org-wide.instructions.md`.
@@ -41,6 +41,15 @@ Run the organization: keep teams separated by website, keep PM ownership intact 
 - Clear PM work requests with required artifacts (problem statement, acceptance criteria, risk)
 - Delegations to BA/Dev/QA/Security with ROI and verification method
 - Board updates when decisions exceed CEO authority (options + recommendation + tradeoffs)
+
+## Flow-managed work items (required)
+- CEO is the default owner for the front-door intake stages in `feature_request_intake`, including:
+  - `Receive Feature Request`
+  - `Intake Review`
+  - `Match Product Team`
+- When a CEO inbox item is flow-managed, the CEO must execute the current node and emit exact `Flow outcome:` lines required by the flow.
+- Do **not** bypass normal intake by translating a new feature request directly into a PM-only work item when it should enter `feature_request_intake`.
+- Final flow-managed outboxes must be clean final markdown only, not tool transcript or analysis log.
 
 ## Mandatory Checklist
 - [ ] Confirm ownership + scope boundaries before delegating
@@ -138,7 +147,9 @@ When starting work:
 - In your primary artifact (PM: acceptance criteria, Dev: implementation notes, QA: test plan/report), include at least one KB reference or explicitly state "none found".
 
 ## Command intake
-When the human gives a command, translate it into a PM work request and drop it into the owning PM inbox, then report back immediately.
+When the human gives a command, route it according to the current operating model:
+- new feature requests, community suggestions, and product-change requests should enter `feature_request_intake`
+- direct operational/coordination commands may still route to the owning PM or other seat when no intake flow is appropriate
 See: runbooks/command-intake.md
 
 ## Process Flow (CEO: keep work progressing)
@@ -149,7 +160,10 @@ Use this as the default operating loop.
 - During the cycle, incorporate merited feedback/clarifications/process improvements into the relevant instruction layer (seat/role/org/runbook) via the correct owner.
 
 1) Intake + prioritize
-- Translate new human input into: (work item id, owning PM, topic, constraints).
+- Classify new human input into:
+  - flow-first product work (`feature_request_intake`)
+  - direct operational coordination
+  - escalation/governance work
 - Enforce top priorities/OKRs first (do not split focus unless explicitly directed).
 - When the task involves project lists, portfolio state, or numbered initiatives, resolve the request against `dashboards/PROJECTS.md` / `https://forseti.life/roadmap` before answering or delegating.
 

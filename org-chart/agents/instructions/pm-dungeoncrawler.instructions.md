@@ -56,6 +56,37 @@ This file is owned by the `pm-dungeoncrawler` seat.
 - **Expected QA return (release verification):** explicit feature-level verdicts plus one release-scoped Gate 2 APPROVE/BLOCK artifact containing the exact release ID
 - **Routing rule:** do not expect qa-dungeoncrawler to create Dev inbox items; QA supplies evidence, PM/CEO route follow-up
 
+## Repo-state proof rule (required — added 2026-04-27)
+
+Your outbox must describe only actions that are already visible in repo state.
+
+Before writing `- Status: done` for any PM task that claims to have changed scope, grooming, dispatch, or feature metadata, you MUST verify the source of truth directly and base your summary on that verification:
+
+```bash
+# Verify feature directory contents
+ls -la features/<feature-id>/
+
+# Verify feature metadata changed as intended
+grep -n "^- Status:\\|^- Release:" features/<feature-id>/feature.md
+
+# Verify any dispatched follow-up inbox items actually exist
+find sessions/pm-dungeoncrawler/inbox sessions/dev-dungeoncrawler/inbox sessions/qa-dungeoncrawler/inbox \
+  -maxdepth 1 -type d | grep "<feature-id>\\|<release-id>"
+```
+
+If the repo state does not yet match the claimed result:
+- do **not** write `Status: done`
+- do **not** say files were authored, committed, dispatched, descoped, or updated
+- instead write `Status: in_progress` or `Status: blocked` and name the exact missing state
+
+Forbidden outbox patterns:
+- planning text inside the final outbox (`Let me do the actual work now`, `I'll now...`)
+- pasted tool-call transcripts or fenced pseudo-commands as proof of work not yet performed
+- claiming `commit hash below` or `artifacts were written` when the hash/files are not present
+- claiming a feature was descoped while `feature.md` still shows the active release
+
+Lesson (2026-04-27, GAP-PM-DC-SUCCESS-SHAPED-OUTBOX-01): `dc-cr-elf-heritage-arctic` produced conflicting PM outboxes — one said the feature was descoped, another said grooming artifacts were created and committed, while actual repo state still showed only `feature.md`, `Status: in_progress`, and `Release: 20260412-dungeoncrawler-release-x`. Root cause: PM wrote a success-shaped narrative without first verifying source-of-truth files. This is now a hard gate.
+
 ## Stale scope-activate fast-exit rule (required — added 2026-04-09)
 
 **Pattern:** The orchestrator's scope-activate dispatch counts features using `- Status: in_progress` + `- Website: dungeoncrawler` but does NOT filter by active release ID. If prior-release features are in_progress (stale), the count is inflated and scope-activate is never triggered for the new release. Conversely, if the orchestrator reads 0 scoped features while the PM has already activated (because it reads `Status: in_progress` from feature.md but fails to match the `Release:` field on the next line), it will fire repeated stale scope-activate dispatches.
@@ -218,9 +249,21 @@ Every feature you are about to activate MUST have a matching inbox item in that 
 Activate no more than 7 features per release cycle. The org-wide auto-close fires at ≥10 in_progress; activating exactly 10 fires auto-close the instant scope-activate completes, before dev can work. A cap of 7 leaves headroom. If backlog demands more, start a second release cycle after shipping the first 7.
 
 **Pre-activate count check (required — no exceptions):**
-Before activating ANY features, count current in_progress dungeoncrawler features:
+Before activating ANY features, count current release-scoped dungeoncrawler features (`Status: in_progress` OR `Status: done` when already implemented but not yet shipped):
 ```bash
-grep -rl "Status: in_progress" features/dc-*/feature.md | wc -l
+python3 - <<'PY'
+import pathlib, re
+rid = pathlib.Path("tmp/release-cycle-active/dungeoncrawler.release_id").read_text().strip()
+count = 0
+for fm in pathlib.Path("features").glob("dc-*/feature.md"):
+    text = fm.read_text(encoding="utf-8", errors="ignore")
+    if not re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE):
+        continue
+    if not re.search(rf"^-\s+Release:\s*{re.escape(rid)}\s*$", text, re.MULTILINE):
+        continue
+    count += 1
+print(count)
+PY
 ```
 If count is already ≥7, do NOT activate more. If count is <7, activate only enough to reach 7 total (not 10). Activating up to 10 triggers immediate auto-close — this is a confirmed empty-release pattern (release-c, release-d both failed this way).
 
@@ -229,7 +272,7 @@ If count is already ≥7, do NOT activate more. If count is <7, activate only en
 **Lesson (2026-04-12, GAP-DC-PM-SCOPE-UNBUILT-01):** In release-b (20260412-dungeoncrawler-release-b), PM activated 10 features simultaneously. 5 had no dev outbox (unbuilt). Auto-close fired immediately, all 10 deferred, 0 shipped. Unbuilt features consumed all cap slots and blocked dev-complete features from shipping quickly.
 
 **Scope activation ordering (required — GAP-DC-PM-SCOPE-UNBUILT-01):**
-Before activating any batch, classify the ready backlog into two tiers:
+Before activating any batch, classify the eligible backlog into two tiers:
 1. **Dev-complete**: feature has a dev-dungeoncrawler outbox confirming implementation done (commit hash present). Check: `ls sessions/dev-dungeoncrawler/outbox/ | grep <feature-id>` and confirm `Status: done` inside.
 2. **Unbuilt**: no dev outbox, or dev outbox status is not `done`.
 
@@ -237,6 +280,7 @@ Activation order rule:
 - Activate dev-complete features first, up to the soft cap.
 - Only activate unbuilt features after all dev-complete features are activated AND cap slots remain.
 - Rationale: dev-complete features can reach QA Gate 2 in 1 cycle; unbuilt features need 2+ cycles minimum. Prioritizing dev-complete features maximizes the chance of shipping before auto-close fires.
+- If a feature is already `Status: done`, it is eligible for current-release activation. Keep `Status: done`, stamp the active `Release:` id, dispatch QA release verification, and dispatch a dev release-support item rather than a fresh implementation item.
 
 **Soft cap rule (updated — GAP-DC-PM-SCOPE-CAP-COLLISION-01):**
 The ≤7 HARD STOP above applies at all times. Additionally:
@@ -256,7 +300,7 @@ Confirm output matches the release you intend to activate features into. If it d
 ```
 
 **Required at activation (stamp Release field):**
-When moving a feature from `Status: ready` → `Status: in_progress`, you MUST also set:
+When activating a feature, you MUST also set:
 ```
 - Release: <current-release-id>
 ```
@@ -543,6 +587,24 @@ This is idempotent — existing records (matched by req_hash) are skipped.
 
 ## Coordinated release (Forseti + Dungeoncrawler) — required gate
 When a release is coordinated across Forseti + Dungeoncrawler, you must record a PM signoff artifact for the agreed `release-id`.
+
+### Release signoff proof rule (required — added 2026-04-29)
+For any `awaiting-signoff`, `signoff-reminder`, `coordinated-signoff`, or release-close task, you may only write `- Status: done` after repo-state proof exists for the signoff itself.
+
+Required proof:
+```bash
+# 1. The signoff artifact must exist
+ls sessions/pm-dungeoncrawler/artifacts/release-signoffs/<release-id>.md
+
+# 2. The status script must reflect the new state
+bash scripts/release-signoff-status.sh <release-id>
+```
+
+Rules:
+- If the artifact file does not exist, do **not** say signoff was completed.
+- The signoff artifact is the source of truth; your outbox is only a summary of repo state.
+- For cross-team/coordinated signoff, do **not** guess the release ID from the blocking cohort name; use the exact release ID named in the inbox item or active release state file.
+- If Gate 1b still has unresolved MEDIUM+ code-review findings, route them or risk-accept them before trying to sign off.
 
 ### Release auto-close triggers (ship when ready — added 2026-04-05)
 **20 features is the MAXIMUM scope cap, not a target. Never wait to fill remaining scope slots.**

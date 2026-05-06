@@ -10,7 +10,15 @@ class CharacterImagePromptBuilder {
   /**
    * Default negative prompt for portrait generation.
    */
-  private const DEFAULT_NEGATIVE_PROMPT = 'text, watermark, logo, signature, blurry, low quality, deformed';
+  private const DEFAULT_NEGATIVE_PROMPT = 'elf, elven, half-elf, pointed ears, long pointed ears, non-human ears, runes, glyphs, sigils, pseudo-text, text, words, letters, numbers, captions, subtitles, watermark, logo, signature, label, readable inscription, book text, scroll text, parchment writing, banners, spellbook pages, UI overlay, blurry, low quality, deformed';
+
+  /**
+   * Internal-only fields excluded from the exported profile.
+   */
+  private const PROFILE_EXCLUDED_KEYS = [
+    'portrait_generate',
+    'portrait_prompt',
+  ];
 
   /**
    * Builds a provider-ready portrait prompt from character data.
@@ -24,31 +32,43 @@ class CharacterImagePromptBuilder {
    *   The prompt text.
    */
   public function buildPortraitPrompt(array $character_data, string $user_prompt = ''): string {
-    $lines = [
-      'Create a high-fantasy character portrait for a tabletop RPG.',
-      'No text, logos, watermarks, or copyrighted characters.',
-      'Keep a clear silhouette, consistent lighting, and game-ready detail.',
-      'Portrait framing: head and shoulders, neutral background.',
-    ];
+    $subject = $this->buildSubjectLine($character_data);
+    $action = $this->buildActionLine($character_data);
+    $context = $this->buildContextLine($character_data);
+    $composition = 'Composition: vertical head-and-shoulders portrait, eye-level camera, centered face, both ears anatomically human and rounded, clean silhouette.';
+    $style = 'Style: polished fantasy character portrait, realistic facial anatomy, detailed skin and hair, soft cinematic lighting, no props, no symbols.';
 
-    $ability_guidance = $this->buildAbilityAppearanceGuidance($character_data['abilities'] ?? []);
-    if ($ability_guidance !== '') {
-      $lines[] = 'Appearance weighting:';
-      $lines[] = $ability_guidance;
-    }
-
-    $attribute_lines = $this->buildAttributeLines($character_data);
-    if (!empty($attribute_lines)) {
-      $lines[] = 'Character attributes:';
-      $lines = array_merge($lines, $attribute_lines);
-    }
+    $lines = array_values(array_filter([
+      'Generate exactly one original fantasy portrait character image.',
+      $subject,
+      $action,
+      $context,
+      $composition,
+      $style,
+      'Positive framing: plain clothing details, clean neutral backdrop, no written surfaces, no magical glyphs, no decorative lettering.',
+      'Identity rule: ancestry, gender, appearance, and concept are authoritative. Ignore conflicting inventory traits, feat names, or spell names when deciding anatomy or styling.',
+      'No copyrighted characters.',
+    ]));
 
     $resolved_user_prompt = trim($user_prompt);
     if ($resolved_user_prompt !== '') {
-      $lines[] = 'User direction:';
-      $lines[] = $resolved_user_prompt;
+      $lines[] = 'Additional direction: ' . $resolved_user_prompt;
     }
 
+    return implode("\n", $lines);
+  }
+
+  /**
+   * Builds a flattened spreadsheet-style export of full character metadata.
+   */
+  public function buildCharacterProfileSpreadsheet(array $character_data): string {
+    $lines = [];
+    $filtered = $character_data;
+    foreach (self::PROFILE_EXCLUDED_KEYS as $key) {
+      unset($filtered[$key]);
+    }
+
+    $this->appendProfileRows($filtered, '', $lines);
     return implode("\n", $lines);
   }
 
@@ -57,6 +77,14 @@ class CharacterImagePromptBuilder {
    */
   public function getDefaultNegativePrompt(): string {
     return self::DEFAULT_NEGATIVE_PROMPT;
+  }
+
+  public function buildNegativePrompt(array $character_data): string {
+    $parts = [self::DEFAULT_NEGATIVE_PROMPT];
+    if (strtolower($this->resolveAncestryName($character_data)) === 'human') {
+      $parts[] = 'elven facial structure, elf wizard, fae features';
+    }
+    return implode(', ', array_filter($parts));
   }
 
   /**
@@ -91,7 +119,7 @@ class CharacterImagePromptBuilder {
       }
     }
 
-    $ability_line = $this->buildAbilityLine($character_data['abilities'] ?? []);
+    $ability_line = $this->buildAbilityLine($character_data);
     if ($ability_line !== '') {
       $lines[] = "- Abilities: {$ability_line}";
     }
@@ -105,14 +133,14 @@ class CharacterImagePromptBuilder {
    * Charisma dominates the overall visual impression. Other abilities only add
    * subtle secondary cues.
    *
-   * @param array $abilities
-   *   Ability map.
+   * @param array $character_data
+   *   Character data payload.
    *
    * @return string
    *   Prompt line or empty string.
    */
-  private function buildAbilityAppearanceGuidance(array $abilities): string {
-    $normalized = $this->normalizeAbilities($abilities);
+  private function buildAbilityAppearanceGuidance(array $character_data): string {
+    $normalized = $this->resolveAbilities($character_data);
     if (empty($normalized)) {
       return '';
     }
@@ -179,14 +207,14 @@ class CharacterImagePromptBuilder {
   /**
    * Builds a compact ability summary line.
    *
-   * @param array $abilities
-   *   Ability map.
+   * @param array $character_data
+   *   Character data payload.
    *
    * @return string
    *   Summary line or empty string.
    */
-  private function buildAbilityLine(array $abilities): string {
-    $normalized = $this->normalizeAbilities($abilities);
+  private function buildAbilityLine(array $character_data): string {
+    $normalized = $this->resolveAbilities($character_data);
     if (empty($normalized)) {
       return '';
     }
@@ -208,6 +236,79 @@ class CharacterImagePromptBuilder {
   }
 
   /**
+   * Builds ancestry-specific identity lock guidance.
+   */
+  private function buildSubjectLine(array $character_data): string {
+    $parts = [];
+    $name = $this->stringValue($character_data['name'] ?? '');
+    $age = $this->stringValue($character_data['age'] ?? '');
+    $ancestry = $this->resolveAncestryName($character_data);
+    $gender = $this->stringValue($character_data['gender'] ?? '');
+    $class = $this->stringValue($character_data['class'] ?? '');
+    $appearance = $this->stringValue($character_data['appearance'] ?? '');
+
+    if ($name !== '') {
+      $parts[] = $name;
+    }
+    if ($age !== '') {
+      $parts[] = $age . '-year-old';
+    }
+    if ($ancestry !== '') {
+      $parts[] = strtolower($ancestry);
+    }
+    if ($gender !== '') {
+      $parts[] = $gender;
+    }
+    if ($class !== '') {
+      $parts[] = strtolower($class);
+    }
+    if ($appearance !== '') {
+      $parts[] = 'with ' . strtolower($appearance);
+    }
+
+    return 'Subject: ' . implode(', ', $parts) . '.';
+  }
+
+  private function buildActionLine(array $character_data): string {
+    $concept = $this->stringValue($character_data['concept'] ?? '');
+    $action = 'Action: facing the camera with a calm, confident, sly expression.';
+    if ($concept !== '') {
+      $action = 'Action: facing the camera with a ' . strtolower($concept) . ' expression and controlled posture.';
+    }
+    return $action;
+  }
+
+  private function buildContextLine(array $character_data): string {
+    $background = $this->stringValue($character_data['background'] ?? '');
+    $deity = $this->stringValue($character_data['deity'] ?? '');
+    $context = 'Context: plain studio-like fantasy backdrop, soft diffuse light, no props, no books, no scrolls, no magical symbols.';
+    if ($background !== '' || $deity !== '') {
+      $details = [];
+      if ($background !== '') {
+        $details[] = strtolower($background) . ' upbringing';
+      }
+      if ($deity !== '') {
+        $details[] = 'subtle ' . strtolower($deity) . ' influence without symbols or text';
+      }
+      $context = 'Context: plain studio-like fantasy backdrop, soft diffuse light, no props, no books, no scrolls, no magical symbols; styling cues only from ' . implode(' and ', $details) . '.';
+    }
+    return $context;
+  }
+
+  /**
+   * Resolves the ancestry name from flat or nested payloads.
+   */
+  private function resolveAncestryName(array $character_data): string {
+    $ancestry = $character_data['ancestry'] ?? '';
+    if (is_array($ancestry)) {
+      $name = $ancestry['name'] ?? '';
+      return is_scalar($name) ? trim((string) $name) : '';
+    }
+
+    return is_scalar($ancestry) ? trim((string) $ancestry) : '';
+  }
+
+  /**
    * Normalizes a value to a trimmed string.
    */
   private function stringValue($value): string {
@@ -218,43 +319,73 @@ class CharacterImagePromptBuilder {
     return trim((string) $value);
   }
 
+
   /**
-   * Normalizes abilities to the standard PF2e short keys.
+   * Append flattened spreadsheet rows using dotted paths.
    *
-   * @param array $abilities
-   *   Ability map.
-   *
-   * @return array<string, int>
-   *   Normalized map.
+   * @param mixed $value
+   *   Current value being processed.
+   * @param string $path
+   *   Current dotted path.
+   * @param array<int, string> $lines
+   *   Output accumulator.
    */
-  private function normalizeAbilities(array $abilities): array {
-    if (!is_array($abilities)) {
-      return [];
+  private function appendProfileRows(mixed $value, string $path, array &$lines): void {
+    if ($value === NULL) {
+      return;
     }
 
-    $mapping = [
-      'str' => ['str', 'strength'],
-      'dex' => ['dex', 'dexterity'],
-      'con' => ['con', 'constitution'],
-      'int' => ['int', 'intelligence'],
-      'wis' => ['wis', 'wisdom'],
-      'cha' => ['cha', 'charisma'],
-    ];
-
-    $normalized = [];
-    foreach ($mapping as $target => $aliases) {
-      foreach ($aliases as $alias) {
-        if (!array_key_exists($alias, $abilities) || !is_numeric($abilities[$alias])) {
-          continue;
-        }
-
-        $value = (int) $abilities[$alias];
-        $normalized[$target] = max(3, min(18, $value));
-        break;
+    if (is_scalar($value)) {
+      $resolved = trim((string) $value);
+      if ($resolved !== '' && $path !== '') {
+        $lines[] = '- ' . $path . ': ' . $resolved;
       }
+      return;
     }
 
-    return $normalized;
+    if (!is_array($value) || $value === []) {
+      return;
+    }
+
+    if (array_is_list($value)) {
+      $scalar_items = [];
+      $all_scalars = TRUE;
+      foreach ($value as $item) {
+        if (!is_scalar($item)) {
+          $all_scalars = FALSE;
+          break;
+        }
+        $resolved = trim((string) $item);
+        if ($resolved !== '') {
+          $scalar_items[] = $resolved;
+        }
+      }
+
+      if ($all_scalars) {
+        if ($scalar_items !== [] && $path !== '') {
+          $lines[] = '- ' . $path . ': ' . implode(', ', $scalar_items);
+        }
+        return;
+      }
+
+      foreach ($value as $index => $item) {
+        $child_path = $path . '[' . $index . ']';
+        $this->appendProfileRows($item, $child_path, $lines);
+      }
+      return;
+    }
+
+    foreach ($value as $key => $child) {
+      if (!is_string($key) && !is_int($key)) {
+        continue;
+      }
+      if (in_array((string) $key, self::PROFILE_EXCLUDED_KEYS, TRUE)) {
+        continue;
+      }
+
+      $child_path = $path === '' ? (string) $key : $path . '.' . (string) $key;
+      $this->appendProfileRows($child, $child_path, $lines);
+    }
   }
 
   /**

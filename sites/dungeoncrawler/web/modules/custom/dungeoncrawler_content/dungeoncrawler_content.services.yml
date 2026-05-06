@@ -650,6 +650,17 @@ services:
   dungeoncrawler_content.spell_catalog:
     class: Drupal\dungeoncrawler_content\Service\SpellCatalogService
 
+  dungeoncrawler_content.ritual_catalog:
+    class: Drupal\dungeoncrawler_content\Service\RitualCatalogService
+    arguments:
+      - '@dungeoncrawler_content.character_manager'
+
+  dungeoncrawler_content.ritual_execution:
+    class: Drupal\dungeoncrawler_content\Service\RitualExecutionService
+    arguments:
+      - '@dungeoncrawler_content.ritual_catalog'
+      - '@dungeoncrawler_content.character_manager'
+
   dungeoncrawler_content.learn_a_spell:
     class: Drupal\dungeoncrawler_content\Service\LearnASpellService
     arguments:
@@ -698,3 +709,6 @@ services:
     class: Drupal\dungeoncrawler_content\Controller\SomController
     arguments:
       - '@dungeoncrawler_content.character_manager'
+
+  dungeoncrawler_content.language_service:
+    class: Drupal\dungeoncrawler_content\Service\LanguageService

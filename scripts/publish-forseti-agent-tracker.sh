@@ -222,12 +222,13 @@ PY
 
 agent_exec_yes() {
   local agent="$1"
-  local out_epoch
-  out_epoch=$(latest_mtime_epoch "sessions/${agent}/outbox")
-  [ "$out_epoch" -gt 0 ] || { echo "no"; return; }
-  local now; now=$(date +%s)
-  local delta=$((now-out_epoch))
-  if [ "$delta" -le 1800 ]; then echo "yes"; else echo "no"; fi
+  local active_item active_started active_pid
+  IFS=$'\t' read -r active_item active_started active_pid < <(agent_active_inbox_info "$agent")
+  if [ -n "${active_item:-}" ] && [ -n "${active_pid:-}" ]; then
+    echo "yes"
+  else
+    echo "no"
+  fi
 }
 
 agent_active_inbox_info() {
@@ -1342,7 +1343,7 @@ publish_one() {
   elif [ "$inbox_count" -gt 0 ] && [ -n "$next_inbox" ]; then
     action="inbox:${next_inbox} (ROI ${next_inbox_effective_roi}"
     if [ "$exec" = "yes" ]; then
-      action+="; Exec recent"
+      action+="; Exec active"
     fi
     action+=")"
   else

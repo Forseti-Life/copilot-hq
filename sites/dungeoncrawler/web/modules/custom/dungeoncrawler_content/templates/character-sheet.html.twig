@@ -26,22 +26,30 @@
 
   {# Character Header #}
   <div class="dc-sheet__header">
-    <div class="dc-sheet__portrait-wrap">
-      {% if character.portrait %}
-        <img src="{{ character.portrait }}" alt="{{ character.name }}" class="dc-sheet__portrait" />
-      {% else %}
-        <div class="dc-sheet__portrait-placeholder">
-          <span>{{ character.name|first|upper }}</span>
-        </div>
-      {% endif %}
-      {% if character.status == 'incomplete' %}
-        {% if not character.portrait and character.step >= 8 %}
-          <div class="dc-sheet__status-incomplete">🖼️ Image generation in progress</div>
+    <div class="dc-sheet__portrait-panel">
+      <div class="dc-sheet__portrait-wrap">
+        {% if character.portrait %}
+          <img src="{{ character.portrait }}" alt="{{ character.name }}" class="dc-sheet__portrait" />
         {% else %}
-          <div class="dc-sheet__status-incomplete">⚠️ Character setup incomplete (Step {{ character.step }}/8)</div>
+          <div class="dc-sheet__portrait-placeholder">
+            <span>{{ character.name|first|upper }}</span>
+          </div>
         {% endif %}
-      {% elseif character.status == 'dead' %}
-        <div class="dc-sheet__status-dead">☠️ FALLEN</div>
+        {% if character.status == 'incomplete' %}
+          {% if not character.portrait and character.step >= 8 %}
+            <div class="dc-sheet__status-incomplete">🖼️ Image generation in progress</div>
+          {% else %}
+            <div class="dc-sheet__status-incomplete">⚠️ Character setup incomplete (Step {{ character.step }}/8)</div>
+          {% endif %}
+        {% elseif character.status == 'dead' %}
+          <div class="dc-sheet__status-dead">☠️ FALLEN</div>
+        {% endif %}
+      </div>
+      {% if not embed_mode %}
+        <div class="dc-sheet__portrait-actions">
+          {{ character.portrait_regenerate_form|raw }}
+          {{ character.portrait_upload_form|raw }}
+        </div>
       {% endif %}
     </div>
 

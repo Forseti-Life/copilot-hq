@@ -309,6 +309,14 @@
           </div>
         </div>
 
+        <div class="details-panel hidden" id="languageSelectionPanel">
+          <h3>Choose Starting Languages</h3>
+          <p class="help-text" id="languageSelectionHelp">Finalize your Intelligence score to see available bonus language choices.</p>
+          <div id="languageDefaults" class="language-defaults"></div>
+          <div id="languageOptions" class="language-options"></div>
+          <p class="boost-counter">Selected bonus languages: <span id="languageCount">0</span>/<span id="languageSlots">0</span></p>
+        </div>
+
         <div class="step-actions">
           <button type="button" class="btn btn-secondary" onclick="prevStep(4)">← Back</button>
           <button type="button" class="btn btn-primary" onclick="nextStep(6)" id="abilitiesNextBtn" disabled>Next: Character Details →</button>

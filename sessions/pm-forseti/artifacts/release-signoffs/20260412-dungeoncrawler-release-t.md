@@ -3,7 +3,11 @@
 - Release id: 20260412-dungeoncrawler-release-t
 - Site: forseti.life
 - PM seat: pm-forseti
+<<<<<<< HEAD
 - Signed off at: 2026-05-05T13:06:11+00:00
+=======
+- Signed off at: 2026-04-25T13:30:02+00:00
+>>>>>>> reconcile/copilot-hq-local-priority-main
 
 ## Signoff statement
 I confirm the PM-level gates for this site are satisfied for this release id:

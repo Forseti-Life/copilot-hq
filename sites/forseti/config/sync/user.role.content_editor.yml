@@ -1,14 +1,24 @@
+<<<<<<< HEAD
 uuid: dc412d97-60a6-4c71-a3fa-f5c9c9d90471
+=======
+uuid: a12cee79-1e95-4a98-849a-d595da933f5a
+>>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
   config:
+<<<<<<< HEAD
     - node.type.ai_conversation
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
     - node.type.article
     - node.type.page
     - taxonomy.vocabulary.tags
   module:
+<<<<<<< HEAD
     - ai_conversation
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
     - comment
     - contextual
     - file
@@ -25,13 +35,19 @@ weight: 2
 is_admin: false
 permissions:
   - 'access administration pages'
+<<<<<<< HEAD
   - 'access content'
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   - 'access content overview'
   - 'access contextual links'
   - 'access files overview'
   - 'access toolbar'
   - 'administer url aliases'
+<<<<<<< HEAD
   - 'create ai_conversation content'
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   - 'create article content'
   - 'create page content'
   - 'create terms in tags'
@@ -41,14 +57,20 @@ permissions:
   - 'delete own files'
   - 'delete own page content'
   - 'delete page revisions'
+<<<<<<< HEAD
   - 'edit own ai_conversation content'
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   - 'edit own article content'
   - 'edit own comments'
   - 'edit own page content'
   - 'edit terms in tags'
   - 'revert all revisions'
+<<<<<<< HEAD
   - 'use ai conversation'
   - 'view institution reports'
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   - 'view all revisions'
   - 'view own unpublished content'
   - 'view the administration theme'

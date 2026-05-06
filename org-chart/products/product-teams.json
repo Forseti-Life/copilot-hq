@@ -13,6 +13,7 @@
       "active": true,
       "release_preflight_enabled": true,
       "coordinated_release_default": true,
+      "release_dependencies": [],
       "qa_agent": "qa-forseti",
       "dev_agent": "dev-forseti",
       "pm_agent": "pm-forseti",
@@ -23,7 +24,7 @@
         "base_url_env": "FORSETI_BASE_URL",
         "local_base_url": "https://forseti.life",
         "production_url": "https://forseti.life",
-        "drupal_web_root": "/home/ubuntu/forseti.life/sites/forseti/web",
+        "drupal_web_root": "/var/www/html/forseti/web",
         "qa_artifacts_dir": "sessions/qa-forseti/artifacts/auto-site-audit",
         "route_regex": "^(?:/api/|/admin/reports/|/jobhunter|/user/login|/contact|/how-it-works)(?:/|$)",
         "qa_permissions_path": "org-chart/sites/forseti.life/qa-permissions.json"
@@ -42,6 +43,7 @@
       "active": true,
       "release_preflight_enabled": true,
       "coordinated_release_default": true,
+      "release_dependencies": [],
       "qa_agent": "qa-dungeoncrawler",
       "dev_agent": "dev-dungeoncrawler",
       "pm_agent": "pm-dungeoncrawler",
@@ -217,6 +219,7 @@
       "qa_agent": "qa-forseti-agent-tracker",
       "dev_agent": "dev-forseti-agent-tracker",
       "pm_agent": "pm-forseti-agent-tracker",
+      "ba_agent": "ba-forseti-agent-tracker",
       "qa_suite_manifest": "qa-suites/products/forseti-agent-tracker/suite.json",
       "site_audit": {
         "enabled": false,
@@ -242,6 +245,7 @@
       "qa_agent": "qa-infra",
       "dev_agent": "dev-infra",
       "pm_agent": "pm-infra",
+      "ba_agent": "ba-infra",
       "qa_suite_manifest": "qa-suites/products/infrastructure/suite.json",
       "site_audit": {
         "enabled": false,

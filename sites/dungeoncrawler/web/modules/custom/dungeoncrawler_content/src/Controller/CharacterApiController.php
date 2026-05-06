@@ -5,6 +5,7 @@ namespace Drupal\dungeoncrawler_content\Controller;
 use Drupal\Core\Access\CsrfTokenGenerator;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\dungeoncrawler_content\Service\CharacterManager;
+use Drupal\dungeoncrawler_content\Service\LanguageService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,16 +17,19 @@ class CharacterApiController extends ControllerBase {
 
   protected CharacterManager $characterManager;
   protected CsrfTokenGenerator $csrfToken;
+  protected LanguageService $languageService;
 
-  public function __construct(CharacterManager $character_manager, CsrfTokenGenerator $csrf_token) {
+  public function __construct(CharacterManager $character_manager, CsrfTokenGenerator $csrf_token, LanguageService $language_service) {
     $this->characterManager = $character_manager;
     $this->csrfToken = $csrf_token;
+    $this->languageService = $language_service;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('dungeoncrawler_content.character_manager'),
       $container->get('csrf_token'),
+      $container->get('dungeoncrawler_content.language_service'),
     );
   }
 
@@ -80,6 +84,19 @@ class CharacterApiController extends ControllerBase {
 
     try {
       $character_id = $data['character_id'] ?? NULL;
+      $existing = NULL;
+      $existing_character_data = [];
+
+      if ($character_id) {
+        $existing = $this->characterManager->loadCharacter($character_id);
+        if (!$existing || $existing->uid != $this->currentUser()->id()) {
+          return new JsonResponse([
+            'success' => FALSE,
+            'error' => 'Character not found or access denied',
+          ], 403);
+        }
+        $existing_character_data = CharacterManager::getStoredCharacterData($existing);
+      }
 
       // Validate ancestry ID if provided.
       $ancestry_val = $data['ancestry'] ?? NULL;
@@ -140,17 +157,31 @@ class CharacterApiController extends ControllerBase {
         'inventory' => $data['inventory'] ?? [],
         'gold' => $data['gold'] ?? 15,
         'wizard_complete' => $data['wizard_complete'] ?? FALSE,
+        'languages' => $existing_character_data['languages'] ?? [],
       ];
+
+      $language_result = $this->languageService->processLanguages($character_data, $data, $existing_character_data['languages'] ?? []);
+      if (!$language_result['success']) {
+        return new JsonResponse([
+          'success' => FALSE,
+          'error' => $language_result['error'],
+        ], 400);
+      }
+      $character_data['languages'] = $language_result['languages'];
 
       // Update existing character or create new one
       if ($character_id) {
-        // Update existing draft
-        $existing = $this->characterManager->loadCharacter($character_id);
-        if (!$existing || $existing->uid != $this->currentUser()->id()) {
+        $existing_heritage = CharacterManager::getStoredHeritage($existing);
+        $requested_heritage = $character_data['heritage'] ?? $existing_heritage;
+        if (
+          CharacterManager::isWizardCompleteRecord($existing) &&
+          $requested_heritage !== '' &&
+          $requested_heritage !== $existing_heritage
+        ) {
           return new JsonResponse([
             'success' => FALSE,
-            'error' => 'Character not found or access denied',
-          ], 403);
+            'error' => 'Heritage cannot be changed after character creation is complete.',
+          ], 409);
         }
 
         $fields = [
@@ -276,8 +307,102 @@ class CharacterApiController extends ControllerBase {
         'ancestry' => $character->ancestry,
         'class' => $character->class,
         'status' => $character->status,
+        'languages' => $character_data['languages'] ?? [],
         'data' => $character_data,
       ],
+    ]);
+  }
+
+  /**
+   * Update heritage for a draft character before wizard completion.
+   *
+   * POST /api/character/{character_id}/heritage
+   */
+  public function updateHeritage(Request $request, int $character_id): JsonResponse {
+    if (!$this->currentUser()->isAuthenticated()) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Authentication required',
+      ], 401);
+    }
+
+    $token = $request->headers->get('X-CSRF-Token');
+    if (!$token || !$this->csrfToken->validate($token, 'rest')) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Invalid or missing CSRF token',
+      ], 403);
+    }
+
+    $data = json_decode($request->getContent(), TRUE);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Invalid JSON',
+      ], 400);
+    }
+
+    $character = $this->characterManager->loadCharacter($character_id);
+    if (!$character || $character->uid != $this->currentUser()->id()) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Character not found or access denied',
+      ], 403);
+    }
+
+    if (CharacterManager::isWizardCompleteRecord($character)) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Heritage cannot be changed after character creation is complete.',
+      ], 409);
+    }
+
+    $heritage_val = $data['heritage'] ?? NULL;
+    if (!is_string($heritage_val) || $heritage_val === '') {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'A heritage is required.',
+      ], 400);
+    }
+
+    $stored = CharacterManager::getStoredCharacterData($character);
+    $ancestry_val = $data['ancestry'] ?? ($stored['ancestry'] ?? $character->ancestry ?? '');
+    if (!is_string($ancestry_val) || $ancestry_val === '') {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'An ancestry is required before setting heritage.',
+      ], 400);
+    }
+
+    $canonical = CharacterManager::resolveAncestryCanonicalName($ancestry_val);
+    if ($canonical === '') {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Invalid ancestry: ' . $ancestry_val,
+      ], 400);
+    }
+
+    if (!CharacterManager::isValidHeritageForAncestry($canonical, $heritage_val)) {
+      return new JsonResponse([
+        'success' => FALSE,
+        'error' => 'Invalid heritage for selected ancestry.',
+      ], 400);
+    }
+
+    $stored['ancestry'] = $canonical;
+    $stored['heritage'] = $heritage_val;
+
+    $this->characterManager->updateCharacter($character_id, [
+      'ancestry' => $canonical,
+      'character_data' => json_encode($stored, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+    ]);
+
+    return new JsonResponse([
+      'success' => TRUE,
+      'character_id' => $character_id,
+      'ancestry' => $canonical,
+      'heritage' => $heritage_val,
+      'action' => 'heritage_updated',
     ]);
   }
 

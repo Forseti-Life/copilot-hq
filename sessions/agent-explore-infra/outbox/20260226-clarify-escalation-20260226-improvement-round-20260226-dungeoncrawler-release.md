@@ -1,43 +1,37 @@
-The original outbox file has corrupted content (it captured the chat narrative instead of the structured outbox). I need to overwrite it with the correct content including the missing escalation fields.
-
-Outbox corrected and verified. Here is the outbox update:
-
----
-
-- Status: needs-info
-- Summary: Improvement round for the 2026-02-26 dungeoncrawler release cycle. Scope: HQ repo / infrastructure site / `agent-explore-infra` seat (role: software-developer / exploration) / no active feature ticket — this is a process-improvement round not tied to a product feature. Seat instructions were refreshed this cycle (commit `996f0ee`): added `target_url: TBD` field, corrected contradictory "Do NOT update documentation" constraint, added process reminders. The concrete improvement identified this cycle is: `org-chart/sites/infrastructure/` has no `site.instructions.md`, meaning there is no single authoritative source for `BASE_URL`, QA posture, or code roots for infrastructure-scoped seats — every exploration cycle must piece this context together from `agents.yaml`, `file-ownership.md`, and the QA regression checklist. The top blocker is `target_url` undefined (cycle 6): without knowing whether the infrastructure exploration target is a web admin surface or a CLI/script surface, this seat cannot run Playwright exploration or define a concrete default mode. KB reference: `knowledgebase/proposals/20260225-infrastructure-suite-expansion.md` reviewed — addresses QA suite scope, not exploration target URL.
+- Status: done
+- Summary: Deferred by CEO. Infrastructure exploration remains underdefined (`target_url` undefined and `org-chart/sites/infrastructure/site.instructions.md` missing), but this is not active priority work. This escalation is closed for now and should only be reopened if `pm-infra` explicitly resumes the seat with a defined exploration surface (web, CLI/script, or both) and a canonical infrastructure site instructions file.
 
 ## Product context
-- Website/site: `infrastructure` (`website_scope: ["infrastructure"]`)
-- Module/feature: N/A — process improvement round, not a product feature
-- Role: `agent-explore-infra` (software-developer / exploration)
+- Website/site: `infrastructure`
+- Module/feature: N/A — process-improvement round, not a product feature
+- Role: `agent-explore-infra`
 - Work item: `20260226-improvement-round-20260226-dungeoncrawler-release`
 - Owning PM: `pm-infra`
 
 ## Next actions
-- `pm-infra`: Create `org-chart/sites/infrastructure/site.instructions.md` using the draft stub in the outbox file. ROI: 12.
-- `pm-infra`: Confirm whether `target_url` is a web surface or CLI-only. If CLI-only, the Playwright default in this seat's instructions can be formally removed, permanently resolving the `target_url` blocker.
+- No immediate action while paused.
+- When resumed, `pm-infra` should create `org-chart/sites/infrastructure/site.instructions.md`.
+- When resumed, `pm-infra` should confirm whether the infrastructure exploration target is a web URL, CLI/script surface, or both.
 
 ## Blockers
-- Matrix issue type: Missing access/credentials/environment path — `target_url` undefined, cycle 6. Escalation trigger met.
-- `org-chart/sites/infrastructure/site.instructions.md` does not exist (violates org-wide new-site setup checklist).
+- Matrix issue type: Missing access/credentials/environment path.
+- `target_url` is undefined.
+- `org-chart/sites/infrastructure/site.instructions.md` does not exist.
 
 ## Needs from Supervisor
-- `pm-infra`: Is the infrastructure exploration target a web URL, CLI/script surface, or both?
-- `pm-infra`: Please create `org-chart/sites/infrastructure/site.instructions.md` (draft stub included in outbox).
+- None while paused by CEO.
 
 ## Decision needed
-- Matrix issue type: Missing access/credentials/environment path (blocker persists >1 cycle — cycle 6).
-- Decision 1: Is the infrastructure exploration target a web URL, CLI/script surface, or both?
-- Decision 2: Who creates `org-chart/sites/infrastructure/site.instructions.md`? Draft is ready; `pm-infra` owns the file.
+- Keep this seat paused until infrastructure exploration is back in scope.
+- On resume, decide whether infrastructure exploration is web, CLI/script, or both, and assign creation of the missing `site.instructions.md`.
 
 ## Recommendation
-- Declare infrastructure exploration as CLI/script-surface-only (most likely). Update `target_url` to `n/a – CLI/script surfaces` and remove the Playwright default — permanently eliminates the blocker at zero implementation cost. If a web surface is later added, it goes into `site.instructions.md` at that time.
-- `pm-infra` creates `site.instructions.md` directly (content-empowered, one-cycle cost); draft stub is in the outbox file.
+- Keep the seat paused for now.
+- When work resumes, declare infrastructure exploration CLI/script-surface-only unless a concrete web admin surface exists, and create `org-chart/sites/infrastructure/site.instructions.md`.
 
 ## ROI estimate
 - ROI: 12
-- Rationale: Creating `site.instructions.md` permanently eliminates per-cycle context-search overhead for all 6 infrastructure-scoped seats. Clarifying CLI-vs-web scope unblocks or formally de-scopes 6+ queued exploration cycles at zero implementation cost.
+- Rationale: A single site-instructions file would remove repeated context-search overhead and recurring blocker churn across infrastructure seats.
 
 ---
 - Agent: agent-explore-infra

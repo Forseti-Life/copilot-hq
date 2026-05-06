@@ -1,13 +1,13 @@
 # CEO Session State — ceo-copilot-2
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-23 21:02 UTC
+> Last updated: 2026-04-29 17:08 UTC
 
 ---
 
 ## Currently Working On
 
-Recovered the release pipeline after the HQ-path cleanup: corrected installed cron paths, restarted the orchestrator, cleared the stale deploy-age false failure in release health, and superseded malformed blocker residue so only true access blockers remain.
+Completed the RCA/signoff-enforcement phase and then fixed the prioritization issue that was still starving release work behind aged backlog ROI. Current-release blockers now run in a dedicated executor lane ahead of ordinary backlog items, and `hq-status.sh` now reports the same lane-aware next inbox item that the executor will actually consume. Live queue cleanup is complete: `pm-forseti` is waiting on the real release-v signoff, and `pm-dungeoncrawler` is now correctly pointed at the release-y code-review follow-up instead of backlog intake.
 
 ---
 
@@ -15,19 +15,16 @@ Recovered the release pipeline after the HQ-path cleanup: corrected installed cr
 
 | Site | Release ID | Status | Last Action |
 |---|---|---|---|
-| forseti | `20260412-forseti-release-q` | ✅ Ready for coordinated push (all co-signoffs present) | 2026-04-20T18:02:09+00:00 |
-| dungeoncrawler | `20260412-dungeoncrawler-release-s` | ✅ Ready for coordinated push (all co-signoffs present, post-dev 254.5h) | 2026-04-20T18:02:09+00:00 |
+| forseti | `20260412-forseti-release-v` | Gate 2 APPROVE exists; PM signoff artifact still missing | 2026-04-29T12:07:00+00:00 |
+| dungeoncrawler | `20260412-dungeoncrawler-release-y` | Gate 2 APPROVE exists; PM signoff missing and code-review follow-up still unresolved | 2026-04-29T12:07:00+00:00 |
 
-Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler → `20260412-dungeoncrawler-release-t`
+Next releases queued: forseti → `20260412-forseti-release-w`, dungeoncrawler → `20260412-dungeoncrawler-release-z`
 
 ---
 
-## What Was Last Worked On (session 2026-04-23 21:02 UTC)
+## What Was Just Worked On
 
-1. **Automation restored** — Fixed the installed crontab to use canonical root paths, patched `install-crons.sh` to refresh managed entries instead of preserving stale ones, and restarted the orchestrator so release processing resumed.
-2. **Release gate corrected** — Updated `scripts/ceo-release-health.sh` so a stale-but-successful `deploy.yml` run is a warning rather than a false release blocker on this live-symlink host.
-3. **Blocker residue cleaned** — Wrote CEO cleanup outboxes for stale malformed `needs-info` items so only the real accountant credential/access blocker remains in `hq-blockers.sh`.
-4. **Checkpoint baseline restored** — Ran a manual checkpoint commit, restored the stray `dungeoncrawler-content` submodule to `origin/main`, and reattached local `main` to track `origin/main` for future automation.
+Finished the root-cause work on PM signoff drift, corrected the reminder automation, and then fixed the remaining throughput problem in the executor. The issue was that old PM backlog items had accumulated ROI in the thousands from the anti-starvation aging rule, while the fresh release-y code-review follow-up sat around 249, so `pm-dungeoncrawler` kept executing backlog instead of the live blocker. I added `scripts/lib/release-priority.sh` and changed `agent-exec-next.sh` to give current-release blockers their own lane ahead of the normal ROI queue. I also updated `hq-status.sh` to use the same lane-aware ordering, so the dashboard now matches the real executor. Live verification shows `pm-dungeoncrawler`'s next inbox is now `20260429-code-review-followup-20260412-dungeoncrawler-release-y`.
 
 ---
 
@@ -35,14 +32,13 @@ Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler �
 
 | Agent | Inbox | Status |
 |---|---|---|
-| ceo-copilot-2 | 5 | Phase 2 complete; Phase 3 housekeeping active |
-| pm-forseti | 9 | Grooming active; `release-q` ready to ship |
-| pm-dungeoncrawler | 4 | Grooming active; `release-s` ready to ship |
-| dev-forseti | 3 | 2 langgraph console features in progress |
-| dev-dungeoncrawler | 1 | Spells chapter 7 in progress |
-| qa-forseti | 6 | Suite activation active for langgraph features |
-| qa-dungeoncrawler | 1 | Unit test halfling ancestry |
-| Architect/infra | 18 | System analysis + infra grooming |
+| ceo-copilot-2 | 0 | No active CEO inbox items; signoff enforcement fix is recorded in outbox/state |
+| pm-forseti | 1 | Valid active signoff prompt: create release-v artifact |
+| pm-dungeoncrawler | 37 | Active blocker is release-y code-review follow-up; queue now points at it first |
+| dev-forseti | 0 | No active queue items |
+| dev-dungeoncrawler | 0 | Waiting on PM routing of release-y code-review finding |
+| qa-forseti | 0 | Gate 2 evidence already exists for release-v |
+| qa-dungeoncrawler | 0 | Gate 2 evidence already exists for release-y |
 
 ---
 
@@ -50,64 +46,46 @@ Next releases queued: forseti → `20260412-forseti-release-r`, dungeoncrawler �
 
 | Item | Owner | Priority | Notes |
 |---|---|---|---|
-| Bestiary 3 implementation | dev-dungeoncrawler | P1 | Internal structured B3 inventory is confirmed; normalization is landed across read/write/template flows; seeded/internal rows now carry or hydrate core catalog fields; remaining work is richer shared-schema ingestion and import depth |
-| Chameleon Gnome heritage | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; action exposure is landed and regression-covered at the service layer, with active dev queue restored for remaining release validation |
-| Survival navigation actions | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; core handlers are surfaced and regression-covered, with active dev queue restored for remaining release validation |
-| Snare system | dev-dungeoncrawler | P2 | Retargeted to `20260412-dungeoncrawler-release-r`; downtime crafting is surfaced and service coverage exists, with active dev queue restored for broader feature completion |
-| Spellcasting rules (Ch 7) | dev-dungeoncrawler | P1 | Retargeted to `20260412-dungeoncrawler-release-r`; encounter blocker rules are hardened, with active dev queue restored for broader spell-catalog completion |
-| Forseti open-source initiative | pm-open-source / dev-open-source | P1 | Release target is now the explicit `drupal-ai-conversation` publication candidate instead of `tbd`, and both PM and dev now have live inbox items aligned to that candidate |
-| Dungeoncrawler release-r grooming | pm-dungeoncrawler | P1 | Current queued PM task is `20260419-groom-20260412-dungeoncrawler-release-r`; PM also has B3 completion notification |
-| Forseti release-q grooming | pm-forseti | P1 | Current queued PM task is `20260419-groom-20260412-forseti-release-q` |
-| Auto-checkpoint remote divergence | CEO / dev-infra | P1 | Local `main` now tracks `origin/main`, but the remote has one divergent commit; future checkpoint pushes need a safe reconcile plan rather than blind force |
-| Residual historical subtree references | CEO / owning seats | P2 | Historical QA checklists and open-source export docs still mention `copilot-hq/` where they describe history or sanitized exports; live runtime instructions are now normalized |
-| Accountant billing access blocker | CEO / Board inputs | P1 | Only remaining active blocker: AWS Cost Explorer and GitHub org billing access are still missing for `accountant-forseti` |
-| Forseti scoreboard freshness | pm-forseti | P2 | Existing stale-scoreboard item remains in PM inbox |
+| Forseti release `20260412-forseti-release-v` truthful PM signoff | pm-forseti | P1 | QA APPROVE exists; missing signoff artifact is the only remaining PM gate |
+| Dungeoncrawler release `20260412-dungeoncrawler-release-y` code-review finding routing | pm-dungeoncrawler / dev-dungeoncrawler | P1 | Release Gate 1b is now correctly blocking signoff on unresolved findings; route or risk-accept before PM signoff |
+| Signoff source-of-truth enforcement | CEO / PM seats | P1 | Reminder automation and PM instructions now enforce artifact proof and exact release IDs |
+| Release blocker queue priority | CEO / executor | P1 | Current-release blockers now run in a separate executor lane ahead of stale backlog ROI |
+| Release Gate 1b flow mismatch | CEO / PM / Architecture | P1 | Documented: release-cycle code review is still legacy/non-flow-managed; future enhancement would model it explicitly in LangGraph if desired |
+| Accountant billing access blocker | CEO / Board inputs | P1 | Standing Board-level blocker unrelated to this RCA |
 
 ---
 
-## Key Decisions Made (2026-04-19 11:51 UTC)
+## Key Decisions Made
 
-- Backstopped the release-operator role directly when `pm-forseti` stalled at investigation and the coordinated Dungeoncrawler release was already otherwise ready.
-- Treated the missing lead-PM release candidate bundle as a content/process gap, not a reason to leave `release-p` unshipped.
-- Used a second `post-coordinated-push.sh` run to complete the runtime advance after the first pass only wrote the coordinated push marker.
-- Promoted `dc-b3-bestiary3` from deferred to active grooming because its only explicit gate was Bestiary 2 shipping, which is now complete.
-- Did not stop at grooming; once B3 became ready, immediately activated it into the empty current Dungeoncrawler release so `release-q` no longer sat open without scope.
-- Reverted an unsafe generated-content implementation attempt for Bestiary 3, then confirmed the repo already contains a safe internal structured B3 inventory and pivoted execution onto that path.
-- Landed B3-safe Bestiary-source normalization in both the catalog API and content write/import path before attempting deeper schema ingestion.
-- Landed the same B3-safe normalization in the template-example seeding path so internal registry examples and JSON content imports converge on the same canonical source metadata.
-- Landed single-creature response hydration so thin internal registry rows expose the same core catalog fields on read that list responses already provide.
-- Landed template-seeding enrichment so internal registry examples also persist the basic creature identity fields (`creature_id`, `name`, `level`, `rarity`) directly inside `schema_data`.
-- Declared `/home/ubuntu/forseti.life` the canonical HQ root in the authoritative ownership files and startup instructions.
-- Converted live instruction references that pointed agents at `copilot-hq/` into root-relative HQ paths.
-- Converted live runtime scripts and executor prompts that pointed at `copilot-hq/` into canonical root paths.
-- Repaired the org-chart validator and ownership audit so future overlap regressions surface correctly.
-- Refreshed the installed cron entries to canonical root paths and restarted orchestrator processing.
-- Downgraded stale deploy.yml age from FAIL to WARN in release health for this live-code host.
-- Cleared malformed blocker residue so supervisor blocker views now show only true active blockers.
+- Declared the signoff artifact file, not PM outbox prose, as the operative source of truth for release signoff completion.
+- Treated dungeoncrawler release-y signoff reminders as premature until Gate 1b follow-up is closed in repo state.
+- Filed a KB lesson and updated shared instructions in the same session rather than leaving the RCA as report-only output.
+- Added automation guards so signoff/remediation now produce `code-review-followup` work instead of signoff prompts when release review findings were never routed.
+- Fixed reminder dispatch so dependency PMs receive the exact release ID and exact signoff command they must execute, and dedupe stale signoff reminders across days.
+- Changed executor ordering so current-release blockers no longer compete directly with aged backlog ROI inside an agent inbox.
 
 ---
 
 ## Next Priority Actions (pick up here next session)
 
-1. Resolve the `origin/main` divergence before allowing unattended checkpoint pushes again.
-2. Unblock `accountant-forseti` with AWS/GitHub billing access or documented substitute data sources.
-3. Sweep remaining historical-only `copilot-hq/` references and decide which should stay as archival/export notes versus be normalized.
+1. Let the next `pm-dungeoncrawler` execution consume `20260429-code-review-followup-20260412-dungeoncrawler-release-y`.
+2. Let `pm-forseti` write the real signoff artifact for `20260412-forseti-release-v`.
+3. After Gate 1b closure, re-drive `pm-dungeoncrawler` signoff on release-y using artifact proof only.
+4. Re-check release health once the two PM follow-through items land.
 
 ---
 
 ## Pipeline Health Snapshot
 
 ```text
-Orchestrator:        running (pid 3800021)
-Agent exec:          not running
-Checkpoint:          running (pid 1361039)
+Orchestrator:        running (pids 1064043, 1069098)
+Checkpoint loops:    running (pids 339310, 728445)
 CEO inbox:           0
-pm-forseti inbox:    2
-pm-dungeoncrawler:   2
-ba-dungeoncrawler:   0
-dev-forseti:         0
-dev-infra:           0
-Release health:      current releases advanced to forseti release-p and dungeoncrawler release-q; Dungeoncrawler release-q now has B3 in progress while Forseti release-p remains empty
-System health:       merge health still failing; forseti scoreboard stale
-Key artifact:        sessions/pm-dungeoncrawler/artifacts/releases/20260412-dungeoncrawler-release-q/01-change-list.md
+pm-forseti inbox:    1
+pm-dungeoncrawler:   37
+dev-forseti inbox:   0
+dev-dungeoncrawler:  0
+Release health:      release-v blocked on missing PM signoff artifact; release-y blocked on unresolved Gate 1b code-review follow-up and owner PM signoff
+System health:       executor failure backlog + merge-health warning remain from earlier system health check
+Key artifacts:       sessions/ceo-copilot-2/outbox/20260429-rca-persistent-blocker-pm-signoff-not-occurring.md ; sessions/ceo-copilot-2/outbox/20260429-rca-code-review-findings-not-progressed-through-langgraph.md ; sessions/ceo-copilot-2/outbox/20260429-signoff-enforcement-hardening.md ; sessions/ceo-copilot-2/outbox/20260429-release-blocker-priority-lane.md
 ```

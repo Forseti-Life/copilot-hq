@@ -34,6 +34,63 @@ def _mark_now(state_file: Path) -> None:
     state_file.write_text(str(_now_ts()), encoding="utf-8")
 
 
+def _item_marked_done(item_dir: Path) -> bool:
+    for md in item_dir.glob("*.md"):
+        try:
+            text = md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if re.search(r"^-\s*Status:\s*done\b", text, re.MULTILINE | re.IGNORECASE):
+            return True
+    return False
+
+
+def _gating_failure_keys(failures: List[str]) -> set[str]:
+    keys: set[str] = set()
+    for failure in failures:
+        match = re.match(r"^\s*([A-Za-z0-9._-]+)\s+\(", failure)
+        if match:
+            keys.add(match.group(1))
+    return keys
+
+
+def _gating_failure_keys_from_text(text: str) -> set[str]:
+    return {
+        match.group(1)
+        for match in re.finditer(r"^\s*-\s*([A-Za-z0-9._-]+)\s+\(", text, re.MULTILINE)
+    }
+
+
+def _ceo_has_pending_quarantine_item(ceo_inbox: Path, gating_failures: List[str]) -> bool:
+    """Return True when a recent unresolved CEO quarantine item already covers these failures."""
+    if not ceo_inbox.exists():
+        return False
+    now = _now_ts()
+    current_keys = _gating_failure_keys(gating_failures)
+    for item_dir in ceo_inbox.iterdir():
+        if not item_dir.is_dir() or item_dir.name == "_archived":
+            continue
+        if "gating-agent-quarantine-escalation" not in item_dir.name:
+            continue
+        if _item_marked_done(item_dir):
+            continue
+        age = now - int(item_dir.stat().st_mtime)
+        if age > _QUARANTINE_ITEM_STALE_SECS:
+            continue
+        text_parts: List[str] = []
+        for md in item_dir.glob("*.md"):
+            try:
+                text_parts.append(md.read_text(encoding="utf-8", errors="ignore"))
+            except OSError:
+                continue
+        text = "\n".join(text_parts)
+        if text and all(failure in text for failure in gating_failures):
+            return True
+        if current_keys and current_keys.issubset(_gating_failure_keys_from_text(text)):
+            return True
+    return False
+
+
 def _run(cmd: List[str], *, timeout: int = 600) -> tuple[int, str]:
     """Execute a shell command (imported from run.py context)."""
     import subprocess
@@ -54,6 +111,7 @@ def _run(cmd: List[str], *, timeout: int = 600) -> tuple[int, str]:
 
 _INBOX_AUDIT_COOLDOWN = 3600          # re-audit at most once per hour
 _INWORK_STALE_SECS    = 7200          # .inwork lock is stale after 2h
+_QUARANTINE_ITEM_STALE_SECS = 86400   # allow fresh CEO quarantine escalation after 24h
 
 
 # ── Inbox audit ───────────────────────────────────────────────────────────────
@@ -184,6 +242,74 @@ def reap_stale_copilot_processes() -> Dict[str, Any]:
 _QUARANTINE_ESCALATE_COOLDOWN = 28800  # seconds between gating-agent quarantine escalations (8h: prevent re-fire while awaiting Board decision)
 
 
+def _manual_code_review_gate_verdict(repo_root: Path, release_id: str) -> str | None:
+    """Return approve/reject when a manual code-review gate verdict exists."""
+    candidates = []
+    cr_outbox = repo_root / "sessions" / "agent-code-review" / "outbox"
+    if cr_outbox.exists():
+        candidates.extend(sorted(cr_outbox.glob(f"*manual-cr*{release_id}*.md")))
+    ceo_outbox = repo_root / "sessions" / "ceo-copilot-2" / "outbox"
+    if ceo_outbox.exists():
+        candidates.extend(sorted(ceo_outbox.glob(f"*code-review-gate*{release_id}*.md")))
+
+    saw_approve = False
+    for f in candidates:
+        try:
+            content = f.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        m = re.search(r"^-\s*Status:\s*(\S+)", content, re.MULTILINE | re.IGNORECASE)
+        if not m or m.group(1).lower() not in {"done", "approved", "approve"}:
+            continue
+        upper = content.upper()
+        if "VERDICT: REJECT" in upper or re.search(r"\bREJECT\b", upper):
+            return "reject"
+        if "VERDICT: APPROVE" in upper or re.search(r"\bAPPROVE\b", upper):
+            saw_approve = True
+    return "approve" if saw_approve else None
+
+
+def _gating_outbox_files_for_release(
+    repo_root: Path,
+    agent_id: str,
+    release_id: str,
+    feature_ids: List[str],
+    active_release_ids: List[str],
+) -> List[pathlib.Path]:
+    """Return outbox files that represent gating work for an active release.
+
+    PM gating is release-scoped (groom, signoff, push-ready, release-close, etc.).
+    Feature-scoped PM handoffs like `needs-dev-*<feature-id>*` are ordinary work and
+    must not count as release-gating quarantines. Code review remains feature-scoped.
+    """
+    outbox = repo_root / "sessions" / agent_id / "outbox"
+    if not outbox.exists():
+        return []
+    signoff_artifact = (
+        repo_root / "sessions" / agent_id / "artifacts" / "release-signoffs" / f"{release_id}.md"
+        if release_id and agent_id.startswith("pm-")
+        else None
+    )
+    has_signoff_artifact = signoff_artifact.exists() if signoff_artifact else False
+
+    hits: List[pathlib.Path] = []
+    for f in sorted(outbox.glob("*.md")):
+        if agent_id == "agent-code-review":
+            file_release_ids = [rid for rid in active_release_ids if rid and rid in f.name]
+            if file_release_ids and all(
+                _manual_code_review_gate_verdict(repo_root, rid) == "approve"
+                for rid in file_release_ids
+            ):
+                continue
+            if (release_id and release_id in f.name) or any(fid in f.name for fid in feature_ids):
+                hits.append(f)
+        elif release_id and release_id in f.name:
+            if has_signoff_artifact and "signoff-reminder" in f.name:
+                continue
+            hits.append(f)
+    return hits
+
+
 def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) -> None:
     """Detect when gating agents (PM, agent-code-review) are majority-quarantined
     for an active release and escalate to CEO inbox. (ISSUE-012 fix)
@@ -235,14 +361,13 @@ def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) 
     quarantine_statuses = {"needs-info", "blocked"}
 
     for agent_id, release_id in gating_agents:
-        outbox = repo_root / "sessions" / agent_id / "outbox"
-        if not outbox.exists():
-            continue
-        # Find outbox files relevant to any active release
-        relevant: List[pathlib.Path] = []
-        for f in outbox.glob("*.md"):
-            if (release_id and release_id in f.name) or any(fid in f.name for fid in feature_ids):
-                relevant.append(f)
+        relevant = _gating_outbox_files_for_release(
+            repo_root,
+            agent_id,
+            release_id,
+            feature_ids,
+            sorted(all_release_ids),
+        )
         if not relevant:
             continue
         quarantined = 0
@@ -264,11 +389,14 @@ def escalate_quarantined_gating_agents(repo_root: Path, quarantine_state: Path) 
     if not gating_failures:
         return
 
+    ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
+    if _ceo_has_pending_quarantine_item(ceo_inbox, gating_failures):
+        return
+
     _mark_now(quarantine_state)
     print(f"QUARANTINE-ESCALATE: gating agent failures detected: {', '.join(gating_failures)}")
 
     today = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
-    ceo_inbox = repo_root / "sessions" / "ceo-copilot-2" / "inbox"
     item_dir = ceo_inbox / f"{today}-gating-agent-quarantine-escalation"
     if item_dir.exists():
         return

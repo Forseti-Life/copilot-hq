@@ -20,6 +20,17 @@ def load_product_teams(config_path: Path) -> list[dict[str, Any]]:
     return list(data.get("teams") or [])
 
 
+def release_enabled_teams(config_path: Path) -> list[dict[str, Any]]:
+    return sorted(
+        [
+            team
+            for team in load_product_teams(config_path)
+            if team.get("active") and team.get("release_preflight_enabled")
+        ],
+        key=lambda team: str(team.get("id") or ""),
+    )
+
+
 def coordinated_teams(config_path: Path) -> list[dict[str, Any]]:
     return sorted(
         [
@@ -29,6 +40,47 @@ def coordinated_teams(config_path: Path) -> list[dict[str, Any]]:
         ],
         key=lambda team: str(team.get("id") or ""),
     )
+
+
+def release_enabled_team_map(config_path: Path) -> dict[str, dict[str, Any]]:
+    return {
+        str(team.get("id") or "").strip(): team
+        for team in release_enabled_teams(config_path)
+        if str(team.get("id") or "").strip()
+    }
+
+
+def explicit_release_dependencies(team: dict[str, Any]) -> list[str]:
+    values = team.get("release_dependencies")
+    if not isinstance(values, list):
+        return []
+    deps: list[str] = []
+    team_id = str(team.get("id") or "").strip()
+    for value in values:
+        dep = str(value or "").strip()
+        if not dep or dep == team_id or dep in deps:
+            continue
+        deps.append(dep)
+    return deps
+
+
+def release_cohort(config_path: Path, team_id: str) -> list[dict[str, Any]]:
+    team_map = release_enabled_team_map(config_path)
+    normalized_team_id = str(team_id or "").strip()
+    if not normalized_team_id or normalized_team_id not in team_map:
+        return []
+
+    primary = team_map[normalized_team_id]
+    cohort_ids = [normalized_team_id]
+    for dep in explicit_release_dependencies(primary):
+        if dep in team_map and dep not in cohort_ids:
+            cohort_ids.append(dep)
+
+    return [team_map[cohort_id] for cohort_id in sorted(cohort_ids)]
+
+
+def release_cohort_ids(config_path: Path, team_id: str) -> list[str]:
+    return [str(team.get("id") or "").strip() for team in release_cohort(config_path, team_id)]
 
 
 def lookup_active_team(config_path: Path, query: str) -> dict[str, Any]:
@@ -75,20 +127,105 @@ def combined_release_marker_key(
 
 
 def next_release_id_after(release_id: str, team_id: str, current_day: str) -> str:
-    suffixes = ["release", "release-next"] + [
-        f"release-{chr(c)}" for c in range(ord("b"), ord("z") + 1)
-    ]
     date_part = current_day
     suffix = "release"
     match = re.match(rf"^(\d{{8}})-{re.escape(team_id)}-(.+)$", release_id or "")
     if match:
         date_part = match.group(1)
         suffix = match.group(2)
-    try:
-        idx = suffixes.index(suffix)
-    except ValueError:
-        idx = 0
-    return f"{date_part}-{team_id}-{suffixes[min(idx + 1, len(suffixes) - 1)]}"
+
+    if suffix == "release":
+        next_suffix = "release-next"
+    elif suffix == "release-next":
+        next_suffix = "release-b"
+    else:
+        label_match = re.fullmatch(r"release-([a-z]+)", suffix)
+        if not label_match:
+            next_suffix = "release-b"
+        else:
+            chars = list(label_match.group(1))
+            idx = len(chars) - 1
+            while idx >= 0 and chars[idx] == "z":
+                chars[idx] = "a"
+                idx -= 1
+            if idx < 0:
+                chars.insert(0, "a")
+            else:
+                chars[idx] = chr(ord(chars[idx]) + 1)
+            next_suffix = f"release-{''.join(chars)}"
+
+    return f"{date_part}-{team_id}-{next_suffix}"
+
+
+def _team_site_tokens(team: dict[str, Any]) -> set[str]:
+    tokens: set[str] = set()
+    team_id = str(team.get("id") or "").strip().lower()
+    site = str(team.get("site") or "").strip().lower()
+    if team_id:
+        tokens.add(team_id)
+    if site:
+        tokens.add(site)
+        if site.endswith(".life"):
+            tokens.add(site[: -len(".life")])
+    for alias in team.get("aliases") or []:
+        alias_text = str(alias or "").strip().lower()
+        if alias_text:
+            tokens.add(alias_text)
+    return {token for token in tokens if token}
+
+
+def summarize_release_work(
+    root: Path, team: dict[str, Any], release_id: str
+) -> dict[str, Any]:
+    """Summarize whether a team has actionable work for a release.
+
+    Actionable work means either:
+    1. The candidate/current release already has scoped work (`in_progress` or `done`).
+    2. The site has groomed backlog that can be scoped immediately (`ready` or `done`)
+       and is either unassigned or already tagged to the candidate release.
+    """
+    features_root = root / "features"
+    if not features_root.exists():
+        return {
+            "scoped_count": 0,
+            "ready_backlog_count": 0,
+            "ready_feature_ids": [],
+            "has_actionable_work": False,
+        }
+
+    tokens = _team_site_tokens(team)
+    scoped_count = 0
+    ready_feature_ids: list[str] = []
+
+    for feature_md in sorted(features_root.glob("*/feature.md")):
+        try:
+            text = feature_md.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+
+        website_match = re.search(r"^-\s+Website:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+        status_match = re.search(r"^-\s+Status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+        release_match = re.search(r"^-\s+Release:\s*(.*)$", text, re.MULTILINE | re.IGNORECASE)
+
+        website = (website_match.group(1).strip().lower() if website_match else "")
+        status = (status_match.group(1).strip().lower() if status_match else "")
+        feature_release = (release_match.group(1).strip() if release_match else "")
+
+        if not website or not any(token in website for token in tokens):
+            continue
+
+        if status in {"in_progress", "done"} and release_id and feature_release == release_id:
+            scoped_count += 1
+
+        if status in {"ready", "done"} and (not feature_release or feature_release == release_id):
+            ready_feature_ids.append(feature_md.parent.name)
+
+    return {
+        "scoped_count": scoped_count,
+        "ready_backlog_count": len(ready_feature_ids),
+        "ready_feature_ids": ready_feature_ids,
+        "has_actionable_work": bool(scoped_count or ready_feature_ids),
+    }
 
 
 def has_groom_item(root: Path, pm_agent: str, next_release_id: str) -> bool:

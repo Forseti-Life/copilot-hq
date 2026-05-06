@@ -2176,9 +2176,9 @@ class CharacterCreationStepForm extends FormBase {
       ? $status['providers'][$provider]
       : [];
     $enabled = !empty($provider_status['enabled']);
-    $has_api_key = !empty($provider_status['has_api_key']);
+    $has_credentials = !empty($provider_status['has_credentials']) || !empty($provider_status['has_api_key']);
 
-    if ($enabled && $has_api_key) {
+    if ($enabled && $has_credentials) {
       return [
         'available' => TRUE,
         'description' => $this->t('Creates a portrait using the configured AI image provider after character creation.'),
@@ -2189,8 +2189,8 @@ class CharacterCreationStepForm extends FormBase {
     if (!$enabled) {
       $issues[] = $this->t('the provider is disabled');
     }
-    if (!$has_api_key) {
-      $issues[] = $this->t('no API key is configured');
+    if (!$has_credentials) {
+      $issues[] = $this->t('no live credentials are configured');
     }
 
     return [
@@ -2210,7 +2210,7 @@ class CharacterCreationStepForm extends FormBase {
 
     if ($reason === 'provider_unavailable') {
       $provider = ucfirst((string) ($result['provider'] ?? 'image generation'));
-      $this->messenger()->addWarning($this->t('@provider portrait generation is currently unavailable because no live provider configuration is present.', [
+      $this->messenger()->addWarning($this->t('@provider portrait generation is currently unavailable because no live credentials are configured.', [
         '@provider' => $provider,
       ]));
       return;

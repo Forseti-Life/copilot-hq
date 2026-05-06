@@ -25,4 +25,8 @@
 ---
 - Agent: qa-infra
 - Source inbox: /home/ubuntu/forseti.life/sessions/qa-infra/inbox/20260424-unit-test-20260424-syshealth-merge-health-remediation
+<<<<<<< HEAD
 - Generated: 2026-05-04T00:40:28+00:00
+=======
+- Generated: 2026-04-24T06:45:38+00:00
+>>>>>>> reconcile/copilot-hq-local-priority-main

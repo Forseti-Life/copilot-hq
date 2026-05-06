@@ -100,8 +100,8 @@ curl -s -b "$FORSETI_COOKIE_AUTHENTICATED" \
 **Verification — negative case (env NOT set, banner must appear):**
 ```bash
 # Simulate unset env via PHP eval (requires drush access)
-cd /home/ubuntu/forseti.life/sites/forseti && \
-  vendor/bin/drush php-eval \
+cd /var/www/html/forseti && \
+  vendor/bin/drush --uri=https://forseti.life php:eval \
   'echo getenv("COPILOT_HQ_ROOT") === false ? "UNSET" : "SET: " . getenv("COPILOT_HQ_ROOT");'
 # If output is SET, banner will not appear in production (correct behavior)
 # To test banner: temporarily remove COPILOT_HQ_ROOT from Apache env config,

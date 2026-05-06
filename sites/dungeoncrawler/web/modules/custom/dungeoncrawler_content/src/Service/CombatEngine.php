@@ -303,23 +303,27 @@ class CombatEngine {
       'current_round' => (int) ($encounter['current_round'] ?? 1),
     ];
 
-    // Req 2186: Trigger recovery check if participant is dying at start of turn.
-    if ($this->conditionManager) {
-      $dying_value = $this->conditionManager->getConditionValue($pid, 'dying', $eid) ?? 0;
-      if ($dying_value > 0) {
-        $result['recovery_check'] = $this->conditionManager->processDying($pid, $eid);
-      }
-    }
-
-    // REQ 2177: Fast Healing — restore fast_healing HP at start of each turn.
-    // REQ 2178: Regeneration — same, but prevents permanent death unless bypassed.
+    // Fetch participant entity data early for feature calculations.
     $participant_row = $this->database->select('combat_participants', 'p')
       ->fields('p', ['entity_ref'])
       ->condition('id', $pid)
       ->execute()
       ->fetchAssoc();
+    $entity_data = !empty($participant_row['entity_ref']) ? json_decode($participant_row['entity_ref'], TRUE) : [];
+
+    // Req 2186: Trigger recovery check if participant is dying at start of turn.
+    if ($this->conditionManager) {
+      $dying_value = $this->conditionManager->getConditionValue($pid, 'dying', $eid) ?? 0;
+      if ($dying_value > 0) {
+        // Apply recovery DC adjustments from feats (e.g., Mountain's Stoutness).
+        $dc_adjustment = (int) ($entity_data['derived_adjustments']['recovery_check_dc_adjustment'] ?? 0);
+        $result['recovery_check'] = $this->conditionManager->processDying($pid, $eid, $dc_adjustment);
+      }
+    }
+
+    // REQ 2177: Fast Healing — restore fast_healing HP at start of each turn.
+    // REQ 2178: Regeneration — same, but prevents permanent death unless bypassed.
     if ($participant_row) {
-      $entity_data = !empty($participant_row['entity_ref']) ? json_decode($participant_row['entity_ref'], TRUE) : [];
       $fast_healing = (int) ($entity_data['fast_healing'] ?? 0);
       $regeneration = (int) ($entity_data['regeneration'] ?? 0);
       $regen_bypassed_by = $entity_data['regeneration_bypassed_by'] ?? NULL;

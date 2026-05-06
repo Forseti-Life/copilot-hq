@@ -7,15 +7,30 @@
 .DS_Store
 *.log
 *.tmp
+node-identity.conf
 
 # Runtime state (do not commit)
 tmp/escalation-streaks/
 tmp/site-audit/
 tmp/.last-publish-agent-tracker.epoch
 tmp/org-control.json
+tmp/.last-copilot-api-call
+tmp/hq-status-cache.json
+tmp/ceo-ops-scheduler-state.json
+tmp/orchestrator-health-last-autoexec
+tmp/orchestrator-quarantine-escalate-last
+tmp/auto-push-dispatched/
+tmp/orchestrator-loop-runs/
+tmp/orchestrator-stagnation/
+tmp/executor-failures/
+tmp/executor-failures-archive/
+tmp/release-cycle-active/
+tmp/release-kpi-monitor/
 
 # Runtime locks
 **/.exec-lock/
+**/.inwork
+**/.last-progress-at
 tmp/.agent-exec-*.lock
 tmp/.agent-exec-*/
 
@@ -37,6 +52,10 @@ llm/.venv/
 .orchestrator-loop.pid
 .dev-sync-loop.pid
 inbox/responses/.ceo-health-last-queue
+inbox/responses/langgraph-*.json
+inbox/responses/langgraph-*.jsonl
+copilot-hq/inbox/responses/langgraph-*.json
+copilot-hq/inbox/responses/langgraph-*.jsonl
 
 # Python cache
 llm/__pycache__/
@@ -46,6 +65,7 @@ llm/lib/__pycache__/
 # Ignore only volatile runtime pointers (symlinks, latest markers).
 # Note: the blanket sessions/** ignore was removed 2026-04-06 because sessions/
 # are the org's primary audit trail and must be fully tracked in version control.
+sessions/**/artifacts/active-inbox-item.json
 sessions/**/artifacts/**/latest
 sessions/**/artifacts/**/latest.*
 

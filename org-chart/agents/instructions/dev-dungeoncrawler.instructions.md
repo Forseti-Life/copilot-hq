@@ -136,13 +136,13 @@ Use these at the start of any release cycle to confirm environment health before
 
 ```bash
 # Confirm Drupal site root is accessible
-ls /home/ubuntu/forseti.life/sites/dungeoncrawler/web/
+ls /var/www/html/dungeoncrawler/web/
 
 # Confirm Drush works and Drupal bootstraps
-cd /home/ubuntu/forseti.life/sites/dungeoncrawler && /home/ubuntu/forseti.life/sites/dungeoncrawler/vendor/bin/drush status --fields=drupal-version,bootstrap
+cd /var/www/html/dungeoncrawler && ./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life status --fields=drupal-version,bootstrap
 
 # Check installed custom module(s) are enabled (use full drush path — plain `vendor/bin/drush` may fail in headless context)
-cd /home/ubuntu/forseti.life/sites/dungeoncrawler && /home/ubuntu/forseti.life/sites/dungeoncrawler/vendor/bin/drush pm:list --type=module | grep -E "ai_conversation|dungeoncrawler"
+cd /var/www/html/dungeoncrawler && ./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life pm:list --type=module | grep -E "ai_conversation|dungeoncrawler"
 # Expected: all three should show "Enabled" — ai_conversation, dungeoncrawler_content, dungeoncrawler_tester
 # If any show "Disabled": run drush pm:enable <module> --yes, then drush config:export --yes, then git add + commit config/sync/
 
@@ -163,13 +163,13 @@ If any of these fail at cycle start, record the failure in the outbox and escala
 
 **Dev path** (`/home/ubuntu/forseti.life/sites/dungeoncrawler/`):
 - Dev DB: `dungeoncrawler_dev`
-- Dev drush: `cd /home/ubuntu/forseti.life/sites/dungeoncrawler && ./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life <cmd>`
-- `drush/drush.yml` sets `root: /var/www/html/dungeoncrawler/web` to ensure bootstrap works.
-- **Composer install + autoload fix required** (see KB lesson 2026-04): after `composer install`, `vendor/composer/installed.php` maps `drupal/core` to `vendor/drupal/core` (stub) instead of `web/core`. Fix: update `install_path` to `__DIR__ . '/../../web/core'` and set `Drupal\Core` + `Drupal\Component` PSR-4 paths to `$baseDir . '/web/core/...'` in `autoload_psr4.php` and `autoload_static.php`. Also create `web/autoload.php` returning `require __DIR__ . '/../vendor/autoload.php'`.
+- Use this path for source editing and repo-scoped PHP/unit test work.
+- Do **not** treat the repo-side path as the authoritative Drush root. Drupal bootstrap there has been inconsistent after Composer refreshes, so operational Drush verification should use the live root below unless and until the dev install is revalidated.
 
 **Production path** (`/var/www/html/dungeoncrawler/`):
 - Production DB: `dungeoncrawler`
 - Production drush: `cd /var/www/html/dungeoncrawler && ./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life <cmd>`
+- Current requirement: `Composer\InstalledVersions::getInstallPath('drupal/core')` must resolve to `web/core`; if it points at `vendor/drupal/core`, Drush 13 will fail with `EmptyBoot`.
 - **IMPORTANT: never use bare `drush` command in /var/www/html/dungeoncrawler** — the system drush resolves to the wrong Drupal root (`/var/www/html/drupal`, thetruthperspective). Always use `./vendor/bin/drush`.
 - **IMPORTANT: never run `drush config:export` on dungeoncrawler** — the config/sync directory contains AWS credentials in plaintext. Config export is prohibited without explicit PM authorization and credential scrubbing. Module enables and other runtime DB changes do not require config export.
 - DB access: `mysql -u root -pSeric001! dungeoncrawler`

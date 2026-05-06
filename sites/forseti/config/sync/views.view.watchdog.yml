@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 uuid: 9f693d2a-1d26-4d53-b184-ec940c422d67
+=======
+uuid: 59f3c7c7-f052-4a7b-9920-ab9eae7cedbf
+>>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
@@ -292,7 +296,11 @@ display:
             replace_spaces: false
             path_case: none
             trim_whitespace: false
+<<<<<<< HEAD
             alt: ''
+=======
+            alt: '{{ message }}'
+>>>>>>> reconcile/copilot-hq-local-priority-main
             rel: ''
             link_class: ''
             prefix: ''

@@ -1,15 +1,27 @@
+<<<<<<< HEAD
 uuid: 2a1128ce-bbd4-4874-ad17-64ef7dce4a5f
+=======
+uuid: 5d90b43a-605f-4d76-851e-6a7ec63b229d
+>>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
   config:
+<<<<<<< HEAD
+=======
+    - core.entity_view_mode.node.rss
+>>>>>>> reconcile/copilot-hq-local-priority-main
     - core.entity_view_mode.node.teaser
   module:
     - node
     - taxonomy
     - user
 _core:
+<<<<<<< HEAD
   default_config_hash: KejdxDJQmx8SaO-t83OVekLw6ar4ldjmsJMGcotGxnQ
+=======
+  default_config_hash: 3o-ZjKjvMBpgaHiS3k8RvejhwJB4yX81fbjQjWc-tC8
+>>>>>>> reconcile/copilot-hq-local-priority-main
 id: taxonomy_term
 label: 'Taxonomy term'
 module: taxonomy
@@ -280,7 +292,11 @@ display:
         type: node_rss
         options:
           relationship: none
+<<<<<<< HEAD
           view_mode: default
+=======
+          view_mode: rss
+>>>>>>> reconcile/copilot-hq-local-priority-main
       query:
         type: views_query
         options: {  }

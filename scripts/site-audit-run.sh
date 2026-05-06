@@ -51,6 +51,9 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+sys.path.insert(0, str((Path.cwd() / 'scripts' / 'lib').resolve()))
+from gate2_artifacts import latest_gate2_artifact
+
 label = sys.argv[1]
 base_url = sys.argv[2]
 out_dir = Path(sys.argv[3])
@@ -473,6 +476,106 @@ Deliverable:
 
 _queue_dev_findings_item()
 
+def _resolve_qa_agent(team_id: str, pm_agent_id: str) -> str:
+  if team_id:
+    teams_path = Path('org-chart') / 'products' / 'product-teams.json'
+    if teams_path.exists():
+      try:
+        teams = json.loads(teams_path.read_text(encoding='utf-8', errors='ignore')).get('teams') or []
+      except Exception:
+        teams = []
+      for team in teams:
+        if not team.get('active', False):
+          continue
+        current_team_id = str(team.get('id') or '').strip()
+        aliases = [str(a).strip() for a in (team.get('aliases') or []) if str(a).strip()]
+        if team_id not in [current_team_id, *aliases]:
+          continue
+        qa_agent = str(team.get('qa_agent') or '').strip()
+        if qa_agent:
+          return qa_agent
+  if pm_agent_id.startswith('pm-'):
+    return f"qa-{pm_agent_id[3:]}"
+  if team_id:
+    return f"qa-{team_id}"
+  return ""
+
+def _existing_release_gate2_verdict(qa_agent_id: str, release_id: str) -> Path | None:
+  if not qa_agent_id or not release_id:
+    return None
+  outbox_dir = Path('sessions') / qa_agent_id / 'outbox'
+  artifact = latest_gate2_artifact(outbox_dir, release_id)
+  return artifact.path if artifact else None
+
+def _queue_release_gate2_verdict_item() -> None:
+  if not release_cycle_active:
+    return
+  if open_issue_total <= 0:
+    return
+  if not release_id:
+    return
+
+  qa_agent_id = _resolve_qa_agent(team_id, pm_agent_id)
+  if not qa_agent_id:
+    return
+
+  existing_verdict = _existing_release_gate2_verdict(qa_agent_id, release_id)
+  if existing_verdict is not None:
+    try:
+      verdict_text = existing_verdict.read_text(encoding='utf-8', errors='ignore').upper()
+    except OSError:
+      verdict_text = ''
+    if "BLOCK" in verdict_text:
+      print(f"INFO: skip Gate 2 verdict queue — release BLOCK already recorded: {existing_verdict}")
+      return
+    print(f"INFO: existing Gate 2 verdict is APPROVE; queueing fresh verdict because open issues remain for {release_id}")
+
+  release_slug = re.sub(r'[^A-Za-z0-9._-]+', '-', release_id.strip()).strip('-')[:80]
+  item_id = f"{run_ts}-gate2-verdict-{release_slug}"
+  inbox_dir = Path('sessions') / qa_agent_id / 'inbox' / item_id
+  outbox_dir = Path('sessions') / qa_agent_id / 'outbox'
+  outbox_file = outbox_dir / f"{item_id}.md"
+  if inbox_dir.exists() or outbox_file.exists():
+    return
+
+  inbox_root = Path('sessions') / qa_agent_id / 'inbox'
+  needle = f"-gate2-verdict-{release_slug[:40]}"
+  for p in (inbox_root.iterdir() if inbox_root.exists() else []):
+    if p.is_dir() and p.name != "_archived" and needle in p.name:
+      return
+
+  inbox_dir.mkdir(parents=True, exist_ok=True)
+  (inbox_dir / 'roi.txt').write_text("175\n", encoding='utf-8')
+  findings_summary_md = (out_dir / 'findings-summary.md').as_posix()
+  findings_summary_json = (out_dir / 'findings-summary.json').as_posix()
+  risk_acceptance_dir = (Path('sessions') / pm_agent_id / 'artifacts' / 'risk-acceptances').as_posix()
+  cmd = f"""# Gate 2 verdict required — {release_id}
+
+- Site: {label}
+- Release id: {release_id}
+- QA run: {run_ts}
+- Base URL: {base_url}
+- Findings summary: {findings_summary_md}
+- Findings JSON: {findings_summary_json}
+- Open issues: {open_issue_total}
+
+## Why this item exists
+- This active release still has open audit issues, so the clean-audit auto-approve path cannot fire.
+- Feature-level QA outboxes do NOT satisfy release Gate 2 on their own.
+- Produce exactly one release-scoped QA verdict artifact containing the exact release id and explicit APPROVE or BLOCK.
+
+## Required actions
+1) Review the latest audit evidence plus any current-release risk acceptances under `{risk_acceptance_dir}`.
+2) If the release is still blocked, write `sessions/{qa_agent_id}/outbox/<timestamp>-gate2-block-{release_slug}.md`.
+3) If all remaining issues are resolved or explicitly covered by current-release risk acceptance, write `sessions/{qa_agent_id}/outbox/<timestamp>-gate2-approve-{release_slug}.md`.
+4) The artifact body MUST include both `{release_id}` and either `APPROVE` or `BLOCK`.
+5) Do not close this item with only targeted feature verification notes; the output must be a release-level Gate 2 verdict artifact.
+"""
+  (inbox_dir / 'command.md').write_text(cmd, encoding='utf-8')
+  print(f"INFO: queued Gate 2 verdict item for {qa_agent_id}: {item_id}")
+
+_queue_release_gate2_verdict_item()
+
 def _queue_pm_gate2_ready_item() -> None:
   """Notify PM when violations drop to 0 during an active release cycle."""
   if not release_cycle_active:
@@ -615,6 +718,10 @@ elif dev_agent_id and open_issue_total > 0:
   lines.append("- Script auto-queued a Dev findings item (review QA results and fix failed tests) when no pending findings item existed.")
 else:
   lines.append("- No Dev findings item queued (no open issues or no mapped Dev seat).")
+if release_cycle_active and release_id and open_issue_total > 0:
+  lines.append("- Script auto-queued a release-scoped QA Gate 2 verdict item so the active release cannot stall on feature-only QA evidence.")
+elif release_cycle_active and release_id and open_issue_total == 0:
+  lines.append("- No release-scoped Gate 2 verdict item queued because the audit is already clean; the clean-audit backstop handles APPROVE artifact creation.")
 lines.append("- Dev consumes this evidence and fixes failing behavior; QA updates suites if the test script is flawed.")
 lines.append("- PM is pulled in only for scope/intent decisions (e.g., ACL publicness) and for release coordination/final push.")
 

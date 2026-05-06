@@ -12,7 +12,7 @@ class RoadmapPipelineStatusResolver {
   /**
    * Maps feature pipeline statuses to roadmap display statuses.
    *
-   * - 'done'    = code written and unit-tested; NOT yet QA-verified → in_progress
+   * - 'done'    = implementation finished in the backlog → done
    * - 'shipped' = QA-verified and released to production → implemented
    * - 'backlog' = deferred/unstarted work → pending
    */
@@ -24,7 +24,7 @@ class RoadmapPipelineStatusResolver {
     'deferred'   => 'pending',
     'backlog'    => 'pending',
     'in_progress' => 'in_progress',
-    'done'       => 'in_progress',
+    'done'       => 'done',
     'shipped'    => 'implemented',
   ];
 
@@ -280,6 +280,10 @@ class RoadmapPipelineStatusResolver {
       'active_release' => $active_release,
       'next_release' => $next_release,
       'started_at' => $started_at,
+<<<<<<< HEAD
+=======
+      'last_completed_release' => '',
+>>>>>>> reconcile/copilot-hq-local-priority-main
       'active_release_status' => '',
       'active_release_status_display' => 'pending',
       'active_release_status_label' => 'Unavailable',
@@ -289,7 +293,18 @@ class RoadmapPipelineStatusResolver {
       'next_features' => [],
     ];
 
+<<<<<<< HEAD
     $snapshot = array_merge($snapshot, $this->resolveReleaseSnapshotState($website, $active_release, $next_release));
+=======
+    $snapshot = array_merge(
+      $snapshot,
+      $this->resolveReleaseSnapshotState(
+        $active_release,
+        $next_release,
+        $this->readPushState("{$website}.advanced")
+      )
+    );
+>>>>>>> reconcile/copilot-hq-local-priority-main
 
     if (!is_dir($this->featuresPath) || ($active_release === '' && $next_release === '')) {
       return $snapshot;
@@ -316,7 +331,13 @@ class RoadmapPipelineStatusResolver {
       }
 
       $release = $this->extractFieldValue($contents, 'Release', '');
+<<<<<<< HEAD
       if ($release !== $active_release && $release !== $next_release) {
+=======
+      $matches_active_release = $active_release !== '' && $release === $active_release;
+      $matches_next_release = $next_release !== '' && $release === $next_release;
+      if (!$matches_active_release && !$matches_next_release) {
+>>>>>>> reconcile/copilot-hq-local-priority-main
         continue;
       }
 
@@ -331,10 +352,17 @@ class RoadmapPipelineStatusResolver {
         'release' => $release,
       ];
 
+<<<<<<< HEAD
       if ($release === $active_release) {
         $snapshot['active_features'][] = $feature;
       }
       elseif ($release === $next_release) {
+=======
+      if ($matches_active_release) {
+        $snapshot['active_features'][] = $feature;
+      }
+      elseif ($matches_next_release) {
+>>>>>>> reconcile/copilot-hq-local-priority-main
         $snapshot['next_features'][] = $feature;
       }
     }
@@ -431,7 +459,11 @@ class RoadmapPipelineStatusResolver {
       }
 
       $status = mb_strtolower($this->extractFieldValue($contents, 'Status', ''));
+<<<<<<< HEAD
       $mapped_status = self::PIPELINE_TO_FEATURE_FLOW[$status] ?? 'pending';
+=======
+      $mapped_status = self::PIPELINE_TO_ROADMAP[$status] ?? 'pending';
+>>>>>>> reconcile/copilot-hq-local-priority-main
       if (isset($counts[$mapped_status])) {
         $counts[$mapped_status]++;
       }
@@ -508,6 +540,21 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+<<<<<<< HEAD
+=======
+   * Reads a coordinated-push state file.
+   */
+  private function readPushState(string $filename): string {
+    $path = $this->pushStatePath . DIRECTORY_SEPARATOR . $filename;
+    if (!is_readable($path)) {
+      return '';
+    }
+    $contents = file_get_contents($path);
+    return $contents === FALSE ? '' : trim($contents);
+  }
+
+  /**
+>>>>>>> reconcile/copilot-hq-local-priority-main
    * Maps raw pipeline status to release-snapshot display state.
    */
   private function snapshotDisplayStatus(string $status): string {
@@ -539,9 +586,29 @@ class RoadmapPipelineStatusResolver {
    * @return array<string, string>
    *   Status fields for the release snapshot.
    */
+<<<<<<< HEAD
   private function resolveReleaseSnapshotState(string $website, string $active_release, string $next_release): array {
     if ($active_release === '') {
       return [
+=======
+  private function resolveReleaseSnapshotState(string $active_release, string $next_release, string $last_completed_release = ''): array {
+    if ($active_release === '') {
+      if ($last_completed_release !== '') {
+        $push_marker = $this->findPushMarker($last_completed_release);
+        return [
+          'last_completed_release' => $last_completed_release,
+          'active_release_status' => 'idle_advanced',
+          'active_release_status_display' => 'implemented',
+          'active_release_status_label' => 'Idle — waiting for scoped work',
+          'active_release_pushed_at' => $push_marker !== '' ? date(DATE_ATOM, filemtime($push_marker) ?: time()) : '',
+          'release_sync_note' => $next_release !== ''
+            ? 'The most recent release was already pushed and the cycle boundary already advanced. The next release stays queued until work is scoped.'
+            : 'The most recent release was already pushed and the cycle is currently idle.',
+        ];
+      }
+      return [
+        'last_completed_release' => '',
+>>>>>>> reconcile/copilot-hq-local-priority-main
         'active_release_status' => '',
         'active_release_status_display' => 'pending',
         'active_release_status_label' => 'Unavailable',
@@ -550,6 +617,7 @@ class RoadmapPipelineStatusResolver {
       ];
     }
 
+<<<<<<< HEAD
     if ($this->isAdvancedRelease($website, $active_release)) {
       return [
         'active_release_status' => 'in_progress',
@@ -563,6 +631,12 @@ class RoadmapPipelineStatusResolver {
     $push_marker = $this->findPushMarker($active_release);
     if ($push_marker !== '') {
       return [
+=======
+    $push_marker = $this->findPushMarker($active_release);
+    if ($push_marker !== '') {
+      return [
+        'last_completed_release' => '',
+>>>>>>> reconcile/copilot-hq-local-priority-main
         'active_release_status' => 'pushed_pending_advance',
         'active_release_status_display' => 'implemented',
         'active_release_status_label' => 'Pushed — awaiting cycle advance',
@@ -574,6 +648,10 @@ class RoadmapPipelineStatusResolver {
     }
 
     return [
+<<<<<<< HEAD
+=======
+      'last_completed_release' => '',
+>>>>>>> reconcile/copilot-hq-local-priority-main
       'active_release_status' => 'in_progress',
       'active_release_status_display' => 'in_progress',
       'active_release_status_label' => 'In Progress',
@@ -601,6 +679,7 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+<<<<<<< HEAD
    * Returns TRUE when the active release already matches the latest team advance sentinel.
    */
   private function isAdvancedRelease(string $website, string $active_release): bool {
@@ -618,6 +697,8 @@ class RoadmapPipelineStatusResolver {
   }
 
   /**
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
    * Returns TRUE when a feature has been routed into the PM intake queue.
    */
   private function isQueuedViaIntake(string $feature_id, string $status): bool {

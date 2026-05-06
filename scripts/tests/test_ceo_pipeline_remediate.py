@@ -157,6 +157,16 @@ def test_queues_release_and_sla_followups(tmp_path):
     assert any("sla-outbox-lag-dev-dungeoncrawler-20260412-old" in name for name in pm_dc_items)
     assert not any("gate2-followup-20260412-forseti-release-i" in name for name in qa_forseti_items)
     assert any("gate2-followup-20260412-dungeoncrawler-release-j" in name for name in qa_dc_items)
+    reminder = next(
+        p
+        for p in (root / "sessions" / "pm-dungeoncrawler" / "inbox").iterdir()
+        if "signoff-reminder-20260412-forseti-release-i" in p.name
+    )
+    readme = (reminder / "README.md").read_text(encoding="utf-8")
+    assert "bash scripts/release-signoff.sh" in readme
+    assert "20260412-forseti-release-i" in readme
+    assert "`sessions/pm-dungeoncrawler/artifacts/release-signoffs/20260412-forseti-release-i.md`" in readme
+    assert "bash scripts/release-signoff-status.sh 20260412-forseti-release-i" in readme
 
 
 def test_skips_signoff_and_gate2_until_dev_outbox_exists(tmp_path):
@@ -272,6 +282,70 @@ def test_missing_escalation_items_include_structured_metadata(tmp_path):
     assert "- Escalated status: blocked" in readme
 
 
+def test_missing_escalation_dedupes_existing_pending_metadata_item(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "scripts" / "sla-report.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "echo 'SLA report @ test'\n"
+        "echo 'BREACH missing-escalation: pm-dungeoncrawler status=blocked "
+        "outbox=20260414-release-close-now-20260412-dungeoncrawler-release-m.md "
+        "supervisor=ceo-copilot-2'\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "sla-report.sh").chmod(
+        (root / "scripts" / "sla-report.sh").stat().st_mode | stat.S_IXUSR
+    )
+
+    existing = (
+        root / "sessions" / "ceo-copilot-2" / "inbox"
+        / "20260425-sla-missing-escalation-pm-dungeoncrawler-20260414-release-close-now"
+    )
+    existing.mkdir(parents=True)
+    (existing / "README.md").write_text(
+        "# SLA breach: missing escalation for pm-dungeoncrawler\n\n"
+        "- Agent: ceo-copilot-2\n"
+        "- Escalated agent: pm-dungeoncrawler\n"
+        "- Escalated item: 20260414-release-close-now-20260412-dungeoncrawler-release-m\n"
+        "- Escalated status: needs-info\n"
+        "- Status: pending\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    items = sorted(p.name for p in (root / "sessions" / "ceo-copilot-2" / "inbox").iterdir() if p.is_dir())
+    assert items == ["20260425-sla-missing-escalation-pm-dungeoncrawler-20260414-release-close-now"]
+
+
+def test_in_progress_age_breach_creates_ceo_alert(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "scripts" / "sla-report.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        "set -euo pipefail\n"
+        "echo 'SLA report @ test'\n"
+        "echo 'BREACH in-progress-age: pm-forseti inbox=20260428-flow-feature_request_intake-suggestion-forseti-nid-2-pm-scope-decision-r1 age=5400s status=in-progress'\n",
+        encoding="utf-8",
+    )
+    (root / "scripts" / "sla-report.sh").chmod(
+        (root / "scripts" / "sla-report.sh").stat().st_mode | stat.S_IXUSR
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    items = sorted((root / "sessions" / "ceo-copilot-2" / "inbox").iterdir())
+    readme = (items[0] / "README.md").read_text(encoding="utf-8")
+    assert "# SLA breach: aging in-progress item for pm-forseti" in readme
+    assert "- Escalated agent: pm-forseti" in readme
+    assert (
+        "- Escalated item: 20260428-flow-feature_request_intake-suggestion-forseti-nid-2-pm-scope-decision-r1"
+        in readme
+    )
+    assert "- Escalated status: in-progress" in readme
+
+
 def test_skips_signoff_reminder_when_stale_inbox_item_exists(tmp_path):
     """Guard 2: if a signoff-reminder for the same release already exists in the
     inbox (e.g. from a prior day's DATE_PREFIX run), no duplicate should be created."""
@@ -363,3 +437,43 @@ def test_skips_signoff_reminder_when_artifact_exists(tmp_path):
     assert not any("signoff-reminder" in n for n in pm_dc_items), (
         f"Unexpected signoff-reminder created when artifact exists: {pm_dc_items}"
     )
+
+
+def test_queues_code_review_followup_instead_of_signoff_reminder(tmp_path):
+    root = _make_root(tmp_path)
+    (root / "sessions" / "dev-forseti" / "outbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / "dev-forseti" / "outbox" / "20260413-impl-forseti-feature-a.md").write_text(
+        "forseti-feature-a implemented\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "qa-forseti" / "outbox").mkdir(parents=True, exist_ok=True)
+    (root / "sessions" / "qa-forseti" / "outbox" / "20260414-gate2-approve-forseti.md").write_text(
+        "APPROVE 20260412-forseti-release-i\n", encoding="utf-8"
+    )
+    (
+        root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260412-forseti-release-i.md"
+    ).write_text("signed\n", encoding="utf-8")
+    (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
+    (
+        root
+        / "sessions"
+        / "agent-code-review"
+        / "outbox"
+        / "20260428-code-review-forseti.life-20260412-forseti-release-i.md"
+    ).write_text(
+        "- Status: done\n\n"
+        "### HIGH\n\n"
+        "**H-01 — Missing CSRF token validation**\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root)
+
+    assert result.returncode == 0, result.stderr
+    pm_dc_items = [
+        p.name
+        for p in (root / "sessions" / "pm-dungeoncrawler" / "inbox").iterdir()
+        if p.is_dir()
+    ]
+    assert any("code-review-followup-20260412-forseti-release-i" in n for n in pm_dc_items)
+    assert not any("signoff-reminder-20260412-forseti-release-i" in n for n in pm_dc_items)

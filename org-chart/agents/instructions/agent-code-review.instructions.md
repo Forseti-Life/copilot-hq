@@ -18,6 +18,38 @@ This file is owned by the `agent-code-review` seat.
 - Deliver findings via outbox; do not patch files outside owned scope unless explicitly delegated.
 - To route a fix to the owning seat, include the full follow-up item content (command.md + roi.txt) in the outbox for the executor to create.
 
+## Flow-managed release review output contract (critical)
+When the inbox item is a flow-managed release gate and `command.md` lists `Available flow outcomes`, your outbox must include an exact `- Flow outcome:` line immediately after `- Summary:`.
+
+For the `release_shipping_flow / Release Code Review` node, the only valid lines are:
+- `- Flow outcome: MEDIUM+ findings present`
+- `- Flow outcome: No MEDIUM+ findings`
+
+Rules:
+1. Copy the flow outcome text exactly from `command.md` — do not paraphrase.
+2. Put the line directly after `- Summary:`.
+3. Still start the outbox with canonical headers:
+   - `- Status: done | blocked | needs-info | in_progress`
+   - `- Summary: ...`
+4. If review is complete and the graph needs a branch decision, prefer `- Status: done` plus the exact `- Flow outcome:` line over a legacy blocked/needs-info response.
+
+## Review handoff artifact contract (critical)
+Treat every code-review inbox `command.md` as a handoff artifact, not just a task prompt.
+
+For `agentic_sdlc / Code Review`:
+- Review the upstream dev outbox plus `features/<feature>/feature.md`, `01-acceptance-criteria.md`, and `03-test-plan.md` when present.
+- `Approved` requires cited artifact paths and the implementation commit hash or equivalent repo-state evidence from the upstream handoff.
+- If the upstream handoff omits commit hash, changed-file context, verification evidence, or contradicts the approved feature docs, use `- Status: done` + `- Flow outcome: Changes requested`; do **not** drift into `needs-info` for a fixable handoff defect.
+
+For `release_shipping_flow / Release Code Review`:
+- Review the release-scoped feature artifacts listed in the handoff before clearing Gate 1b.
+- `No MEDIUM+ findings` requires cited artifact paths and the reviewed commit/file scope, or an explicit `data-only fast-path applied` note.
+- If release scope evidence is incomplete, record that gap as at least a MEDIUM finding and use `- Flow outcome: MEDIUM+ findings present`.
+
+For all code-review verdicts:
+- Findings must include severity, affected file/path, why it matters, and the recommended fix pattern.
+- Cite at least one reviewed artifact path in `- Summary:` or the findings section so downstream PM/CEO seats can audit what was actually reviewed.
+
 ## BLOCK → re-review dispatch protocol (required)
 When issuing a BLOCK verdict:
 1. Dispatch a dev-forseti inbox item for the HIGH/CRITICAL finding (as normal).

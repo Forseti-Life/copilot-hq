@@ -6,16 +6,22 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "gate2-clean-audit-backstop.py"
+HELPER_MODULE = Path(__file__).resolve().parents[1] / "lib" / "gate2_artifacts.py"
 
 
 def _make_root(tmp_path: Path) -> Path:
     root = tmp_path / "hq"
     (root / "org-chart" / "products").mkdir(parents=True)
     (root / "tmp" / "release-cycle-active").mkdir(parents=True)
+    (root / "scripts" / "lib").mkdir(parents=True)
     (root / "sessions" / "qa-dungeoncrawler" / "artifacts" / "auto-site-audit" / "latest").mkdir(parents=True)
     (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True)
     (root / "sessions" / "ceo-copilot-2" / "inbox").mkdir(parents=True)
     (root / "sessions" / "ceo-copilot-2" / "outbox").mkdir(parents=True)
+    (root / "scripts" / "lib" / "gate2_artifacts.py").write_text(
+        HELPER_MODULE.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
 
     teams = {
         "teams": [

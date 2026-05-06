@@ -1,18 +1,25 @@
 _core:
   default_config_hash: 4GIX5Esnc_umpXUBj4IIocRX7Mt5fPhm4AgXfE3E56E
 module:
+<<<<<<< HEAD
   admin_toolbar: 0
   admin_toolbar_tools: 0
   ai_conversation: 0
   amisafe: 0
   announcements_feed: 0
   automated_cron: 0
+=======
+  announcements_feed: 0
+  automated_cron: 0
+  backup_migrate: 0
+>>>>>>> reconcile/copilot-hq-local-priority-main
   big_pipe: 0
   block: 0
   block_content: 0
   breakpoint: 0
   ckeditor5: 0
   comment: 0
+<<<<<<< HEAD
   company_research: 0
   config: 0
   contact: 0
@@ -24,10 +31,20 @@ module:
   dynamic_page_cache: 0
   editor: 0
   entity: 0
+=======
+  config: 0
+  contextual: 0
+  datetime: 0
+  dblog: 0
+  drupal_langgraph: 0
+  dynamic_page_cache: 0
+  editor: 0
+>>>>>>> reconcile/copilot-hq-local-priority-main
   field: 0
   field_ui: 0
   file: 0
   filter: 0
+<<<<<<< HEAD
   flexible_permissions: 0
   forseti_content: 0
   forseti_games: 0
@@ -45,23 +62,41 @@ module:
   metatag: 0
   mysql: 0
   nfr: 0
+=======
+  help: 0
+  history: 0
+  image: 0
+  link: 0
+  menu_link_content: 0
+  menu_ui: 0
+  mysql: 0
+>>>>>>> reconcile/copilot-hq-local-priority-main
   node: 0
   options: 0
   page_cache: 0
   path: 0
   path_alias: 0
+<<<<<<< HEAD
   safety_calculator: 0
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   search: 0
   shortcut: 0
   system: 0
   taxonomy: 0
   text: 0
+<<<<<<< HEAD
   token: 0
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   toolbar: 0
   update: 0
   user: 0
   views_ui: 0
+<<<<<<< HEAD
   pathauto: 1
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   views: 10
   standard: 1000
 theme:

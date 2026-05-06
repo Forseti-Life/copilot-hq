@@ -4,32 +4,32 @@
 
 ### AC-Route-1: All observe routes exist and return 200 for admin
 ```
-GET /langgraph-console/observe → LangGraphConsoleObserveController::index() → 200 OK
-GET /langgraph-console/observe/traces → LangGraphConsoleObserveController::traces() → 200 OK
-GET /langgraph-console/observe/metrics → LangGraphConsoleObserveController::metrics() → 200 OK
-GET /langgraph-console/observe/drift → LangGraphConsoleObserveController::drift() → 200 OK
-GET /langgraph-console/observe/alerts → LangGraphConsoleObserveController::alerts() → 200 OK
-GET /langgraph-console/observe/feature-progress → LangGraphConsoleObserveController::featureProgress() → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe → drupal_langgraph observe surface → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/traces → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/metrics → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/drift → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/alerts → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/feature-progress → 200 OK
 ```
 
-### AC-Route-2: Routes require administrator role
+### AC-Route-2: Routes require Drupal LangGraph admin access
 ```
-GET /langgraph-console/observe/traces (no auth) → 303 redirect to /user/login
-GET /langgraph-console/observe/traces (authenticated, non-admin role) → 403 Forbidden
-GET /langgraph-console/observe/traces (authenticated, administrator) → 200 OK
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/traces (no auth) → 403 Forbidden
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/traces (authenticated, non-admin role) → 403 Forbidden
+GET /admin/reports/drupal-langgraph/langgraph-console/observe/traces (authenticated, account with `administer drupal langgraph` or legacy tracker admin permission) → 200 OK
 ```
 
-### AC-Route-3: Routes use LangGraphConsoleObserveController in routing.yml
+### AC-Route-3: Routes live under the drupal_langgraph admin console tree
 ```yaml
-/langgraph-console/observe:
+/admin/reports/drupal-langgraph/langgraph-console/observe:
   requirements:
-    _permission: 'view content'  # inherit from parent
+    _custom_access: '\Drupal\drupal_langgraph\Controller\LangGraphConsoleController::adminAccess'
 ```
 
 ## Node Traces
 
 ### AC-Traces-1: Traces page loads with data from langgraph-ticks.jsonl
-- File location: `$COPILOT_HQ_ROOT/tmp/langgraph-ticks.jsonl` (verified via DashboardController::langgraphPath())
+- File location: `$COPILOT_HQ_ROOT/inbox/responses/langgraph-ticks.jsonl` (resolved through `HqPathManager`)
 - Parse last line of file (most recent tick)
 - Extract `step_results[]` array
 - Render table with rows for each step result
@@ -76,7 +76,7 @@ GET /langgraph-console/observe/traces (authenticated, administrator) → 200 OK
 - Test: 1-hour range, 1-day range, edge cases (same start/end time)
 
 ### AC-Traces-9: COPILOT_HQ_ROOT env check
-- Before rendering, verify `COPILOT_HQ_ROOT` is available via DashboardController::langgraphPath()
+- Before rendering, verify `COPILOT_HQ_ROOT` is available via the `drupal_langgraph` path manager
 - If not available: render yellow banner at top of page "⚠️ Live data unavailable: COPILOT_HQ_ROOT not configured."
 - Do not crash; render fallback UI
 
@@ -174,7 +174,7 @@ Tick Duration Trend (last 10 ticks):
 - Read from 3 sources:
   1. `$COPILOT_HQ_ROOT/tmp/executor-failures/*.json` — executor failures
   2. Scan `sessions/*/inbox/*/command.md` for `Status: blocked` — agent blocks
-  3. Parse `$COPILOT_HQ_ROOT/orchestrator/logs/` for "tick timeout" messages (if available)
+  3. Parse orchestrator/runtime logs for "tick timeout" messages (if available)
 
 ### AC-Alerts-2: Incident categories
 ```
@@ -225,8 +225,8 @@ Incident Type | Severity | Source | Fields |
 ## Feature Progress
 
 ### AC-FP-1: Embed Feature Progress dashboard
-- `/langgraph-console/observe/feature-progress` displays feature progress
-- Data source: `$COPILOT_HQ_ROOT/dashboards/FEATURE_PROGRESS.md` (auto-refreshed by orchestrator)
+- `/admin/reports/drupal-langgraph/langgraph-console/observe/feature-progress` displays feature progress
+- Data source: `dashboards/FEATURE_PROGRESS.md` (auto-refreshed by orchestrator)
 - Either embed as iframe or inline the markdown content in Twig template
 
 ### AC-FP-2: Feature summary

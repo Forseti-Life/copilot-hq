@@ -1,8 +1,8 @@
 # Feature Intake Runbook
 
-**Owner:** `pm-forseti` (and `pm-dungeoncrawler` for their site)  
-**Trigger:** Start of every release cycle — Stage 0 (before scope freeze)  
-**Scripts:** `scripts/suggestion-intake.sh`, `scripts/suggestion-triage.sh`
+**Owner:** `ceo-copilot-2` for intake routing, then site PM/BA/PM seats for product disposition  
+**Trigger:** Continuous suggestion seeding plus normal seat execution through `feature_request_intake`  
+**Scripts:** `scripts/suggestion-intake.sh`, `scripts/route-flow-transitions.py`
 
 ---
 
@@ -20,15 +20,14 @@ User message
 Talk to Forseti (ai_conversation node)
     ↓  [AI detects [CREATE_SUGGESTION] tag]
 community_suggestion node (status: new)
-    ↓  [suggestion-intake.sh at cycle start]
-PM inbox batch item  →  triage/NID-<n>-triage.md
-    ↓  [PM reviews each one]
-suggestion-triage.sh accept → features/<feature-id>/feature.md (status: planned)
-suggestion-triage.sh defer  → Drupal node: deferred  (queued next cycle)
-suggestion-triage.sh decline→ Drupal node: declined  (archived)
-suggestion-triage.sh escalate → board security review queue (human review required)
-    ↓  [accepted features]
-Gap analysis  →  feature.md ## Gap Analysis + Feature type set
+    ↓  [suggestion-intake.sh]
+CEO inbox item  →  Flow id: feature_request_intake / Receive Feature Request
+    ↓  [CEO / BA / PM execute flow-managed handoffs]
+Intake Review → Match Product Team → BA Requirements Review → PM Scope Decision
+    ↓  [Approved for delivery]
+Prepare Delivery Handoff → launches agentic_sdlc
+    ↓  [delivery work may materialize/update feature docs]
+Gap analysis / feature documentation / acceptance criteria
     ↓
 Acceptance Criteria  →  01-acceptance-criteria.md (criteria tagged [NEW]/[EXTEND]/[TEST-ONLY])
     ↓
@@ -41,9 +40,35 @@ Normal dev/QA/ship cycle
 
 ---
 
-## Step 1 — Run intake at cycle start
+## Artifact contract (authoritative)
 
-At the **start of every release cycle** (Stage 0, before scope freeze), the PM runs:
+The intake flow is artifact-driven. Every handoff must produce one canonical artifact that the next seat can consume without guessing.
+
+| Stage | Artifact | Canonical path / system | Produced by | Consumer / next handoff |
+|---|---|---|---|---|
+| Raw request | Community suggestion record | Drupal `community_suggestion` node | `ai_conversation` / upstream intake surface | `scripts/suggestion-intake.sh` |
+| Intake entrypoint | Flow-managed CEO inbox item | `sessions/ceo-copilot-2/inbox/<date>-flow-feature-request-intake-.../command.md` | `scripts/suggestion-intake.sh` | `feature_request_intake` execution |
+| Intake routing trail | Flow outboxes / runtime state | `sessions/<seat>/outbox/*.md`, `tmp/flow-runs/feature_request_intake/<run-id>/` | CEO / BA / PM via flow execution | downstream intake node or delivery launch |
+| Approved delivery handoff | Delivery entrypoint item | `sessions/<seat>/inbox/<date>-flow-agentic_sdlc-.../command.md` | `route-flow-transitions.py` | delivery flow |
+| Accepted backlog item | Feature brief | `features/<feature-id>/feature.md` | PM / BA once delivery/backlog decision is made | BA / PM grooming |
+| Problem framing | Problem Statement | `features/<feature-id>/00-problem-statement.md` or equivalent linked intake artifact | PM / BA | Acceptance-criteria authoring |
+| Scope contract | Acceptance Criteria | `features/<feature-id>/01-acceptance-criteria.md` | PM | QA test planning + Dev implementation |
+| Initial risk contract | Risk Assessment | `features/<feature-id>/06-risk-assessment.md` or linked risk artifact | PM | PM scope decision / release selection |
+| QA handoff | QA inbox item | `sessions/qa-<site>/inbox/<item-id>/command.md` | `scripts/pm-qa-handoff.sh` or PM | QA test generation |
+| QA planning artifact | Test Plan | `features/<feature-id>/03-test-plan.md` | QA | Stage 0 scope selection / Gate 2 |
+| Groomed release input | Change list entry | `sessions/<lead-pm>/artifacts/release-candidates/<release-id>/01-change-list.md` | PM | Dev + QA current-release execution |
+
+Rules:
+- `feature.md` is the canonical backlog/work-definition artifact.
+- `01-acceptance-criteria.md` is the canonical scope contract for Dev and QA.
+- `03-test-plan.md` is QA's planning artifact; the executable PASS/FAIL suite remains the canonical test-case SoT.
+- No handoff is considered complete until the downstream artifact exists in its canonical location.
+
+---
+
+## Step 1 — Seed intake continuously
+
+The system continuously seeds new suggestions into the intake flow:
 
 ```bash
 ./scripts/suggestion-intake.sh forseti
@@ -51,7 +76,7 @@ At the **start of every release cycle** (Stage 0, before scope freeze), the PM r
 
 This will:
 - Query Drupal for all `community_suggestion` nodes with `field_suggestion_status = new`
-- Write a batch inbox item to `sessions/pm-forseti/inbox/<date>-suggestion-intake/`
+- Write one flow-managed inbox item to `sessions/ceo-copilot-2/inbox/...`
 - Mark queried nodes as `under_review` in Drupal
 - Print a summary of how many suggestions were found
 
@@ -59,52 +84,43 @@ If there are no new suggestions, it exits cleanly — nothing to do.
 
 ---
 
-## Step 2 — Triage each suggestion
+## Step 2 — Execute the intake flow
 
-Open the batch inbox item README:
+The `feature_request_intake` flow now owns review and routing:
 
-```
-sessions/pm-forseti/inbox/<date>-suggestion-intake/README.md
-```
+1. CEO executes:
+   - `Receive Feature Request`
+   - `Intake Review`
+   - `Match Product Team`
+2. BA executes:
+   - `BA Requirements Review`
+3. PM executes:
+   - `PM Scope Decision`
+4. If PM approves, the flow launches `agentic_sdlc`
+5. If delivery later discovers a scope ambiguity (for example a feature that should be held, deferred, or consolidated into a parent slice), the active `agentic_sdlc` run must branch to `PM Scope Rebaseline` using the exact flow outcome `Scope decision required`
 
-For each suggestion in `triage/NID-<n>-triage.md`, make one of four decisions:
-
-| Decision | Meaning | Drupal status set |
-|----------|---------|-------------------|
-| `accept` | Include in backlog, create feature brief | `in_progress` |
-| `defer`  | Good idea, wrong timing — next cycle | `deferred` |
-| `decline`| Not aligned with mission or product direction | `declined` |
-| `escalate` | Security/integrity/stability risk needs human board review | `under_review` |
-
-**Security gate is mandatory.** If a suggestion could introduce security abuse, release-integrity bypass,
-or crash/data-destruction risk, PM must choose `escalate` (not `accept`).
-
-Use the triage template at `templates/suggestion-triage.md` to document your rationale.
-
-**Mission alignment is required for every accept decision.** If you cannot articulate how a feature
-advances "Democratize and decentralize internet services by building community-managed versions of
-core systems for scientific, technology-focused, and tolerant people" — defer or decline it.
+Each flow-managed seat must emit exact `Flow outcome:` lines from `command.md` so the router can advance the next node.
 
 ---
 
-## Step 3 — Record the decision
+## Step 3 — Materialize accepted work
 
-```bash
-# Accept: creates features/<feature-id>/feature.md automatically
-./scripts/suggestion-triage.sh forseti <nid> accept <feature-id>
+If PM approves the request for delivery, the intake flow launches `agentic_sdlc`.
+Feature docs such as `features/<feature-id>/feature.md` may still be created or updated as part of normal PM/BA grooming after intake approval.
 
-# Defer: queued for next cycle
-./scripts/suggestion-triage.sh forseti <nid> defer
+For release-stage scoped work, `pm-scope-activate.sh` now seeds the same `agentic_sdlc` runtime directly for the active feature by writing flow-managed `Generate Code` and `Test Cases Review` inbox items plus `tmp/flow-runs/agentic_sdlc/<feature-id>/product-team.json`. That keeps late release activation on the same LangGraph contract as intake-launched work instead of falling back to legacy ad hoc Dev/QA handoffs.
 
-# Decline: archived, won't resurface
-./scripts/suggestion-triage.sh forseti <nid> decline
+Inside `agentic_sdlc`, scope correction is a first-class flow action:
 
-# Escalate: board-security review required before any acceptance
-./scripts/suggestion-triage.sh forseti <nid> escalate
-```
+- Dev or QA may emit `- Flow outcome: Scope decision required` when delivery hits a real scope/ownership ambiguity.
+- PM then executes `PM Scope Rebaseline`.
+- PM must choose one of the flow outcomes:
+  - `Resume implementation`
+  - `Resume test design`
+  - `Re-scope requirements`
+  - `Hold / defer / consolidate`
 
-Naming convention for feature IDs: `forseti-<short-kebab-description>`  
-Examples: `forseti-safety-content-search`, `forseti-job-hunter-alerts`, `forseti-community-voting`
+Do **not** treat hold/defer/consolidate as ad hoc inbox churn outside the flow when the work already lives inside `agentic_sdlc`.
 
 ---
 
@@ -185,9 +201,8 @@ subprocess.run(["bash", "scripts/suggestion-intake.sh", site], check=False)
 
 | File | Purpose |
 |------|---------|
-| `scripts/suggestion-intake.sh` | Pull new suggestions → PM inbox |
-| `scripts/suggestion-triage.sh` | Record accept/defer/decline decision |
-| `templates/suggestion-triage.md` | Triage decision template |
+| `scripts/suggestion-intake.sh` | Pull new suggestions → intake flow entrypoint |
+| `scripts/route-flow-transitions.py` | Route intake handoffs and launch delivery |
 | `templates/feature-brief.md` | Feature brief template |
 | `templates/01-acceptance-criteria.md` | AC template |
 | `runbooks/release-cycle-process-flow.md` | Full release cycle (this feeds into Stage 0) |

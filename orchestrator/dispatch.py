@@ -111,6 +111,131 @@ _TEAM_WEBSITE_PREFIX: Dict[str, str] = {
 }
 
 
+def _release_enabled_team_map() -> Dict[str, Dict[str, Any]]:
+    teams_path = REPO_ROOT / "org-chart" / "products" / "product-teams.json"
+    try:
+        teams_data = _json.loads(teams_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    team_map: Dict[str, Dict[str, Any]] = {}
+    for team in teams_data.get("teams", []):
+        team_id = (team.get("id") or "").strip()
+        if not team_id:
+            continue
+        if not (team.get("active") and team.get("release_preflight_enabled")):
+            continue
+        deps = []
+        for dep in team.get("release_dependencies") or []:
+            dep_id = str(dep or "").strip()
+            if dep_id and dep_id != team_id and dep_id not in deps:
+                deps.append(dep_id)
+        team_map[team_id] = {
+            "id": team_id,
+            "label": (team.get("label") or "").strip(),
+            "site": (team.get("site") or "").strip(),
+            "pm": (team.get("pm_agent") or "").strip(),
+            "dev": (team.get("dev_agent") or "").strip(),
+            "qa": (team.get("qa_agent") or "").strip(),
+            "deps": deps,
+        }
+    return team_map
+
+
+def _unrouted_code_review_findings(release_id: str) -> List[Dict[str, str]]:
+    if REPO_ROOT is None or not release_id:
+        return []
+    import sys
+
+    lib_dir = REPO_ROOT / "scripts" / "lib"
+    if not lib_dir.exists():
+        lib_dir = Path(__file__).resolve().parents[1] / "scripts" / "lib"
+    if str(lib_dir) not in sys.path:
+        sys.path.insert(0, str(lib_dir))
+    try:
+        from code_review_gate import unresolved_medium_plus_findings  # type: ignore
+    except Exception:
+        return []
+    return unresolved_medium_plus_findings(REPO_ROOT, release_id)
+
+
+def _queue_code_review_followup(team: Dict[str, Any], release_id: str, findings: List[Dict[str, str]]) -> None:
+    pm_id = str(team.get("pm") or "").strip()
+    team_id = str(team.get("id") or "").strip()
+    team_label = str(team.get("label") or team_id).strip()
+    if REPO_ROOT is None or not pm_id or not team_id or not findings:
+        return
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+    item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-code-review-followup-{slug}"
+    item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
+    if item_dir.exists():
+        return
+    item_dir.mkdir(parents=True, exist_ok=True)
+    source_outbox = str(findings[0].get("source_outbox") or "").strip()
+    findings_md = "\n".join(
+        f"- `{item['id']}` ({item['severity']}) from `{item['source_outbox']}`" for item in findings
+    )
+    (item_dir / "command.md").write_text(
+        f"- Flow id: release_shipping_flow\n"
+        f"- Flow run id: {release_id}\n"
+        f"- Flow node: PM Code Review Triage\n"
+        f"- Flow owner seat: {pm_id}\n"
+        f"- Flow previous node: Release Code Review\n"
+        + (f"- Flow source outbox: {source_outbox}\n" if source_outbox else "")
+        + f"- Product team id: {team_id}\n"
+        f"- Product team label: {team_label}\n"
+        f"- Available flow outcomes: Route fixes to Dev | Risk accepted / all findings resolved\n\n"
+        f"# Flow handoff: release_shipping_flow / PM Code Review Triage\n\n"
+        f"MEDIUM+ code-review findings exist for `{release_id}` but no matching dev routing or "
+        f"risk-acceptance artifact was found, so Gate 1b is still open.\n\n"
+        f"## Findings needing action\n{findings_md}\n\n"
+        f"## Required action\n"
+        f"1. Read the release code-review outbox for the findings above.\n"
+        f"2. For each MEDIUM+ finding, either:\n"
+        f"   - route a fix to the owning dev seat as a `cr-finding` inbox item, or\n"
+        f"   - record a risk acceptance in `sessions/{pm_id}/artifacts/risk-acceptances/`.\n"
+        f"3. Include one or more exact `- Flow outcome:` lines in your outbox:\n"
+        f"   - `- Flow outcome: Route fixes to Dev`\n"
+        f"   - `- Flow outcome: Risk accepted / all findings resolved`\n",
+        encoding="utf-8",
+    )
+    (item_dir / "roi.txt").write_text("220\n", encoding="utf-8")
+
+
+def _has_pending_signoff_reminder(pm_id: str, release_id: str) -> bool:
+    if REPO_ROOT is None:
+        return False
+    inbox = REPO_ROOT / "sessions" / pm_id / "inbox"
+    if not inbox.exists():
+        return False
+    slug = re.sub(r"[^A-Za-z0-9._-]", "-", release_id)[:80]
+    for item_dir in inbox.iterdir():
+        if item_dir.is_dir() and "signoff-reminder" in item_dir.name and slug in item_dir.name:
+            return True
+    return False
+
+
+def _signoff_instruction_text(
+    *,
+    pm_id: str,
+    command: str,
+    artifact_path: str,
+    status_release_id: str,
+    extra_context: str,
+) -> str:
+    return (
+        "## Action required\n"
+        f"{extra_context}\n\n"
+        "Record the signoff in repo state by running:\n"
+        f"`{command}`\n\n"
+        "The signoff artifact is the source of truth; outbox prose is not a substitute.\n\n"
+        "## Acceptance criteria\n"
+        f"- `{artifact_path}` exists\n"
+        f"- `bash scripts/release-signoff-status.sh {status_release_id}` reflects your PM signoff\n"
+        "- All open blockers for your site are resolved or explicitly deferred\n"
+    )
+
+
 # ── Dispatch functions ───────────────────────────────────────────────────────
 
 def _dispatch_signoff_reminders() -> None:
@@ -130,29 +255,41 @@ def _dispatch_signoff_reminders() -> None:
     state_dir = _SIGNOFF_REMINDER_STATE.parent
     state_dir.mkdir(parents=True, exist_ok=True)
 
-    teams_path = REPO_ROOT / "org-chart" / "products" / "product-teams.json"
-    try:
-        teams_data = _json.loads(teams_path.read_text(encoding="utf-8"))
-    except Exception:
+    team_map = _release_enabled_team_map()
+    if not team_map:
         return
 
-    coordinated_teams = [
-        {"id": (t.get("id") or "").strip(), "pm": (t.get("pm_agent") or "").strip()}
-        for t in teams_data.get("teams", [])
-        if t.get("active") and t.get("coordinated_release_default")
-        and (t.get("id") or "").strip() and (t.get("pm_agent") or "").strip()
-    ]
-
     for rid_file in active_dir.glob("*.release_id"):
+        team_id = rid_file.name.replace(".release_id", "")
+        team = team_map.get(team_id)
+        if not team:
+            continue
         rid = rid_file.read_text(encoding="utf-8").strip()
         if not rid:
             continue
         slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
+        dep_ids = [dep for dep in team["deps"] if dep in team_map]
+        if not dep_ids:
+            continue
 
-        signed = [t for t in coordinated_teams
-                  if (REPO_ROOT / "sessions" / t["pm"] / "artifacts" / "release-signoffs" / f"{slug}.md").exists()]
-        unsigned = [t for t in coordinated_teams
-                    if not (REPO_ROOT / "sessions" / t["pm"] / "artifacts" / "release-signoffs" / f"{slug}.md").exists()]
+        signed = []
+        unsigned = []
+        primary_signoff = REPO_ROOT / "sessions" / team["pm"] / "artifacts" / "release-signoffs" / f"{slug}.md"
+        if primary_signoff.exists():
+            signed.append(team)
+        for dep_id in dep_ids:
+            dep_release_file = active_dir / f"{dep_id}.release_id"
+            dep_release_id = dep_release_file.read_text(encoding="utf-8").strip() if dep_release_file.exists() else ""
+            dep_team = team_map[dep_id]
+            if not dep_release_id:
+                unsigned.append((dep_team, dep_release_id))
+                continue
+            dep_slug = re.sub(r"[^A-Za-z0-9._-]", "-", dep_release_id)[:80]
+            dep_signoff = REPO_ROOT / "sessions" / dep_team["pm"] / "artifacts" / "release-signoffs" / f"{dep_slug}.md"
+            if dep_signoff.exists():
+                signed.append(dep_team)
+            else:
+                unsigned.append((dep_team, dep_release_id))
 
         if not signed or not unsigned:
             continue  # nobody signed yet, or all signed — nothing to remind
@@ -164,32 +301,44 @@ def _dispatch_signoff_reminders() -> None:
             continue
 
         # Dispatch reminder to each unsigned PM
-        for t in unsigned:
+        for t, dep_release_id in unsigned:
             pm_id = t["pm"]
-            item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-signoff-reminder-{slug}"
+            if _has_pending_signoff_reminder(pm_id, rid):
+                continue
+            item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-signoff-reminder-{slug}"
             item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
             if item_dir.exists():
                 continue  # already dispatched this cycle
             item_dir.mkdir(parents=True, exist_ok=True)
             signed_names = ", ".join(s["pm"] for s in signed)
+            dep_slug = re.sub(r"[^A-Za-z0-9._-]", "-", dep_release_id)[:80] if dep_release_id else ""
+            command = f"bash scripts/release-signoff.sh {dep_id if (dep_id := t['id']) else team_id} {dep_release_id}".strip()
+            artifact_path = (
+                f"sessions/{pm_id}/artifacts/release-signoffs/{dep_slug}.md"
+                if dep_slug else
+                f"sessions/{pm_id}/artifacts/release-signoffs/<your-active-release-id>.md"
+            )
             (item_dir / "README.md").write_text(
-                f"# Signoff reminder: {rid}\n\n"
+                f"# Dependency signoff reminder: {rid}\n\n"
                 f"- Agent: {pm_id}\n"
-                f"- Release: {rid}\n"
+                f"- Blocking release: {rid}\n"
+                f"- Required signoff release: {dep_release_id or 'unknown'}\n"
                 f"- Status: pending\n"
-                f"- Created: {datetime.now(timezone.utc).isoformat()}\n\n"
-                f"## Action required\n"
-                f"The following PMs have already signed off on `{rid}`: {signed_names}.\n"
-                f"A push has already been triggered for the signed teams — your signoff will advance your own release cycle.\n\n"
-                f"Review the release checklist and write your signoff artifact:\n"
-                f"`sessions/{pm_id}/artifacts/release-signoffs/{slug}.md`\n\n"
-                f"## Acceptance criteria\n"
-                f"- File exists at the path above with `- Status: approved`\n"
-                f"- All open blockers for your site are resolved or explicitly deferred\n",
+                f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+                + _signoff_instruction_text(
+                    pm_id=pm_id,
+                    command=command,
+                    artifact_path=artifact_path,
+                    status_release_id=rid,
+                    extra_context=(
+                        f"The following dependency PMs have already signed off for `{rid}`: {signed_names}.\n"
+                        f"Your dependency release signoff `{dep_release_id or '<your-active-release-id>'}` is still required before `{team_id}` can ship."
+                    ),
+                ),
                 encoding="utf-8",
             )
             (item_dir / "roi.txt").write_text("500", encoding="utf-8")
-            print(f"SIGNOFF-REMINDER: dispatched to {pm_id} for release {rid}")
+            print(f"SIGNOFF-REMINDER: dispatched to {pm_id} for dependency cohort {rid}")
 
         state_key.write_text(str(_now_ts()), encoding="utf-8")
 
@@ -209,59 +358,55 @@ def _dispatch_proactive_awaiting_signoff() -> None:
     if not active_dir.exists():
         return
 
-    teams_path = REPO_ROOT / "org-chart" / "products" / "product-teams.json"
-    try:
-        teams_data = _json.loads(teams_path.read_text(encoding="utf-8"))
-    except Exception:
+    team_map = _release_enabled_team_map()
+    if not team_map:
         return
 
-    coordinated_teams = [
-        {"id": (t.get("id") or "").strip(), "pm": (t.get("pm_agent") or "").strip()}
-        for t in teams_data.get("teams", [])
-        if t.get("active") and t.get("coordinated_release_default")
-        and (t.get("id") or "").strip() and (t.get("pm_agent") or "").strip()
-    ]
-
     for rid_file in active_dir.glob("*.release_id"):
+        team_id = rid_file.name.replace(".release_id", "")
+        team = team_map.get(team_id)
+        if not team:
+            continue
         rid = rid_file.read_text(encoding="utf-8").strip()
         if not rid:
             continue
         slug = re.sub(r"[^A-Za-z0-9._-]", "-", rid)[:80]
+        pm_id = team["pm"]
+        if not pm_id:
+            continue
+        signoff_path = REPO_ROOT / "sessions" / pm_id / "artifacts" / "release-signoffs" / f"{slug}.md"
+        if signoff_path.exists():
+            continue
 
-        # Check if any team has already signed off on this release
-        any_signed = any(
-            (REPO_ROOT / "sessions" / t["pm"] / "artifacts" / "release-signoffs" / f"{slug}.md").exists()
-            for t in coordinated_teams
+        unresolved = _unrouted_code_review_findings(rid)
+        if unresolved:
+            _queue_code_review_followup(team, rid, unresolved)
+            continue
+
+        item_id = f"{_dt.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"
+        item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
+        if item_dir.exists():
+            continue
+        item_dir.mkdir(parents=True, exist_ok=True)
+        command = f"bash scripts/release-signoff.sh {team_id} {rid}"
+        artifact_path = f"sessions/{pm_id}/artifacts/release-signoffs/{slug}.md"
+        (item_dir / "README.md").write_text(
+            f"# Release ready for signoff: {rid}\n\n"
+            f"- Agent: {pm_id}\n"
+            f"- Release: {rid}\n"
+            f"- Status: pending\n"
+            f"- Created: {_dt.now(timezone.utc).isoformat()}\n\n"
+            + _signoff_instruction_text(
+                pm_id=pm_id,
+                command=command,
+                artifact_path=artifact_path,
+                status_release_id=rid,
+                extra_context="Your release cycle is ready for signoff.",
+            ),
+            encoding="utf-8",
         )
-        if any_signed:
-            continue  # at least one team signed, so reactive reminder logic takes over
-
-        # All teams unsigned — this is an opportunity for proactive dispatch
-        # For now, just dispatch to all unsigned teams on coordinated releases
-        for t in coordinated_teams:
-            pm_id = t["pm"]
-            item_id = f"{datetime.now(timezone.utc).strftime('%Y%m%d')}-awaiting-signoff-{slug}"
-            item_dir = REPO_ROOT / "sessions" / pm_id / "inbox" / item_id
-            if item_dir.exists():
-                continue  # already dispatched this cycle
-            item_dir.mkdir(parents=True, exist_ok=True)
-            (item_dir / "README.md").write_text(
-                f"# Release ready for signoff: {rid}\n\n"
-                f"- Agent: {pm_id}\n"
-                f"- Release: {rid}\n"
-                f"- Status: pending\n"
-                f"- Created: {datetime.now(timezone.utc).isoformat()}\n\n"
-                f"## Action required\n"
-                f"Your release cycle is ready for signoff. All gates are clean and no blockers are open.\n"
-                f"Review the release checklist and write your signoff artifact:\n"
-                f"`sessions/{pm_id}/artifacts/release-signoffs/{slug}.md`\n\n"
-                f"## Acceptance criteria\n"
-                f"- File exists at the path above with `- Status: approved`\n"
-                f"- All open blockers for your site are resolved or explicitly deferred\n",
-                encoding="utf-8",
-            )
-            (item_dir / "roi.txt").write_text("60", encoding="utf-8")
-            print(f"AWAITING-SIGNOFF: dispatched to {pm_id} for release {rid}")
+        (item_dir / "roi.txt").write_text("60", encoding="utf-8")
+        print(f"AWAITING-SIGNOFF: dispatched to {pm_id} for release {rid}")
 
 
 def _org_enabled() -> bool:
@@ -300,7 +445,7 @@ def _count_site_features_in_progress(site_keyword: str) -> int:
 
 
 def _count_site_features_for_release(site_keyword: str, release_id: str) -> int:
-    """Count features scoped to a specific release_id with Status: in_progress and Website: <site_keyword>.
+    """Count features scoped to a specific release_id with Status: in_progress|done and Website: <site_keyword>.
 
     Only counts features that explicitly declare the matching Release: field.
     Features without a Release: field are excluded (they belong to an untracked release).
@@ -309,7 +454,7 @@ def _count_site_features_for_release(site_keyword: str, release_id: str) -> int:
     for fm in (REPO_ROOT / "features").glob("*/feature.md"):
         try:
             text = fm.read_text(encoding="utf-8", errors="ignore")
-            has_status  = bool(re.search(r"^-\s+Status:\s*in_progress", text, re.MULTILINE | re.IGNORECASE))
+            has_status  = bool(re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE | re.IGNORECASE))
             has_site    = bool(re.search(rf"^-\s+Website:.*{re.escape(site_keyword)}", text, re.MULTILINE | re.IGNORECASE))
             has_release = bool(re.search(
                 rf"^-\s+Release:\s*(?:\n\s*)*{re.escape(release_id)}\s*$",

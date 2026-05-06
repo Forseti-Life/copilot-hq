@@ -1,8 +1,8 @@
 # Intake → QA Handoff: Full Process Flow
 
-**Owner:** `pm-forseti` (process driver) + `qa-forseti` (test generation)  
+**Owner:** `ceo-copilot-2` for intake routing, `pm-forseti` for PM disposition, `qa-forseti` for test generation  
 **Runbooks referenced:** `runbooks/feature-intake.md`, `runbooks/release-cycle-process-flow.md`  
-**Scripts:** `scripts/suggestion-intake.sh`, `scripts/suggestion-triage.sh`, `scripts/pm-qa-handoff.sh`
+**Scripts:** `scripts/suggestion-intake.sh`, `scripts/route-flow-transitions.py`, `scripts/pm-qa-handoff.sh`
 
 ---
 
@@ -22,10 +22,11 @@
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  GROOMING (runs during Stage 3, parallel to Dev execution)                  │
 │                                                                             │
-│  1. PM runs:  ./scripts/suggestion-intake.sh forseti                        │
-│  2. PM triages each suggestion (accept/defer/decline)                       │
-│  3. PM writes Acceptance Criteria:  features/<id>/01-acceptance-criteria.md │
-│  4. PM hands off to QA:  ./scripts/pm-qa-handoff.sh forseti <feature-id>    │
+│  1. suggestion-intake.sh seeds feature_request_intake                        │
+│  2. CEO / BA / PM execute intake handoffs                                    │
+│  3. PM approves for delivery or parks/requests changes                       │
+│  4. Accepted work enters agentic_sdlc and normal PM/QA grooming              │
+│  5. PM hands off to QA:  ./scripts/pm-qa-handoff.sh forseti <feature-id>    │
 │  5. QA generates test cases → feature overlay + features/<id>/03-test-plan.md │
 │                                                                             │
 │  ✓ Feature is GROOMED when all three exist:                                 │
@@ -97,50 +98,25 @@ for fm in sorted(pathlib.Path("features").glob("*/feature.md")):
 PY
 ```
 
-### Step 2 — Pull community suggestions (once at Stage 3 start)
+### Step 2 — Seed community suggestions into the intake flow
 
 Open `README.md` in the batch folder. Review the summary table — gives you category + title at a glance.
 
-### Step 3 — Triage each suggestion
+### Step 3 — Execute the intake flow handoffs
 
-For each `triage/NID-<n>-triage.md`:
+Use `feature_request_intake` as the intake authority:
 
-**Ask these questions in order:**
+1. CEO executes the intake stages and matches the product team
+2. BA writes `BA Requirements Review`
+3. PM executes `PM Scope Decision`
+4. PM emits one of:
+   - `Approved for delivery`
+   - `Changes requested`
+   - `Parked in backlog`
 
-1. **Mission alignment** — Does this advance "democratize and decentralize internet services for scientific, technology-focused, and tolerant people"?
-   - Yes → continue
-   - No → `decline`
+### Step 4 — Continue grooming after PM approval
 
-2. **This cycle or next?** — Is this feasible given current scope? Does it conflict with in-flight work?
-   - Feasible + high ROI → `accept`
-   - Good idea, wrong timing → `defer`
-   - Not worth doing → `decline`
-
-2.5. **Security/integrity gate (mandatory)** — Could this introduce security abuse, release-gate bypass,
-or crash/data-loss risk?
-   - No clear risk → continue
-   - Any risk or uncertainty → `escalate` (human board review required)
-
-3. **Module ownership** — Which module does this touch? Is the owning Dev available this cycle?
-   - If cross-module: flag in the feature brief for passthrough coordination
-
-Record your decision and rationale in the triage file.
-
-### Step 4 — Run the decision
-
-```bash
-# Accept — creates features/<feature-id>/feature.md
-./scripts/suggestion-triage.sh forseti <nid> accept <feature-id>
-
-# Defer — marks Drupal node deferred
-./scripts/suggestion-triage.sh forseti <nid> defer
-
-# Decline — marks Drupal node declined
-./scripts/suggestion-triage.sh forseti <nid> decline
-
-# Escalate — route to board-security review queue
-./scripts/suggestion-triage.sh forseti <nid> escalate
-```
+Once PM approves the request for delivery, continue with normal PM/QA grooming and QA handoff for the resulting feature/work item.
 
 ### Step 5 — Gap analysis (required before writing AC)
 
@@ -339,8 +315,8 @@ Stage 0  (scope freeze)
   → 01-change-list.md                    ← items not groomed yet: deferred here
   QA preflight queued
      │
-Stage 3  Dev executes                    PM: suggestion-intake.sh
-         QA monitors                     PM: triage (accept/defer/decline)
+Stage 3  Dev executes                    system: suggestion-intake.sh
+         QA monitors                     intake: CEO/BA/PM flow handoffs
          (current release)               PM: write 01-acceptance-criteria.md
                                          PM→QA: pm-qa-handoff.sh
                                          QA: generate test cases → feature overlay
@@ -368,8 +344,8 @@ No grooming work ever blocks or delays an in-flight release.
 
 | Step | Artifact | Location |
 |------|----------|----------|
-| Suggestion intake | Batch inbox item | `sessions/pm-forseti/inbox/<date>-suggestion-intake/` |
-| Triage decision | Triage file | `sessions/pm-forseti/inbox/<date>-suggestion-intake/triage/NID-<n>-triage.md` |
+| Suggestion intake | CEO flow inbox item | `sessions/ceo-copilot-2/inbox/<date>-flow-feature_request_intake-.../` |
+| Intake decision trail | Flow outboxes | `sessions/<seat>/outbox/<item-id>.md` |
 | Feature brief | `feature.md` | `features/<feature-id>/feature.md` |
 | Acceptance criteria | `01-acceptance-criteria.md` | `features/<feature-id>/01-acceptance-criteria.md` |
 | Release scope | `01-change-list.md` | `sessions/pm-forseti/artifacts/release-candidates/<release-id>/01-change-list.md` |
@@ -389,8 +365,8 @@ No grooming work ever blocks or delays an in-flight release.
 | `runbooks/feature-intake.md` | Community suggestion intake detail |
 | `runbooks/release-cycle-process-flow.md` | Full 9-stage release cycle |
 | `runbooks/shipping-gates.md` | Release gate requirements |
-| `scripts/suggestion-intake.sh` | Pull community suggestions → PM inbox |
-| `scripts/suggestion-triage.sh` | Record PM triage decision |
+| `scripts/suggestion-intake.sh` | Pull community suggestions → intake flow entrypoint |
+| `scripts/route-flow-transitions.py` | Advance `feature_request_intake` and launch delivery |
 | `scripts/pm-qa-handoff.sh` | Formal PM→QA feature handoff |
 | `templates/suggestion-triage.md` | Triage decision form |
 | `templates/01-acceptance-criteria.md` | AC template (QA contract) |

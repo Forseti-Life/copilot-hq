@@ -593,7 +593,8 @@ class MapGeneratorService {
     try {
       // Use INSERT IGNORE (upsert) to avoid duplicates on re-generation.
       $this->database->merge('dc_campaign_rooms')
-        ->key(['campaign_id' => $campaign_id, 'room_id' => $room_id])
+        ->key('campaign_id', $campaign_id)
+        ->key('room_id', $room_id)
         ->fields([
           'campaign_id'       => $campaign_id,
           'room_id'           => $room_id,
@@ -611,7 +612,8 @@ class MapGeneratorService {
       // Initialize room state row if the table exists.
       try {
         $this->database->merge('dc_campaign_room_states')
-          ->key(['campaign_id' => $campaign_id, 'room_id' => $room_id])
+          ->key('campaign_id', $campaign_id)
+          ->key('room_id', $room_id)
           ->fields([
             'campaign_id'  => $campaign_id,
             'room_id'      => $room_id,
@@ -688,7 +690,8 @@ class MapGeneratorService {
       // 1. Global library entry (dungeoncrawler_content_registry).
       try {
         $this->database->merge('dungeoncrawler_content_registry')
-          ->key(['content_type' => 'npc', 'content_id' => $content_id])
+          ->key('content_type', 'npc')
+          ->key('content_id', $content_id)
           ->fields([
             'content_type' => 'npc',
             'content_id'   => $content_id,
@@ -712,7 +715,9 @@ class MapGeneratorService {
       // 2. Campaign-scoped copy (dc_campaign_content_registry).
       try {
         $this->database->merge('dc_campaign_content_registry')
-          ->key(['campaign_id' => $campaign_id, 'content_type' => 'npc', 'content_id' => $content_id])
+          ->key('campaign_id', $campaign_id)
+          ->key('content_type', 'npc')
+          ->key('content_id', $content_id)
           ->fields([
             'campaign_id'      => $campaign_id,
             'content_type'     => 'npc',

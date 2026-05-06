@@ -19,12 +19,33 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
   private string $featuresPath;
 
   /**
+   * Temporary release-state directory.
+   */
+  private string $releaseStatePath;
+
+  /**
+   * Temporary push-marker directory.
+   */
+  private string $pushStatePath;
+
+  /**
+   * Temporary PM inbox directory.
+   */
+  private string $pmInboxPath;
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
     $this->featuresPath = sys_get_temp_dir() . '/dc-roadmap-pipeline-' . uniqid('', TRUE);
+    $this->releaseStatePath = sys_get_temp_dir() . '/dc-roadmap-release-state-' . uniqid('', TRUE);
+    $this->pushStatePath = sys_get_temp_dir() . '/dc-roadmap-push-state-' . uniqid('', TRUE);
+    $this->pmInboxPath = sys_get_temp_dir() . '/dc-roadmap-pm-inbox-' . uniqid('', TRUE);
     mkdir($this->featuresPath, 0777, TRUE);
+    mkdir($this->releaseStatePath, 0777, TRUE);
+    mkdir($this->pushStatePath, 0777, TRUE);
+    mkdir($this->pmInboxPath, 0777, TRUE);
   }
 
   /**
@@ -32,6 +53,9 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
    */
   protected function tearDown(): void {
     $this->deleteDirectory($this->featuresPath);
+    $this->deleteDirectory($this->releaseStatePath);
+    $this->deleteDirectory($this->pushStatePath);
+    $this->deleteDirectory($this->pmInboxPath);
     parent::tearDown();
   }
 
@@ -40,11 +64,11 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
    * @covers ::getPipelineStatus
    */
   public function testResolveRoadmapStatusUsesPipelineStatusWhenFeatureExists(): void {
-    // 'done' = code written + unit-tested but NOT QA-verified → in_progress.
+    // 'done' should remain visible as done on the roadmap.
     $this->writeFeatureStatus('dc-cr-example', 'done');
     $resolver = new RoadmapPipelineStatusResolver($this->featuresPath);
 
-    $this->assertSame('in_progress', $resolver->resolveRoadmapStatus('dc-cr-example', 'pending'));
+    $this->assertSame('done', $resolver->resolveRoadmapStatus('dc-cr-example', 'pending'));
   }
 
   /**
@@ -137,7 +161,7 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
       'Feature Brief: Deferred Feature'
     );
 
-    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath);
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
     $groups = $resolver->getFeatureBacklogGroups('dungeoncrawler');
 
     $this->assertCount(2, $groups);
@@ -150,6 +174,166 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     $this->assertSame('GMG implementation', $groups[1]['title']);
     $this->assertSame(['queued' => 0, 'in_progress' => 1], $groups[1]['counts']);
     $this->assertSame('in_progress', $groups[1]['features'][0]['display_status']);
+  }
+
+  /**
+   * @covers ::getFeatureBacklogGroups
+   */
+  public function testDeferredFeatureWithActivePmInboxShowsAsQueuedBacklog(): void {
+    $this->writeFeature(
+      'dc-cr-xp-award-system',
+      'deferred',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P3',
+        'Category' => 'rule-system',
+      ],
+      'Feature Brief: XP Award System'
+    );
+    $this->writeInboxItem('dc-cr-xp-award-system');
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
+    $groups = $resolver->getFeatureBacklogGroups('dungeoncrawler');
+
+    $this->assertCount(1, $groups);
+    $this->assertSame('Rule System', $groups[0]['title']);
+    $this->assertSame(['queued' => 1, 'in_progress' => 0], $groups[0]['counts']);
+    $this->assertSame('dc-cr-xp-award-system', $groups[0]['features'][0]['feature_id']);
+    $this->assertSame('queued', $groups[0]['features'][0]['display_status']);
+  }
+
+  /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotSurfacesActiveAndNextReleaseFeatures(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.release_id', "20260412-dungeoncrawler-release-s\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-t\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.started_at', "2026-04-20T13:27:41+00:00\n");
+
+    $this->writeFeature(
+      'dc-cr-dwarf-ancestry',
+      'done',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+        'Release' => '20260412-dungeoncrawler-release-s',
+      ],
+      'Feature Brief: Dwarf Ancestry'
+    );
+    $this->writeFeature(
+      'dc-cr-halfling-resolve',
+      'in_progress',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P3',
+        'Release' => '20260412-dungeoncrawler-release-s',
+      ],
+      'Feature Brief: Halfling Resolve'
+    );
+    $this->writeFeature(
+      'dc-cr-elf-heritage-arctic',
+      'ready',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P2',
+        'Release' => '20260412-dungeoncrawler-release-t',
+      ],
+      'Feature Brief: Arctic Elf Heritage'
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('20260412-dungeoncrawler-release-s', $snapshot['active_release']);
+    $this->assertSame('20260412-dungeoncrawler-release-t', $snapshot['next_release']);
+    $this->assertSame('in_progress', $snapshot['active_release_status']);
+    $this->assertSame('In Progress', $snapshot['active_release_status_label']);
+    $this->assertCount(2, $snapshot['active_features']);
+    $this->assertSame('dc-cr-halfling-resolve', $snapshot['active_features'][0]['feature_id']);
+    $this->assertSame('In Progress', $snapshot['active_features'][0]['status_label']);
+    $this->assertCount(1, $snapshot['next_features']);
+    $this->assertSame('dc-cr-elf-heritage-arctic', $snapshot['next_features'][0]['feature_id']);
+    $this->assertSame('Queued', $snapshot['next_features'][0]['status_label']);
+  }
+
+  /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotShowsPushedStateWhenMarkerExists(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.release_id', "20260412-dungeoncrawler-release-w\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-x\n");
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.started_at', "2026-04-26T21:07:34+00:00\n");
+    file_put_contents(
+      $this->pushStatePath . '/20260412-dungeoncrawler-release-w__20260412-forseti-release-u.pushed',
+      "2026-04-27T12:37:40+00:00\n"
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('pushed_pending_advance', $snapshot['active_release_status']);
+    $this->assertSame('implemented', $snapshot['active_release_status_display']);
+    $this->assertSame('Pushed — awaiting cycle advance', $snapshot['active_release_status_label']);
+    $this->assertNotSame('', $snapshot['active_release_pushed_at']);
+    $this->assertStringContainsString('release-cycle files have not advanced yet', $snapshot['release_sync_note']);
+  }
+
+  /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotDoesNotTreatUnassignedFeaturesAsActiveRelease(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-aa\n");
+
+    $this->writeFeature(
+      'dc-cr-skill-feats',
+      'deferred',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+      ],
+      'Feature Brief: Skill Feats'
+    );
+    $this->writeFeature(
+      'dc-cr-focus-spells',
+      'ready',
+      [
+        'Website' => 'dungeoncrawler',
+        'Priority' => 'P1',
+        'Release' => '20260412-dungeoncrawler-release-aa',
+      ],
+      'Feature Brief: Focus Spells'
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('', $snapshot['active_release']);
+    $this->assertCount(0, $snapshot['active_features']);
+    $this->assertCount(1, $snapshot['next_features']);
+    $this->assertSame('dc-cr-focus-spells', $snapshot['next_features'][0]['feature_id']);
+  }
+
+  /**
+   * @covers ::getReleaseCycleSnapshot
+   */
+  public function testGetReleaseCycleSnapshotShowsIdleAdvancedStateAfterBoundaryAdvance(): void {
+    file_put_contents($this->releaseStatePath . '/dungeoncrawler.next_release_id', "20260412-dungeoncrawler-release-aa\n");
+    file_put_contents($this->pushStatePath . '/dungeoncrawler.advanced', "20260412-dungeoncrawler-release-z\n");
+    file_put_contents(
+      $this->pushStatePath . '/20260412-dungeoncrawler-release-z.pushed',
+      "2026-05-01T13:06:02+00:00\n"
+    );
+
+    $resolver = new RoadmapPipelineStatusResolver($this->featuresPath, $this->releaseStatePath, $this->pushStatePath, $this->pmInboxPath);
+    $snapshot = $resolver->getReleaseCycleSnapshot('dungeoncrawler');
+
+    $this->assertSame('', $snapshot['active_release']);
+    $this->assertSame('20260412-dungeoncrawler-release-z', $snapshot['last_completed_release']);
+    $this->assertSame('idle_advanced', $snapshot['active_release_status']);
+    $this->assertSame('implemented', $snapshot['active_release_status_display']);
+    $this->assertSame('Idle — waiting for scoped work', $snapshot['active_release_status_label']);
+    $this->assertNotSame('', $snapshot['active_release_pushed_at']);
+    $this->assertStringContainsString('cycle boundary already advanced', $snapshot['release_sync_note']);
   }
 
   /**
@@ -195,6 +379,15 @@ class RoadmapPipelineStatusResolverTest extends UnitTestCase {
     }
 
     file_put_contents($dir . '/feature.md', implode("\n", $lines) . "\n");
+  }
+
+  /**
+   * Writes a minimal PM inbox item for a feature.
+   */
+  private function writeInboxItem(string $feature_id): void {
+    $dir = $this->pmInboxPath . '/20260428-backlog-intake-' . $feature_id;
+    mkdir($dir, 0777, TRUE);
+    file_put_contents($dir . '/command.md', "- Feature: `{$feature_id}`\n");
   }
 
   /**

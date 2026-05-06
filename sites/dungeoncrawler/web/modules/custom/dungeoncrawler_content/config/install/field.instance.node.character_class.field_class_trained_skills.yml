@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_class_trained_skills
+    - node.type.character_class
+  module:
+    - node
+id: node.character_class.field_class_trained_skills
+field_name: field_class_trained_skills
+entity_type: node
+bundle: character_class
+label: 'Trained Skills'
+description: 'Number of skills the character can choose to be trained in.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: integer

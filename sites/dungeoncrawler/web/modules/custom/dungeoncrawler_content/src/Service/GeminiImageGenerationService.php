@@ -101,6 +101,8 @@ class GeminiImageGenerationService {
       'negative_prompt' => trim((string) ($payload['negative_prompt'] ?? '')),
       'campaign_context' => trim((string) ($payload['campaign_context'] ?? '')),
       'requested_by_uid' => (int) ($payload['requested_by_uid'] ?? 0),
+      'character_profile_spreadsheet' => trim((string) ($payload['character_profile_spreadsheet'] ?? '')),
+      'character_profile_json' => trim((string) ($payload['character_profile_json'] ?? '')),
       'requested_at' => $timestamp,
     ];
 

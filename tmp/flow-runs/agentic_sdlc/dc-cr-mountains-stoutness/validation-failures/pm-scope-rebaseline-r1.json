@@ -1,0 +1,10 @@
+{
+  "node": "PM Scope Rebaseline",
+  "owner_seat": "pm-dungeoncrawler",
+  "rejected_outbox": "sessions/pm-dungeoncrawler/outbox/20260430-flow-agentic_sdlc-dc-cr-mountains-stoutness-pm-scope-rebaseline-r3.md",
+  "errors": [
+    "final outbox appears semantically divergent from the upstream request (matched anchors: none; expected anchors include: feat, level, verification, toughness, character)"
+  ],
+  "retry_item": "20260430-flow-agentic_sdlc-dc-cr-mountains-stoutness-pm-scope-rebaseline-validation-r1",
+  "created_at": "2026-04-30T18:17:05.590406Z"
+}

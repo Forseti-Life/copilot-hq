@@ -70,7 +70,7 @@ Add a dedicated user-facing AI chat page at `/forseti/chat`. Authenticated users
 ## Verification commands
 ```bash
 # Route registered
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush router:debug | grep forseti.chat
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life router:debug | grep forseti.chat
 
 # Anonymous access
 curl -o /dev/null -s -w "%{http_code}" https://forseti.life/forseti/chat

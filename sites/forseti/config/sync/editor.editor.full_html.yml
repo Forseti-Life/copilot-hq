@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 uuid: 74c6f97a-61d8-4230-9583-54a113c8edc2
+=======
+uuid: cf47bd9a-9ed3-470e-b688-4ee4d1a351b1
+>>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
@@ -7,7 +11,11 @@ dependencies:
   module:
     - ckeditor5
 _core:
+<<<<<<< HEAD
   default_config_hash: lurcn8yf33g3Dkzdc55cTfJa9salGp9ytSYyG1s7QMI
+=======
+  default_config_hash: 4mmJmN8kEiUf9aytnx0QPOORBNL5JaF_ijXRwOm2stg
+>>>>>>> reconcile/copilot-hq-local-priority-main
 format: full_html
 editor: ckeditor5
 settings:
@@ -92,6 +100,10 @@ settings:
       properties:
         reversed: true
         startIndex: true
+<<<<<<< HEAD
+=======
+        styles: true
+>>>>>>> reconcile/copilot-hq-local-priority-main
       multiBlock: true
     ckeditor5_sourceEditing:
       allowed_tags: {  }

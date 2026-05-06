@@ -21,6 +21,7 @@ PY
 # SLA thresholds (seconds)
 SLA_OUTBOX=${SLA_OUTBOX:-900}      # 15m: inbox item should get an outbox status
 SLA_ESCALATE=${SLA_ESCALATE:-300}  # 5m: blocked/needs-info should produce supervisor escalation
+SLA_IN_PROGRESS=${SLA_IN_PROGRESS:-1800}  # 30m: in-progress item should show fresh progress
 
 supervisor_for() {
   ./scripts/supervisor-for.sh "$1"
@@ -48,9 +49,36 @@ outbox_for_item_exists() {
   [ -f "sessions/${agent}/outbox/${item}.md" ]
 }
 
+outbox_file_for_item() {
+  local agent="$1" item="$2"
+  local path="sessions/${agent}/outbox/${item}.md"
+  [ -f "$path" ] && printf '%s\n' "$path"
+}
+
 outbox_status() {
   local f="$1"
   grep -iE '^\- Status:' "$f" 2>/dev/null | tail -n 1 | sed 's/^- Status: *//I' | tr '[:upper:]' '[:lower:]' | tr -d '\r' | tr ' _' '-' | sed 's/[^a-z-].*$//'
+}
+
+progress_epoch() {
+  local agent="$1" item="$2"
+  local progress_file="sessions/${agent}/inbox/${item}/.last-progress-at"
+  local outbox_file
+  outbox_file="$(outbox_file_for_item "$agent" "$item" || true)"
+  if [ -f "$progress_file" ]; then
+    local raw epoch
+    raw="$(cat "$progress_file" 2>/dev/null || true)"
+    epoch="$(date -d "$raw" +%s 2>/dev/null || echo 0)"
+    if [ "${epoch:-0}" -gt 0 ] 2>/dev/null; then
+      echo "$epoch"
+      return 0
+    fi
+  fi
+  if [ -n "$outbox_file" ] && [ -f "$outbox_file" ]; then
+    stat -c %Y "$outbox_file" 2>/dev/null || echo 0
+    return 0
+  fi
+  inbox_item_epoch "$agent" "$item"
 }
 
 needs_escalation_exists() {
@@ -87,12 +115,25 @@ breach=0
 while IFS= read -r agent; do
 
   item="$(oldest_inbox_item "$agent")"
-  if [ -n "$item" ] && ! outbox_for_item_exists "$agent" "$item"; then
-    t=$(inbox_item_epoch "$agent" "$item")
-    age=$((now - t))
-    if [ "$age" -gt "$SLA_OUTBOX" ]; then
-      echo "BREACH outbox-lag: ${agent} inbox=${item} age=${age}s"
-      breach=1
+  if [ -n "$item" ]; then
+    if ! outbox_for_item_exists "$agent" "$item"; then
+      t=$(inbox_item_epoch "$agent" "$item")
+      age=$((now - t))
+      if [ "$age" -gt "$SLA_OUTBOX" ]; then
+        echo "BREACH outbox-lag: ${agent} inbox=${item} age=${age}s"
+        breach=1
+      fi
+    else
+      item_outbox="$(outbox_file_for_item "$agent" "$item" || true)"
+      item_status="$(outbox_status "$item_outbox")"
+      if [ "$item_status" = "in-progress" ]; then
+        progress_t=$(progress_epoch "$agent" "$item")
+        progress_age=$((now - progress_t))
+        if [ "$progress_age" -gt "$SLA_IN_PROGRESS" ]; then
+          echo "BREACH in-progress-age: ${agent} inbox=${item} age=${progress_age}s status=${item_status}"
+          breach=1
+        fi
+      fi
     fi
   fi
 

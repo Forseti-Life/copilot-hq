@@ -54,7 +54,7 @@ def release_feature_count(features_root: Path, release_id: str) -> int:
     pattern = re.compile(rf"^-\s+Release:\s*{re.escape(release_id)}\s*$", re.MULTILINE)
     for fm in features_root.glob("*/feature.md"):
         text = fm.read_text(encoding="utf-8", errors="ignore")
-        if "- Status: in_progress" not in text:
+        if not re.search(r"^-\s+Status:\s*(in_progress|done)\s*$", text, re.MULTILINE):
             continue
         if pattern.search(text):
             count += 1
@@ -129,8 +129,22 @@ for team in sorted(teams, key=lambda entry: entry.get("id", "")):
     sentinel_file = pushed_dir / f"{team_id}.advanced"
 
     if not release_file.exists():
-        print(f"❌ FAIL [{team_id}] missing active release file: {release_file}")
-        failures += 1
+        if not next_file.exists():
+            print(f"❌ FAIL [{team_id}] missing active release file: {release_file}")
+            failures += 1
+            continue
+        next_release_id = read_text(next_file)
+        ready_feats = ready_features(features_root, team_id)
+        if ready_feats:
+            print(
+                f"⚠️  WARN [{team_id}] release cycle idle without active release; "
+                f"{len(ready_feats)} ready feature(s) exist for next candidate {next_release_id}"
+            )
+        else:
+            print(
+                f"✅ PASS [{team_id}] release cycle correctly idle waiting for work "
+                f"(next candidate: {next_release_id})"
+            )
         continue
     if not next_file.exists():
         print(f"❌ FAIL [{team_id}] missing next release file: {next_file}")

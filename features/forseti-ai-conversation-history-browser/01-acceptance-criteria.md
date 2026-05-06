@@ -71,7 +71,7 @@ curl -o /dev/null -s -w "%{http_code}" https://forseti.life/forseti/conversation
 grep -A8 "forseti.conversation_delete" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/ai_conversation.routing.yml
 
 # Route registered
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush router:debug | grep forseti.conversations
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life router:debug | grep forseti.conversations
 
 # Template exists
 ls /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/ai_conversation/templates/user-ai-conversations.html.twig

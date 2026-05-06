@@ -143,17 +143,62 @@ raise SystemExit(1)
 PY
 }
 
+resolve_drupal_root_for_site() {
+  local requested_site="$1"
+  local prior_site="$SITE"
+  local prior_root="${DRUPAL_ROOT:-}"
+  local resolved=""
+  SITE="$requested_site"
+  unset DRUPAL_ROOT
+  resolved="$(resolve_drupal_root || true)"
+  SITE="$prior_site"
+  if [ -n "$prior_root" ]; then
+    DRUPAL_ROOT="$prior_root"
+  fi
+  printf '%s\n' "$resolved"
+}
+
+configure_runtime_for_root() {
+  local root="$1"
+  if [ -z "$root" ] || [ ! -d "$root" ]; then
+    return 1
+  fi
+
+  local drush="$root/vendor/bin/drush"
+  local web_root="$root/web"
+  if [ ! -d "$web_root" ]; then
+    return 1
+  fi
+
+  DRUPAL_ROOT="$root"
+  DRUSH="$drush"
+  WEB_ROOT="$web_root"
+  return 0
+}
+
+alternate_ai_site() {
+  case "$SITE" in
+    forseti|forseti.life|forseti-life)
+      echo "dungeoncrawler"
+      ;;
+    dungeoncrawler|dungeoncrawler.forseti.life)
+      echo "forseti"
+      ;;
+    *)
+      echo ""
+      ;;
+  esac
+}
+
+missing_ai_service_output() {
+  local text="${1:-}"
+  printf '%s\n' "$text" | grep -qiE 'non-existent service "(ai_conversation\.prompt_manager|ai_conversation\.ai_api_service)"'
+}
+
 DRUPAL_ROOT="$(resolve_drupal_root || true)"
-if [ -z "$DRUPAL_ROOT" ] || [ ! -d "$DRUPAL_ROOT" ]; then
+if ! configure_runtime_for_root "$DRUPAL_ROOT"; then
   echo "ERROR: unable to resolve Drupal root for site '$SITE'" >&2
   echo "Set DRUPAL_ROOT explicitly and retry." >&2
-  exit 2
-fi
-
-DRUSH="$DRUPAL_ROOT/vendor/bin/drush"
-WEB_ROOT="$DRUPAL_ROOT/web"
-if [ ! -d "$WEB_ROOT" ]; then
-  echo "ERROR: Drupal web root not found at $WEB_ROOT" >&2
   exit 2
 fi
 
@@ -342,22 +387,35 @@ run_php_bootstrap_eval() {
   "$PHP_BIN" -r "$PHP_BOOTSTRAP_CODE" 2>&1
 }
 
-set +e
-RAW_OUTPUT="$(run_drush_eval)"
-DRUSH_EXIT=$?
-set -e
-
-SANITIZED_OUTPUT="$RAW_OUTPUT"
-if [ "$SUPPRESS_DRUSH_WARNINGS" = "1" ]; then
-  SANITIZED_OUTPUT="$(printf '%s\n' "$RAW_OUTPUT" | awk 'BEGIN{IGNORECASE=1} index(tolower($0), "drush command terminated abnormally") == 0 { print }')"
-fi
-
-if [ $DRUSH_EXIT -ne 0 ]; then
+run_current_runtime() {
   set +e
-  RAW_OUTPUT="$(run_php_bootstrap_eval)"
+  RAW_OUTPUT="$(run_drush_eval)"
   DRUSH_EXIT=$?
   set -e
+
   SANITIZED_OUTPUT="$RAW_OUTPUT"
+  if [ "$SUPPRESS_DRUSH_WARNINGS" = "1" ]; then
+    SANITIZED_OUTPUT="$(printf '%s\n' "$RAW_OUTPUT" | awk 'BEGIN{IGNORECASE=1} index(tolower($0), "drush command terminated abnormally") == 0 { print }')"
+  fi
+
+  if [ $DRUSH_EXIT -ne 0 ]; then
+    set +e
+    RAW_OUTPUT="$(run_php_bootstrap_eval)"
+    DRUSH_EXIT=$?
+    set -e
+    SANITIZED_OUTPUT="$RAW_OUTPUT"
+  fi
+}
+
+run_current_runtime
+
+if [ $DRUSH_EXIT -ne 0 ] && missing_ai_service_output "$SANITIZED_OUTPUT"; then
+  FALLBACK_SITE="$(alternate_ai_site)"
+  FALLBACK_ROOT="$(resolve_drupal_root_for_site "$FALLBACK_SITE")"
+  if [ -n "$FALLBACK_SITE" ] && [ -n "$FALLBACK_ROOT" ] && [ "$FALLBACK_ROOT" != "$DRUPAL_ROOT" ] && configure_runtime_for_root "$FALLBACK_ROOT"; then
+    echo "[bedrock-assist] ai_conversation services missing on requested site; retrying via fallback site=$FALLBACK_SITE drupal_root=$DRUPAL_ROOT" >&2
+    run_current_runtime
+  fi
 fi
 
 if [ $DRUSH_EXIT -eq 0 ]; then

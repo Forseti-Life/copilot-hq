@@ -38,7 +38,19 @@ class CharacterManager {
         'bonus_language_per_int'    => 1,
       ],
     ],
-    'Elf' => ['hp' => 6, 'size' => 'Medium', 'speed' => 30, 'boosts' => ['Dexterity', 'Intelligence'], 'flaw' => 'Constitution', 'languages' => ['Common', 'Elven'], 'traits' => ['Elf', 'Humanoid'], 'vision' => 'low-light vision'],
+    'Elf' => [
+      'hp' => 6,
+      'size' => 'Medium',
+      'speed' => 30,
+      'boosts' => ['Dexterity', 'Intelligence'],
+      'flaw' => 'Constitution',
+      'languages' => ['Common', 'Elven'],
+      'traits' => ['Elf', 'Humanoid'],
+      'vision' => 'low-light vision',
+      // One bonus language per positive Intelligence modifier point.
+      'bonus_language_pool' => ['Celestial', 'Draconic', 'Gnoll', 'Gnomish', 'Goblin', 'Orcish', 'Sylvan'],
+      'bonus_language_source' => 'intelligence_modifier',
+    ],
     'Dwarf' => [
       'hp' => 10,
       'size' => 'Medium',
@@ -417,52 +429,89 @@ class CharacterManager {
       [
         'id' => 'death-warden',
         'name' => 'Death Warden Dwarf',
-        'benefit' => 'Your ancestors have long warded their families against the necromantic powers wielded by their enemies. If you roll a critical failure on a saving throw against a necromancy effect, you get a failure instead.',
+        'benefit' => 'Your ancestors have been tomb guardians for generations, and the power they cultivated to ward off necromancy has passed on to you. If you roll a success on a saving throw against a necromancy effect, you get a critical success instead.',
         'special' => [
-          'necromancy_crit_fail_upgrade' => [
-            'trigger' => 'critical failure on saving throw vs. necromancy',
-            'effect' => 'Treat the result as a failure instead of a critical failure.',
+          'necromancy_save_upgrade' => [
+            'trigger' => 'success on saving throw vs. necromancy',
+            'effect' => 'Treat the result as a critical success instead of a success.',
           ],
         ],
       ],
       [
         'id' => 'forge',
         'name' => 'Forge Dwarf',
-        'benefit' => 'You have a remarkable adaptation to hot environments from your ancestors who lived and worked with fire. You can ignore the effects of environmental heat in non-extreme environments. Standard armor penalties do not apply to Fortitude saves vs. heat in non-extreme conditions.',
+        'benefit' => 'You have a remarkable adaptation to hot environments from ancestors who inhabited blazing deserts or volcanic chambers beneath the earth. This grants you fire resistance equal to half your level (minimum 1), and you treat environmental heat effects as if they were one step less extreme.',
         'special' => [
-          'heat_resistance_non_extreme' => TRUE,
-          'armor_heat_penalty_ignored' => TRUE,
+          'fire_resistance_half_level' => [
+            'damage_type' => 'fire',
+            'value_formula' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'heat_severity_downgrade_1_step' => [
+            'trigger' => 'environmental heat effect',
+            'effect' => 'Treat heat as one step less severe (incredible → extreme → severe → moderate → mild)',
+          ],
         ],
       ],
       [
         'id' => 'rock',
         'name' => 'Rock Dwarf',
-        'benefit' => 'Your ancestors lived and worked among the rocks and boulders of the mountains, and you carry some of this hardiness in your bones. You gain a +1 circumstance bonus to your Fortitude DC against Shove and Trip attempts. You are also treated as one size larger when calculating your Bulk limit.',
+        'benefit' => 'Your ancestors lived and worked among the rocks and boulders of the mountains, and you carry some of this hardiness in your bones. You gain a +2 circumstance bonus to your Fortitude or Reflex DC against attempts to Shove or Trip you. This bonus also applies to saving throws against spells or effects that attempt to knock you prone. In addition, if any effect would force you to move 10 feet or more, you are moved only half the distance.',
         'special' => [
-          'fortitude_bonus' => [
+          'anti_displacement_dc_bonus' => [
+            'value' => 2,
             'type' => 'circumstance',
-            'value' => 1,
-            'condition' => 'Fortitude DC against Shove and Trip',
+            'applies_to' => ['shove_dc', 'trip_dc', 'knock_prone_save'],
+            'description' => '+2 to Fortitude or Reflex DC against Shove, Trip, and knock-prone effects',
           ],
-          'bulk_size_bonus' => 1,
+          'forced_movement_halved' => [
+            'threshold' => 10,
+            'effect' => 'Forced movement of 10+ feet is reduced to half distance (round down to nearest 5)',
+            'excludes' => ['voluntary_movement'],
+          ],
         ],
       ],
       [
         'id' => 'strong-blooded',
         'name' => 'Strong-Blooded Dwarf',
-        'benefit' => 'Your blood runs hearty and strong, and you can shake off the effects of toxins. You gain a +1 status bonus to Fortitude saving throws against poisons. When you succeed at a Fortitude save against a poison, you treat it as a critical success and expunge the poison from your system.',
+        'benefit' => 'Your blood runs hearty and strong, and you can shake off the effects of toxins. You gain poison resistance equal to half your level (minimum 1), and each of your successful saving throws against a poison affliction reduces its stage by 2, or by 1 for a virulent poison. Each critical success against an ongoing poison reduces its stage by 3, or by 2 for a virulent poison.',
         'special' => [
-          'fortitude_poison_bonus' => ['type' => 'status', 'value' => 1, 'condition' => 'saving throws against poisons'],
-          'poison_save_upgrade' => [
-            'on_critical_success' => 'expunge poison',
-            'on_success' => 'reduce poison stage by 1',
+          'poison_resistance_half_level' => [
+            'damage_type' => 'poison',
+            'value_formula' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'poison_stage_reduction_bonus' => [
+            'on_success' => [
+              'standard_poison' => 'reduce stage by 2',
+              'virulent_poison' => 'reduce stage by 1',
+            ],
+            'on_critical_success' => [
+              'standard_poison' => 'reduce stage by 3',
+              'virulent_poison' => 'reduce stage by 2',
+            ],
+            'applies_to_poison_only' => TRUE,
           ],
         ],
       ],
     ],
     'Elf' => [
-      ['id' => 'arctic', 'name' => 'Arctic Elf', 'benefit' => 'Cold resistance'],
-      ['id' => 'cavern', 'name' => 'Cavern Elf', 'benefit' => 'Darkvision'],
+      ['id' => 'arctic', 'name' => 'Arctic Elf', 'benefit' => 'You dwell deep in the frozen north and have gained incredible resilience against cold environments, granting you cold resistance equal to half your level (minimum 1). You treat environmental cold effects as if they were one step less extreme (incredible cold becomes extreme, extreme cold becomes severe, and so on).',
+        'special' => [
+          'cold_resistance' => [
+            'type' => 'half_level_min_1',
+            'value' => 'max(1, floor(character_level / 2))',
+            'recalculate_on_level_up' => TRUE,
+          ],
+          'environmental_cold_severity_downgrade' => [
+            'trigger' => 'environmental_cold_effect',
+            'severity_ladder' => ['incredible' => 'extreme', 'extreme' => 'severe', 'severe' => 'moderate', 'moderate' => 'mild'],
+            'downgrade_steps' => 1,
+            'applies_to_cold_only' => TRUE,
+          ],
+        ],
+      ],
+      ['id' => 'cavern', 'name' => 'Cavern Elf', 'benefit' => 'Darkvision', 'vision_override' => 'darkvision'],
       ['id' => 'seer', 'name' => 'Seer Elf', 'benefit' => 'Detect magic cantrip'],
       ['id' => 'woodland', 'name' => 'Woodland Elf', 'benefit' => 'Climb speed'],
     ],
@@ -846,6 +895,27 @@ class CharacterManager {
           'damage_bonus' => ['type' => 'circumstance', 'value' => 1, 'per' => 'weapon_die', 'condition' => 'against selected target type'],
         ],
       ],
+      ['id' => 'mountains-stoutness', 'name' => "Mountain's Stoutness", 'level' => 9, 'traits' => ['Dwarf'], 'prerequisites' => '',
+        'benefit' => "Increase your maximum Hit Points by your level. When you have the dying condition, the DC of your recovery checks is equal to 9 + your dying value (instead of 10 + your dying value). If you also have the Toughness feat, the Hit Points gained from it and this feat are cumulative, and the DC of your recovery checks is equal to 6 + your dying value.",
+        'special' => [
+          'max_hp_bonus' => 'current_level',
+          'recovery_dc_adjustment' => -1,
+          'recovery_dc_adjustment_with_toughness' => -4,
+          'toughness_combo_eligible' => TRUE,
+        ],
+      ],
+      ['id' => 'dwarven-weapon-expertise', 'name' => 'Dwarven Weapon Expertise', 'level' => 13, 'traits' => ['Dwarf'], 'prerequisites' => 'Dwarven Weapon Familiarity',
+        'benefit' => 'Your dwarven affinity blends with your training, granting you great skill with dwarven weapons. Whenever you gain a class feature that grants you expert or greater proficiency in certain weapons, you also gain that proficiency for battle axes, picks, warhammers, and all dwarven weapons in which you are trained.',
+        'special' => [
+          'proficiency_propagation' => [
+            'trigger' => 'class_feature_expert_or_greater',
+            'propagate_to_weapons' => ['battleaxe', 'pick', 'warhammer'],
+            'propagate_to_dwarf_trained_set' => TRUE,
+            'prerequisite_check' => 'dwarven_weapon_familiarity',
+            'propagate_on_condition' => 'proficiency_rank_expert_or_higher',
+          ],
+        ],
+      ],
     ],
     'Elf' => [
       ['id' => 'ancestral-longevity', 'name' => 'Ancestral Longevity', 'level' => 1, 'traits' => ['Elf'], 'prerequisites' => '',
@@ -941,6 +1011,9 @@ class CharacterManager {
         'benefit' => 'Trained in Acrobatics and Stealth. Gain Halfling Lore skill.'],
       ['id' => 'halfling-weapon-familiarity', 'name' => 'Halfling Weapon Familiarity', 'level' => 1, 'traits' => ['Halfling'], 'prerequisites' => '',
         'benefit' => 'Trained with sling and halfling sling staff. For proficiency, treat martial halfling weapons as simple, advanced halfling weapons as martial.'],
+      ['id' => 'halfling-weapon-expertise', 'name' => 'Halfling Weapon Expertise', 'level' => 13, 'traits' => ['Halfling'], 'prerequisites' => 'Halfling Weapon Familiarity',
+        'benefit' => 'Whenever you gain a class feature that grants expert or greater proficiency in a given weapon or weapons, you also gain that proficiency in the sling, halfling sling staff, shortsword, and all halfling weapons in which you are trained.',
+        'prerequisite_halfling_weapon_familiarity' => TRUE],
       ['id' => 'sure-feet', 'name' => 'Sure Feet', 'level' => 1, 'traits' => ['Halfling'], 'prerequisites' => '',
         'benefit' => 'You can attempt Acrobatics checks to Balance on narrow surfaces and uneven ground without rolling. On a critical failure, you succeed instead.'],
       ['id' => 'titan-slinger', 'name' => 'Titan Slinger', 'level' => 1, 'traits' => ['Halfling'], 'prerequisites' => '',
@@ -9499,6 +9572,7 @@ the triggering spell. You then attempt to counteract the triggering spell.'],
     $ancestry_feat = ['slot_type' => 'ancestry_feat', 'label' => 'Ancestry Feat'];
 
     $universal = [
+      1  => ['feat_slots' => [$class_feat, $ancestry_feat], 'skill_increases' => 0, 'ability_boosts' => 0],
       2  => ['feat_slots' => [$class_feat, $skill_feat],  'skill_increases' => 0, 'ability_boosts' => 0],
       3  => ['feat_slots' => [$class_feat, $general_feat], 'skill_increases' => 1, 'ability_boosts' => 0],
       4  => ['feat_slots' => [$class_feat, $skill_feat],  'skill_increases' => 0, 'ability_boosts' => 0],
@@ -10375,6 +10449,39 @@ the triggering spell. You then attempt to counteract the triggering spell.'],
    */
   public function getCharacterData(object $record): array {
     return json_decode($record->character_data, TRUE) ?? [];
+  }
+
+  /**
+   * Get decoded character data from a stored record without service state.
+   */
+  public static function getStoredCharacterData(?object $record): array {
+    if (!$record || empty($record->character_data) || !is_string($record->character_data)) {
+      return [];
+    }
+
+    $data = json_decode($record->character_data, TRUE);
+    return is_array($data) ? $data : [];
+  }
+
+  /**
+   * Determine whether a stored character has completed wizard creation.
+   */
+  public static function isWizardCompleteRecord(?object $record): bool {
+    if (!$record) {
+      return FALSE;
+    }
+
+    $data = self::getStoredCharacterData($record);
+    return !empty($record->status) || !empty($data['wizard_complete']);
+  }
+
+  /**
+   * Return the currently stored heritage ID for a character record.
+   */
+  public static function getStoredHeritage(?object $record): string {
+    $data = self::getStoredCharacterData($record);
+    $heritage = $data['heritage'] ?? '';
+    return is_string($heritage) ? $heritage : '';
   }
 
   /**

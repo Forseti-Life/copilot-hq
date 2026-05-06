@@ -4,7 +4,7 @@
 
 Orchestration is the automated loop that:
 - keeps every agent's inbox draining by executing one item per agent per tick
-- manages the release cycle lifecycle (start, advance, signoff detection)
+- supports release handoffs through artifact-aware dispatchers and state checks
 - monitors KPI stagnation and routes escalations to the CEO for GenAI action
 - publishes telemetry to the Drupal dashboard
 
@@ -27,55 +27,65 @@ orchestrator-loop.sh  (background daemon, every 60s)
        │      ├─ has work_item: + matching features/<wi>/feature.md → PM owner lookup
        │      └─ anything else      → sessions/<active-ceo-seat>/inbox/<item>/ (CEO GenAI triage)
        │
-       ├─ 3. release_cycle  ────────────────────────────────────────── interval-gated (5 min)
-       │      for each team (coordinated_release_default=true):
-       │        no active cycle?  → scripts/release-cycle-start.sh <team> <cur> <next>
-       │        signed off?       → advance (next→current, gen new next, restart)
-       │        active?           → no-op
+       ├─ 3. pick_agents            all agents with inbox, CEO first (level=500)
        │
-       ├─ 4. pick_agents            all agents with inbox, CEO first (level=500)
-       │
-       ├─ 5. exec_agents            scripts/agent-exec-next.sh <agent>  [GenAI call]
+       ├─ 4. exec_agents            scripts/agent-exec-next.sh <agent>  [GenAI call]
        │      ├─ local LLM (llm/runner.py) if model assigned in llm/routing.yaml
-     │      ├─ selected backend for Copilot-routed seats:
-     │      │    - Copilot CLI (`copilot --resume ...`) when available/default
-     │      │    - Bedrock assistant wrapper (`scripts/bedrock-assist.sh`) when configured
+      │      ├─ selected backend for Copilot-routed seats:
+      │      │    - Copilot CLI (`copilot --resume ...`) when available/default
+      │      │    - Bedrock assistant wrapper (`scripts/bedrock-assist.sh`) when configured
        │      └─ on blocked/needs-info → creates sessions/<supervisor>/inbox/<escalation>/
        │           └─ if supervisor=board → inbox/commands/ via ceo-queue.sh
        │
-       ├─ 6. health_check           scripts/hq-status.sh + scripts/hq-blockers.sh
+       ├─ 5. health_check           scripts/hq-status.sh + scripts/hq-blockers.sh
        │      stalled agents → auto re-exec (2-min cooldown)
+       │      release-support dispatchers:
+       │        - gate2 auto-approve
+       │        - release-close-now
+       │        - scope-activate nudge
+       │        - feature-gap remediation
        │
-       ├─ 7. kpi_monitor ───────────────────────────────────────────── interval-gated (5 min)
+       ├─ 6. kpi_monitor ───────────────────────────────────────────── interval-gated (5 min)
        │      scripts/release-kpi-monitor.py --auto-remediate
        │      stagnation detected → ceo-queue.sh → inbox/commands/ → CEO inbox
        │
-       └─ 8. publish                scripts/publish-forseti-agent-tracker.sh
-              → Drupal copilot_agent_tracker tables + "Todo for Keith" dashboard
+       └─ 7. publish                scripts/publish-forseti-agent-tracker.sh
+               → Drupal copilot_agent_tracker tables + "Todo for Keith" dashboard
 
 auto-checkpoint-loop                (independent daemon, every 2h)
 improvement-round-loop              (independent daemon, PM+CEO process review dispatch)
 ```
 
-## Release cycle trigger path
+**Live note:** the top-level LangGraph tick is now the 7-node pipeline above. The legacy `release_cycle` and `coordinated_push` wrappers still exist in code only as retired no-ops for compatibility/log parity; actual release movement happens through scripts and queue artifacts.
+
+## Release handoff trigger path
 
 ```
-orchestrator release_cycle step (every 5 min)
-  └─ scripts/release-cycle-start.sh <team_id> <current_release_id> <next_release_id>
-       ├─ sessions/qa-<team>/inbox/<preflight-item>/    ← QA Gate 1 (test suite review)
-       └─ sessions/pm-<team>/inbox/<groom-next-item>/   ← PM grooms next release in parallel
+release-cycle-start.sh <team_id> <current_release_id> <next_release_id>
+  ├─ tmp/release-cycle-active/<team>.release_id
+  ├─ tmp/release-cycle-active/<team>.next_release_id
+  ├─ sessions/qa-<team>/inbox/<preflight-item>/         ← QA preflight startup artifact
+  └─ sessions/pm-<team>/inbox/<groom-next-item>/        ← PM next-release grooming artifact
+  └─ sessions/agent-code-review/inbox/<code-review-item>/command.md
+       └─ flow-managed `release_shipping_flow` / `Release Code Review`
 
 → orchestrator picks these up on next tick → exec_agents runs qa-<team> and pm-<team>
 
 QA → Dev → QA repair loop (Stages 3-4)
-  └─ Dev fixes → QA re-verifies → PM signs off
-       └─ scripts/release-signoff.sh <team> <release-id>
-            → sessions/pm-<team>/artifacts/release-signoffs/<id>.md
+  └─ agent-code-review / PM triage / Dev fixes → QA re-verifies → PM signs off
+         └─ scripts/release-signoff.sh <team> <release-id>
+              → sessions/pm-<team>/artifacts/release-signoffs/<id>.md
 
-PM signoff marks the release ready, but runtime stays on that release until:
-  └─ pm-forseti completes coordinated push
-        └─ scripts/post-coordinated-push.sh
-             → advances release_id to next_release_id
+If the coordinated cohort is fully signed:
+  └─ scripts/release-signoff.sh also creates
+       sessions/<operator-pm>/inbox/<ts>-push-ready-<release>/command.md
+       └─ flow-managed `release_shipping_flow` / `Coordinated Push`
+
+PM signoff marks the release ready, but runtime stays on that release until the operator consumes that push-ready item and runs:
+  └─ scripts/post-coordinated-push.sh [team-id ...]
+       → advances release_id to next_release_id
+       → seeds a new current/next pair
+       → dispatches post-push audit follow-through
 
 After post-push + post-release QA, CEO runs:
   └─ python3 scripts/project-progress-audit.py
@@ -133,7 +143,7 @@ What it verifies:
 ./scripts/release-cycle-control.sh status
 ```
 
-When paused, the orchestrator still runs, but it skips the `release_cycle` step, coordinated-push release automation, and health-check release dispatchers.
+When paused, the orchestrator still runs, but release-support dispatchers and coordinated-push follow-through automation are skipped.
 
 ### One-shot tick (debug)
 ```bash
@@ -206,15 +216,12 @@ Important:
 Items appear at: `/admin/reports/waitingonkeith`
 CEO inbox items must match `YYYYMMDD-(needs|needs-escalated)-` pattern in the active CEO seat inbox (`sessions/ceo-copilot*/inbox/`).
 
-### Force a release cycle check now
+### Inspect live release handoff state
 ```bash
-python3 -c "
-import sys; sys.path.insert(0, '.')
-from orchestrator.run import _release_cycle_step
-log = []
-_release_cycle_step(log)
-import json; print(json.dumps(log, indent=2))
-"
+ls tmp/release-cycle-active/
+cat tmp/release-cycle-active/<team>.release_id
+cat tmp/release-cycle-active/<team>.next_release_id
+scripts/release-signoff-status.sh <release-id>
 ```
 
 ### Release cycle state
@@ -233,7 +240,7 @@ scripts/release-signoff-status.sh <release-id>
 | Agent repeatedly blocked | `scripts/agent-exec-next.sh <agent>` manually; inspect outbox for error notes |
 | CEO inbox not draining | Confirm active CEO seat is not paused (for example: `scripts/is-agent-paused.sh ceo-copilot-2`) |
 | "Todo for Keith" empty | Confirm CEO inbox items match `YYYYMMDD-needs-*` pattern; run publish manually |
-| Release cycle not starting | Check `tmp/release-cycle-active/` — if missing, release_cycle step will start it on next tick |
+| Release state missing | Check `tmp/release-cycle-active/`; seed or reseed with `scripts/release-cycle-start.sh <team> <current> <next>` |
 | KPI stagnation loop | Check `inbox/commands/` for unprocessed stagnation items; check CEO inbox for actionable items |
 
 ## Key file locations

@@ -77,7 +77,7 @@ grep -A8 "job_hunter.interview_prep_save" /home/ubuntu/forseti.life/sites/forset
 grep -A8 "job_hunter.interview_prep_ai_tips" /home/ubuntu/forseti.life/sites/forseti/web/modules/custom/job_hunter/job_hunter.routing.yml
 
 # DB table created
-cd /home/ubuntu/forseti.life/sites/forseti && ./vendor/bin/drush php:eval "var_dump(\Drupal::database()->schema()->tableExists('jobhunter_interview_notes'));"
+cd /var/www/html/forseti && ./vendor/bin/drush --uri=https://forseti.life php:eval "var_dump(\Drupal::database()->schema()->tableExists('jobhunter_interview_notes'));"
 
 # Anonymous access
 curl -o /dev/null -s -w "%{http_code}" https://forseti.life/jobhunter/interview-prep/1

@@ -118,8 +118,8 @@ class DashboardController extends ControllerBase {
     $vertex_status = $integration_status['providers']['vertex'] ?? [];
     $default_provider = (string) ($integration_status['default_provider'] ?? 'gemini');
 
-    $gemini_mode = (!empty($gemini_status['enabled']) && !empty($gemini_status['has_api_key'])) ? 'live-ready' : 'stub';
-    $vertex_mode = (!empty($vertex_status['enabled']) && !empty($vertex_status['has_api_key'])) ? 'live-ready' : 'stub';
+    $gemini_mode = (!empty($gemini_status['enabled']) && (!empty($gemini_status['has_credentials']) || !empty($gemini_status['has_api_key']))) ? 'live-ready' : 'stub';
+    $vertex_mode = (!empty($vertex_status['enabled']) && (!empty($vertex_status['has_credentials']) || !empty($vertex_status['has_api_key']))) ? 'live-ready' : 'stub';
 
     $build['gemini_image_generation'] = [
       '#type' => 'details',
@@ -139,7 +139,7 @@ class DashboardController extends ControllerBase {
             '@source' => (string) ($gemini_status['api_key_source'] ?? 'none'),
             '@model' => (string) ($gemini_status['model'] ?? ''),
           ]),
-          $this->t('Vertex mode: @mode (enabled: @enabled, key source: @source, model: @model)', [
+          $this->t('Vertex mode: @mode (enabled: @enabled, auth source: @source, model: @model)', [
             '@mode' => $vertex_mode,
             '@enabled' => !empty($vertex_status['enabled']) ? 'yes' : 'no',
             '@source' => (string) ($vertex_status['api_key_source'] ?? 'none'),
@@ -152,12 +152,14 @@ class DashboardController extends ControllerBase {
         '#markup' => '<h4>' . $this->t('Server Environment Setup') . '</h4>',
       ],
       'setup_help_text' => [
-        '#markup' => '<p>' . $this->t('Set GEMINI_API_KEY and/or VERTEX_API_KEY as environment variables for the web server user, then reload Apache and rebuild cache.') . '</p>',
+        '#markup' => '<p>' . $this->t('Set GEMINI_API_KEY for Gemini and either VERTEX_API_KEY or GOOGLE_APPLICATION_CREDENTIALS for Vertex as environment variables for the web server user, then reload Apache and rebuild cache.') . '</p>',
       ],
       'setup_help_commands' => [
         '#markup' => '<pre>sudo tee -a /etc/apache2/envvars >/dev/null &lt;&lt;\'EOF\'
 export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
 export VERTEX_API_KEY="YOUR_VERTEX_API_KEY"
+# OR for Vertex service-account auth:
+# export GOOGLE_APPLICATION_CREDENTIALS="/secure/path/vertex-service-account.json"
 EOF
 
 sudo systemctl reload apache2

@@ -55,8 +55,9 @@ The acceptance criteria specifies `ConditionManagerTest.php` and `RulesEngineTes
 
 ## Prod DB state verification
 
-```
-drush ev "foreach(['combat_encounters','combat_participants','combat_conditions','combat_round_actions'] ...)"
+```bash
+cd /var/www/html/dungeoncrawler
+./vendor/bin/drush --uri=https://dungeoncrawler.forseti.life ev "foreach(['combat_encounters','combat_participants','combat_conditions','combat_round_actions'] ...)"
 combat_encounters:     exists
 combat_participants:   exists
 combat_conditions:     MISSING

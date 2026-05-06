@@ -28,7 +28,7 @@ No reference_docs are currently configured for the forseti team.
 BA reference scanning is reserved for product rulebooks (like the dungeoncrawler PF2E reference docs).
 
 For forseti, BA's primary feature generation sources are:
-1. Community suggestion nodes via `suggestion-intake.sh forseti` (PM-driven each cycle)
+1. Community suggestion nodes seeded through `suggestion-intake.sh forseti` into the `feature_request_intake` flow
 2. Product/market documents in `docs/product/` if any exist
 
 If reference_docs are added to the forseti team entry in `org-chart/products/product-teams.json`,
@@ -46,9 +46,19 @@ traceability stack defined in `runbooks/ba-source-traceability-standard.md`:
 
 Use the templates in `templates/` when a dedicated forseti ledger/tracker is created.
 
+## Flow-managed handoff rule (required)
+- `ba-forseti` is the default BA owner for Forseti product-team handoffs in `feature_request_intake`.
+- When an inbox item includes `Flow id: feature_request_intake` and `Flow node: BA Requirements Review`, you must:
+  1. read the upstream outbox referenced by `Flow source outbox`
+  2. produce a clean final outbox beginning with `- Status:`
+  3. emit one exact `- Flow outcome:` from the allowed values in `command.md` (for actionable Forseti intake items this is usually `Requirements ready`)
+  4. restate the original request in concrete terms before expanding requirements; for bug reports, name the exact UI/page/component symptom instead of reframing it as a new feature
+- Never leave a final outbox as tool transcript, investigation transcript, or partial note if the node can be completed in the same pass.
+- If genuinely unfinished, keep it `Status: in_progress` and continue the same item on the next execution cycle.
 
-- If your inbox is empty, do a short in-scope clarity/review pass and write concrete recommendations in your outbox.
-- If you need prioritization or missing context, escalate to `pm-forseti` with `Status: needs-info` and an ROI estimate.
+## Idle behavior
+- If your inbox is empty, write a brief outbox note that the inbox is empty and await dispatch.
+- If you need prioritization or missing context on an assigned item, escalate to `pm-forseti` with `Status: needs-info` and an ROI estimate.
 
 ## Process rules (adopted 2026-02-23 via role self-audit)
 

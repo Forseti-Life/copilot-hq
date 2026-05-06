@@ -301,7 +301,7 @@ Implementation strategy (first-pass architecture):
    - Default provider (`generated_image_provider`)
    - Gemini live settings + key (`GEMINI_API_KEY` or config)
    - Gemini system context prompt (`gemini_system_context_prompt`) for automatic prompt wrapping
-   - Vertex live settings + key (`VERTEX_API_KEY` or config)
+   - Vertex live settings + auth (`VERTEX_API_KEY`, saved config, or `GOOGLE_APPLICATION_CREDENTIALS`)
 - **Operator setup aid**: Dashboard includes copy-ready Linux/Apache env export snippet for both providers plus reload/cache steps.
 - **Storage design reference**: See `GENERATED_IMAGE_STORAGE_DESIGN.md` for object-table review and proposed generated-image persistence model.
 - **Phase 1 storage tables**: `dc_generated_images` (asset metadata) and `dc_generated_image_links` (object-slot links) via update hook `10010`.

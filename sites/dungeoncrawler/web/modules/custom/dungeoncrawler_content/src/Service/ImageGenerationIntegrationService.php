@@ -65,10 +65,37 @@ class ImageGenerationIntegrationService {
   }
 
   /**
+   * Runs a provider-specific live integration test using supplied settings.
+   *
+   * @param string $provider
+   *   Provider to test (gemini|vertex).
+   * @param array<string, mixed> $settings
+   *   Unsaved form values to prefer over persisted config.
+   *
+   * @return array<string, mixed>
+   *   Provider response.
+   */
+  public function testProvider(string $provider, array $settings = []): array {
+    $resolved_provider = $this->resolveProvider($provider);
+    $payload = $this->buildIntegrationTestPayload($settings);
+
+    if ($resolved_provider === 'gemini') {
+      $system_prompt = $this->getGeminiSystemContextPrompt($settings);
+      $payload['system_prompt'] = $system_prompt;
+      $payload['wrapped_prompt'] = $this->wrapGeminiPrompt((string) ($payload['prompt'] ?? ''), $system_prompt);
+    }
+
+    return match ($resolved_provider) {
+      'vertex' => $this->vertexImageService->testLiveConnection($payload, $settings),
+      default => $this->geminiImageService->testLiveConnection($payload, $settings),
+    };
+  }
+
+  /**
    * Returns configured Gemini system context prompt.
    */
-  public function getGeminiSystemContextPrompt(): string {
-    $configured = trim((string) $this->configFactory->get('dungeoncrawler_content.settings')->get('gemini_system_context_prompt'));
+  public function getGeminiSystemContextPrompt(array $settings = []): string {
+    $configured = trim((string) ($settings['gemini_system_context_prompt'] ?? $this->configFactory->get('dungeoncrawler_content.settings')->get('gemini_system_context_prompt')));
     return $configured !== '' ? $configured : self::DEFAULT_GEMINI_SYSTEM_PROMPT;
   }
 
@@ -113,6 +140,26 @@ class ImageGenerationIntegrationService {
 
     $configured = strtolower(trim((string) $this->configFactory->get('dungeoncrawler_content.settings')->get('generated_image_provider')));
     return in_array($configured, ['gemini', 'vertex'], TRUE) ? $configured : 'gemini';
+  }
+
+  /**
+   * Build a deterministic payload for live integration tests.
+   *
+   * @param array<string, mixed> $settings
+   *   Unsaved form values.
+   *
+   * @return array<string, mixed>
+   *   Test payload.
+   */
+  private function buildIntegrationTestPayload(array $settings): array {
+    return [
+      'prompt' => 'Create a simple fantasy torch icon for a tactical RPG token with a transparent background. No text or labels.',
+      'negative_prompt' => 'text, watermark, logo, signature, blurry, low quality',
+      'style' => 'fantasy',
+      'aspect_ratio' => '1:1',
+      'campaign_context' => 'admin_integration_test',
+      'requested_by_uid' => (int) ($settings['requested_by_uid'] ?? 0),
+    ];
   }
 
 }

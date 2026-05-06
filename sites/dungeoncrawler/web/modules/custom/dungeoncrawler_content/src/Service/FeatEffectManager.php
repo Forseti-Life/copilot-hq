@@ -1077,6 +1077,25 @@ class FeatEffectManager {
           $effects['applied_feats'][] = $feat_id;
           break;
 
+        case 'halfling-weapon-expertise':
+          $cascade_rank = $this->getClassWeaponExpertiseRank($character_data['class_features'] ?? []);
+          if ($cascade_rank !== '') {
+            foreach ($effects['training_grants']['weapons'] as &$weapon_entry) {
+              if (($weapon_entry['group'] ?? '') === 'Halfling Weapons') {
+                $existing_rank = $weapon_entry['proficiency'] ?? 'trained';
+                $rank_order = ['untrained' => 0, 'trained' => 1, 'expert' => 2, 'master' => 3, 'legendary' => 4];
+                if (($rank_order[$cascade_rank] ?? 0) > ($rank_order[$existing_rank] ?? 0)) {
+                  $weapon_entry['proficiency'] = $cascade_rank;
+                }
+              }
+            }
+            unset($weapon_entry);
+            $effects['derived_adjustments']['flags']['halfling_weapon_expertise_cascade_rank'] = $cascade_rank;
+            $effects['notes'][] = 'Halfling Weapon Expertise: class weapon expertise also applies to sling, halfling sling staff, shortsword, and trained halfling weapons.';
+          }
+          $effects['applied_feats'][] = $feat_id;
+          break;
+
         case 'catfolk-weapon-familiarity':
           $this->addWeaponFamiliarity($effects, 'Catfolk Weapons');
           $effects['applied_feats'][] = $feat_id;
@@ -1200,6 +1219,18 @@ class FeatEffectManager {
         case 'vengeful-hatred':
           $this->addConditionalSaveModifier($effects, 'Will', 1, 'against chosen hated foe');
           $effects['notes'][] = 'Vengeful Hatred: +1 conditional Will save against hated foe.';
+          $effects['applied_feats'][] = $feat_id;
+          break;
+
+        case 'mountains-stoutness':
+          $current_level = (int) ($character_data['level'] ?? 1);
+          $effects['derived_adjustments']['max_hp_bonus'] = ($effects['derived_adjustments']['max_hp_bonus'] ?? 0) + $current_level;
+          $effects['derived_adjustments']['flags']['mountains_stoutness_active'] = TRUE;
+          // Recovery DC reduction: -1 base, -4 if Toughness also present (=6 + dying instead of 10 + dying)
+          $has_toughness = isset($applied_feats['toughness']);
+          $recovery_dc_adj = $has_toughness ? -4 : -1;
+          $effects['derived_adjustments']['recovery_check_dc_adjustment'] = ($effects['derived_adjustments']['recovery_check_dc_adjustment'] ?? 0) + $recovery_dc_adj;
+          $effects['notes'][] = "Mountain's Stoutness: +{$current_level} max HP; Recovery DC becomes " . (9 + ($has_toughness ? -3 : 0)) . " + dying_value.";
           $effects['applied_feats'][] = $feat_id;
           break;
 
@@ -1704,6 +1735,32 @@ class FeatEffectManager {
         $effects['notes'][] = 'Hillock Halfling: +level HP on overnight rest; +level HP snack rider when receiving a successful Treat Wounds action.';
         break;
 
+      case 'cavern':
+        // AC: Cavern Elf — darkvision; supersedes Low-Light Vision; no duplicate.
+        $already_has_darkvision = FALSE;
+        foreach ($effects['senses'] as $sense) {
+          if (($sense['id'] ?? '') === 'darkvision') {
+            $already_has_darkvision = TRUE;
+            break;
+          }
+        }
+        if (!$already_has_darkvision) {
+          $this->addSense(
+            $effects,
+            'darkvision',
+            'Darkvision',
+            'See in complete darkness as well as bright light, in black and white. Supersedes Low-Light Vision.',
+            ['precision' => 'precise']
+          );
+        }
+        // Remove low-light-vision: darkvision is strictly superior.
+        $effects['senses'] = array_values(array_filter(
+          $effects['senses'],
+          static fn($s) => ($s['id'] ?? '') !== 'low-light-vision'
+        ));
+        $effects['notes'][] = 'Cavern Elf: darkvision (supersedes Low-Light Vision; no duplicate if already possessed).';
+        break;
+
       case 'halfling-resolve':
         // AC: Halfling Resolve (Feat 9) — when a halfling with this feat rolls
         // a success on a saving throw against an emotion effect, upgrade to crit.
@@ -1879,7 +1936,7 @@ class FeatEffectManager {
   /**
    * Returns the highest weapon proficiency rank granted by class features.
    *
-   * Used by gnome-weapon-expertise to cascade class proficiency upgrades.
+   * Used by ancestry weapon expertise feats to cascade class proficiency upgrades.
    * Returns '' if no expert-or-greater class weapon feature is present.
    *
    * @param array $class_features

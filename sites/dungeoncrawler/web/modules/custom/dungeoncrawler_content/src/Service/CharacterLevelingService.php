@@ -507,7 +507,7 @@ class CharacterLevelingService {
       'class_feat'    => CharacterManager::CLASS_FEATS[$class_name] ?? [],
       'skill_feat'    => CharacterManager::SKILL_FEATS,
       'general_feat'  => CharacterManager::GENERAL_FEATS,
-      'ancestry_feat' => CharacterManager::ANCESTRY_FEATS,
+      'ancestry_feat' => $this->getAncestryFeatsForCharacter($char_data),
       default         => [],
     };
 
@@ -546,6 +546,18 @@ class CharacterLevelingService {
       }
       return TRUE;
     }));
+  }
+
+  /**
+   * Get ancestry feats eligible for a character's ancestry.
+   *
+   * @param array $char_data  Character data array.
+   * @return array  Flat array of feats for the character's ancestry.
+   */
+  private function getAncestryFeatsForCharacter(array $char_data): array {
+    $ancestry = $char_data['basicInfo']['ancestry'] ?? 'Human';
+    $ancestry_feats = CharacterManager::ANCESTRY_FEATS[$ancestry] ?? [];
+    return is_array($ancestry_feats) ? $ancestry_feats : [];
   }
 
   // ── Private helpers ─────────────────────────────────────────────────────────
@@ -688,7 +700,7 @@ class CharacterLevelingService {
       'class_feat'    => CharacterManager::CLASS_FEATS[$class_name] ?? [],
       'skill_feat'    => CharacterManager::SKILL_FEATS,
       'general_feat'  => CharacterManager::GENERAL_FEATS,
-      'ancestry_feat' => CharacterManager::ANCESTRY_FEATS,
+      'ancestry_feat' => $this->getAncestryFeatsForCharacter($char_data),
       default         => array_merge(
         CharacterManager::CLASS_FEATS[$class_name] ?? [],
         CharacterManager::SKILL_FEATS,
@@ -816,6 +828,27 @@ class CharacterLevelingService {
       }
     }
 
+<<<<<<< HEAD
+=======
+    // Halfling Weapon Familiarity prerequisite (e.g. Halfling Weapon Expertise).
+    if (!empty($feat['prerequisite_halfling_weapon_familiarity'])) {
+      if (!$this->characterHasHalflingWeaponFamiliarity($char_data)) {
+        throw new \InvalidArgumentException(
+          "Feat '{$feat_id}' requires Halfling Weapon Familiarity", 400
+        );
+      }
+    }
+
+    // Distracting Shadows prerequisite (e.g. Ceaseless Shadows).
+    if (!empty($feat['prerequisite_distracting_shadows'])) {
+      if (!$this->characterHasDistractingShadows($char_data)) {
+        throw new \InvalidArgumentException(
+          "Feat '{$feat_id}' requires Distracting Shadows", 400
+        );
+      }
+    }
+
+>>>>>>> reconcile/copilot-hq-local-priority-main
     return $feat;
   }
 
@@ -870,4 +903,23 @@ class CharacterLevelingService {
     return in_array('goblin-weapon-familiarity', $owned_ids, TRUE);
   }
 
+<<<<<<< HEAD
+=======
+  /**
+   * Returns TRUE if the character has Halfling Weapon Familiarity.
+   */
+  private function characterHasHalflingWeaponFamiliarity(array $char_data): bool {
+    $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
+    return in_array('halfling-weapon-familiarity', $owned_ids, TRUE);
+  }
+
+  /**
+   * Returns TRUE if the character has Distracting Shadows.
+   */
+  private function characterHasDistractingShadows(array $char_data): bool {
+    $owned_ids = array_column($char_data['features']['feats'] ?? [], 'id');
+    return in_array('distracting-shadows', $owned_ids, TRUE);
+  }
+
+>>>>>>> reconcile/copilot-hq-local-priority-main
 }

@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Tuple
 
 from langgraph.graph import StateGraph  # type: ignore
+from orchestrator.runtime_graph.catalog import HQ_ORCHESTRATOR_TICK_NODE_ORDER
+from orchestrator.runtime_graph.consume_replies import run_consume_replies
 
 
 TickResult = Tuple[Dict[str, Any], int, int]
@@ -134,10 +136,7 @@ def _write_tick_telemetry(state: Dict[str, Any]) -> None:
         pass
 
     # Build parity record with schema expected by DashboardController::langGraphParityHealth().
-    expected_steps = [
-        "consume_replies", "dispatch_commands", "release_cycle", "coordinated_push",
-        "pick_agents", "exec_agents", "health_check", "kpi_monitor", "publish",
-    ]
+    expected_steps = list(HQ_ORCHESTRATOR_TICK_NODE_ORDER)
     actual_steps = [entry.get("step") for entry in log_entries if "step" in entry]
     steps_match = actual_steps == expected_steps
 
@@ -207,8 +206,16 @@ def run_tick(
     }
 
     def consume_replies(s: Dict[str, Any]) -> Dict[str, Any]:
-        rc, _ = deps.run_cmd(["bash", "scripts/consume-forseti-replies.sh"], timeout=300)
-        s["log"].append({"step": "consume_replies", "rc": rc})
+        summary = run_consume_replies(
+            repo_root=pathlib.Path(
+                os.environ.get(
+                    "COPILOT_HQ_ROOT",
+                    str(pathlib.Path(__file__).resolve().parent.parent.parent),
+                )
+            ),
+            run_cmd=deps.run_cmd,
+        )
+        s["log"].append({"step": "consume_replies", **summary})
         return s
 
     def dispatch_commands(s: Dict[str, Any]) -> Dict[str, Any]:
@@ -216,32 +223,33 @@ def run_tick(
         return s
 
     def release_cycle(s: Dict[str, Any]) -> Dict[str, Any]:
-        # Bypass the interval gate when a release lifecycle event signal is pending.
-        _RC_SIGNALS = (
+        release_signals = (
             "release-signoff-created",
             "release-cycle-advanced",
             "gate2-approved",
             "coordinated-push-done",
         )
-        event_triggered = deps.has_events(*_RC_SIGNALS)
+        event_triggered = deps.has_events(*release_signals)
         interval_elapsed = (deps.now_ts() - s["release_cycle_last_run"]) >= s["release_cycle_interval"]
+        should_run = event_triggered or interval_elapsed
+        s["_release_cycle_should_run"] = should_run
+        s["_release_cycle_trigger"] = "event" if event_triggered else "interval" if interval_elapsed else "skipped"
 
-        if event_triggered or interval_elapsed:
-            trigger = "event" if event_triggered else "interval"
-            deps.consume_events(*_RC_SIGNALS)
+        if event_triggered:
+            deps.consume_events(*release_signals)
+
+        if should_run:
             deps.release_cycle_step(s["log"])
-            # Annotate the log entry with the trigger reason.
-            for entry in reversed(s["log"]):
-                if entry.get("step") == "release_cycle":
-                    entry["trigger"] = trigger
-                    break
             s["release_cycle_last_run"] = deps.now_ts()
         else:
             s["log"].append({"step": "release_cycle", "skipped": True})
         return s
 
     def coordinated_push(s: Dict[str, Any]) -> Dict[str, Any]:
-        deps.coordinated_push_step(s["log"])
+        if s.get("_release_cycle_should_run"):
+            deps.coordinated_push_step(s["log"])
+        else:
+            s["log"].append({"step": "coordinated_push", "skipped": True})
         return s
 
     def pick_agents(s: Dict[str, Any]) -> Dict[str, Any]:
@@ -263,9 +271,11 @@ def run_tick(
 
         agents = ceo_agents + selected_other
         selected = [str(getattr(a, "agent_id", "")) for a in agents]
+        exec_queue = [str(getattr(a, "agent_id", "")) for a in (ceo_agents + other_agents)]
         current_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_release_work", False)]
         next_release = [str(getattr(a, "agent_id", "")) for a in selected_other if getattr(a, "has_next_release_work", False)]
         s["selected_agents"] = selected
+        s["_agent_exec_queue"] = exec_queue
 
         # ISSUE-008: warn when per-tick agent coverage falls below 20%.
         # At 4 workers / 48 agents = 8% coverage; this fires a visible log line
@@ -283,6 +293,7 @@ def run_tick(
         s["log"].append({
             "step": "pick_agents",
             "selected": selected,
+            "exec_queue_depth": len(exec_queue),
             "release_priority": current_release,
             "next_release_spillover": next_release,
             "queued_agents": queued_count,
@@ -293,7 +304,8 @@ def run_tick(
     def exec_agents(s: Dict[str, Any]) -> Dict[str, Any]:
         ran: List[Dict[str, Any]] = []
         selected_agents = [str(agent_id) for agent_id in (s.get("selected_agents") or [])]
-        if not selected_agents:
+        exec_queue = [str(agent_id) for agent_id in (s.pop("_agent_exec_queue", None) or selected_agents)]
+        if not exec_queue:
             s["log"].append({"step": "exec_agents", "ran": ran, "workers": 0})
             return s
 
@@ -333,20 +345,39 @@ def run_tick(
             kpi_pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             kpi_future = kpi_pool.submit(_kpi_task)
 
-        workers = _exec_worker_limit(len(selected_agents))
+        workers = min(_exec_worker_limit(max(len(selected_agents), 1)), len(exec_queue))
         with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-            future_map = {
-                pool.submit(_run_agent_burst, agent_id): agent_id
-                for agent_id in selected_agents
-            }
+            future_map: Dict[concurrent.futures.Future[Dict[str, Any]], str] = {}
             results: Dict[str, Dict[str, Any]] = {}
-            for future in concurrent.futures.as_completed(future_map):
-                agent_id = future_map[future]
-                results[agent_id] = future.result()
+            queue_iter = iter(exec_queue)
 
-        for agent_id in selected_agents:
+            def _submit_next_agent() -> bool:
+                try:
+                    agent_id = next(queue_iter)
+                except StopIteration:
+                    return False
+                future_map[pool.submit(_run_agent_burst, agent_id)] = agent_id
+                return True
+
+            for _ in range(workers):
+                if not _submit_next_agent():
+                    break
+
+            while future_map:
+                future = next(concurrent.futures.as_completed(tuple(future_map.keys())))
+                agent_id = future_map.pop(future)
+                results[agent_id] = future.result()
+                _submit_next_agent()
+
+        for agent_id in exec_queue:
             ran.append(results.get(agent_id, {"agent": agent_id, "rc": 1, "runs": 0}))
-        s["log"].append({"step": "exec_agents", "ran": ran, "workers": workers})
+        s["log"].append({
+            "step": "exec_agents",
+            "ran": ran,
+            "workers": workers,
+            "selected_count": len(selected_agents),
+            "queue_depth": len(exec_queue),
+        })
 
         # Collect kpi result — it ran concurrently during agent execution.
         if kpi_future is not None and kpi_pool is not None:

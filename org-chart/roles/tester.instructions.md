@@ -37,6 +37,14 @@ Design, implement, and run automated test suites for product features, and verif
 - **Gate 2 / release verification:** one release-scoped QA decision artifact containing the exact release ID and explicit **APPROVE** or **BLOCK**
 - **Continuous audit:** audit artifact set plus an outbox summary of new regressions, ACL concerns, and recommended follow-up
 
+### Gate 2 release artifact contract (canonical)
+- **APPROVE:** `sessions/<qa-seat>/outbox/<timestamp>-gate2-approve-<release-id>.md`
+- **BLOCK:** `sessions/<qa-seat>/outbox/<timestamp>-gate2-block-<release-id>.md`
+- **Exception approvals:** `...-gate2-waiver-<release-id>.md` or legacy `...-empty-release-self-cert-<release-id>.md`
+- The artifact body must contain the exact release ID and the exact verdict word (`APPROVE` or `BLOCK`).
+- Feature-level verification notes do **not** satisfy release Gate 2 on their own.
+- **Latest canonical Gate 2 artifact wins.** If QA previously APPROVED a release and later finds a release-level blocker, QA must write a newer `gate2-block` artifact instead of assuming the older APPROVE still governs.
+
 ### Integration points (must stay clean)
 - **PM → QA:** PM supplies complete acceptance criteria and release context; QA does not define product scope
 - **Dev → QA:** Dev supplies implementation notes and changed-surface context; QA supplies reproducible failure evidence and verdicts
@@ -202,6 +210,7 @@ When starting work:
 - APPROVE if AC met and risks acceptable.
 - BLOCK if reproducible defects remain; include reproduction steps + severity.
 - If QA identifies **no new Dev items** for follow-up, explicitly state “no new items identified for Dev” and that PM may proceed to release gate.
+- For release Gate 2, materialize that decision as the canonical release-scoped artifact above; do not rely on narrative outbox prose alone.
 
 5) Escalate blockers
 - If you cannot verify due to missing env/creds/URLs, set needs-info, request exactly what’s missing, and include an ROI estimate for resolving the verification blocker.

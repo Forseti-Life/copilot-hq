@@ -33,7 +33,7 @@ agent-exec-next.sh
 | `ba-*` | mistral-7b-instruct | Structured requirements, documentation |
 | `qa-*` | phi-3-mini | Checklist evaluation, APPROVE/BLOCK |
 | `sec-analyst-*` | mistral-7b-instruct | Security checklists, structured findings |
-| `agent-code-review` | deepseek-coder | Code-specialized model |
+| `agent-code-review` | Copilot | Code review needs stronger repo reasoning and more reliable canonical outbox recovery |
 | `agent-explore-*` | phi-3-mini | Summarization, reading, exploration |
 | `agent-task-runner` | phi-3-mini | Structured output for build/test runs |
 

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 uuid: 05767260-00c0-4e67-a23c-6629adc5473d
+=======
+uuid: 9830f049-4a3c-41e3-97e2-f234d26dacad
+>>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
@@ -6,12 +10,19 @@ dependencies:
     - filter.format.restricted_html
   module:
     - comment
+<<<<<<< HEAD
     - contact
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
     - filter
     - search
     - system
 _core:
+<<<<<<< HEAD
   default_config_hash: 6WavjUYXIegP9AAg2zXGx54MWIVoomC3SZhNiqe-Dyk
+=======
+  default_config_hash: xLG41YbRo2NP-0SgRNTkMzLEuaeibanGXgUTbdIcIIg
+>>>>>>> reconcile/copilot-hq-local-priority-main
 id: anonymous
 label: 'Anonymous user'
 weight: 0
@@ -19,6 +30,9 @@ is_admin: false
 permissions:
   - 'access comments'
   - 'access content'
+<<<<<<< HEAD
   - 'access site-wide contact form'
+=======
+>>>>>>> reconcile/copilot-hq-local-priority-main
   - 'search content'
   - 'use text format restricted_html'

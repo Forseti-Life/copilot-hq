@@ -77,7 +77,8 @@ class CharacterPortraitGenerationService {
       ];
     }
 
-    if ($this->hasExistingPortrait($character_id, $campaign_id)) {
+    $force_regenerate = !empty($options['force_regenerate']);
+    if (!$force_regenerate && $this->hasExistingPortrait($character_id, $campaign_id)) {
       return [
         'attempted' => FALSE,
         'reason' => 'already_exists',
@@ -107,14 +108,18 @@ class CharacterPortraitGenerationService {
 
     $user_prompt = (string) ($options['user_prompt'] ?? ($character_data['portrait_prompt'] ?? ''));
     $prompt = $this->promptBuilder->buildPortraitPrompt($character_data, $user_prompt);
+    $character_profile_spreadsheet = $this->promptBuilder->buildCharacterProfileSpreadsheet($character_data);
 
     $payload = [
       'prompt' => $prompt,
-      'style' => (string) ($options['style'] ?? 'fantasy'),
-      'aspect_ratio' => (string) ($options['aspect_ratio'] ?? '1:1'),
-      'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->getDefaultNegativePrompt()),
+      'style' => (string) ($options['style'] ?? 'cinematic-portrait'),
+      'aspect_ratio' => (string) ($options['aspect_ratio'] ?? '3:4'),
+      'negative_prompt' => (string) ($options['negative_prompt'] ?? $this->promptBuilder->buildNegativePrompt($character_data)),
       'campaign_context' => (string) ($options['campaign_context'] ?? 'character_creation'),
       'requested_by_uid' => $owner_uid,
+      'force_regenerate' => $force_regenerate,
+      'character_profile_spreadsheet' => $character_profile_spreadsheet,
+      'character_profile_json' => json_encode($character_data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
     ];
 
     try {
@@ -130,6 +135,17 @@ class CharacterPortraitGenerationService {
         'visibility' => 'owner',
         'is_primary' => 1,
       ]);
+
+      if (!empty($storage['stored']) && !empty($options['replace_existing']) && !empty($storage['image_id'])) {
+        $this->generatedImageRepository->archiveObjectImages(
+          'dc_campaign_characters',
+          (string) $character_id,
+          $campaign_id,
+          'portrait',
+          'original',
+          (int) $storage['image_id']
+        );
+      }
 
       return [
         'attempted' => TRUE,

@@ -1,0 +1,104 @@
+{
+  "base_url": "https://forseti.life",
+  "count": 16,
+  "generated_at": "2026-04-28T14:58:34+0000",
+  "input": "tmp/site-audit/forseti-life-20260428-145832/forseti-life-all-paths.txt",
+  "results": [
+    {
+      "error": null,
+      "final_url": "https://forseti.life/",
+      "status": 200,
+      "url": "https://forseti.life/"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/contact",
+      "status": 404,
+      "url": "https://forseti.life/contact"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/core/misc/favicon.ico",
+      "status": 200,
+      "url": "https://forseti.life/core/misc/favicon.ico"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/rss.xml",
+      "status": 200,
+      "url": "https://forseti.life/rss.xml"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/sites/default/files/css/css_CmXOdPNMm8Et7XPfh5N6CsqSMgRTm_qohJdVPQ_wz6Y.css",
+      "status": 200,
+      "url": "https://forseti.life/sites/default/files/css/css_CmXOdPNMm8Et7XPfh5N6CsqSMgRTm_qohJdVPQ_wz6Y.css"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/sites/default/files/css/css_GxJN5D4cygyk1d8iUZSE_PofTynpD2YBvBCctdJJXvg.css",
+      "status": 200,
+      "url": "https://forseti.life/sites/default/files/css/css_GxJN5D4cygyk1d8iUZSE_PofTynpD2YBvBCctdJJXvg.css"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/sites/default/files/js/js_ZsMcmWHeMwAJevfpwDE8rROJirLdaX0R08kBjbBX9v4.js",
+      "status": 200,
+      "url": "https://forseti.life/sites/default/files/js/js_ZsMcmWHeMwAJevfpwDE8rROJirLdaX0R08kBjbBX9v4.js"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/sites/default/files/js/js_cRM4K4nwbS5gjncZLeWjrzt_wiFqq_XxLYvEoUhlCVk.js",
+      "status": 200,
+      "url": "https://forseti.life/sites/default/files/js/js_cRM4K4nwbS5gjncZLeWjrzt_wiFqq_XxLYvEoUhlCVk.js"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicon.ico",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicon.ico"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/android-chrome-192x192.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/android-chrome-192x192.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/android-chrome-512x512.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/android-chrome-512x512.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/apple-touch-icon.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/apple-touch-icon.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/favicon-16x16.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/favicon-16x16.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/favicon-32x32.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/favicons/favicon-32x32.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/images/logos/forseti_navbar.png",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/images/logos/forseti_navbar.png"
+    },
+    {
+      "error": null,
+      "final_url": "https://forseti.life/themes/custom/forseti/manifest.json",
+      "status": 200,
+      "url": "https://forseti.life/themes/custom/forseti/manifest.json"
+    }
+  ]
+}

@@ -380,6 +380,14 @@
   flex-wrap: wrap;
 }
 
+.dc-sheet__portrait-panel {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 .dc-sheet__portrait-wrap {
   width: 120px;
   height: 120px;
@@ -387,6 +395,7 @@
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
+  margin: 0 auto;
 }
 
 .dc-sheet__portrait {
@@ -421,6 +430,33 @@
   font-weight: 700;
   font-size: 0.75rem;
   padding: 2px;
+}
+
+.dc-sheet__portrait-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dc-sheet__portrait-actions .dc-btn,
+.dc-sheet__portrait-actions .form-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.dc-sheet__portrait-actions .form-item {
+  margin: 0;
+}
+
+.dc-sheet__portrait-actions .description {
+  font-size: 0.75rem;
+  color: var(--dc-text-muted);
+  margin-top: 0.25rem;
+}
+
+.dc-sheet__portrait-actions input[type="file"] {
+  width: 100%;
+  font-size: 0.8rem;
 }
 
 .dc-sheet__identity {

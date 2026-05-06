@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# suggestion-intake.sh — Pull new community_suggestion nodes from Drupal into PM inbox
+# suggestion-intake.sh — Pull new community_suggestion nodes from Drupal into feature_request_intake
 #
 # Usage:
 #   ./scripts/suggestion-intake.sh [site]      # site defaults to "forseti"
@@ -7,16 +7,23 @@
 # What it does:
 #   1. Queries Drupal for community_suggestion nodes with status = "new"
 #   2. Marks each queried suggestion as "under_review" in Drupal
-#   3. Writes a PM inbox batch item: sessions/pm-<site>/inbox/<date>-suggestion-intake/
-#   4. Each suggestion gets its own sub-file for individual triage
-#
-# PM then reviews the inbox item and uses suggestion-triage.sh to accept/defer/decline each one.
+#   3. Seeds one `feature_request_intake` entrypoint inbox item per suggestion
+#   4. Lets the new flow own review, product-team matching, BA/PM routing, and delivery launch
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 SITE="${1:-forseti}"
+LOCK_FILE="/var/tmp/suggestion-intake-${SITE}.lock"
+
+mkdir -p "$(dirname "$LOCK_FILE")"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  echo "[suggestion-intake] Another run is already in progress for site: $SITE"
+  exit 0
+fi
+
 resolve_drupal_root() {
   local site="$1"
   local configured_roots
@@ -148,10 +155,9 @@ if [ -n "$DRUPAL_WEB_ROOT" ]; then
 fi
 
 DRUSH="$DRUPAL_ROOT/vendor/bin/drush"
-PM_AGENT="pm-${SITE}"
-INBOX_DIR="sessions/${PM_AGENT}/inbox"
+FLOW_OWNER="ceo-copilot-2"
+INBOX_DIR="sessions/${FLOW_OWNER}/inbox"
 DATE_TAG="$(date +%Y%m%d-%H%M%S)"
-BATCH_ITEM="${INBOX_DIR}/${DATE_TAG}-suggestion-intake"
 
 if [ ! -f "$DRUSH" ]; then
   echo "ERROR: drush not found at $DRUSH" >&2
@@ -162,49 +168,96 @@ echo "[suggestion-intake] Querying new suggestions for site: $SITE"
 echo "[suggestion-intake] Drupal root: $DRUPAL_ROOT"
 
 # Query new suggestions via drush php-eval
+QUERY_ERR_FILE="$(mktemp)"
+set +e
 SUGGESTIONS_JSON="$(cd "$DRUPAL_ROOT" && vendor/bin/drush php:eval '
-$query = \Drupal::entityQuery("node")
-  ->condition("type", "community_suggestion")
-  ->condition("field_suggestion_status", "new")
-  ->accessCheck(FALSE)
-  ->sort("created", "ASC")
-  ->execute();
-$nodes = \Drupal\node\Entity\Node::loadMultiple($query);
-$results = [];
-foreach ($nodes as $node) {
-  $results[] = [
-    "nid"          => $node->id(),
-    "title"        => $node->getTitle(),
-    "created"      => date("Y-m-d H:i", $node->getCreatedTime()),
-    "uid"          => $node->getOwnerId(),
-    "summary"      => $node->get("field_suggestion_summary")->value ?? "",
-    "original_msg" => $node->get("field_original_message")->value ?? "",
-    "category"     => $node->get("field_suggestion_category")->value ?? "other",
-    "conv_nid"     => $node->get("field_conversation_reference")->target_id ?? null,
-  ];
+try {
+  $query = \Drupal::entityQuery("node")
+    ->condition("type", "community_suggestion")
+    ->condition("field_suggestion_status", "new")
+    ->accessCheck(FALSE)
+    ->sort("created", "ASC")
+    ->execute();
+  $nodes = \Drupal\node\Entity\Node::loadMultiple($query);
+  $results = [];
+  foreach ($nodes as $node) {
+    $results[] = [
+      "nid"          => $node->id(),
+      "title"        => $node->getTitle(),
+      "created"      => date("Y-m-d H:i", $node->getCreatedTime()),
+      "uid"          => $node->getOwnerId(),
+      "summary"      => $node->get("field_suggestion_summary")->value ?? "",
+      "original_msg" => $node->get("field_original_message")->value ?? "",
+      "category"     => $node->get("field_suggestion_category")->value ?? "other",
+      "conv_nid"     => $node->get("field_conversation_reference")->target_id ?? null,
+    ];
+  }
+  echo json_encode($results);
+} catch (\Exception $e) {
+  // If the community_suggestion content type or field is not implemented, return empty list
+  echo "[]";
 }
-echo json_encode($results);
-' 2>/dev/null)"
+' 2>"$QUERY_ERR_FILE")"
+QUERY_RC=$?
+set -e
 
-COUNT="$(echo "$SUGGESTIONS_JSON" | python3 -c "import json,sys; print(len(json.loads(sys.stdin.read())))")"
+if [ "$QUERY_RC" -ne 0 ]; then
+  echo "ERROR: suggestion-intake query failed for site '$SITE'." >&2
+  sed -n '1,40p' "$QUERY_ERR_FILE" >&2 || true
+  rm -f "$QUERY_ERR_FILE"
+  exit 1
+fi
+
+# Empty output is not an error - it means no suggestions or no content type
+if [ -z "${SUGGESTIONS_JSON//[$' \t\r\n\[\]']/}" ]; then
+  # Try to parse it as JSON to make sure it's valid
+  COUNT="$(printf '%s' "$SUGGESTIONS_JSON" | python3 -c "import json, sys; print(len(json.loads(sys.stdin.read())))" 2>/dev/null || echo '0')"
+  if [ "$COUNT" = "0" ]; then
+    echo "[suggestion-intake] No new suggestions found for site: $SITE"
+    rm -f "$QUERY_ERR_FILE"
+    exit 0
+  fi
+fi
+
+COUNT="$(python3 - "$SUGGESTIONS_JSON" <<'PY'
+import json
+import sys
+
+raw = sys.argv[1]
+try:
+    data = json.loads(raw)
+except json.JSONDecodeError as exc:
+    print(f"ERROR: invalid suggestion JSON: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+
+if not isinstance(data, list):
+    print("ERROR: suggestion query did not return a JSON list", file=sys.stderr)
+    raise SystemExit(1)
+
+print(len(data))
+PY
+)"
+rm -f "$QUERY_ERR_FILE"
 
 if [ "$COUNT" -eq 0 ]; then
   echo "[suggestion-intake] No new suggestions found. Nothing to do."
   exit 0
 fi
 
-echo "[suggestion-intake] Found $COUNT new suggestion(s). Writing PM inbox item..."
-mkdir -p "$BATCH_ITEM"
+echo "[suggestion-intake] Found $COUNT new suggestion(s). Seeding feature_request_intake items..."
 
-# Write the batch README
-python3 - "$SUGGESTIONS_JSON" "$BATCH_ITEM" "$COUNT" "$SITE" "$DATE_TAG" <<'PY'
-import json, sys, pathlib, textwrap
+SEED_RESULT_JSON="$(python3 - "$SUGGESTIONS_JSON" "$INBOX_DIR" "$SITE" "$DATE_TAG" "$FLOW_OWNER" <<'PY'
+import json
+import pathlib
+import re
+import sys
+import textwrap
 
 suggestions = json.loads(sys.argv[1])
-batch_dir = pathlib.Path(sys.argv[2])
-count = int(sys.argv[3])
-site = sys.argv[4]
-date_tag = sys.argv[5]
+inbox_root = pathlib.Path(sys.argv[2])
+site = sys.argv[3]
+date_tag = sys.argv[4]
+flow_owner = sys.argv[5]
 
 category_labels = {
     "safety_feature": "Safety Feature",
@@ -216,88 +269,27 @@ category_labels = {
     "other": "Other",
 }
 
-# Write batch README
-readme = f"""# Suggestion Intake Batch — {date_tag}
+def slugify(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", value).strip("-").lower()
+    return slug or "item"
 
-**Site:** {site}.life  
-**New suggestions:** {count}  
-**Status:** Pending PM triage  
-
-## What to do
-
-For each suggestion below:
-1. Review summary + original message
-2. Update triage decision in `triage/NID-triage.md`
-3. Run: `./scripts/suggestion-triage.sh {site} <nid> <accept|defer|decline|escalate> [feature-id]`
-   - `accept`  → creates `features/<feature-id>/feature.md`, marks Drupal node `in_progress`
-   - `defer`   → marks Drupal node `deferred`, queued for next cycle
-   - `decline` → marks Drupal node `declined`
-  - `escalate`→ routes to board-security review queue, keeps node `under_review`
-
-## Mandatory security gate
-
-If a suggestion clearly asks for security abuse, release-gate/integrity bypass, intentionally destructive behavior,
-or a major architecture replatform/rewrite,
-do not accept it at PM level. Use `escalate` for human board review first.
-Normal product improvements should continue through standard PM triage.
-
-## Quick summary table
-
-| # | NID | Category | Title |
-|---|-----|----------|-------|
-"""
-for i, s in enumerate(suggestions, 1):
-    cat = category_labels.get(s["category"], s["category"])
-    title_short = s["title"][:60] + ("..." if len(s["title"]) > 60 else "")
-    readme += f'| {i} | {s["nid"]} | {cat} | {title_short} |\n'
-
-readme += "\n## Suggestions (detail)\n\n"
-for s in suggestions:
-    cat = category_labels.get(s["category"], s["category"])
-    conv_link = f"Node {s['conv_nid']}" if s["conv_nid"] else "N/A"
-    readme += f"""---
-### NID {s['nid']}: {s['title']}
-
-- **Created:** {s['created']}
-- **Category:** {cat}
-- **Conversation:** {conv_link}
-- **Drupal URL:** /node/{s['nid']}/edit
-
-**Summary:**
-{textwrap.fill(s['summary'], 100)}
-
-**Original user message:**
-{textwrap.fill(s['original_msg'], 100)}
-
-**Triage:** _(see triage/NID-{s['nid']}-triage.md)_
-
-"""
-
-(batch_dir / "README.md").write_text(readme, encoding="utf-8")
-
-# Build cross-site keyword map from product-teams.json (teams other than current site)
-import re as _re
-
-def _load_cross_site_keywords(current_site_id):
-    hq_root = pathlib.Path.cwd()
-    product_teams_path = hq_root / "org-chart" / "products" / "product-teams.json"
+def load_cross_site_keywords(current_site_id: str) -> dict[str, list[str]]:
+    product_teams_path = pathlib.Path.cwd() / "org-chart" / "products" / "product-teams.json"
     if not product_teams_path.exists():
         return {}
     data = json.loads(product_teams_path.read_text(encoding="utf-8"))
     teams = data.get("teams", []) if isinstance(data, dict) else data
 
-    # Determine the current site's canonical domain so co-hosted teams are excluded
     current_domain = None
     for team in teams:
         if str(team.get("id") or "").strip().lower() == current_site_id.lower():
             current_domain = str(team.get("site") or "").strip().lower()
             break
 
-    cross_site = {}  # team_id -> list of keywords (longest first)
+    cross_site: dict[str, list[str]] = {}
     for team in teams:
         tid = str(team.get("id") or "").strip().lower()
         tsite = str(team.get("site") or "").strip().lower()
-        # Skip current site team and any team that lives on the same domain
         if not tid or tid == current_site_id.lower():
             continue
         if current_domain and tsite == current_domain:
@@ -306,97 +298,105 @@ def _load_cross_site_keywords(current_site_id):
         if tsite:
             keywords.add(tsite)
             keywords.add(tsite.replace(".life", ""))
-        for a in (team.get("aliases") or []):
-            a = str(a).strip().lower()
-            if a and len(a) >= 4:  # skip very short aliases (avoid false positives)
-                keywords.add(a)
+        for alias in (team.get("aliases") or []):
+            alias = str(alias).strip().lower()
+            if alias and len(alias) >= 4:
+                keywords.add(alias)
         cross_site[tid] = sorted(keywords, key=len, reverse=True)
     return cross_site
 
-_cross_site_keywords = _load_cross_site_keywords(site)
-
-def _detect_cross_site_mentions(text, cross_site_map):
-    """Return list of (team_id, keyword) for the first keyword match per team."""
+def detect_cross_site_mentions(text: str, cross_site_map: dict[str, list[str]]) -> list[tuple[str, str]]:
     text_lower = text.lower()
-    found = []
-    for tid, keywords in cross_site_map.items():
-        for kw in keywords:
-            if _re.search(r'(?<![a-z0-9])' + _re.escape(kw) + r'(?![a-z0-9])', text_lower):
-                found.append((tid, kw))
-                break  # one match per team is sufficient
+    found: list[tuple[str, str]] = []
+    for team_id, keywords in cross_site_map.items():
+        for keyword in keywords:
+            if re.search(r"(?<![a-z0-9])" + re.escape(keyword) + r"(?![a-z0-9])", text_lower):
+                found.append((team_id, keyword))
+                break
     return found
 
-# Write individual triage stubs
-triage_dir = batch_dir / "triage"
-triage_dir.mkdir(exist_ok=True)
+def item_exists(marker: str) -> bool:
+    seat_root = pathlib.Path.cwd() / "sessions" / flow_owner
+    for bucket in ("inbox", "outbox", "artifacts"):
+        root = seat_root / bucket
+        if not root.exists():
+            continue
+        for path in root.iterdir():
+            if marker in path.name:
+                return True
+    return False
 
-for s in suggestions:
-    cat = category_labels.get(s["category"], s["category"])
-    triage_file = triage_dir / f"NID-{s['nid']}-triage.md"
+cross_site_keywords = load_cross_site_keywords(site)
+created = 0
+skipped = 0
 
-    # Detect cross-site mentions in title + summary + original message
-    combined_text = " ".join([
-        s.get("title") or "",
-        s.get("summary") or "",
-        s.get("original_msg") or "",
-    ])
-    cross_site_mentions = _detect_cross_site_mentions(combined_text, _cross_site_keywords)
+for suggestion in suggestions:
+    nid = str(suggestion.get("nid") or "").strip()
+    title = str(suggestion.get("title") or "").strip()
+    summary = str(suggestion.get("summary") or "").strip()
+    original = str(suggestion.get("original_msg") or "").strip()
+    category = category_labels.get(str(suggestion.get("category") or "other"), str(suggestion.get("category") or "other"))
+    conv_nid = suggestion.get("conv_nid")
+    created_at = str(suggestion.get("created") or "").strip()
 
+    marker = f"feature-request-intake-{site}-nid-{nid}"
+    item_name = f"{date_tag}-flow-{marker}-{slugify(title)[:40]}".rstrip("-")
+    item_dir = inbox_root / item_name
+    if item_exists(marker) or item_dir.exists():
+        skipped += 1
+        continue
+
+    combined_text = " ".join([title, summary, original])
+    cross_site_mentions = detect_cross_site_mentions(combined_text, cross_site_keywords)
+    cross_site_section = ""
     if cross_site_mentions:
-        mention_lines = "\n".join(
-            f"  - `{kw}` → belongs to: **{tid}**"
-            for tid, kw in cross_site_mentions
+        mentions = "\n".join(f"- `{keyword}` appears to reference product team `{team_id}`" for team_id, keyword in cross_site_mentions)
+        cross_site_section = (
+            "\n## Cross-site warning\n\n"
+            "This suggestion mentions another site or product alias. Do not assume the source site owns it without review.\n\n"
+            f"{mentions}\n"
         )
-        cross_site_warning = f"""## ⚠ CROSS-SITE WARNING
 
-This suggestion references content from a site other than **{site}**. Verify attribution before accepting or routing.
+    conv_line = f"- Source conversation node: {conv_nid}" if conv_nid is not None else "- Source conversation node: n/a"
+    item_dir.mkdir(parents=True, exist_ok=True)
+    command = (
+        f"- Flow id: feature_request_intake\n"
+        f"- Flow run id: suggestion-{site}-nid-{nid}\n"
+        f"- Flow node: Receive Feature Request\n"
+        f"- Flow owner seat: {flow_owner}\n"
+        f"\n"
+        f"# Incoming feature request from community suggestion\n\n"
+        f"- Source system: Drupal community_suggestion\n"
+        f"- Source site: {site}\n"
+        f"- Suggestion NID: {nid}\n"
+        f"{conv_line}\n"
+        f"- Suggestion category: {category}\n"
+        f"- Created at: {created_at or 'unknown'}\n"
+        f"- Suggested product team: {site}\n"
+        f"\n"
+        f"## Request summary\n\n"
+        f"{textwrap.fill(summary or title or '(no summary provided)', 100)}\n"
+        f"\n"
+        f"## Suggestion title\n\n"
+        f"{title or '(untitled suggestion)'}\n"
+        f"\n"
+        f"## Original user message\n\n"
+        f"{textwrap.fill(original or '(not captured)', 100)}\n"
+        f"\n"
+        f"## Intake notes\n\n"
+        f"- This request was automatically seeded by `scripts/suggestion-intake.sh`.\n"
+        f"- Legacy PM-only suggestion triage has been retired; use the `feature_request_intake` flow to review, clarify, defer, reject, or approve this request.\n"
+        f"- If approved, the intake flow should decide whether to materialize or update a backlog feature artifact before launching delivery.\n"
+        f"- Drupal node edit URL: /node/{nid}/edit\n"
+        f"{cross_site_section}"
+    )
+    (item_dir / "command.md").write_text(command, encoding="utf-8")
+    (item_dir / "roi.txt").write_text("30\n", encoding="utf-8")
+    created += 1
 
-**Detected references to other sites:**
-{mention_lines}
-
-**Action required:**
-- [ ] Confirm this suggestion belongs to **{site}** (not the detected site above)
-- [ ] If misfiled: re-run `./scripts/suggestion-intake.sh <correct-site>` with the correct site, or move this triage item to the correct PM inbox manually
-- [ ] If a cross-site feature request: escalate to the owning PM seat for that site
-
----
-
-"""
-    else:
-        cross_site_warning = ""
-
-    triage_file.write_text(f"""{cross_site_warning}# Triage: NID {s['nid']} — {s['title']}
-
-- **Category:** {cat}
-  - **Decision:** [ ] accept  [ ] defer  [ ] decline  [ ] escalate
-- **Feature ID** (if accept): {site}-  
-- **Priority** (if accept): P0 | P1 | P2
-- **PM notes:**
-
-## Rationale
-
-_Why accept/defer/decline? Mission alignment? Scope fit? Effort estimate?_
-
-## Mission alignment check
-
-Does this align with: "Democratize and decentralize internet services by building
-community-managed versions of core systems for scientific, technology-focused, and tolerant people."
-
-- [ ] Directly advances mission
-- [ ] Neutral / infrastructure
-- [ ] Does not align (decline)
-
-## Security / integrity gate (required)
-
-- [ ] No security abuse pattern (auth bypass, secret exposure, exploit primitive)
-- [ ] No release-integrity bypass (skip QA/tests/approval, disable logging/guardrails)
-- [ ] No stability-destructive action (data destruction, crash/DoS pattern)
-- [ ] If any box above is uncertain or false → **escalate** for board review
-
-""", encoding="utf-8")
-
-print(f"Written {len(suggestions)} triage stubs to {triage_dir}")
+print(json.dumps({"created": created, "skipped": skipped, "total": len(suggestions)}))
 PY
+)"
 
 # Mark suggestions as under_review in Drupal
 echo "[suggestion-intake] Marking suggestions as under_review in Drupal..."
@@ -415,9 +415,9 @@ echo count(\$nids) . ' nodes updated to under_review';
 
 cd "$ROOT_DIR"
 
-# Write ROI estimate for the PM agent
-echo "3" > "$BATCH_ITEM/roi.txt"
+CREATED_COUNT="$(printf '%s' "$SEED_RESULT_JSON" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('created', 0))")"
+SKIPPED_COUNT="$(printf '%s' "$SEED_RESULT_JSON" | python3 -c "import json,sys; print(json.loads(sys.stdin.read()).get('skipped', 0))")"
 
 echo "[suggestion-intake] Done."
-echo "[suggestion-intake] Inbox item: $BATCH_ITEM"
-echo "[suggestion-intake] $COUNT suggestion(s) ready for PM triage."
+echo "[suggestion-intake] Created $CREATED_COUNT feature_request_intake item(s); skipped $SKIPPED_COUNT duplicate/already-seeded suggestion(s)."
+echo "[suggestion-intake] Flow owner inbox: sessions/${FLOW_OWNER}/inbox/"

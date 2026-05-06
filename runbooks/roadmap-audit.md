@@ -421,13 +421,13 @@ pick one feature at a time, never batch.
    | `in_progress` | all | Already in release — move to next item |
    | `deferred` | varies | Note dependency blocker; skip to next Not Started item |
 
-   **The pipeline is identical to the community suggestion flow:**
+   **The pipeline is aligned with the current community suggestion flow:**
    ```
-   feature.md (accepted) → PM writes AC → pm-qa-handoff.sh → QA writes test plan
-     → qa-pm-testgen-complete.sh → pm-scope-activate.sh → in_progress
+   feature_request_intake → PM/BA grooming → PM writes AC → pm-qa-handoff.sh
+     → QA writes test plan → qa-pm-testgen-complete.sh → pm-scope-activate.sh → in_progress
    ```
    Roadmap features are pre-accepted (the feature stub = the triage decision). Skip
-   `suggestion-intake.sh` / `suggestion-triage.sh` — go straight to AC.
+   front-door intake seeding and go straight to PM/BA grooming + AC.
 
 5. **PM inbox task format** (when feature is `planned` with no AC):
    ```

@@ -15,6 +15,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
 from typing import Iterable
 
 
@@ -26,6 +27,9 @@ def _repo_root() -> Path:
 
 
 REPO_ROOT = _repo_root()
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "lib"))
+
+from gate2_artifacts import latest_gate2_artifact_with_verdict
 
 
 @dataclass(frozen=True)
@@ -101,16 +105,8 @@ def _gate2_outbox_dir(qa_agent: str) -> Path:
 
 def _existing_gate2_approve(qa_agent: str, release_id: str) -> Path | None:
     outbox = _gate2_outbox_dir(qa_agent)
-    if not outbox.exists():
-        return None
-    for path in sorted(outbox.glob("*gate2-approve*.md")):
-        try:
-            content = path.read_text(encoding="utf-8", errors="ignore")
-        except Exception:
-            continue
-        if release_id in content and "APPROVE" in content:
-            return path
-    return None
+    artifact = latest_gate2_artifact_with_verdict(outbox, release_id, "APPROVE")
+    return artifact.path if artifact else None
 
 
 def _write_gate2_approve(team: Team, release_id: str, findings_json: Path, source: str) -> Path:

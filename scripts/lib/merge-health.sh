@@ -13,11 +13,41 @@ merge_health_reset() {
   MERGE_HEALTH_UNMERGED_COUNT=0
   MERGE_HEALTH_TRACKED_CHANGE_COUNT=0
   MERGE_HEALTH_UNTRACKED_COUNT=0
+  MERGE_HEALTH_OPERATIONAL_CHANGE_COUNT=0
+  MERGE_HEALTH_SUBMODULE_DIRTY_COUNT=0
   MERGE_HEALTH_GIT_DIR=""
   MERGE_HEALTH_SUMMARY=""
   MERGE_HEALTH_UNMERGED_FILES=()
   MERGE_HEALTH_TRACKED_CHANGE_FILES=()
   MERGE_HEALTH_UNTRACKED_FILES=()
+  MERGE_HEALTH_OPERATIONAL_CHANGE_FILES=()
+  MERGE_HEALTH_SUBMODULE_DIRTY_FILES=()
+}
+
+merge_health_is_operational_path() {
+  local path="$1"
+  case "$path" in
+    sessions/*|tmp/*|inbox/commands/*|inbox/processed/*|inbox/responses/*|copilot-hq/inbox/responses/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+merge_health_is_dirty_submodule_worktree() {
+  local repo_root="$1"
+  local path="$2"
+  local gitmodules="$repo_root/.gitmodules"
+
+  [ -f "$gitmodules" ] || return 1
+  git -C "$repo_root" config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep -Fxq "$path" || return 1
+  git -C "$repo_root/$path" rev-parse --git-dir >/dev/null 2>&1 || return 1
+
+  git -C "$repo_root" diff --cached --quiet -- "$path" || return 1
+  git -C "$repo_root/$path" status --porcelain --ignore-submodules=none 2>/dev/null | grep -q . || return 1
+  return 0
 }
 
 merge_health_scan() {
@@ -69,25 +99,37 @@ merge_health_scan() {
     local path="${line:3}"
     case "$status" in
       "??")
-        MERGE_HEALTH_UNTRACKED_FILES+=("$path")
+        if merge_health_is_operational_path "$path"; then
+          MERGE_HEALTH_OPERATIONAL_CHANGE_FILES+=("$path")
+        else
+          MERGE_HEALTH_UNTRACKED_FILES+=("$path")
+        fi
         ;;
       *U|U*|AA|DD)
         continue
         ;;
       *)
-        MERGE_HEALTH_TRACKED_CHANGE_FILES+=("$path")
+        if merge_health_is_operational_path "$path"; then
+          MERGE_HEALTH_OPERATIONAL_CHANGE_FILES+=("$path")
+        elif merge_health_is_dirty_submodule_worktree "$repo_root" "$path"; then
+          MERGE_HEALTH_SUBMODULE_DIRTY_FILES+=("$path")
+        else
+          MERGE_HEALTH_TRACKED_CHANGE_FILES+=("$path")
+        fi
         ;;
     esac
   done < <(git -C "$repo_root" status --porcelain 2>/dev/null || true)
 
   MERGE_HEALTH_TRACKED_CHANGE_COUNT="${#MERGE_HEALTH_TRACKED_CHANGE_FILES[@]}"
   MERGE_HEALTH_UNTRACKED_COUNT="${#MERGE_HEALTH_UNTRACKED_FILES[@]}"
+  MERGE_HEALTH_OPERATIONAL_CHANGE_COUNT="${#MERGE_HEALTH_OPERATIONAL_CHANGE_FILES[@]}"
+  MERGE_HEALTH_SUBMODULE_DIRTY_COUNT="${#MERGE_HEALTH_SUBMODULE_DIRTY_FILES[@]}"
   if [ "$MERGE_HEALTH_TRACKED_CHANGE_COUNT" -gt 0 ]; then
     MERGE_HEALTH_HAS_ISSUES=1
   fi
 
   if [ "$MERGE_HEALTH_HAS_ISSUES" -eq 0 ]; then
-    MERGE_HEALTH_SUMMARY="no active merge conflicts, unfinished integration state, or dirty tracked changes"
+    MERGE_HEALTH_SUMMARY="no active merge conflicts, unfinished integration state, or blocking tracked changes"
     return 0
   fi
 
@@ -110,9 +152,6 @@ merge_health_scan() {
   if [ "$MERGE_HEALTH_TRACKED_CHANGE_COUNT" -gt 0 ]; then
     summary_parts+=("${MERGE_HEALTH_TRACKED_CHANGE_COUNT} tracked local change(s)")
   fi
-  if [ "$MERGE_HEALTH_UNTRACKED_COUNT" -gt 0 ]; then
-    summary_parts+=("${MERGE_HEALTH_UNTRACKED_COUNT} untracked file(s)")
-  fi
 
   local joined=""
   local part
@@ -123,6 +162,36 @@ merge_health_scan() {
     joined+="$part"
   done
   MERGE_HEALTH_SUMMARY="$joined"
+}
+
+merge_health_note_lines() {
+  local max_lines="${1:-10}"
+  local emitted=0
+  local path
+
+  if [ "$MERGE_HEALTH_OPERATIONAL_CHANGE_COUNT" -gt 0 ]; then
+    echo "Ignored operational tracked changes: $MERGE_HEALTH_OPERATIONAL_CHANGE_COUNT"
+    emitted=$((emitted + 1))
+    for path in "${MERGE_HEALTH_OPERATIONAL_CHANGE_FILES[@]}"; do
+      if [ "$emitted" -ge "$max_lines" ]; then
+        break
+      fi
+      echo "Operational change: $path"
+      emitted=$((emitted + 1))
+    done
+  fi
+
+  if [ "$MERGE_HEALTH_SUBMODULE_DIRTY_COUNT" -gt 0 ] && [ "$emitted" -lt "$max_lines" ]; then
+    echo "Dirty submodule worktrees tracked outside HQ merge health: $MERGE_HEALTH_SUBMODULE_DIRTY_COUNT"
+    emitted=$((emitted + 1))
+    for path in "${MERGE_HEALTH_SUBMODULE_DIRTY_FILES[@]}"; do
+      if [ "$emitted" -ge "$max_lines" ]; then
+        break
+      fi
+      echo "Dirty submodule worktree: $path"
+      emitted=$((emitted + 1))
+    done
+  fi
 }
 
 merge_health_issue_lines() {

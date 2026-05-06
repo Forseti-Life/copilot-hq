@@ -319,7 +319,7 @@ class ConditionManager {
    *   'conscious'    => bool,
    * ]
    */
-  public function processDying(int $participant_id, int $encounter_id): array {
+  public function processDying(int $participant_id, int $encounter_id, int $dc_adjustment = 0): array {
     $conditions = $this->getActiveConditions($participant_id, $encounter_id);
     $dying_row = NULL;
     foreach ($conditions as $row) {
@@ -337,7 +337,8 @@ class ConditionManager {
     $roll = mt_rand(1, 20);
 
     // REQ 2158: Recovery flat check DC = 10 + dying value (not hardcoded 10).
-    $dc = 10 + $dying_before;
+    // Feat adjustments (e.g. Mountain's Stoutness) can modify base DC.
+    $dc = 10 + $dying_before + $dc_adjustment;
 
     // Standard PF2e degree-of-success for flat checks:
     // nat 20 OR roll ≥ dc+10 = crit success

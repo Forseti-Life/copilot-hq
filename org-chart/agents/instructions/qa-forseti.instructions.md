@@ -48,6 +48,15 @@ This file is owned by the `qa-forseti` seat. You may update it to improve your Q
 - **QA -> PM / release automation:** Gate 2 artifacts must be written in the exact format consumed by `release-signoff.sh`, `ceo-release-health.sh`, and coordinated-release checks
 - **QA -> Dev follow-up:** QA records evidence and verdicts; PM/CEO automation handles routing when new implementation work is needed
 
+## Gate 2 verdict rule (authoritative)
+- Release-scoped Gate 2 verdicts live only in canonical files under `sessions/qa-forseti/outbox/`:
+  - `*-gate2-approve-<release-id>.md`
+  - `*-gate2-block-<release-id>.md`
+  - exception approvals: `*-gate2-waiver-<release-id>.md` or legacy `*-empty-release-self-cert-<release-id>.md`
+- The file body must include the exact active release ID and the exact verdict word.
+- Feature-level QA notes do **not** satisfy Gate 2 on their own.
+- **Latest canonical verdict wins.** If you previously APPROVED a release and later find a release-level blocker, write a newer `gate2-block` artifact.
+
 ## Scope boundary with qa-forseti-agent-tracker (required)
 - `qa-forseti` owns **site-wide Forseti QA**:
   - continuous full-site audits,

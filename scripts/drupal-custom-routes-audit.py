@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import time
 import socket
 import urllib.parse
@@ -96,8 +97,45 @@ def _substitute_placeholders(path_template: str) -> str:
     return re.sub(r"\{([^}]+)\}", repl, path_template)
 
 
-def _iter_routing_files(custom_modules_dir: Path) -> list[Path]:
-    return sorted(custom_modules_dir.rglob("*.routing.yml"))
+def _enabled_custom_modules(drupal_web_root: Path) -> set[str] | None:
+    custom_modules_dir = drupal_web_root / "modules" / "custom"
+    site_root = drupal_web_root.parent
+    drush_bin = site_root / "vendor" / "bin" / "drush"
+    if not custom_modules_dir.exists() or not drush_bin.exists():
+        return None
+
+    custom_modules = {path.name for path in custom_modules_dir.iterdir() if path.is_dir()}
+    if not custom_modules:
+        return set()
+
+    try:
+        result = subprocess.run(
+            [
+                str(drush_bin),
+                "pml",
+                "--status=enabled",
+                "--type=module",
+                "--no-core",
+                "--format=json",
+            ],
+            cwd=site_root,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=30,
+        )
+        modules = json.loads(result.stdout or "{}")
+    except Exception:
+        return None
+
+    return {name for name in modules.keys() if name in custom_modules}
+
+
+def _iter_routing_files(custom_modules_dir: Path, enabled_modules: set[str] | None = None) -> list[Path]:
+    routing_files = sorted(custom_modules_dir.rglob("*.routing.yml"))
+    if enabled_modules is None:
+        return routing_files
+    return [path for path in routing_files if path.parent.name in enabled_modules]
 
 
 def _parse_routes_from_file(path: Path) -> list[tuple[str, str, list[str]]]:
@@ -155,7 +193,8 @@ def audit_custom_routes(
         extra_headers or [],
     )
 
-    routing_files = _iter_routing_files(custom_dir)
+    enabled_modules = _enabled_custom_modules(drupal_web_root)
+    routing_files = _iter_routing_files(custom_dir, enabled_modules=enabled_modules)
     started = time.time()
     for rf in routing_files:
         if max_seconds is not None and (time.time() - started) >= max_seconds:

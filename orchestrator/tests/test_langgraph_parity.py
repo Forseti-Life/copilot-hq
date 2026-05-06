@@ -22,8 +22,6 @@ class TestLangGraphParity(unittest.TestCase):
                     "log": [
                         {"step": "consume_replies", "rc": 0},
                         {"step": "dispatch_commands", "dispatched": []},
-                        {"step": "release_cycle", "teams": []},
-                        {"step": "coordinated_push", "status": "noop"},
                         {"step": "pick_agents", "selected": ["pm-forseti"]},
                         {"step": "exec_agents", "ran": [{"agent": "pm-forseti", "rc": 0}]},
                         {"step": "health_check", "blocked_count": 0, "idle_with_inbox": 0, "remediated": []},
@@ -58,8 +56,6 @@ class TestLangGraphParity(unittest.TestCase):
                     "log": [
                         {"step": "consume_replies", "rc": 0},
                         {"step": "dispatch_commands", "dispatched": []},
-                        {"step": "release_cycle", "teams": []},
-                        {"step": "coordinated_push", "status": "noop"},
                         {"step": "pick_agents", "selected": ["pm-forseti"]},
                         {"step": "exec_agents", "ran": [{"agent": "qa-forseti", "rc": 0}]},
                         {"step": "health_check", "blocked_count": 0, "idle_with_inbox": 0, "remediated": []},

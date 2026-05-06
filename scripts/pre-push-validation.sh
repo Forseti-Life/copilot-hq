@@ -7,6 +7,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 source scripts/lib/escalations.sh
+source scripts/lib/merge-health.sh
 
 # Colors for output
 RED='\033[0;31m'
@@ -23,15 +24,17 @@ failures=0
 # Check 1: Merge health (no uncommitted changes)
 echo ""
 echo "Check 1: Merge Health"
-if [ -n "$(git status --short 2>/dev/null || true)" ]; then
-    echo -e "${RED}✗ FAIL${NC} Uncommitted changes detected:"
-    git status --short | head -10
-    if [ $(git status --short | wc -l) -gt 10 ]; then
-        echo "  ... and $(( $(git status --short | wc -l) - 10 )) more"
-    fi
+merge_health_scan "."
+if [ "$MERGE_HEALTH_HAS_ISSUES" -eq 1 ]; then
+    echo -e "${RED}✗ FAIL${NC} Blocking merge/integration changes detected:"
+    merge_health_issue_lines 10 | sed 's/^/  /'
     failures=$((failures + 1))
 else
-    echo -e "${GREEN}✓ PASS${NC} Merge health clean"
+    echo -e "${GREEN}✓ PASS${NC} No blocking merge/integration changes"
+    while IFS= read -r detail; do
+        [ -n "$detail" ] || continue
+        echo "  note: $detail"
+    done < <(merge_health_note_lines 10)
 fi
 
 # Check 2: No git index lock

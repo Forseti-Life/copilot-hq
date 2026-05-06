@@ -2809,6 +2809,60 @@ function dungeoncrawler_content_install() {
     \Drupal::logger('dungeoncrawler_content')->error('Ancestry node seeding during install failed: @error', ['@error' => $e->getMessage()]);
   }
 
+  // Seed 12 core character class nodes on fresh installs.
+  try {
+    $core_classes = ['alchemist', 'barbarian', 'bard', 'champion', 'cleric', 'druid',
+      'fighter', 'monk', 'ranger', 'rogue', 'sorcerer', 'wizard'];
+    $all_classes = \Drupal\dungeoncrawler_content\Service\CharacterManager::CLASSES;
+    foreach ($core_classes as $class_id) {
+      if (!isset($all_classes[$class_id])) {
+        continue;
+      }
+      $existing = \Drupal::entityQuery('node')
+        ->condition('type', 'character_class')
+        ->condition('title', $class_id)
+        ->accessCheck(FALSE)
+        ->execute();
+      if (!empty($existing)) {
+        continue;
+      }
+      $class_data = $all_classes[$class_id];
+      
+      // Serialize proficiencies and class features as JSON.
+      $proficiencies = $class_data['proficiencies'] ?? [];
+      $proficiencies_json = !empty($proficiencies) ? json_encode($proficiencies, JSON_PRETTY_PRINT) : '';
+
+      // Extract class features (everything except basic attributes).
+      $class_features = [];
+      $exclude_keys = ['id', 'name', 'description', 'hp', 'key_ability', 'proficiencies', 'armor_proficiency', 'weapons', 'skills', 'trained_skills', 'fixed_skills', 'spellcasting'];
+      foreach ($class_data as $key => $value) {
+        if (!in_array($key, $exclude_keys)) {
+          $class_features[$key] = $value;
+        }
+      }
+      $features_json = !empty($class_features) ? json_encode($class_features, JSON_PRETTY_PRINT) : '';
+
+      $node = \Drupal\node\Entity\Node::create([
+        'type'   => 'character_class',
+        'title'  => $class_id,
+        'status' => 1,
+        'uid'    => 1,
+      ]);
+      $node->set('field_class_name', $class_data['name'] ?? ucfirst($class_id));
+      $node->set('field_class_description', $class_data['description'] ?? '');
+      $node->set('field_class_key_ability', $class_data['key_ability'] ?? 'Strength');
+      $node->set('field_class_hp_per_level', (int) ($class_data['hp'] ?? 8));
+      $node->set('field_class_proficiencies', $proficiencies_json);
+      $node->set('field_class_features', $features_json);
+      $node->set('field_class_trained_skills', (int) ($class_data['trained_skills'] ?? 0));
+      $node->save();
+    }
+    \Drupal::logger('dungeoncrawler_content')->notice('hook_install: seeded core character class nodes.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('dungeoncrawler_content')->error('Character class node seeding during install failed: @error', ['@error' => $e->getMessage()]);
+  }
+
   // Seed all content from JSON files (items, creatures, etc.).
   try {
     /** @var \Drupal\dungeoncrawler_content\Service\ContentRegistry $registry */
@@ -2830,6 +2884,15 @@ function dungeoncrawler_content_install() {
   }
   catch (\Exception $e) {
     \Drupal::logger('dungeoncrawler_content')->error('Content seeder during install failed: @error', ['@error' => $e->getMessage()]);
+  }
+
+  // Create GM Running Guide operational tables on fresh install.
+  try {
+    dungeoncrawler_content_update_10046();
+    \Drupal::logger('dungeoncrawler_content')->notice('hook_install: created GM running guide tables.');
+  }
+  catch (\Exception $e) {
+    \Drupal::logger('dungeoncrawler_content')->error('GM running guide tables creation during install failed: @error', ['@error' => $e->getMessage()]);
   }
 }
 
@@ -5718,7 +5781,7 @@ function dungeoncrawler_content_update_10046() {
         'section'              => ['type' => 'varchar', 'length' => 64,   'not null' => TRUE, 'default' => ''],
         'title'                => ['type' => 'varchar', 'length' => 255,  'not null' => TRUE, 'default' => ''],
         'content_markdown'     => ['type' => 'text',   'size' => 'big',  'not null' => TRUE],
-        'tags_json'            => ['type' => 'text',   'size' => 'normal','not null' => TRUE, 'default' => '[]'],
+        'tags_json'            => ['type' => 'text',   'size' => 'normal','not null' => TRUE],
         'structured_data_json' => ['type' => 'text',   'size' => 'big'],
         'source_book'          => ['type' => 'varchar', 'length' => 32,   'not null' => TRUE, 'default' => 'gmg'],
         'created'              => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
@@ -5738,10 +5801,10 @@ function dungeoncrawler_content_update_10046() {
       'fields' => [
         'id'                   => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
         'campaign_id'          => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
-        'pc_links_json'        => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'character_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'player_prefs_json'    => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'adventure_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'pc_links_json'        => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'character_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'player_prefs_json'    => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'adventure_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'created'              => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'updated'              => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
       ],
@@ -5756,7 +5819,7 @@ function dungeoncrawler_content_update_10046() {
       'fields' => [
         'id'                 => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
         'campaign_id'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
-        'pc_snapshots_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'pc_snapshots_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'refreshed_at'       => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
       ],
       'primary key' => ['id'],
@@ -5819,10 +5882,10 @@ function dungeoncrawler_content_update_10046() {
         'lethality_level'     => ['type' => 'varchar', 'length' => 16,   'not null' => TRUE, 'default' => 'heroic'],
         'tpk_handling'        => ['type' => 'varchar', 'length' => 32,   'not null' => TRUE, 'default' => 'pause_and_discuss'],
         'xcard_enabled'       => ['type' => 'int',    'size' => 'tiny',   'not null' => TRUE, 'default' => 1],
-        'lines_json'          => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'veils_json'          => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'lines_json'          => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'veils_json'          => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'governance_policy'   => ['type' => 'text',   'size' => 'big'],
-        'zero_tolerance_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'zero_tolerance_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'created'             => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'updated'             => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
       ],
@@ -5853,8 +5916,8 @@ function dungeoncrawler_content_update_10046() {
       'fields' => [
         'id'             => ['type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE],
         'campaign_id'    => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
-        'allowlist_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'denylist_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'allowlist_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'denylist_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'organized_play' => ['type' => 'int',    'size' => 'tiny',   'not null' => TRUE, 'default' => 0],
         'created'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'updated'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
@@ -5873,9 +5936,9 @@ function dungeoncrawler_content_update_10046() {
         'encounter_id'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'purpose'             => ['type' => 'text',   'size' => 'big'],
         'adversary_rationale' => ['type' => 'text',   'size' => 'big'],
-        'location_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'location_hooks_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'setup_profile'       => ['type' => 'varchar', 'length' => 32],
-        'dynamic_twists_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'dynamic_twists_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'emotional_beat'      => ['type' => 'varchar', 'length' => 128,  'not null' => TRUE, 'default' => ''],
         'created'             => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'updated'             => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
@@ -5893,7 +5956,7 @@ function dungeoncrawler_content_update_10046() {
         'campaign_id'    => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'session_id'     => ['type' => 'int',    'unsigned' => TRUE],
         'scene_type'     => ['type' => 'varchar', 'length' => 32,   'not null' => TRUE, 'default' => 'combat'],
-        'pc_hooks_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'pc_hooks_json'  => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'spotlight_pc'   => ['type' => 'int',    'unsigned' => TRUE],
         'emotional_beat' => ['type' => 'varchar', 'length' => 128,  'not null' => TRUE, 'default' => ''],
         'created'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
@@ -5916,8 +5979,8 @@ function dungeoncrawler_content_update_10046() {
         'level_ceiling'        => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 20],
         'downtime_depth'       => ['type' => 'varchar', 'length' => 16,   'not null' => TRUE, 'default' => 'medium'],
         'collaboration_mode'   => ['type' => 'varchar', 'length' => 32,   'not null' => TRUE, 'default' => 'gm_led'],
-        'touchstones_json'     => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
-        'character_goals_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE, 'default' => '[]'],
+        'touchstones_json'     => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
+        'character_goals_json' => ['type' => 'text',   'size' => 'big',   'not null' => TRUE],
         'created'              => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
         'updated'              => ['type' => 'int',    'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0],
       ],
@@ -5952,7 +6015,7 @@ function dungeoncrawler_content_update_10047() {
         'campaign_id'    => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
         'subsystem_type' => ['type' => 'varchar',  'length' => 32,      'not null' => TRUE, 'default' => ''],
         'status'         => ['type' => 'varchar',  'length' => 16,      'not null' => TRUE, 'default' => 'active'],
-        'progress_state' => ['type' => 'text',     'size' => 'big',     'not null' => TRUE, 'default' => '{}'],
+        'progress_state' => ['type' => 'text',     'size' => 'big',     'not null' => TRUE],
         'initiated_by'   => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
         'created'        => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
         'updated'        => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
@@ -5974,7 +6037,7 @@ function dungeoncrawler_content_update_10047() {
         'campaign_id' => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
         'rule_name'   => ['type' => 'varchar',  'length' => 64,      'not null' => TRUE, 'default' => ''],
         'enabled'     => ['type' => 'int',      'size' => 'tiny',    'not null' => TRUE, 'default' => 0],
-        'config_json' => ['type' => 'text',     'size' => 'big',     'not null' => TRUE, 'default' => '{}'],
+        'config_json' => ['type' => 'text',     'size' => 'big',     'not null' => TRUE],
         'created'     => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
         'updated'     => ['type' => 'int',      'unsigned' => TRUE,  'not null' => TRUE, 'default' => 0],
       ],
