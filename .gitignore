@@ -51,23 +51,16 @@ llm/.venv/
 .*-loop.pid
 .orchestrator-loop.pid
 .dev-sync-loop.pid
-inbox/responses/.ceo-health-last-queue
-inbox/responses/langgraph-*.json
-inbox/responses/langgraph-*.jsonl
-copilot-hq/inbox/responses/langgraph-*.json
-copilot-hq/inbox/responses/langgraph-*.jsonl
 
 # Python cache
 llm/__pycache__/
 llm/lib/__pycache__/
 
-# 5) Session audit trail — inbox/outbox/artifacts are tracked (org audit trail).
-# Ignore only volatile runtime pointers (symlinks, latest markers).
-# Note: the blanket sessions/** ignore was removed 2026-04-06 because sessions/
-# are the org's primary audit trail and must be fully tracked in version control.
-sessions/**/artifacts/active-inbox-item.json
-sessions/**/artifacts/**/latest
-sessions/**/artifacts/**/latest.*
+# Session and inbox working state
+sessions/
+inbox/
+copilot-hq/sessions/
+copilot-hq/inbox/
 
 # Standalone product/module checkouts that are intentionally not tracked by copilot-hq
 /ai-conversation/

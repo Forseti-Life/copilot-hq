@@ -1,1 +1,0 @@
-Fresh Gate 2 rerun for Dungeoncrawler release-u after prior QA closeout was blocked by missing/incorrect feature list injection. This packet inlines the authoritative dc-* feature IDs directly in the command.
