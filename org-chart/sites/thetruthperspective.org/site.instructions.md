@@ -11,6 +11,7 @@ All seats with `website_scope: ["thetruthperspective.org"]`.
 - Production `BASE_URL`: TBD (fill in when unpausing/activating)
 
 ## Code roots (on this host)
+- Drupal modules checkout: `/var/www/html/drupal/modules`
 - Drupal site root: TBD
 - Drupal web root: TBD
 

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 uuid: bb11d26e-a038-4243-a649-5d23a8008393
-=======
-uuid: 3900f09f-e40b-4a7c-948e-d84b7b69e30c
->>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies: {  }
@@ -10,15 +6,9 @@ _core:
   default_config_hash: B6mQr6j7ZcqZB14S8ytJEXCYzOQ1mcOW9-oWYbtkbJc
 id: daily_schedule
 label: 'Daily Schedule'
-<<<<<<< HEAD
 enabled: true
 keep: 20
 period: 86400
-=======
-enabled: false
-keep: ''
-period: null
->>>>>>> reconcile/copilot-hq-local-priority-main
 cron: null
 source_id: default_db
 destination_id: private_files

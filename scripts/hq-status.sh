@@ -165,7 +165,7 @@ legacy_agent_exec_status ".agent-exec-loop.pid"
 expected_stopped_status "CEO ops" ".ceo-ops-loop.pid" "legacy; orchestrator-managed"
 expected_stopped_status "CEO health" ".ceo-health-loop.pid" "legacy; orchestrator-managed"
 expected_stopped_status "Publisher loop" ".publish-forseti-agent-tracker-loop.pid" "handled by orchestrator tick"
-pid_status "Checkpoint" ".auto-checkpoint-loop.pid"
+expected_stopped_status "Checkpoint" ".auto-checkpoint-loop.pid" "disabled by policy"
 expected_stopped_status "Improve round" ".improvement-round-loop.pid" "disabled legacy loop"
 
 echo

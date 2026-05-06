@@ -57,7 +57,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
    * Resolve a path under COPILOT_HQ_ROOT.
    */
   private function hqPath(string $relative): string {
-    $root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     return $root . '/' . ltrim($relative, '/');
   }
 
@@ -75,7 +75,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
     return [
       '#markup' => '<div role="alert" style="background:#fff3cd;border:1px solid #ffc107;padding:8px 12px;margin-bottom:12px;border-radius:4px;">'
         . '<strong>' . $this->t('Warning') . ':</strong> '
-        . $this->t('The COPILOT_HQ_ROOT environment variable is not set. Using default path: /home/ubuntu/forseti.life/copilot-hq')
+        . $this->t('The COPILOT_HQ_ROOT environment variable is not set. Using default path: /home/ubuntu/forseti.life')
         . '</div>',
     ];
   }
@@ -762,7 +762,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
   public function admin(): array {
     ['tick' => $tick, 'parity' => $parity] = $this->loadTelemetry();
 
-    $hq_root    = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root    = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $ticks_path = $this->hqPath(self::TICKS_RELATIVE);
     $par_path   = $this->hqPath(self::PARITY_RELATIVE);
     $dry_run    = isset($tick['dry_run']) ? (bool) $tick['dry_run'] : NULL;
@@ -780,7 +780,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
     }
 
     $config_rows = [
-      [$this->t('COPILOT_HQ_ROOT'), $hq_root, $this->t('Runtime env var (falls back to /home/ubuntu/forseti.life/copilot-hq)')],
+      [$this->t('COPILOT_HQ_ROOT'), $hq_root, $this->t('Runtime env var (falls back to /home/ubuntu/forseti.life)')],
       [$this->t('Provider'), $provider, $this->t('Agent execution provider')],
       [$this->t('Agent cap'), $agent_cap !== NULL ? (string) $agent_cap : '—', $this->t('Max agents executed per tick')],
       [$this->t('Mode'), $dry_run === NULL ? '—' : ($dry_run ? 'dry-run' : 'live'), $this->t('dry_run=true means no writes')],
@@ -808,7 +808,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
         'Environment variable COPILOT_HQ_ROOT + filesystem stat of langgraph-ticks.jsonl, langgraph-parity-latest.json, FEATURE_PROGRESS.md.'
       ),
       'terms' => $this->renderKeyTerms([
-        'COPILOT_HQ_ROOT'  => 'Environment variable pointing to the copilot-hq working directory. All telemetry file paths resolve relative to this root. Falls back to /home/ubuntu/forseti.life/copilot-hq.',
+        'COPILOT_HQ_ROOT'  => 'Environment variable pointing to the copilot-hq working directory. All telemetry file paths resolve relative to this root. Falls back to /home/ubuntu/forseti.life.',
         'dry_run'          => 'When true, the orchestrator runs all logic but skips external writes. No GitHub pushes, no file writes outside the HQ repo.',
         'publish_enabled'  => 'Controls whether the orchestrator runs the publish step, which writes agent tracker telemetry to the Drupal database. When false, Drupal UI shows stale agent data.',
         'agent_cap'        => 'Max agents dispatched per tick. Raised temporarily for faster throughput during a release; lowered to reduce API usage.',
@@ -2096,7 +2096,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
   private function subAdminConfig(array $sub, array $back): array {
     ['tick' => $tick] = $this->loadTelemetry();
     $rows = [
-      [$this->t('COPILOT_HQ_ROOT'), rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/')],
+      [$this->t('COPILOT_HQ_ROOT'), rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/')],
       [$this->t('Provider'), (string) ($tick['provider'] ?? '—')],
       [$this->t('Agent cap'), isset($tick['agent_cap']) ? (string) $tick['agent_cap'] : '—'],
       [$this->t('Mode'), isset($tick['dry_run']) ? ((bool) $tick['dry_run'] ? 'dry-run' : 'live') : '—'],

@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 uuid: 7219f405-3958-45b2-b063-505f035b8c38
-=======
-uuid: 81393677-0cd2-4a07-9ba7-8b9b6f8c2b27
->>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
   config:
     - filter.format.basic_html
-<<<<<<< HEAD
     - node.type.ai_conversation
     - node.type.evaluated_entity
   module:
@@ -20,28 +15,17 @@ dependencies:
     - group
     - job_hunter
     - node
-=======
-  module:
-    - comment
-    - file
-    - filter
->>>>>>> reconcile/copilot-hq-local-priority-main
     - search
     - shortcut
     - system
 _core:
-<<<<<<< HEAD
   default_config_hash: cFrlqjtkTfvY3RGccjJkPf1SGIfJ942IrxTLWAO4mgA
-=======
-  default_config_hash: hcfESiA8tr3D1muRk2KF7tbcun16ZJlG1R5SzKGed6g
->>>>>>> reconcile/copilot-hq-local-priority-main
 id: authenticated
 label: 'Authenticated user'
 weight: 1
 is_admin: false
 permissions:
   - 'access comments'
-<<<<<<< HEAD
   - 'access company research'
   - 'access content'
   - 'access job hunter'
@@ -62,12 +46,3 @@ permissions:
   - 'use ai conversation'
   - 'use text format basic_html'
   - 'view own unpublished content'
-=======
-  - 'access content'
-  - 'access shortcuts'
-  - 'delete own files'
-  - 'post comments'
-  - 'search content'
-  - 'skip comment approval'
-  - 'use text format basic_html'
->>>>>>> reconcile/copilot-hq-local-priority-main

@@ -5,6 +5,9 @@ Authoritative operating rules: `org-chart/sites/thetruthperspective.org/site.ins
 ## Scope
 All work items for **thetruthperspective.org** should remain logically separated from other websites.
 
+## Registered Repository Target
+- `keithaumiller/thetruthperspective` → `/var/www/html/drupal/modules`
+
 ## Module Ownership
 See:
 - `org-chart/ownership/module-ownership.yaml`

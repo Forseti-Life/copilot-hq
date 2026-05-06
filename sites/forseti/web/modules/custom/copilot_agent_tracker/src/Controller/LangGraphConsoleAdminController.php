@@ -95,7 +95,7 @@ final class LangGraphConsoleAdminController extends ControllerBase {
    * Permissions & Team Assignment page.
    */
   public function permissions(): array {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
 
     $permission_matrix = [
       'header' => ['Role', 'Home', 'Build', 'Test', 'Run', 'Observe', 'Release', 'Admin'],
@@ -182,7 +182,7 @@ final class LangGraphConsoleAdminController extends ControllerBase {
    */
   public function auditLog(): array {
     $db = Database::getConnection();
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $request = \Drupal::request();
     $query_params = $request->query->all();
 
@@ -341,7 +341,7 @@ final class LangGraphConsoleAdminController extends ControllerBase {
    * Health & Status Dashboard page.
    */
   public function health(): array {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $health_data = $this->loadHealthData($hq_root);
 
     $orch_status_color = 'red';
@@ -496,7 +496,7 @@ final class LangGraphConsoleAdminController extends ControllerBase {
    * Health JSON endpoint (for AJAX refresh).
    */
   public function healthJson(): JsonResponse {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $health_data = $this->loadHealthData($hq_root);
     return new JsonResponse($health_data);
   }

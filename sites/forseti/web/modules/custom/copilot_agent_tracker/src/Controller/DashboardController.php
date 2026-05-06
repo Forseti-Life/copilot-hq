@@ -38,6 +38,7 @@ final class DashboardController extends ControllerBase {
   const LANGGRAPH_PARITY_RELATIVE = 'inbox/responses/langgraph-parity-latest.json';
   const LANGGRAPH_FEATURE_PROGRESS_RELATIVE = 'dashboards/FEATURE_PROGRESS.md';
   const RELEASE_CYCLE_CONTROL_FILE_DEFAULT = '/var/tmp/copilot-sessions-hq/release-cycle-control.json';
+  const HQ_ROOT_DEFAULT = '/home/ubuntu/forseti.life';
   const JOBHUNTER_CIO_TARGET_EMAIL = 'keith.aumiller@stlouisintegration.com';
 
   public function __construct(
@@ -454,7 +455,7 @@ final class DashboardController extends ControllerBase {
    * Builds LangGraph troubleshooting panels from HQ runtime artifacts.
    */
   private function buildLanggraphTroubleshootingPanels(): array {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: self::HQ_ROOT_DEFAULT), '/');
 
     $ticks_path = $hq_root . '/inbox/responses/langgraph-ticks.jsonl';
     $parity_path = $hq_root . '/inbox/responses/langgraph-parity-latest.json';
@@ -1154,7 +1155,7 @@ final class DashboardController extends ControllerBase {
    * Returns absolute path to a HQ repo file, resolved from COPILOT_HQ_ROOT env.
    */
   private function langgraphPath(string $relative): string {
-    $root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: self::HQ_ROOT_DEFAULT), '/');
     return $root . '/' . ltrim($relative, '/');
   }
 
@@ -1185,7 +1186,7 @@ final class DashboardController extends ControllerBase {
     $state_file = (string) (getenv('RELEASE_CYCLE_CONTROL_FILE') ?: self::RELEASE_CYCLE_CONTROL_FILE_DEFAULT);
     $state = $this->readJsonFile($state_file);
     if (empty($state)) {
-      $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+      $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: self::HQ_ROOT_DEFAULT), '/');
       $state = $this->readJsonFile($hq_root . '/tmp/release-cycle-control.json');
     }
 
@@ -3287,7 +3288,7 @@ final class DashboardController extends ControllerBase {
     }
 
     // --- 2. Scan filesystem for PM release artifacts ---
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: self::HQ_ROOT_DEFAULT), '/');
     $fs_entries = [];
 
     // 2a. Detailed change-list files (more complete; process first so release-notes don't override)

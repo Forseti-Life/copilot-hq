@@ -31,7 +31,7 @@ This module acts as the central content hub for Forseti.Life, providing:
 - `/roadmap` - Portfolio roadmap synced from HQ `dashboards/PROJECTS.md`
 - `/roadmap/{project_id}` - Individual project roadmap detail page
 - `/safety-map` - Interactive crime safety map
-- `/talk-with-forseti_content` - AI conversation interface
+- `/talk-with-forseti` - AI conversation interface
 - `/about` - About Forseti platform
 - `/how-it-works` - Platform explanation
 - `/community` - Community engagement page

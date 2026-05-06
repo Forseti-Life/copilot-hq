@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo_disabled() {
+  echo "disabled"
+}
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )/.." && pwd)"
 cd "$ROOT_DIR"
 
@@ -25,23 +29,19 @@ is_running() {
 
 case "$cmd" in
   start)
-    if is_running; then
-      echo "Already running (pid $(read_pid))"
-      exit 0
+    pid="$(read_pid)"
+    if [ -n "$pid" ] && ps -p "$pid" >/dev/null 2>&1; then
+      kill "$pid" >/dev/null 2>&1 || true
+      sleep 0.2
+      ps -p "$pid" >/dev/null 2>&1 && kill -9 "$pid" >/dev/null 2>&1 || true
     fi
-    setsid bash -c "'$0' run '$interval'" >/dev/null 2>&1 &
-    pid=$!
-    echo "$pid" > "$PIDFILE"
-    echo "Started (pid $pid)"
-    echo "To stop: send SIGTERM to pid $pid"
+    rm -f "$PIDFILE"
+    echo_disabled
+    exit 0
     ;;
 
   status)
-    if is_running; then
-      echo "running (pid $(read_pid))"
-    else
-      echo "not running"
-    fi
+    echo_disabled
     ;;
 
   stop)
@@ -53,22 +53,17 @@ case "$cmd" in
       echo "Stopped (pid $pid)"
       exit 0
     fi
-    echo "Not running"
+    rm -f "$PIDFILE"
+    echo_disabled
     ;;
 
   run)
-    echo $$ > "$PIDFILE"
-    while true; do
-      if [ "$(./scripts/is-org-enabled.sh 2>/dev/null || echo false)" != "true" ]; then
-        sleep "$interval"
-        continue
-      fi
-      ts="$(date -Iseconds)"
-      daylog="$LOGDIR/auto-checkpoint-$(date +%Y%m%d).log"
-      out=$(./scripts/auto-checkpoint.sh 2>&1 || true)
-      echo "[$ts] $out" | tee -a "$daylog" > "$LATEST"
-      sleep "$interval"
-    done
+    rm -f "$PIDFILE"
+    ts="$(date -Iseconds)"
+    daylog="$LOGDIR/auto-checkpoint-$(date +%Y%m%d).log"
+    echo "[$ts] DISABLED: auto-checkpoint loop is permanently turned off" | tee -a "$daylog" > "$LATEST"
+    echo_disabled
+    exit 0
     ;;
 
   *)

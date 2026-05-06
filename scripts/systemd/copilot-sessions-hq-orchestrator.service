@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/home/ubuntu/forseti.life/copilot-hq
+WorkingDirectory=/home/ubuntu/forseti.life
 
 Environment=PYTHONUNBUFFERED=1
 

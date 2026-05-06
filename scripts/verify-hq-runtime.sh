@@ -76,10 +76,7 @@ if [ "$service_active" -eq 0 ] && [ "$loop_active" -eq 0 ]; then
 fi
 
 pass "publisher handled by orchestrator tick"
-
-checkpoint_status="$(./scripts/auto-checkpoint-loop.sh status 2>/dev/null || echo not-running)"
-[[ "$checkpoint_status" == running* ]] || fail "auto-checkpoint loop not running"
-pass "auto-checkpoint loop active"
+pass "auto-checkpoint automation disabled by policy"
 
 release_ctrl=""
 if [ -f /var/tmp/copilot-sessions-hq/release-cycle-control.json ]; then

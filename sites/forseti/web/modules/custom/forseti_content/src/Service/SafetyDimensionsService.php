@@ -65,7 +65,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Building on physical safety - access to essential resources like housing, food, and financial stability that energize daily life.'),
         'integration_note' => [
           'message' => $this->t('Forseti can learn what matters most to you about your neighborhood\'s vitality.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [
@@ -86,7 +86,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Social connections and community cohesion - the networks and relationships that create belonging and mutual support.'),
         'integration_note' => [
           'message' => $this->t('Forseti can help you discover community connections.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [
@@ -108,7 +108,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Freedom of movement, privacy, and justice - the ability to make choices and exercise rights without undue constraint.'),
         'integration_note' => [
           'message' => $this->t('Forseti can explore what freedom means in your community context.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [
@@ -129,7 +129,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Education, skills, and economic opportunity - the resources and systems that enable personal and collective growth.'),
         'integration_note' => [
           'message' => $this->t('Forseti can identify opportunities for skill development in your area.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [
@@ -150,7 +150,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Civic engagement and contribution - the ability to make meaningful contributions to community well-being and feel valued.'),
         'integration_note' => [
           'message' => $this->t('Forseti can suggest ways to contribute to community safety.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [
@@ -171,7 +171,7 @@ class SafetyDimensionsService implements SafetyDimensionsServiceInterface {
         'description' => $this->t('Comprehensive well-being - mental health, physical health, and community identity that create a sense of wholeness and fulfillment.'),
         'integration_note' => [
           'message' => $this->t('Forseti can discuss holistic community health with you.'),
-          'link' => '/talk-with-forseti_content',
+          'link' => '/talk-with-forseti',
           'link_text' => $this->t('Talk with Forseti →'),
         ],
         'factors' => [

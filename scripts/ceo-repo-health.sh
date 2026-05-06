@@ -168,7 +168,7 @@ for base, dirs, files in os.walk(scan_root_str, topdown=True, followlinks=False)
     ]
     if ".git" in dirs or ".git" in files:
         found_repos.add(base)
-        dirs[:] = []
+        dirs[:] = [d for d in dirs if d != ".git"]
 
 rows = []
 for repo_str in sorted(found_repos):

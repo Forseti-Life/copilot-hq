@@ -33,7 +33,6 @@ org_enabled() {
 }
 
 start_loops() {
-  local auto_checkpoint_interval="${HQ_AUTO_CHECKPOINT_INTERVAL_SECONDS:-600}"
   if [ "$require_enabled" -eq 1 ] && [ "$force" -ne 1 ] && ! org_enabled; then
     echo "Org automation disabled; refusing to start loops (use --force to override)." >&2
     exit 1
@@ -49,7 +48,7 @@ start_loops() {
   else
     ./scripts/site-audit-loop.sh stop >/dev/null 2>&1 || true
   fi
-  ./scripts/auto-checkpoint-loop.sh start "$auto_checkpoint_interval" >/dev/null 2>&1 || true
+  ./scripts/auto-checkpoint-loop.sh stop >/dev/null 2>&1 || true
 }
 
 stop_loops() {
@@ -71,8 +70,7 @@ status() {
 
   for s in \
     orchestrator-loop \
-    site-audit-loop \
-    auto-checkpoint-loop
+    site-audit-loop
   do
     if [ -x "./scripts/${s}.sh" ]; then
       printf '%-34s %s\n' "${s}:" "$(./scripts/${s}.sh status 2>/dev/null || echo 'unknown')"
@@ -81,7 +79,7 @@ status() {
 
   echo
   echo "Disabled/legacy loops (should be stopped):"
-  for s in publish-forseti-agent-tracker-loop improvement-round-loop ceo-inbox-loop inbox-loop ceo-health-loop 2-ceo-opsloop agent-exec-loop; do
+  for s in auto-checkpoint-loop publish-forseti-agent-tracker-loop improvement-round-loop ceo-inbox-loop inbox-loop ceo-health-loop 2-ceo-opsloop agent-exec-loop; do
     if [ -x "./scripts/${s}.sh" ]; then
       printf '  %-32s %s\n' "${s}:" "$(./scripts/${s}.sh status 2>/dev/null || echo 'unknown')"
     fi

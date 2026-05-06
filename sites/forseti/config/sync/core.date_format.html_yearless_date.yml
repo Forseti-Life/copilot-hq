@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 uuid: efdd34a7-d238-4f36-827d-dea8487dee02
-=======
-uuid: fcf4b34f-fc7d-4416-aa3c-0ec8751a0636
->>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies: {  }

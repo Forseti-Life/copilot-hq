@@ -117,20 +117,24 @@ The org automation control path is deterministic at the control layer and agenti
 
 ### 4) Runtime loops and cadence
 - `scripts/orchestrator-loop.sh` — every 60s (primary LangGraph execution loop)
-- `scripts/auto-checkpoint-loop.sh` — every 7200s
 - `scripts/site-audit-loop.sh` — every 300s (optional, only when enabled)
 - `scripts/hq-automation-watchdog.sh` — every minute via cron (convergence + suggestion intake)
 
-Legacy loops (`ceo-inbox-loop`, `inbox-loop`, `ceo-health-loop`, `2-ceo-opsloop`) are not part of the default production runtime and should remain stopped.
+Legacy/disabled loops (`auto-checkpoint-loop`, `ceo-inbox-loop`, `inbox-loop`, `ceo-health-loop`, `2-ceo-opsloop`) are not part of the default production runtime and should remain stopped.
 
 ## Production setup essentials
-- Deploy and start runtime using `.github/workflows/deploy.yml` (branch: `master`).
-- Production deploy uses a full repository checkout at `$HOME/forseti.life` by default (override with `REPO_DEPLOY_DIR`), and runs HQ from `$REPO_DEPLOY_DIR/copilot-hq` (override with `HQ_DEPLOY_DIR`).
+- Deploy and start runtime using `.github/workflows/deploy.yml` (branch: `main`).
+- Production deploy uses the current `Forseti-Life/copilot-hq` checkout at `$HOME/forseti.life` by default (override with `HQ_DEPLOY_DIR` or `REPO_DEPLOY_DIR`).
 - Deploy workflow behavior is idempotent: first deploy runs `scripts/setup.sh`; existing deploys run `scripts/verify-hq-runtime.sh --strict` and auto-run `scripts/setup.sh` only if verification fails.
 - Run `./scripts/verify-hq-runtime.sh --strict` after deploy.
 - Select agentic backend via `HQ_AGENTIC_BACKEND`:
 	- `copilot` (default): require chat-capable Copilot CLI (`--resume` support)
 	- `bedrock`: explicit/manual override only
+- LangGraph executor path:
+	- backend selection lives in `scripts/agent-exec-next.sh`
+	- Bedrock execution path is `scripts/agent-exec-next.sh` → `llm/bedrock_runner.py`
+	- direct AWS Bedrock calls live in `llm/bedrock_runner.py` (`bedrock-runtime`, `converse`, `invoke_model`)
+	- `scripts/bedrock-assist.sh` is separate Drupal/operator tooling, not the LangGraph executor path
 - HQ orchestration no longer auto-falls back to Bedrock; if Copilot is unavailable, fix the Copilot runtime or set an explicit override.
 - Validate org state with `./scripts/org-control.sh status --one-line` and runtime state with `./scripts/hq-automation.sh status`.
 
@@ -155,7 +159,7 @@ Legacy loops (`ceo-inbox-loop`, `inbox-loop`, `ceo-health-loop`, `2-ceo-opsloop`
 - `./scripts/prod-assumptions-audit.sh [hq_dir]` — host context, runtime assumptions, release-cycle files, cron, and recent logs.
 - `./scripts/prod-writeability-check.sh [hq_dir]` — write-permission checks for HQ runtime directories (current user + optional `www-data`).
 - `./scripts/prod-release-cycle-flow-check.sh [hq_dir]` — validates release-cycle paths/state and runs one dry release-cycle step.
-- If `hq_dir` is omitted, scripts default to `HQ_DEPLOY_DIR` or `${REPO_DEPLOY_DIR:-$HOME/forseti.life}/copilot-hq`.
+- If `hq_dir` is omitted, scripts default to `HQ_DEPLOY_DIR`, `REPO_DEPLOY_DIR`, or `$HOME/forseti.life`.
 
 ## Preparing for public release
 Start with `PUBLIC_REPO_PREP.md` for a staged publication checklist (security scrub, history review, docs/legal, and release steps).

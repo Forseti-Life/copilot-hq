@@ -2,6 +2,7 @@
 
 namespace Drupal\copilot_agent_tracker\Form;
 
+use Drupal\Component\Yaml\Yaml;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\Process\Process;
@@ -9,29 +10,31 @@ use Symfony\Component\Process\Process;
 final class LlmManagementForm extends FormBase {
 
   const JOB_ROOT_DIR = '/tmp/copilot-agent-tracker-llm-jobs';
-  const QUICK_MODEL_ID = 'Qwen/Qwen2.5-0.5B-Instruct';
+  const HQ_ROOT_DEFAULT = '/home/ubuntu/forseti.life';
+  const QUICK_MODEL_ID = 'phi-3-mini';
 
   public function getFormId(): string {
     return 'copilot_agent_tracker_llm_management_form';
   }
 
   public function buildForm(array $form, FormStateInterface $form_state): array {
-    $local_models = $this->getLocalModelIds();
+    $model_catalog = $this->getModelCatalog();
+    $ready_models = array_values(array_filter($model_catalog, static fn (array $model): bool => !empty($model['downloaded'])));
 
     $options = [];
-    foreach ($local_models as $model_id) {
-      $options[$model_id] = $model_id;
+    foreach ($model_catalog as $model_id => $model) {
+      $label = (string) ($model['name'] ?? $model_id);
+      $status = !empty($model['downloaded']) ? 'ready' : 'not downloaded';
+      $options[$model_id] = $label . ' (' . $status . ')';
     }
 
     if ($options === []) {
-      $this->messenger()->addWarning($this->t('No local Hugging Face model snapshots were detected under your cache path. You can still submit a test and it may download on first run.'));
+      $this->messenger()->addWarning($this->t('No local LLM models were found in llm/model-manifest.yaml.'));
     }
-
-    if (!isset($options[self::QUICK_MODEL_ID])) {
-      $options[self::QUICK_MODEL_ID] = self::QUICK_MODEL_ID . ' (quick default; not detected in local HF cache)';
-    }
-    if (!isset($options['Qwen/Qwen2.5-1.5B-Instruct'])) {
-      $options['Qwen/Qwen2.5-1.5B-Instruct'] = 'Qwen/Qwen2.5-1.5B-Instruct (not detected in local HF cache)';
+    elseif ($ready_models === []) {
+      $this->messenger()->addWarning($this->t('No local GGUF model files were detected under @dir. Run ./llm/download-models.sh before using this page.', [
+        '@dir' => $this->getModelsDir(),
+      ]));
     }
 
     $default_model = (string) $form_state->getValue('model');
@@ -44,7 +47,7 @@ final class LlmManagementForm extends FormBase {
 
     $python_bin = $this->getPythonBin();
     $runner_script = $this->getRunnerScript();
-    $cache_root = $this->getRuntimeCacheRoot();
+    $models_dir = $this->getModelsDir();
 
     // Graceful "not configured" check: show an info notice if the runtime is
     // not set up, but still render the page (do not throw or log at Error).
@@ -72,8 +75,9 @@ final class LlmManagementForm extends FormBase {
           $this->t('Development environment page for local LLM testing.'),
           $this->t('Python runtime: @bin', ['@bin' => $python_bin]),
           $this->t('LLM runner script: @script', ['@script' => $runner_script]),
-          $this->t('HF cache root: @cache', ['@cache' => $cache_root]),
-          $this->t('Detected local model count: @count', ['@count' => (string) count($local_models)]),
+          $this->t('Local model directory: @dir', ['@dir' => $models_dir]),
+          $this->t('Models declared in manifest: @count', ['@count' => (string) count($model_catalog)]),
+          $this->t('Models ready on disk: @count', ['@count' => (string) count($ready_models)]),
         ],
       ],
     ];
@@ -84,7 +88,7 @@ final class LlmManagementForm extends FormBase {
       '#options' => $options,
       '#default_value' => $default_model,
       '#required' => TRUE,
-      '#description' => $this->t('Models are discovered from the local Hugging Face cache snapshots directory.'),
+      '#description' => $this->t('Models are loaded from llm/model-manifest.yaml and resolve to local GGUF files under llm/models/.'),
     ];
 
     $form['prompt'] = [
@@ -208,7 +212,7 @@ final class LlmManagementForm extends FormBase {
 
     $python_bin = $this->getPythonBin();
     $runner_script = $this->getRunnerScript();
-    $cache_root = $this->getRuntimeCacheRoot();
+    $model_path = $this->getLocalModelPath($model);
 
     if (!is_file($python_bin)) {
       $this->messenger()->addError($this->t('Python runtime not found: @path', ['@path' => $python_bin]));
@@ -224,22 +228,15 @@ final class LlmManagementForm extends FormBase {
       ]);
       return;
     }
-
-    $hub_cache = $cache_root . '/hub';
-    $transformers_cache = $cache_root . '/transformers';
-    $lock_cache = $cache_root . '/locks';
-
-    foreach ([$cache_root, $hub_cache, $transformers_cache, $lock_cache] as $dir) {
-      if (!is_dir($dir)) {
-        @mkdir($dir, 0775, TRUE);
-      }
-      if (!is_dir($dir) || !is_writable($dir)) {
-        $this->messenger()->addError($this->t('LLM cache directory is not writable: @dir', ['@dir' => $dir]));
-        $this->getLogger('copilot_agent_tracker')->error('LLM management test failed: cache directory is not writable @dir', [
-          '@dir' => $dir,
-        ]);
-        return;
-      }
+    if ($model_path === '' || !is_file($model_path)) {
+      $this->messenger()->addError($this->t('Local model file not found for model @id. Download it first with ./llm/download-models.sh @id.', [
+        '@id' => $model,
+      ]));
+      $this->getLogger('copilot_agent_tracker')->error('LLM management test failed: local model file not found for @model at @path', [
+        '@model' => $model,
+        '@path' => $model_path,
+      ]);
+      return;
     }
 
     $job_root = $this->getJobRootDir();
@@ -281,9 +278,7 @@ final class LlmManagementForm extends FormBase {
       '@max_length' => (string) $max_length,
       '@python_bin' => $python_bin,
       '@runner_script' => $runner_script,
-      '@hf_home' => $cache_root,
-      '@hub_cache' => $hub_cache,
-      '@transformers_cache' => $transformers_cache,
+      '@model_path' => $model_path,
       '@timeout_sec' => '0',
     ];
 
@@ -292,15 +287,9 @@ final class LlmManagementForm extends FormBase {
       . "echo running > " . escapeshellarg($state_file) . "\n"
       . "date +%s > " . escapeshellarg($started_file) . "\n"
       . "PROMPT=\$(cat " . escapeshellarg($prompt_file) . ")\n"
-      . "HF_HOME=" . escapeshellarg($cache_root) . " "
-      . "HUGGINGFACE_HUB_CACHE=" . escapeshellarg($hub_cache) . " "
-      . "TRANSFORMERS_CACHE=" . escapeshellarg($transformers_cache) . " "
-      . "HF_HUB_CACHE=" . escapeshellarg($hub_cache) . " "
-      . "HF_HUB_DISABLE_TELEMETRY=1 "
       . escapeshellarg($python_bin) . " " . escapeshellarg($runner_script)
-      . " --model " . escapeshellarg($model)
+      . " --model " . escapeshellarg($model_path)
       . " --prompt \"\$PROMPT\""
-      . " --max-length " . escapeshellarg((string) $max_length)
       . " > " . escapeshellarg($stdout_file)
       . " 2> " . escapeshellarg($stderr_file)
       . "\n"
@@ -343,15 +332,13 @@ final class LlmManagementForm extends FormBase {
         'max_length' => $max_length,
         'python_bin' => $python_bin,
         'runner_script' => $runner_script,
-        'hf_home' => $cache_root,
-        'hub_cache' => $hub_cache,
-        'transformers_cache' => $transformers_cache,
+        'model_path' => $model_path,
         'pid' => $pid,
       ];
       file_put_contents($meta_file, json_encode($meta, JSON_PRETTY_PRINT));
 
       $this->getLogger('copilot_agent_tracker')->notice(
-        'LLM_CALL_QUEUED job_id=@job_id user_id=@user username=@username model=@model max_length=@max_length prompt=@prompt pid=@pid python=@python_bin runner=@runner_script hf_home=@hf_home',
+        'LLM_CALL_QUEUED job_id=@job_id user_id=@user username=@username model=@model max_length=@max_length prompt=@prompt pid=@pid python=@python_bin runner=@runner_script model_path=@model_path',
         $logger_context + [
           '@pid' => $pid,
         ]
@@ -393,69 +380,54 @@ final class LlmManagementForm extends FormBase {
     $this->submitForm($form, $form_state);
   }
 
-  private function getLocalModelIds(): array {
-    $hub_dirs = $this->getHubCacheDirs();
-    $models = [];
+  private function getModelCatalog(): array {
+    $manifest_path = $this->getHqRoot() . '/llm/model-manifest.yaml';
+    if (!is_readable($manifest_path)) {
+      return [];
+    }
 
-    foreach ($hub_dirs as $hub_dir) {
-      if (!is_dir($hub_dir)) {
+    try {
+      $decoded = Yaml::decode((string) file_get_contents($manifest_path));
+    }
+    catch (\Throwable) {
+      return [];
+    }
+
+    if (!is_array($decoded) || !is_array($decoded['models'] ?? NULL)) {
+      return [];
+    }
+
+    $models_dir = $this->getModelsDir();
+    $catalog = [];
+    foreach ($decoded['models'] as $entry) {
+      if (!is_array($entry)) {
         continue;
       }
 
-      $entries = glob($hub_dir . '/models--*', GLOB_ONLYDIR) ?: [];
-      foreach ($entries as $entry) {
-        $base = basename($entry);
-        if (!str_starts_with($base, 'models--')) {
-          continue;
-        }
-
-        $raw = substr($base, 8);
-        $parts = explode('--', $raw, 2);
-        if (count($parts) !== 2) {
-          continue;
-        }
-
-        $org = trim($parts[0]);
-        $repo = trim($parts[1]);
-        if ($org === '' || $repo === '') {
-          continue;
-        }
-
-        $snapshots = $entry . '/snapshots';
-        $has_snapshot = is_dir($snapshots) && (glob($snapshots . '/*', GLOB_ONLYDIR) ?: []) !== [];
-        if (!$has_snapshot) {
-          continue;
-        }
-
-        $models[] = $org . '/' . $repo;
+      $model_id = trim((string) ($entry['id'] ?? ''));
+      $name = trim((string) ($entry['name'] ?? $model_id));
+      $filename = trim((string) ($entry['filename'] ?? ''));
+      if ($model_id === '' || $filename === '') {
+        continue;
       }
+
+      $path = $models_dir . '/' . $filename;
+      $catalog[$model_id] = [
+        'id' => $model_id,
+        'name' => $name,
+        'filename' => $filename,
+        'path' => $path,
+        'downloaded' => is_file($path),
+      ];
     }
 
-    sort($models, SORT_NATURAL | SORT_FLAG_CASE);
-    return array_values(array_unique($models));
+    ksort($catalog, SORT_NATURAL | SORT_FLAG_CASE);
+    return $catalog;
   }
 
-  private function getHubCacheDirs(): array {
-    $dirs = [];
-
-    $runtime_root = $this->getRuntimeCacheRoot();
-    $dirs[] = rtrim($runtime_root, '/') . '/hub';
-
-    $env_hf_home = trim((string) getenv('HF_HOME'));
-    if ($env_hf_home !== '') {
-      $dirs[] = rtrim($env_hf_home, '/') . '/hub';
-    }
-
-    $home = trim((string) getenv('HOME'));
-    if ($home === '') {
-      $home = '/home/keithaumiller';
-    }
-    $dirs[] = rtrim($home, '/') . '/.cache/huggingface/hub';
-
-    $dirs[] = '/home/keithaumiller/.cache/huggingface/hub';
-
-    $dirs = array_filter(array_map('strval', $dirs), static fn (string $d): bool => $d !== '');
-    return array_values(array_unique($dirs));
+  private function getLocalModelPath(string $model_id): string {
+    $catalog = $this->getModelCatalog();
+    return (string) ($catalog[$model_id]['path'] ?? '');
   }
 
   private function getPythonBin(): string {
@@ -464,7 +436,18 @@ final class LlmManagementForm extends FormBase {
       return $override;
     }
 
-    return '/home/keithaumiller/copilot-sessions-hq/orchestrator/.venv/bin/python';
+    $hq_root = $this->getHqRoot();
+    $llm_python = $hq_root . '/llm/.venv/bin/python3';
+    if (is_file($llm_python)) {
+      return $llm_python;
+    }
+
+    $orchestrator_python = $hq_root . '/orchestrator/.venv/bin/python3';
+    if (is_file($orchestrator_python)) {
+      return $orchestrator_python;
+    }
+
+    return 'python3';
   }
 
   private function getRunnerScript(): string {
@@ -473,21 +456,20 @@ final class LlmManagementForm extends FormBase {
       return $override;
     }
 
-    return '/home/keithaumiller/copilot-sessions-hq/models/huggingface/main.py';
+    return $this->getHqRoot() . '/llm/runner.py';
   }
 
-  private function getRuntimeCacheRoot(): string {
-    $override = trim((string) getenv('COPILOT_HQ_LLM_HF_CACHE_DIR'));
+  private function getModelsDir(): string {
+    return $this->getHqRoot() . '/llm/models';
+  }
+
+  private function getHqRoot(): string {
+    $override = trim((string) getenv('COPILOT_HQ_ROOT'));
     if ($override !== '') {
       return rtrim($override, '/');
     }
 
-    $tmp = rtrim(sys_get_temp_dir(), '/');
-    if ($tmp === '') {
-      $tmp = '/tmp';
-    }
-
-    return $tmp . '/copilot-agent-tracker-hf-cache';
+    return self::HQ_ROOT_DEFAULT;
   }
 
   private function extractGeneratedText(string $output): string {

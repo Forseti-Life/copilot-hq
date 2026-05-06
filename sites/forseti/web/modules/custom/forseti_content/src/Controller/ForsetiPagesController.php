@@ -23,7 +23,7 @@ class ForsetiPagesController extends ControllerBase {
     // If user is not authenticated, redirect to registration with message.
     if ($current_user->isAnonymous()) {
       $this->messenger()->addWarning($this->t('Conversations with Forseti are reserved for community members. Please register for a free account to get started.'));
-      $url = Url::fromRoute('user.register');
+      $url = Url::fromRoute('user.register', [], ['query' => ['destination' => '/talk-with-forseti']]);
       return new RedirectResponse($url->toString());
     }
     
@@ -916,7 +916,7 @@ class ForsetiPagesController extends ControllerBase {
       ],
       '#contact_cta' => [
         'title' => $this->t('Questions or Concerns?'),
-        'content' => $this->t('If you have any questions about our privacy practices or want to exercise your rights, please <a href="/talk-with-forseti_content" class="alert-link">talk with Forseti</a>. We typically respond within 48 hours.'),
+        'content' => $this->t('If you have any questions about our privacy practices or want to exercise your rights, please <a href="/talk-with-forseti" class="alert-link">talk with Forseti</a>. We typically respond within 48 hours.'),
       ],
       '#last_updated' => $this->t('Last Updated: December 9, 2025'),
       '#cache' => [
@@ -1199,7 +1199,7 @@ class ForsetiPagesController extends ControllerBase {
           'content' => $this->t('These terms are governed by applicable laws. Disputes will be resolved through arbitration or mediation when possible. We are a private community and reserve the right to make final determinations on membership and access.'),
         ],
       ],
-      '#contact' => $this->t('Questions? <a href="/talk-with-forseti_content" class="alert-link">Talk with Forseti</a>'),
+      '#contact' => $this->t('Questions? <a href="/talk-with-forseti" class="alert-link">Talk with Forseti</a>'),
       '#cache' => ['max-age' => 3600, 'contexts' => ['url']],
     ];
   }
@@ -1244,7 +1244,7 @@ class ForsetiPagesController extends ControllerBase {
       ],
       '#user_responsibility' => [
         'title' => $this->t('Member Responsibility & Reporting Issues'),
-        'content' => $this->t('Members are responsible for verifying and customizing AI-generated content before use. <strong>If you encounter any errors, concerns, or issues with our services, please <a href="/talk-with-forseti_content" class="alert-link">Talk with Forseti</a> to report them.</strong> We are committed to making improvements based on member feedback.'),
+        'content' => $this->t('Members are responsible for verifying and customizing AI-generated content before use. <strong>If you encounter any errors, concerns, or issues with our services, please <a href="/talk-with-forseti" class="alert-link">Talk with Forseti</a> to report them.</strong> We are committed to making improvements based on member feedback.'),
       ],
       '#liability_limitation' => [
         'title' => $this->t('Limitation of Liability'),
@@ -1382,7 +1382,7 @@ class ForsetiPagesController extends ControllerBase {
       ],
       '#feedback' => [
         'title' => $this->t('Accessibility Feedback'),
-        'content' => $this->t('We welcome feedback on accessibility. If you encounter barriers, please <a href="/talk-with-forseti_content" class="alert-link">talk with Forseti</a>. We strive to respond within 3 business days.'),
+        'content' => $this->t('We welcome feedback on accessibility. If you encounter barriers, please <a href="/talk-with-forseti" class="alert-link">talk with Forseti</a>. We strive to respond within 3 business days.'),
       ],
       '#assistive_tech' => [
         'title' => $this->t('Tested With'),
@@ -1636,7 +1636,7 @@ class ForsetiPagesController extends ControllerBase {
       '#intro' => $this->t('These terms govern access to and use of the Forseti API.'),
       '#access' => [
         'title' => $this->t('API Access'),
-        'content' => $this->t('API access is currently limited to approved partners and researchers. To request access, <a href="/talk-with-forseti_content" class="alert-link">talk with Forseti</a>.'),
+        'content' => $this->t('API access is currently limited to approved partners and researchers. To request access, <a href="/talk-with-forseti" class="alert-link">talk with Forseti</a>.'),
         'tiers' => [
           [
             'tier' => $this->t('Research Tier'),
@@ -1814,11 +1814,11 @@ class ForsetiPagesController extends ControllerBase {
             'action' => $this->t('Permanent ban'),
           ],
         ],
-        'appeal' => $this->t('You may appeal moderation decisions by <a href="/talk-with-forseti_content" class="alert-link">talking with Forseti</a>.'),
+        'appeal' => $this->t('You may appeal moderation decisions by <a href="/talk-with-forseti" class="alert-link">talking with Forseti</a>.'),
       ],
       '#reporting_violations' => [
         'title' => $this->t('Reporting Guideline Violations'),
-        'content' => $this->t('If you see someone violating these guidelines, please report it through the app or <a href="/talk-with-forseti_content" class="alert-link">talk with Forseti</a>. All reports are reviewed by human moderators.'),
+        'content' => $this->t('If you see someone violating these guidelines, please report it through the app or <a href="/talk-with-forseti" class="alert-link">talk with Forseti</a>. All reports are reviewed by human moderators.'),
       ],
       '#cache' => ['max-age' => 3600, 'contexts' => ['url']],
     ];

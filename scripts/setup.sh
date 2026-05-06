@@ -60,6 +60,6 @@ echo "HQ setup complete."
 # HQ automation converge watchdog (ensures enable/disable flips actually start/stop loops).
 ./scripts/install-cron-hq-automation.sh
 
-# Remove any legacy direct auto-checkpoint cron entry; checkpointing is now
-# owned by the HQ automation loop.
+# Remove any legacy direct auto-checkpoint cron entry. Auto-checkpoint is
+# disabled and must remain off.
 ./scripts/install-cron-auto-checkpoint.sh

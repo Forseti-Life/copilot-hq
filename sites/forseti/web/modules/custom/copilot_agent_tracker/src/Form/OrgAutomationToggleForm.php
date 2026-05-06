@@ -19,7 +19,7 @@ final class OrgAutomationToggleForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, array $org_control = []): array {
     $script = getenv('COPILOT_HQ_ORG_CONTROL_SCRIPT')
-      ?: '/home/keithaumiller/copilot-sessions-hq/scripts/org-control.sh';
+      ?: '/home/ubuntu/forseti.life/scripts/org-control.sh';
 
     // Prefer authoritative status from HQ (read local org-control state), since
     // published telemetry can lag by minutes.
@@ -95,7 +95,7 @@ final class OrgAutomationToggleForm extends FormBase {
     $target_cmd = $enabled_current ? 'disable' : 'enable';
 
     $script = getenv('COPILOT_HQ_ORG_CONTROL_SCRIPT')
-      ?: '/home/keithaumiller/copilot-sessions-hq/scripts/org-control.sh';
+      ?: '/home/ubuntu/forseti.life/scripts/org-control.sh';
 
     $username = $this->currentUser()->getAccountName();
 

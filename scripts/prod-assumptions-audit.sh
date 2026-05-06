@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-$HOME/forseti.life}/copilot-hq}"
+DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-$HOME/forseti.life}}"
 HQ_DIR="${1:-$DEFAULT_HQ_DIR}"
 
 find_hq_dir() {
@@ -13,7 +13,9 @@ find_hq_dir() {
 
   for d in \
     "${HQ_DEPLOY_DIR:-}" \
+    "${REPO_DEPLOY_DIR:-$HOME/forseti.life}" \
     "${REPO_DEPLOY_DIR:-$HOME/forseti.life}/copilot-hq" \
+    "$HOME/forseti.life" \
     "$HOME/forseti.life/copilot-hq" \
     "$HOME/copilot-sessions-hq" \
     "/var/www/html/copilot-sessions-hq" \

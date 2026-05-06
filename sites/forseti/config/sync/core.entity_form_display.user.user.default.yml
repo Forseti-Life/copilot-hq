@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 uuid: eeb6225f-c392-49cc-bddb-1af864f82b80
-=======
-uuid: 195b0ac8-eb68-4e30-b1c2-c61b3c1194e2
->>>>>>> reconcile/copilot-hq-local-priority-main
 langcode: en
 status: true
 dependencies:
@@ -13,11 +9,7 @@ dependencies:
     - image
     - user
 _core:
-<<<<<<< HEAD
   default_config_hash: FaQ9Ptcpxpg30AtiqRDtl_8zbJArHP1LPfug_s59TOA
-=======
-  default_config_hash: Yj33guGRXeB-uq182k6bwtAUtKGpO17nkYxn8FnjhBM
->>>>>>> reconcile/copilot-hq-local-priority-main
 id: user.user.default
 targetEntityType: user
 bundle: user
@@ -26,12 +18,9 @@ content:
   account:
     weight: -10
     region: content
-<<<<<<< HEAD
   contact:
     weight: 5
     region: content
-=======
->>>>>>> reconcile/copilot-hq-local-priority-main
   language:
     weight: 0
     region: content

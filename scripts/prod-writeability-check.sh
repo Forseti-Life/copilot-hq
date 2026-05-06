@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-$HOME/forseti.life}/copilot-hq}"
+DEFAULT_HQ_DIR="${HQ_DEPLOY_DIR:-${REPO_DEPLOY_DIR:-$HOME/forseti.life}}"
 HQ_DIR="${1:-$DEFAULT_HQ_DIR}"
+
+if [ ! -d "$HQ_DIR" ] && [ -d "${HQ_DIR}/copilot-hq" ]; then
+  HQ_DIR="${HQ_DIR}/copilot-hq"
+fi
 
 if [ ! -d "$HQ_DIR" ]; then
   echo "ERROR: HQ directory not found: $HQ_DIR" >&2

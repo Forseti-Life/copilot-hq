@@ -172,7 +172,7 @@ class AdminNavigationForm extends FormBase {
    * Get available seats from HQ.
    */
   private function getAvailableSeats(): array {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $agents_yaml = $hq_root . '/org-chart/agents/agents.yaml';
 
     $seats = [];

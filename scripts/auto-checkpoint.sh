@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Auto checkpoint commit + push for multiple repos.
-# Only commits when there are changes.
+# Auto-checkpoint is intentionally disabled.
+# It previously committed any tracked local changes from this server, which is
+# unsafe for mixed runtime/development worktrees.
+
+ISO="$(date -Iseconds)"
+echo "[$ISO] DISABLED: auto-checkpoint is permanently turned off"
+exit 0
 
 if [ -n "${AUTO_CHECKPOINT_REPOS:-}" ]; then
   mapfile -t REPOS <<<"${AUTO_CHECKPOINT_REPOS}"

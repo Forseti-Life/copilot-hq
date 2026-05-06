@@ -166,7 +166,7 @@ class AdminSettingsForm extends FormBase {
 
     // If config is empty, try JSON fallback.
     if (!$config->get('max_tick_history')) {
-      $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+      $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
       $json_path = $hq_root . '/admin/settings.json';
       if (is_readable($json_path)) {
         $json_data = json_decode(@file_get_contents($json_path), TRUE);
@@ -196,7 +196,7 @@ class AdminSettingsForm extends FormBase {
    * Save settings to JSON file (secondary backend).
    */
   private function saveSettingsJson(array $values): void {
-    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life/copilot-hq'), '/');
+    $hq_root = rtrim((string) (getenv('COPILOT_HQ_ROOT') ?: '/home/ubuntu/forseti.life'), '/');
     $admin_dir = $hq_root . '/admin';
     $json_path = $admin_dir . '/settings.json';
 

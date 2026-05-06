@@ -15,7 +15,7 @@ final class ReleaseManagementCycleForm extends FormBase {
 
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $script = getenv('COPILOT_HQ_RELEASE_CYCLE_CONTROL_SCRIPT')
-      ?: '/home/keithaumiller/copilot-sessions-hq/scripts/release-management-cycle.sh';
+      ?: '/home/ubuntu/forseti.life/scripts/release-cycle-control.sh';
 
     $state = [
       'enabled' => TRUE,
@@ -96,10 +96,10 @@ final class ReleaseManagementCycleForm extends FormBase {
 
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $enabled_current = ((string) $form_state->getValue('enabled_current')) === '1';
-    $target_cmd = $enabled_current ? 'stop' : 'start';
+    $target_cmd = $enabled_current ? 'disable' : 'enable';
 
     $script = getenv('COPILOT_HQ_RELEASE_CYCLE_CONTROL_SCRIPT')
-      ?: '/home/keithaumiller/copilot-sessions-hq/scripts/release-management-cycle.sh';
+      ?: '/home/ubuntu/forseti.life/scripts/release-cycle-control.sh';
 
     $reason = trim((string) $form_state->getValue('reason'));
     $username = $this->currentUser()->getAccountName();
