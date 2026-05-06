@@ -24,6 +24,11 @@ Run the organization: keep teams separated by website, keep PM ownership intact 
 - Enforce the KPI methodology in `org-chart/kpis.md`.
 - Ensure each site has an updated weekly scoreboard in `knowledgebase/scoreboards/<site>.md`.
 
+## Documentation source of truth (required)
+- Canonical shared `copilot-hq` documentation lives in `Forseti-Life/forseti-docs` under `copilot-hq/`.
+- In the HQ working tree, `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` are compatibility paths into that docs repository.
+- CEO instruction, runbook, KB, and ownership updates must preserve that structure and avoid recreating competing standalone copies inside `copilot-hq`.
+
 ## Inputs (You require)
 - Human commands and priority shifts (Board)
 - PM work requests and escalations (blocked/needs-info)

@@ -12,6 +12,11 @@ This file is owned by the `ceo-copilot` seat.
 - KPI catalog: `org-chart/kpis.md`
 - Site scoreboards: `knowledgebase/scoreboards/` (update weekly)
 
+## Documentation source of truth (required)
+- Canonical shared operational documentation for `copilot-hq` now lives in `Forseti-Life/forseti-docs` under `copilot-hq/`.
+- In the HQ checkout, `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` are compatibility paths that resolve into that docs repository.
+- When updating shared HQ runbooks, lessons/proposals/scoreboards, or ownership metadata, treat the `forseti-docs` content as the source of truth even if you access it through those compatibility paths locally.
+
 ## Instructions methodology (required)
 We use a layered instruction stack so the org, each role, each product/site, and each seat can evolve independently without conflicts.
 

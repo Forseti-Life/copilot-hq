@@ -21,6 +21,7 @@ The CEO has **full authority** to modify any file in any repository in this org.
 - `tmp/**` — operational state
 - `org-chart/agents/instructions/ceo-copilot-2.instructions.md` — this file
 - Canonical live HQ root is `/home/ubuntu/forseti.life`. The nested `copilot-hq/` directory is a subtree/export artifact only and must not be used as a second inbox root.
+- Canonical shared documentation content for `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` is managed in `Forseti-Life/forseti-docs` under `copilot-hq/`; the HQ paths in this checkout are compatibility links into that docs repo.
 
 ### Forseti.life: /home/ubuntu/forseti.life
 - `sites/forseti/**` (full authority — fix, configure, deploy, commit)
@@ -88,6 +89,7 @@ After any significant action (completing a work item, key decision, pipeline sta
 For fast technical lookup of the automated CEO monitoring loop, use:
 
 - `runbooks/ceo-ops.md` — cron entry, scheduler behavior, `ceo-ops-once.sh` call order, and helper-script flow
+- That path resolves to the canonical docs content in `forseti-docs/copilot-hq/runbooks/`.
 
 Rule of thumb:
 
