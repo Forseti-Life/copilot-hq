@@ -609,6 +609,33 @@ def check_code_review_gate(team_release_ids: Dict[str, str], log: List[Any], rep
 
 def run_coordinated_push_step(log: List[Any], repo_root: Path) -> None:
     """Auto-deploy each release independently once its owning PM has signed off."""
+    # Add interval gating to prevent rapid re-queueing of gate tasks.
+    # This addresses the issue where coordinated_push was called on every tick without interval gating,
+    # causing check_code_review_gate to be invoked repeatedly and creating duplicate gate tasks.
+    import time
+    coordinated_push_interval = 60  # seconds between coordinated push checks
+    state_file = repo_root / "tmp" / "coordinated-push-last-run.ts"
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    
+    if state_file.exists():
+        try:
+            last_run = int(state_file.read_text(encoding="utf-8").strip())
+            now = int(time.time())
+            if (now - last_run) < coordinated_push_interval:
+                log.append({
+                    "step": "coordinated_push",
+                    "skipped": True,
+                    "reason": "interval_not_elapsed",
+                    "interval": coordinated_push_interval,
+                    "seconds_until_next": coordinated_push_interval - (now - last_run),
+                })
+                return
+        except (ValueError, OSError):
+            pass
+    
+    # Update last run timestamp
+    state_file.write_text(str(int(time.time())), encoding="utf-8")
+    
     release_control = _release_cycle_control_state()
     if not bool(release_control.get("enabled", True)):
         log.append({
