@@ -8,7 +8,7 @@
 - Group: console-ui
 - Group Title: Console Routes & UI
 - Group Sort: 4
-- Status: shipped
+- Status: ready
 - Release: 20260412-forseti-release-r
 - PM owner: pm-forseti
 - Dev owner: dev-forseti
@@ -24,6 +24,12 @@ The Drupal LangGraph Observe section (`/admin/reports/drupal-langgraph/langgraph
 
 - Operators and the CEO can inspect in-progress orchestration execution: see which nodes ran, how long they took, detect performance anomalies, and identify failures and blocked items in one place.
 - Deliver observability for troubleshooting slow ticks, identifying node bottlenecks, and correlating agent blocks with orchestrator events.
+
+## Latest updates
+
+- 2026-04-27: Re-baselined from `shipped` to `ready` after reconciling dev/QA execution history. Specs and QA suite activation exist, but implementation is not complete and the feature should be treated as the next dispatchable backlog slice.
+- 2026-04-25: QA suite activation completed for the Observe routes and verification scope.
+- 2026-04-24: Dev implementation attempt escalated for architectural re-baselining before coding.
 
 ## Acceptance criteria
 

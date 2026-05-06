@@ -2,7 +2,7 @@
 
 - Work item id: forseti-langgraph-console-admin
 - Website: forseti.life
-- Module: copilot_agent_tracker
+- Module: drupal_langgraph
 - Project: PROJ-001
 - Group Order: 5
 - Group: console-ui
@@ -27,6 +27,12 @@ The LangGraph Console Admin section (`/langgraph-console/admin`) provides operat
 - Full audit trail of all console mutations for compliance and troubleshooting
 - Real-time visibility into system health and agent execution state
 - Permission matrix for controlling which roles can access which console sections
+
+## Latest updates
+
+- 2026-04-27: Reaffirmed as backlog. Prior dev/QA dispatches did not produce an implementation-ready release slice, and Admin remains deferred until the Observe slice is completed and re-baselined.
+- 2026-04-23: QA suite activation attempt was quarantined after repeated executor failures; item requires a fresh dispatch rather than more automatic retries.
+- 2026-04-20: Dev recommended deferring Admin behind Observe because the combined scope was too large for one cycle without re-baselining.
 
 ## Acceptance criteria
 

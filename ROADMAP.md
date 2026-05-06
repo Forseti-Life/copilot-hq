@@ -140,15 +140,15 @@ Remaining halfling content rules not yet activated:
 
 ### 🚀 In-Flight
 
-Ongoing improvements to Run/Session wiring within forseti-release-p.
+No active LangGraph implementation slice is currently in flight. The next ready backlog item is `forseti-langgraph-console-observe`; Admin remains deferred until Observe is shipped and release-control mutations remain Board-gated.
 
 ### 🗓️ Planned
 
 | Release | Theme | Key Scope |
 |---|---|---|
-| forseti-release-r | Observe + Feature Progress | Node traces, runtime metrics, drift detection, alerts wired to tick stream; Feature Progress in console frame |
-| forseti-release-s | Build + Test Sections wired | State schema from `engine.py`, node topology parser, eval scorecard framework |
-| forseti-release-t ⚠️ | Release Control Panel (mutations) | Graph versions, promotion flow UI, canary controls — **Board gate required** |
+| forseti-release-r | Observe + Feature Progress | Node traces, runtime metrics, drift detection, incidents, alerts, and Feature Progress wired to live data |
+| forseti-release-s ⚠️ | Release Control Panel (mutations) | Graph versions, promotion flow UI, canary controls — **Board gate required** |
+| forseti-release-t | Admin & Configuration | Settings, permissions, audit log, health dashboard, and navigation controls |
 
 ---
 

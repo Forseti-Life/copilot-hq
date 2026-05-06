@@ -1,7 +1,7 @@
 # LangGraph UI — Release Roadmap
 
 - Product: forseti.life
-- Module: copilot_agent_tracker
+- Module: drupal_langgraph (target console boundary); `copilot_agent_tracker` remains the legacy compatibility shim
 - Feature project: forseti-langgraph-ui
 - Author: architect-copilot
 - Last updated: 2026-04-19
@@ -22,9 +22,9 @@
 | 20260411-coordinated-release | ✅ Shipped | Console Build + Test Sections | State schema visualization, node topology, test/eval scorecards (ahead of schedule) |
 | 20260411-forseti-release-b | ✅ Shipped | Release Control Panel (read-only) | Release panel wired to release state files and PM signoff data |
 | 20260412-forseti-release-e | ✅ Shipped | Console Wiring — Run + Session | Run/Session panels wired to live orchestrator tick data |
-| forseti-release-r | 🗓️ Planned | Console Wiring — Observe + Feature Progress | Node traces, metrics, drift detection wired to tick stream |
-| forseti-release-s | 🗓️ Planned | Console Wiring — Build + Test Sections | State schema + node topology parsed from engine.py; eval scorecard framework |
-| forseti-release-t | 🗓️ Planned ⚠️ Board gate | Release Control Panel (mutations) | Graph version management, promotion flow, canary controls (strong auth required) |
+| forseti-release-r | 🗓️ Planned | Console Wiring — Observe + Feature Progress | Node traces, metrics, drift detection, incidents, feature progress wired to live data |
+| forseti-release-s | 🗓️ Planned ⚠️ Board gate | Release Control Panel (mutations) | Graph version management, promotion flow, canary controls (strong auth required) |
+| forseti-release-t | 🗓️ Planned | Admin & Configuration | Settings, permissions, audit log, health dashboard, navigation controls |
 
 ---
 
@@ -134,7 +134,7 @@
 ### 🔧 forseti-release-r — Console Wiring: Observe & Monitoring (Phase 5)
 **Theme:** Deliver real-time observability: node traces, performance metrics, drift detection, alerts
 
-**Status:** ready (feature specs completed 2026-04-20)
+**Status:** ready (feature specs + QA suite activation completed; implementation remains open)
 **Feature file:** `features/forseti-langgraph-console-observe/feature.md`
 **Acceptance criteria:** `features/forseti-langgraph-console-observe/01-acceptance-criteria.md` (39 criteria across 8 areas)
 
@@ -176,7 +176,7 @@
 ### 📋 forseti-release-t — Admin & Configuration (Phase 7)
 **Theme:** Provide operators with tunable settings, permission management, audit trail, health monitoring
 
-**Status:** ready (feature specs completed 2026-04-20)
+**Status:** backlog (feature specs completed 2026-04-20; re-queue after Observe ships)
 **Feature file:** `features/forseti-langgraph-console-admin/feature.md`
 **Acceptance criteria:** `features/forseti-langgraph-console-admin/01-acceptance-criteria.md` (43 criteria across 9 areas)
 

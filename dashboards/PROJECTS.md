@@ -211,15 +211,15 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 **Roadmap:** `features/forseti-langgraph-ui/roadmap.md`  
 **Scope:** Build the full Copilot HQ control-plane console UI on forseti.life — telemetry, agent monitoring, session management, release controls, and eval scorecards wired to live orchestrator tick data.
 
-**Current state (2026-04-13):** All foundation slices are shipped: telemetry foundation, console stubs (7 routes), context enrichment, Agent Tracker Core, Console Build/Test sections, and Release Control Panel (read-only). Active release `20260412-forseti-release-h` carries the next slice: Run + Session panel wiring (`features/forseti-langgraph-console-run-session/`, Status: ready). Artifact naming corrected (renamed to standard `01-acceptance-criteria.md`, `02-implementation-notes.md`); `03-test-plan.md` created by PM 2026-04-13. BA dispatched to confirm 4 implementation details before dev activation.
+**Current state (2026-04-27):** The foundation and first live console wiring slices are shipped: telemetry foundation, console stubs (7 routes), context enrichment, Agent Tracker Core, Build/Test sections, read-only Release Control Panel, and Run + Session wiring. The backlog has now been re-baselined: `forseti-langgraph-console-observe` is the next ready implementation slice, `forseti-langgraph-console-admin` remains deferred backlog, and release-control mutations remain blocked on Board scope approval. Some docs previously overstated Observe as shipped and Admin as in-progress; this project entry now reflects the reconciled execution history.
 
-**Last scoped release:** `20260412-forseti-release-h` (targeted; not yet activated — pending BA confirmation)
+**Last shipped release:** `20260412-forseti-release-e` (Run + Session wiring)
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** ba-forseti to confirm AC-3 glob pattern, AC-2 truncation placement, AC-7 warning banner condition, and AC-5 Session Health placement. PM activates after BA confirmation.
+**Next step:** PM should dispatch `forseti-langgraph-console-observe` as the next implementation slice against the reconciled architecture notes (service split, caching, centralized validation, routing dispatch). After Observe ships, re-baseline Admin on top of that boundary.
 
-**Queue status:** ba-forseti grooming dispatch: `sessions/ba-forseti/inbox/20260413-groom-forseti-langgraph-console-run-session/` (ROI 40)
+**Queue status:** No active LangGraph inbox items are currently live for PM/dev/QA. Prior Observe/Admin work exists in archived inboxes and outboxes, but a fresh PM dispatch is required before implementation resumes.
 
 ---
 

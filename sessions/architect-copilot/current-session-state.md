@@ -1,51 +1,49 @@
 # Architect Session State — architect-copilot
 
 > **Rolling file. Overwrite this at the end of each working session (and briefly before starting each task).**
-> Last updated: 2026-04-16 during PROJ-009 candidate extract implementation
+> Last updated: 2026-04-27 after PROJ-001 LangGraph backlog reconciliation
 
 ---
 
 ## Currently Working On
 
-Continuing `PROJ-009` open-source readiness by moving from freeze planning to
-implementation for the first public code candidate, `drupal-ai-conversation`.
-
-This slice is focused on:
-- building a curated sanitized extract path for a standalone public candidate
-- avoiding risky in-place production behavior changes just to satisfy packaging
-- turning the refreshed candidate-local audit into an actual candidate artifact
+Completed a backlog/state reconciliation pass for `PROJ-001 — LangGraph Console
+UI` in a clean git worktree so the next implementation slice can start from a
+trusted project record.
 
 ### Current state
 
-- New planning artifact:
-  - `dashboards/open-source/drupal-ai-conversation-freeze-plan-2026-04.md`
-- `features/forseti-open-source-initiative/feature.md` now reflects the current
-  gate more accurately:
-  - current-tree config-sync credential removal is treated as already done
-  - the remaining blockers are candidate-local sanitization, external AWS
-    rotation confirmation, history/private-path cleanup, freeze packaging, and
-    validation evidence
-  - the immediate-next-action path now points at the first-candidate freeze
-    workflow instead of stale pre-audit steps
-- Verified runtime truth still remains:
-  - public release is blocked
-  - `drupal-ai-conversation` is still the first code candidate
-  - curated/extracted repos remain the publication model
+- Reconciliation work was done in the clean worktree on branch
+  `architect/langgraph-reconcile` because the main repo worktree was dirty with
+  unrelated session artifacts.
+- The following LangGraph sources now agree on the next backlog slice:
+  - `dashboards/PROJECTS.md`
+  - `dashboards/FEATURE_PROGRESS.md`
+  - `features/forseti-langgraph-console-observe/feature.md`
+  - `features/forseti-langgraph-console-admin/feature.md`
+  - `features/forseti-langgraph-ui/roadmap.md`
+  - `ROADMAP.md`
+- Reconciled truth:
+  - foundation + Run/Session slices are shipped
+  - `forseti-langgraph-console-observe` is **ready** (not shipped)
+  - `forseti-langgraph-console-admin` is **backlog/deferred**
+  - release-control mutations remain **Board-gated**
 
 ### Key decisions
 
-1. Treat the next architect-critical planning gap as the first-candidate freeze
-   plan, not more repo-family theory.
-2. Keep candidate-local sanitization, repo-wide security/governance cleanup,
-   freeze packaging, and QA validation as separate gates.
-3. Use the PM gate, dev audit, BA packaging brief, and QA validation plan as the
-   shared source of truth for the next execution slice.
+1. Use execution history (dev/QA/PM outboxes and quarantines), not a single
+   status file, to decide Observe/Admin truth.
+2. Treat Observe as the next dispatchable slice because specs and QA suite
+   activation exist, but implementation does not.
+3. Keep Admin behind Observe and keep release mutations explicitly blocked until
+   scope approval is granted.
 
 ### Next actions
 
-1. Clear the `drupal-ai-conversation` candidate-local NO-GO findings and freeze
-   the packaging decision for the first public extract.
-2. Confirm external AWS credential rotation and finish the remaining
-   security/private-path controls required for safe publication.
-3. Freeze one sanitized candidate packet and hand that exact artifact to QA for
-   Gate 2 validation.
+1. PM should dispatch `forseti-langgraph-console-observe` against the
+   reconciled architecture notes (service split, caching, centralized
+   validation, routing dispatch).
+2. After Observe ships, re-baseline `forseti-langgraph-console-admin` on the
+   same `drupal_langgraph` boundary.
+3. If this worktree is the chosen handoff path, review and commit the staged
+   documentation updates from `architect/langgraph-reconcile`.

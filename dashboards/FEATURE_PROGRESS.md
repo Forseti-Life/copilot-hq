@@ -1,6 +1,6 @@
 # Feature Progress
 
-Generated: 2026-04-20T20:00:46Z
+Generated: 2026-04-27T12:47:29Z
 
 | Work item | Website | Module | Status | Priority | PM | Dev | QA |
 |-----------|---------|--------|--------|----------|----|-----|----|
@@ -28,7 +28,7 @@ Generated: 2026-04-20T20:00:46Z
 | dc-cr-animal-companion | dungeoncrawler | dungeoncrawler_content | done |  |  |  |  |
 | dc-cr-background-system | dungeoncrawler | dungeoncrawler_content | done | high (required prerequisite for character creation workflow; provides ability boosts, skill training, and skill feat to character) |  |  |  |
 | dc-cr-burrow-elocutionist | dungeoncrawler | dungeoncrawler_content | done | P3 |  |  |  |
-| dc-cr-ceaseless-shadows | dungeoncrawler | dungeoncrawler_content | in_progress | P3 |  |  |  |
+| dc-cr-ceaseless-shadows | dungeoncrawler | dungeoncrawler_content | done | P3 |  |  |  |
 | dc-cr-character-class | dungeoncrawler | dungeoncrawler_content | done | high (core pillar of character building; defines proficiencies, HP/level, class features, and class feats — required for character creation workflow) |  |  |  |
 | dc-cr-character-creation | dungeoncrawler | dungeoncrawler_content | done | high (first end-to-end player journey; onboarding experience for every new dungeoncrawler player; depends on ancestry, background, and class all being implemented first) |  |  |  |
 | dc-cr-character-leveling | dungeoncrawler | dungeoncrawler_content | shipped | P3 (complex; depends on feats system not yet in scope; deferred to release after next) |  |  |  |
@@ -54,7 +54,7 @@ Generated: 2026-04-20T20:00:46Z
 | dc-cr-dice-system | dungeoncrawler | dungeoncrawler_content | done | P0 (foundational — every resolution system depends on this) |  |  |  |
 | dc-cr-difficulty-class | dungeoncrawler | dungeoncrawler_content | done | P0 (core check resolution mechanic — encounter and skill systems depend on this) |  |  |  |
 | dc-cr-downtime-mode | dungeoncrawler | dungeoncrawler_content | done | P1 |  |  |  |
-| dc-cr-dwarf-ancestry | dungeoncrawler | dungeoncrawler_content | done | P2 (extends ancestry-system with specific stat block; all deps now satisfied — ancestry-system ✓, clan-dagger shipped ✓, heritage-system ✓) |  |  |  |
+| dc-cr-dwarf-ancestry | dungeoncrawler | dungeoncrawler_content | shipped | P2 (extends ancestry-system with specific stat block; all deps now satisfied — ancestry-system ✓, clan-dagger shipped ✓, heritage-system ✓) |  |  |  |
 | dc-cr-dwarf-heritage-ancient-blooded | dungeoncrawler | dungeoncrawler_content | done |  |  |  |  |
 | dc-cr-dwarf-heritage-death-warden | dungeoncrawler | dungeoncrawler_content | done | P2 |  |  |  |
 | dc-cr-dwarf-heritage-forge | dungeoncrawler | dungeoncrawler_content | done | P2 |  |  |  |
@@ -100,8 +100,8 @@ Generated: 2026-04-20T20:00:46Z
 | dc-cr-halfling-heritage-gutsy | dungeoncrawler | dungeoncrawler_content | done | P3 |  |  |  |
 | dc-cr-halfling-heritage-hillock | dungeoncrawler | dungeoncrawler_content | done | P3 |  |  |  |
 | dc-cr-halfling-keen-eyes | dungeoncrawler | dungeoncrawler_content | done | P2 |  |  |  |
-| dc-cr-halfling-resolve | dungeoncrawler | dungeoncrawler_content | in_progress | P3 |  |  |  |
-| dc-cr-halfling-weapon-expertise | dungeoncrawler | dungeoncrawler_content | in_progress | P3 |  |  |  |
+| dc-cr-halfling-resolve | dungeoncrawler | dungeoncrawler_content | shipped | P3 |  |  |  |
+| dc-cr-halfling-weapon-expertise | dungeoncrawler | dungeoncrawler_content | done | P3 |  |  |  |
 | dc-cr-hazards | dungeoncrawler | dungeoncrawler_content | done | P2 |  |  |  |
 | dc-cr-heritage-system | dungeoncrawler | dungeoncrawler_content | done | P1 (character creation dependency; heritage selection step immediately follows ancestry in creation wizard) |  |  |  |
 | dc-cr-human-ancestry | dungeoncrawler | dungeoncrawler_content | done |  |  |  |  |
@@ -216,9 +216,9 @@ Generated: 2026-04-20T20:00:46Z
 | forseti-jobhunter-schema-fix | forseti.life | job_hunter | shipped | P2 |  |  |  |
 | forseti-jobhunter-tailoring-feedback | forseti.life | job_hunter | shipped | medium |  |  |  |
 | forseti-jobhunter-twig-csrf-cleanup | forseti.life | job_hunter | shipped | P2 |  |  |  |
-| forseti-langgraph-console-admin | forseti.life | copilot_agent_tracker | in_progress | P2 |  |  |  |
+| forseti-langgraph-console-admin | forseti.life | drupal_langgraph | backlog | P2 |  |  |  |
 | forseti-langgraph-console-build-sections | forseti.life | copilot_agent_tracker | done | high |  |  |  |
-| forseti-langgraph-console-observe | forseti.life | copilot_agent_tracker | in_progress | P1 |  |  |  |
+| forseti-langgraph-console-observe | forseti.life | drupal_langgraph | ready | P1 |  |  |  |
 | forseti-langgraph-console-release-panel | forseti.life | copilot_agent_tracker | done | high |  |  |  |
 | forseti-langgraph-console-run-session | forseti.life | copilot_agent_tracker | shipped | P1 |  |  |  |
 | forseti-langgraph-console-test-sections | forseti.life | copilot_agent_tracker | done | high |  |  |  |
