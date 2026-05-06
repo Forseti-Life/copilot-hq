@@ -118,6 +118,18 @@ Systemic ops diagnostic plus inbox dispatch generation:
 With `--dispatch`, this script creates inbox items for the owning seats when it
 finds actionable failures.
 
+### `scripts/ceo-repo-health.sh`
+
+On-demand repo creep / duplication scan for deeper filesystem-wide git analysis:
+
+- inventories git repos from a scan root
+- maps local paths to primary GitHub upstream repos
+- highlights duplicate local copies of the same upstream repo
+- flags likely side-workspaces / repo creep outside ownership metadata
+
+This script is **not** part of the default CEO scheduler loop. Use it when a deeper
+repo-hygiene investigation is needed.
+
 ## Related loops
 
 This CEO ops cadence is only one part of the overall system:
