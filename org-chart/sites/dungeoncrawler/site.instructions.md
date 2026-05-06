@@ -18,27 +18,35 @@ Rule:
 ## Code roots (on this host)
 - Live Drupal docroot: `/var/www/html/dungeoncrawler`
 - Live Drupal web root: `/var/www/html/dungeoncrawler/web`
+- Canonical workspace root: `/home/ubuntu/forseti.life`
 - Canonical editable product repo: `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`
-- Compatibility bridge path in main repo: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
-- `dungeoncrawler-pf2e` is a standalone product repo on this host; Dungeoncrawler product changes should land there without requiring a matching `copilot-hq` submodule-pointer commit.
+- Canonical standalone theme repo: `/home/ubuntu/forseti.life/dungeoncrawler-theme`
+- Canonical standalone module repos: `/home/ubuntu/forseti.life/dungeoncrawler-content`, `/home/ubuntu/forseti.life/dungeoncrawler-tester`, and shared `/home/ubuntu/forseti.life/ai-conversation`
+- Compatibility bridge path in HQ: `/home/ubuntu/forseti.life/copilot-hq/sites/dungeoncrawler`
+- `dungeoncrawler-pf2e` remains the standalone product repo, and Dungeoncrawler module development should land in the owning canonical sibling repo under `/home/ubuntu/forseti.life/*` without requiring a matching `copilot-hq` nested-repo pointer commit.
 - Apache serves the live site from `/var/www/html/dungeoncrawler/web`, with these top-level paths symlinked back into `sites/dungeoncrawler`:
   - `web/modules/custom`
   - `web/themes/custom`
   - `config/sync`
-- Inside `sites/dungeoncrawler`, the current Dungeoncrawler site module/theme/config paths now delegate to `dungeoncrawler-pf2e`, including:
-  - `web/modules/custom/ai_conversation`
-  - `web/modules/custom/ai_conversation.backup`
-  - `web/modules/custom/copilot_agent_tracker`
-  - `web/modules/custom/dungeoncrawler_content`
-  - `web/modules/custom/dungeoncrawler_tester`
-  - `web/themes/custom/dungeoncrawler`
-  - `config/sync`
+- Inside the live `web/modules/custom` directory, the current module links resolve to canonical repositories:
+  - `ai_conversation` -> `/home/ubuntu/forseti.life/ai-conversation`
+  - `dungeoncrawler_content` -> `/home/ubuntu/forseti.life/dungeoncrawler-content`
+  - `dungeoncrawler_tester` -> `/home/ubuntu/forseti.life/dungeoncrawler-tester`
+- Dungeoncrawler theme assets now flow through the standalone theme repo:
+  - `dungeoncrawler-theme`
+- The HQ compatibility bridge for that theme remains:
+  - `copilot-hq/sites/dungeoncrawler/web/themes/custom/dungeoncrawler` -> `/home/ubuntu/forseti.life/dungeoncrawler-theme`
+- Site integration assets continue to flow through:
+  - `copilot-hq/sites/dungeoncrawler/config/sync`
 
 ## Working convention
-- Make Dungeoncrawler site/product-code changes in `/home/ubuntu/forseti.life/dungeoncrawler-pf2e`.
-- Treat `/home/ubuntu/forseti.life/sites/dungeoncrawler` as a compatibility/delegation path, not the primary authored source for these delegated site assets.
+- Make Dungeoncrawler module/product-code changes in the owning canonical repository under `/home/ubuntu/forseti.life/*`.
+- Use `/home/ubuntu/forseti.life/dungeoncrawler-pf2e` for full-product code and product-owned assets.
+- Use `/home/ubuntu/forseti.life/dungeoncrawler-theme` for the standalone Drupal theme.
+- Use `/home/ubuntu/forseti.life/dungeoncrawler-content` and `/home/ubuntu/forseti.life/dungeoncrawler-tester` for those standalone module repositories.
+- Treat `/home/ubuntu/forseti.life/copilot-hq/sites/dungeoncrawler` as a compatibility/delegation path, not the primary authored source for standalone module repositories.
 - Use `/var/www/html/dungeoncrawler` when commands must run against the full live Drupal install (for example `drush cr`).
-- Do not add new Dungeoncrawler-owned code directly under `sites/dungeoncrawler`; route it into `dungeoncrawler-pf2e`.
+- Do not add new Dungeoncrawler-owned code directly under `copilot-hq/sites/dungeoncrawler`; route it into the correct canonical sibling repository.
 
 ## Product-wide rules
 - Keep work items logically separated from other websites.
