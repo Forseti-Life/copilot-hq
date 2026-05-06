@@ -3,7 +3,7 @@
 - Work item id: dc-cr-character-creation
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Priority: high (first end-to-end player journey; onboarding experience for every new dungeoncrawler player; depends on ancestry, background, and class all being implemented first)
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Multi-step wizard UI or API endpoint sequence. Each step calls the relevant cont
 - CSRF expectations: all POST/PATCH routes require `_csrf_request_header_mode: TRUE`
 - Input validation: entity field types enforced at Drupal entity layer; no raw free-text user input stored without sanitization
 - PII/logging constraints: no PII logged; gameplay action logs (character id, action type) only
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-difficulty-class
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P0 (core check resolution mechanic — encounter and skill systems depend on this)
 - Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
@@ -36,3 +36,7 @@ DC lookup table by level (1–20) and task difficulty (Trivial/Low/Moderate/High
 - CSRF expectations: DC lookup endpoints are GET-only; any POST storing custom DCs requires `_csrf_request_header_mode: TRUE`
 - Input validation: rarity adjustments and level-based DC tables are server-side constants; no free-text DC overrides accepted
 - PII/logging constraints: no PII logged; DC lookups are ephemeral and not stored
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

@@ -43,7 +43,7 @@ _TEAM_WEBSITE_PREFIX = ("forseti", "dungeoncrawler")
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
+def _run(cmd: List[str], *, timeout: int = 600, env: Optional[Dict[str, str]] = None) -> Tuple[int, str]:
     try:
         proc = subprocess.run(
             cmd,
@@ -52,6 +52,7 @@ def _run(cmd: List[str], *, timeout: int = 600) -> Tuple[int, str]:
             stderr=subprocess.STDOUT,
             text=True,
             timeout=timeout,
+            env=env,
         )
         return proc.returncode, (proc.stdout or "").strip()
     except subprocess.TimeoutExpired:

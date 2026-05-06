@@ -3,7 +3,7 @@
 - Work item id: dc-apg-archetypes
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -40,3 +40,7 @@ Archetypes are modeled as a `ArchetypeEntity` with fields: name, archetype_type 
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

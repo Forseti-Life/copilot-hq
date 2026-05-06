@@ -16,7 +16,7 @@ class ForsetiPipelineStatusResolver {
    */
   private const PIPELINE_TO_ROADMAP = [
     'shipped'     => 'implemented',
-    'done'        => 'implemented',
+    'done'        => 'in_progress',
     'in_progress' => 'in_progress',
     'ready'       => 'queued',
     'backlog'     => 'pending',

@@ -4,7 +4,7 @@
 - Type: new
 - Module: dungeoncrawler_content
 - Priority: P2
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 
 ## Goal
@@ -34,3 +34,7 @@ Model currency as a single integer `copper_pieces` on the character record; expo
 ## Roadmap section
 - See `runbooks/roadmap-audit.md` for audit process.
 - Requirements tracked in `dc_requirements` table.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

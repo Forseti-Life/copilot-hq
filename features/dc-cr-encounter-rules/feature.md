@@ -3,7 +3,7 @@
 - Work item id: dc-cr-encounter-rules
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Priority: P1 (primary gameplay loop; depends on dice and DC)
 - PM owner: pm-dungeoncrawler
@@ -36,3 +36,7 @@ Encounter engine: maintains sorted initiative order, tracks HP for all combatant
 - CSRF expectations: all POST/PATCH encounter routes require `_csrf_request_header_mode: TRUE`
 - Input validation: encounter parameters (initiative, actions) validated against PF2E rule constraints; no free-text user input without sanitization
 - PII/logging constraints: no PII logged; encounter id + character id + action type only
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

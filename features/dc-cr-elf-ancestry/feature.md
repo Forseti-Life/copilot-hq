@@ -3,7 +3,7 @@
 - Work item id: dc-cr-elf-ancestry
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -38,3 +38,7 @@ Create the elf ancestry record in dungeoncrawler_content using the same ancestry
 - All read endpoints (GET sense flags, ancestry data) use `_csrf_token: FALSE`.
 - Anonymous users receive 403 on all character write paths.
 - Character data is scoped to the owning user's session; no cross-character data exposure.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

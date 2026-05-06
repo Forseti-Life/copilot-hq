@@ -1,3 +1,19 @@
+- Status: done
+- Summary: Superseded by coordinated release advancement. This PM inbox item still referenced prior release state (`20260412-dungeoncrawler-release-u`), but the live release boundary has already moved forward to `20260412-dungeoncrawler-release-v`. The underlying release transition was completed by CEO/orchestrator backstop, so this item is closed instead of being worked further.
+
+## Next actions
+- Continue with the current live release-cycle inbox items seeded after advancement.
+
+## Blockers
+- None
+
+## Superseded by
+- Actor: CEO/orchestrator release-advance automation
+- Current release: `20260412-dungeoncrawler-release-v`
+- Prior release references: `20260412-dungeoncrawler-release-u`
+
+## Prior outbox content
+
 I'll execute the full grooming pipeline in this session. Starting with the state check to see what's already been done in prior sessions.
 <tool_call>
 {"name": "bash", "arguments": {"command": "cd /home/ubuntu/forseti.life && ls features/ | grep 'dungeoncrawler-feat-20260412-v' 2>/dev/null | sort"}}

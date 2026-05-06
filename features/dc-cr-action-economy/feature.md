@@ -3,7 +3,7 @@
 - Work item id: dc-cr-action-economy
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P0 (foundation for all encounter-mode gameplay; all class features, spells, and skill actions depend on this)
 - Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
@@ -28,3 +28,7 @@ Turn state model: `actions_remaining` (0–3), `reaction_available` (bool), rese
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

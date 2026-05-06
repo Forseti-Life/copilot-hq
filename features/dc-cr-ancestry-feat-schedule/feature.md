@@ -3,7 +3,7 @@
 - Work item id: dc-cr-ancestry-feat-schedule
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Priority: P3 (depends on dc-cr-character-leveling which is deferred; ancestry feat slots blocked until leveling system exists)
 - PM owner: pm-dungeoncrawler
@@ -29,3 +29,7 @@ Add `ancestry_feat` slots to the character entity at levels 1, 5, 9, 13, 17. The
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

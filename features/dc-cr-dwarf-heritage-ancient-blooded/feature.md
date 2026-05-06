@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarf-heritage-ancient-blooded
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Priority: P3 (depends on dc-cr-heritage-system and dc-cr-dwarf-ancestry, neither yet shipped; deferred to next cycle)
 - PM owner: pm-dungeoncrawler
@@ -37,3 +37,7 @@ Create a `heritage` entity: `id: ancient-blooded-dwarf`, `parent_ancestry: dwarf
 - Heritage assignment validates authenticated user owns the character (no cross-character mutation).
 - Anonymous users receive 403 on all heritage write paths.
 - Heritage ID validated server-side against permitted list for the ancestry before application.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

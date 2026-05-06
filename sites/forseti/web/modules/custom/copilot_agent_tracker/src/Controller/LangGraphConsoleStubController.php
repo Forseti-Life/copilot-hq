@@ -2314,6 +2314,7 @@ final class LangGraphConsoleStubController extends ControllerBase {
       ],
     ];
   }
+
   /**
    * Observe → Feature Progress subsection.
    *
@@ -2382,4 +2383,5 @@ final class LangGraphConsoleStubController extends ControllerBase {
       ],
     ]);
   }
+
 }

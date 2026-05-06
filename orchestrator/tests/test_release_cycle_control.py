@@ -57,7 +57,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             run.REPO_ROOT = root
             calls = []
 
-            def fake_run(cmd, timeout=0):
+            def fake_run(cmd, timeout=0, env=None):
                 calls.append(cmd)
                 return 0, ""
 
@@ -95,7 +95,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             run.REPO_ROOT = root
             calls = []
 
-            def fake_run(cmd, timeout=0):
+            def fake_run(cmd, timeout=0, env=None):
                 calls.append(cmd)
                 return 0, ""
 
@@ -157,7 +157,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             old_run = run._run
             run.REPO_ROOT = root
 
-            def fake_run(cmd, timeout=0):
+            def fake_run(cmd, timeout=0, env=None):
                 return 1, "gh auth missing"
 
             run._run = fake_run
@@ -186,7 +186,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             run.REPO_ROOT = root
             calls = []
 
-            def fake_run(cmd, timeout=0):
+            def fake_run(cmd, timeout=0, env=None):
                 calls.append(cmd)
                 return 0, ""
 

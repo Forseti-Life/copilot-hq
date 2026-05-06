@@ -3,7 +3,7 @@
 - Work item id: dc-cr-xp-award-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -42,3 +42,7 @@ Implement the XP award system — awarding XP from creature defeats, quest objec
 - Book: core, Chapter: ch10
 - REQs: 2332–2335, 2337–2339
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

@@ -3,7 +3,7 @@
 - Work item id: dc-apg-class-expansions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Dev owner: dev-dungeoncrawler
 - QA owner: qa-dungeoncrawler
@@ -41,3 +41,7 @@ For each CRB class with APG subclass expansions, extend the relevant enum: `Barb
 - Book: apg, Chapter: ch02
 - REQs: 191–221 (31 REQs, Core Class Expansions section)
 - See `runbooks/roadmap-audit.md` for audit process.
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

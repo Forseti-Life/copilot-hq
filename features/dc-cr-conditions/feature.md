@@ -3,7 +3,7 @@
 - Work item id: dc-cr-conditions
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -35,3 +35,7 @@ Content type: `condition` with fields for name, value (for valued conditions lik
 - CSRF expectations: all POST/PATCH condition routes require `_csrf_request_header_mode: TRUE`
 - Input validation: condition keys validated against allowed enum; valued conditions (frightened 1–4) validated as integers within range
 - PII/logging constraints: no PII logged; character id + condition key + value only
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

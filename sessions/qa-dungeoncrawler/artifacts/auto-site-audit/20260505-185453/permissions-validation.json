@@ -1,0 +1,13 @@
+{
+  "base_url": "https://dungeoncrawler.forseti.life",
+  "config": "org-chart/sites/dungeoncrawler/qa-permissions.json",
+  "generated_at": "2026-05-05T18:55:04+0000",
+  "label": "dungeoncrawler",
+  "probe_issue_count": 0,
+  "probe_issues": [],
+  "roles_run": [
+    "anon"
+  ],
+  "violation_count": 0,
+  "violations": []
+}

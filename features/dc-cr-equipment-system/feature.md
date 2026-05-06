@@ -3,7 +3,7 @@
 - Work item id: dc-cr-equipment-system
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -34,3 +34,7 @@ Content type: `equipment_item` with fields for item type (weapon/armor/shield/ge
 - CSRF expectations: all POST/PATCH equipment/inventory routes require `_csrf_request_header_mode: TRUE`
 - Input validation: item quantities and bulk values validated against defined limits; item names sanitized at Drupal field layer
 - PII/logging constraints: no PII logged; item id + character id + transaction type only
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

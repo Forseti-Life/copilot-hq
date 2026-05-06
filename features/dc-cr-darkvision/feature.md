@@ -3,7 +3,7 @@
 - Work item id: dc-cr-darkvision
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -31,6 +31,8 @@ Create a `sense` entity: `id: darkvision`, `type: vision`, `effect: no_concealme
 See `features/dc-cr-darkvision/01-acceptance-criteria.md`.
 
 ## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.
 
 - 2026-04-07: Scoped into release — suite activation sent to QA.
 

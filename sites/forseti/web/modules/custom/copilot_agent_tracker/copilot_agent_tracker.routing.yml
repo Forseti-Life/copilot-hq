@@ -219,10 +219,10 @@ copilot_agent_tracker.langgraph_console_release:
     _permission: 'administer copilot agent tracker'
 
 copilot_agent_tracker.langgraph_console_admin:
-  path: '/langgraph-console/admin'
+  path: '/admin/reports/copilot-agent-tracker/langgraph-console/admin'
   defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::index'
-    _title: 'LangGraph Console Admin'
+    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleStubController::admin'
+    _title: 'Admin'
   requirements:
     _permission: 'administer copilot agent tracker'
 
@@ -235,58 +235,3 @@ copilot_agent_tracker.langgraph_console_subsection:
     _permission: 'administer copilot agent tracker'
     section: 'home|build|test|run|observe|release|admin'
     subsection: '[a-z0-9-]+'
-
-copilot_agent_tracker.langgraph_console_admin_settings:
-  path: '/langgraph-console/admin/settings'
-  defaults:
-    _form: '\Drupal\copilot_agent_tracker\Form\AdminSettingsForm'
-    _title: 'Admin Settings'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.langgraph_console_admin_permissions:
-  path: '/langgraph-console/admin/permissions'
-  defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::permissions'
-    _title: 'Permissions & Team Assignment'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.admin_audit_log:
-  path: '/langgraph-console/admin/audit-log'
-  defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::auditLog'
-    _title: 'Audit Log Viewer'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.admin_audit_export:
-  path: '/langgraph-console/admin/audit-log/export'
-  defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::auditExport'
-    _title: 'Audit Export'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.langgraph_console_admin_health:
-  path: '/langgraph-console/admin/health'
-  defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::health'
-    _title: 'Health & Status Dashboard'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.langgraph_console_admin_health_json:
-  path: '/langgraph-console/admin/health.json'
-  defaults:
-    _controller: '\Drupal\copilot_agent_tracker\Controller\LangGraphConsoleAdminController::healthJson'
-  requirements:
-    _permission: 'administer copilot agent tracker'
-
-copilot_agent_tracker.langgraph_console_admin_navigation:
-  path: '/langgraph-console/admin/navigation'
-  defaults:
-    _form: '\Drupal\copilot_agent_tracker\Form\AdminNavigationForm'
-    _title: 'Navigation Controls'
-  requirements:
-    _permission: 'administer copilot agent tracker'

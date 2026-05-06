@@ -3,7 +3,7 @@
 - Work item id: dc-cr-half-elf-heritage
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -32,3 +32,7 @@ Model Half-Elf as a Human heritage record, not a separate ancestry. The heritage
 
 - [ ] Aligns with democratized community game experience
 - [ ] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

@@ -3,7 +3,7 @@
 - Work item id: dc-cr-dwarven-weapon-expertise
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P2
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -32,3 +32,7 @@ Store as a dwarf ancestry feat at level 13 in the dungeoncrawler_content ancestr
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

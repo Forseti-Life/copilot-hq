@@ -3,7 +3,7 @@
 - Work item id: dc-cr-halfling-weapon-expertise
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Priority: P3
 - PM owner: pm-dungeoncrawler
 - Dev owner: dev-dungeoncrawler
@@ -37,5 +37,7 @@ Implements Halfling Weapon Expertise (Halfling Feat 13, prereq: Halfling Weapon 
 - Security AC exemption: Pure rules reference content; no new routes, no user input, no data processing
 
 ## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.
 
 - 2026-05-05: Reconciled stale release metadata after confirmed dev-complete evidence (`sessions/dev-dungeoncrawler/outbox/20260420-195520-impl-dc-cr-halfling-weapon-expertise.md`).

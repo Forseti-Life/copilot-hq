@@ -3,7 +3,7 @@
 - Work item id: dc-cr-alchemical-items
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: done
+- Status: shipped
 - Release: 20260412-dungeoncrawler-release-u
 - Defer reason: 20260228-dungeoncrawler-release-next focuses on core MVP (dice, DC, encounter, conditions, character creation, class, background, skill, equipment); this feature is secondary priority and will be re-evaluated next grooming cycle.
 - Consolidated into: dc-cr-equipment-ch06 (requirements covered in that feature's acceptance criteria)
@@ -31,3 +31,7 @@ Content type: `alchemical_item` with fields for alchemical type (bomb/elixir/mut
 
 - [x] Aligns with democratized community game experience
 - [x] Does not add surveillance or restrict community access
+
+## Latest updates
+
+- 2026-05-05: Reconciled to shipped after coordinated push for 20260412-dungeoncrawler-release-u.

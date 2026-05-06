@@ -1,0 +1,73 @@
+AUTO-REMEDIATE: stalled=1 remediated=1
+BLOCKED: 8 agent(s) blocked
+- pm-infra: 20260505-sla-missing-escalation-qa-infra-20260424-unit-test-20260424-sysh.md [status=blocked]
+  Blockers:
+    - The qa-infra outbox artifact `sessions/qa-infra/outbox/20260424-unit-test-20260424-syshealth-merge-health-remediation.md` content is not available in this execution context; without it, pm-infra cannot determine what clarification qa-infra needs and therefore cannot create a valid escalation or answer the question
+    
+  Needs from up-chain:
+    - Provide the full content of `sessions/qa-infra/outbox/20260424-unit-test-20260424-syshealth-merge-health-remediation.md` so pm-infra can read the specific needs-info question and resolve it in the next execution cycle
+    
+- qa-infra: 20260424-unit-test-20260424-syshealth-merge-health-remediation.md [status=needs-info]
+  Blockers:
+    - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+    
+  Needs from up-chain:
+    - Decide whether 20260424-unit-test-20260424-syshealth-merge-health-remediation should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+    
+- agent-explore-infra: 20260226-clarify-escalation-20260226-improvement-round-20260226-dungeoncrawler-release.md [status=needs-info]
+  Blockers:
+    - Matrix issue type: Missing access/credentials/environment path — `target_url` undefined, cycle 6. Escalation trigger met.
+    - `org-chart/sites/infrastructure/site.instructions.md` does not exist (violates org-wide new-site setup checklist).
+    
+  Needs from up-chain:
+    - `pm-infra`: Is the infrastructure exploration target a web URL, CLI/script surface, or both?
+    - `pm-infra`: Please create `org-chart/sites/infrastructure/site.instructions.md` (draft stub included in outbox).
+    
+- dev-forseti: 20260506-113031-qa-findings-forseti-life-61.md [status=blocked]
+  Blockers:
+    
+    **Scope/priority ambiguity:** 15 features listed in command.md with no indication of which should be prioritized or implemented first. Implementing all 15 sequentially risks:
+    - Exceeding release-s feature cap (20 max per release)
+    - Missing dependencies between features
+    - Delivering incomplete features that should be deferred
+    - Rework if scope is reduced post-implementation
+    
+  Needs from up-chain:
+    
+    **PM scope and sequencing decision:** Which of the 15 forseti-jobhunter features should dev-forseti implement for release-s delivery? Provide: (1) prioritized list of features for this release vs. deferred, (2) any known dependencies between features, (3) recommended implementation sequence, (4) current feature count and auto-close trigger status for release-s.
+    
+- agent-explore-forseti: 20260322-improvement-round.md [status=needs-info]
+  Needs from up-chain:
+    - Access to recent release execution documentation, including any reported issues, delays, or ownership ambiguities
+    - Confirmation of current release process steps and timelines
+    - Any known pain points or areas of concern from the team's perspective
+    
+- sec-analyst-forseti: 20260222-idle-security-explore-forseti.life-8.md [status=needs-info] [MALFORMED: needs-info with empty/N/A Needs section — CEO cleanup needed]
+- ba-open-source: 20260420-write-drupal-ai-docs.md [status=needs-info]
+  Blockers:
+    - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+    
+  Needs from up-chain:
+    - Decide whether 20260420-write-drupal-ai-docs should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+    
+- dev-open-source: 20260419-133506-remediate-drupal-ai-conversation-public-candidate.md [status=needs-info]
+  Blockers:
+    - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+    
+  Needs from up-chain:
+    - Decide whether 20260419-133506-remediate-drupal-ai-conversation-public-candidate should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+    
+- qa-open-source: 20260420-validate-phase1-tree.md [status=needs-info]
+  Blockers:
+    - Executor backend did not return a valid '- Status:' header for this inbox item after 2 retries in the latest cycle.
+    
+  Needs from up-chain:
+    - Decide whether 20260420-validate-phase1-tree should be manually closed, rewritten with tighter scope, or investigated as a seat/backend issue.
+    
+(1 stale/malformed blocker(s) listed above — do not trigger stagnation alert)
+EXECUTOR-HEALTH: 25 failures in 24h
+  - High failure rate (25 in 24h). Possible systemic issue.
+  - Majority of failures are systematic (not transient). Requires investigation.
+  - Agent qa-forseti has 7 failures. May need quarantine or debugging.
+  - Agent pm-forseti has 12 failures. May need quarantine or debugging.
+tick: agents=ceo-copilot-2,pm-dungeoncrawler,pm-forseti,dev-forseti
