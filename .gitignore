@@ -57,6 +57,8 @@ llm/__pycache__/
 llm/lib/__pycache__/
 
 # Session and inbox working state
+# These directories generate heavy operational churn and branch noise, so they are
+# treated as local runtime state rather than tracked repository content.
 sessions/
 inbox/
 copilot-hq/sessions/
