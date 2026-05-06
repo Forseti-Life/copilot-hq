@@ -22,7 +22,7 @@ All seats with `website_scope: ["forseti.life"]`.
 ## Environments
 - Production `BASE_URL`: `https://forseti.life`
 - There is no local/dev environment on this host. This server IS production (Apache 2.4 on ports 80/443, Let's Encrypt SSL).
-- **Code is always live**: `/var/www/html/forseti/web/modules/custom` and `/var/www/html/forseti/web/themes/custom` are symlinks to the git checkout at `/home/ubuntu/forseti.life/sites/forseti/web/modules/custom` and `.../web/themes/custom`. Any committed code change is immediately present in production — no rsync/deploy step is needed for module or theme changes.
+- **Code is always live**: `/var/www/html/forseti/web/modules/custom` and `/var/www/html/forseti/web/themes/custom` are symlinks to the git checkout at `/home/ubuntu/forseti.life/copilot-hq/sites/forseti/web/modules/custom` and `.../web/themes/custom`. Any committed code change is immediately present in production — no rsync/deploy step is needed for module or theme changes.
 - **GitHub Actions deploy.yml** is therefore redundant for module/theme changes on this server. It still handles: config/sync updates via rsync, composer installs, and `drush cr`. If deploy.yml stops triggering (GitHub Actions), do NOT escalate as a code-deploy blocker — verify with `drush config:status` and a checksum diff instead. (Lesson: 2026-04-08 false alarm where pm-forseti halted release-b post-push steps because deploy.yml hadn't triggered since 2026-04-02; production was already current via symlinks.)
 
 Rule:
@@ -30,8 +30,8 @@ Rule:
 - Do NOT run recursive crawls or destructive probes against production unless explicitly authorized for a specific purpose.
 
 ## Code roots (on this host)
-- Drupal site root: `/home/ubuntu/forseti.life/sites/forseti`
-- Drupal web root: `/home/ubuntu/forseti.life/sites/forseti/web`
+- Drupal site root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti`
+- Drupal web root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti/web`
 
 ## Product-wide rules
 - Keep work items logically separated from other websites.

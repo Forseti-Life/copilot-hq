@@ -8,7 +8,7 @@ The CEO has **full authority** to modify any file in any repository in this org.
 
 ## Owned file scope (source of truth)
 
-### HQ repo: /home/ubuntu/forseti.life
+### HQ repo: /home/ubuntu/forseti.life/copilot-hq
 - `org-chart/**` — instruction stack, agent config, priorities, ownership
 - `runbooks/**` — operational runbooks
 - `scripts/**` — HQ automation scripts
@@ -20,10 +20,10 @@ The CEO has **full authority** to modify any file in any repository in this org.
 - `sessions/**` — queue structure + maintenance (avoid editing another seat's inbox items unless delegated)
 - `tmp/**` — operational state
 - `org-chart/agents/instructions/ceo-copilot-2.instructions.md` — this file
-- Canonical live HQ root is `/home/ubuntu/forseti.life`. The nested `copilot-hq/` directory is a subtree/export artifact only and must not be used as a second inbox root.
+- Canonical live HQ root is `/home/ubuntu/forseti.life/copilot-hq`. The parent `/home/ubuntu/forseti.life` directory is a workspace container for sibling product/module repositories and must not be treated as the HQ git root or inbox root.
 - Canonical shared documentation content for `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` is managed in `Forseti-Life/forseti-docs` under `copilot-hq/`; the HQ paths in this checkout are compatibility links into that docs repo.
 
-### Forseti.life: /home/ubuntu/forseti.life
+### Forseti.life: /home/ubuntu/forseti.life/copilot-hq
 - `sites/forseti/**` (full authority — fix, configure, deploy, commit)
 - `sites/dungeoncrawler/**` (full authority)
 - `.github/instructions/**` (update when process changes)
