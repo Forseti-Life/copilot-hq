@@ -66,9 +66,20 @@
     },
     {
       "id": "public-core",
-      "path_regex": "^/(?:$|contact|how-it-works)(?:/|$)",
+      "path_regex": "^/(?:$|how-it-works)(?:/|$)",
       "expect": {
         "anon": "allow",
+        "authenticated": "allow",
+        "content_editor": "allow",
+        "administrator": "allow"
+      }
+    },
+    {
+      "id": "contact-short",
+      "path_regex": "^/contact(?:/|$)",
+      "notes": "CEO decision 2026-05-07: /contact now delegates to the same authenticated AI-conversation launcher flow as /talk-with-forseti. Treat ACL expectations the same as the talk-with-forseti short route.",
+      "expect": {
+        "anon": "deny",
         "authenticated": "allow",
         "content_editor": "allow",
         "administrator": "allow"

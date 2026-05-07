@@ -9,8 +9,9 @@ All work items for **dungeoncrawler** should remain logically separated from oth
 - Production `BASE_URL`: `https://dungeoncrawler.forseti.life`
 
 ## Code roots (on this host)
-- Drupal site root: `/home/ubuntu/forseti.life/sites/dungeoncrawler`
-- Drupal web root: `/home/ubuntu/forseti.life/sites/dungeoncrawler/web`
+- HQ compatibility site root: `/home/ubuntu/forseti.life/copilot-hq/sites/dungeoncrawler`
+- HQ compatibility web root: `/home/ubuntu/forseti.life/copilot-hq/sites/dungeoncrawler/web`
+- Canonical product/module repositories live as sibling repos under `/home/ubuntu/forseti.life/*` and are the source of truth for development
 
 ## Module Ownership
 See:

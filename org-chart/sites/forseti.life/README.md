@@ -9,8 +9,9 @@ All work items for **forseti.life** should remain logically separated from other
 - Production `BASE_URL`: `https://forseti.life`
 
 ## Code roots (on this host)
-- Drupal site root: `/home/ubuntu/forseti.life/sites/forseti`
-- Drupal web root: `/home/ubuntu/forseti.life/sites/forseti/web`
+- HQ compatibility site root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti`
+- HQ compatibility web root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti/web`
+- Canonical module/product repositories live as sibling repos under `/home/ubuntu/forseti.life/*` and are the source of truth for development
 
 ## Module Ownership
 See:

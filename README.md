@@ -20,6 +20,10 @@ docs repository.
 
 This repository is the HQ control plane. Product and module repositories that live alongside it under `/home/ubuntu/forseti.life/*` are maintained as **standalone sibling repositories**, not as gitlinks tracked by this repo.
 
+- Workspace container: `/home/ubuntu/forseti.life`
+- Canonical HQ repo root: `/home/ubuntu/forseti.life/copilot-hq`
+- Canonical development for product/module code should happen in the owning sibling repository under `/home/ubuntu/forseti.life/*`, not inside `copilot-hq`
+
 ## What this repo does
 
 This repository is the canonical control plane for:
@@ -52,6 +56,11 @@ This repository is the canonical control plane for:
 - `orchestrator/` — LangGraph runtime and execution graph
 - `dashboards/` — project, release, finance, and integration dashboards
 - `llm/` — local model catalog, routing, and download tooling
+
+## Canonical development model
+- Use `copilot-hq` for orchestration, governance, instructions, dashboards, runtime automation, and shared control-plane assets.
+- Use the owning sibling repository under `/home/ubuntu/forseti.life/*` for product and module implementation work.
+- Live site `web/modules/custom` directories may point at those sibling repositories directly; those linked repos are the authoritative code locations.
 
 ## Purpose and public positioning
 
@@ -96,6 +105,7 @@ The org automation control path is deterministic at the control layer and agenti
 - State toggle: `scripts/org-control.sh`
 - State read gate: `scripts/is-org-enabled.sh`
 - State file default: `/var/tmp/copilot-sessions-hq/org-control.json` (legacy fallback supported)
+- Governance rule: disabling the org may be done for safety/Board pause handling, but re-enabling the org loop/control requires **explicit human/Board permission**. Do not resume HQ automation from an org-disabled state on autonomous judgment alone.
 
 ### 1b) Source of truth: release-cycle enable/disable
 - State toggle: `scripts/release-cycle-control.sh`

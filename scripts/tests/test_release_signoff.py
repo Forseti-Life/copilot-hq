@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "release-signoff.sh"
+GATE1B_HELPER = Path(__file__).resolve().parents[1] / "lib" / "gate1b_artifacts.py"
 
 
 def _make_root(tmp_path: Path) -> tuple[Path, str]:
@@ -14,8 +15,14 @@ def _make_root(tmp_path: Path) -> tuple[Path, str]:
 
     (root / "org-chart" / "products").mkdir(parents=True)
     (root / "features").mkdir(parents=True)
+    (root / "scripts" / "lib").mkdir(parents=True)
+    (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True)
     (root / "sessions" / "qa-dungeoncrawler" / "outbox").mkdir(parents=True)
     (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-candidates" / release_id).mkdir(parents=True)
+    (root / "scripts" / "lib" / "gate1b_artifacts.py").write_text(
+        GATE1B_HELPER.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
 
     teams = {
         "teams": [
@@ -36,6 +43,17 @@ def _make_root(tmp_path: Path) -> tuple[Path, str]:
     )
     (root / "sessions" / "qa-dungeoncrawler" / "outbox" / f"20260412-gate2-approve-{release_id}.md").write_text(
         f"{release_id} — APPROVE\n",
+        encoding="utf-8",
+    )
+    (root / "sessions" / "agent-code-review" / "outbox" / f"20260412-code-review-dungeoncrawler-{release_id}.md").write_text(
+        "\n".join(
+            [
+                "- Status: done",
+                f"- Release: {release_id}",
+                "- Verdict: APPROVE",
+            ]
+        )
+        + "\n",
         encoding="utf-8",
     )
     return root, release_id
@@ -133,3 +151,40 @@ def test_signoff_rejects_auto_filed_gate2_artifact(tmp_path):
 
     assert result.returncode == 1, result.stdout + result.stderr
     assert "Gate 2 APPROVE evidence not found" in result.stderr
+
+
+def test_signoff_rejects_missing_gate1b_artifact(tmp_path):
+    root, release_id = _make_root(tmp_path)
+    for artifact in (root / "sessions" / "agent-code-review" / "outbox").glob("*.md"):
+        artifact.unlink()
+
+    result = _run(root, release_id)
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    assert "Gate 1b evidence not found" in result.stderr
+    assert "BLOCKED: PM signoff requires completed Gate 1b code review evidence" in result.stderr
+
+
+def test_signoff_accepts_same_release_gate1b_risk_acceptance(tmp_path):
+    root, release_id = _make_root(tmp_path)
+    for artifact in (root / "sessions" / "agent-code-review" / "outbox").glob("*.md"):
+        artifact.unlink()
+    risk_dir = root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "risk-acceptances"
+    risk_dir.mkdir(parents=True)
+    (risk_dir / f"{release_id}-gate-1b-waiver.md").write_text(
+        "\n".join(
+            [
+                "# Gate 1b Risk Acceptance",
+                f"- Release: {release_id}",
+                "- Decision: waive Gate 1b",
+                "- Rationale: explicit risk acceptance for same release",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = _run(root, release_id)
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Gate 1b cleared by risk acceptance" in result.stdout

@@ -12,8 +12,11 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_PRIVATE_ROOT = Path("/var/www/html/forseti/web/sites/default/files/private/drupal_langgraph")
-FALLBACK_REQUEST_ROOT = REPO_ROOT / "tmp" / "langgraph-control-requests"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from orchestrator.langgraph_request_paths import control_requests_root
+
 RUN_LOG_DIR = REPO_ROOT / "tmp" / "langgraph-runtime-request-runs"
 LOCK_PATH = REPO_ROOT / "tmp" / ".langgraph-runtime-requests.lock"
 
@@ -27,15 +30,7 @@ def discover_request_root() -> Path:
     if override:
         return Path(override)
 
-    private_override = os.environ.get("DRUPAL_LANGGRAPH_PRIVATE_ROOT", "").strip()
-    if private_override:
-        return Path(private_override).expanduser() / "control-requests"
-
-    candidate = DEFAULT_PRIVATE_ROOT / "control-requests"
-    if candidate.exists():
-        return candidate
-
-    return FALLBACK_REQUEST_ROOT
+    return control_requests_root()
 
 
 def python_bin() -> str:

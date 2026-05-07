@@ -1,6 +1,7 @@
 import sys
 import tempfile
 import unittest
+import json
 from pathlib import Path
 from unittest import mock
 
@@ -12,8 +13,9 @@ from llm import bedrock_runner  # noqa: E402
 
 
 class _FakeClient:
-    def __init__(self, response_text: str):
+    def __init__(self, response_text: str, usage: dict | None = None):
         self.response_text = response_text
+        self.usage = usage or {}
         self.calls = []
 
     def converse(self, **kwargs):
@@ -25,7 +27,8 @@ class _FakeClient:
                         {"text": self.response_text},
                     ]
                 }
-            }
+            },
+            "usage": self.usage,
         }
 
 
@@ -38,9 +41,13 @@ class TestBedrockRunner(unittest.TestCase):
                 session_id = "test-session"
                 bedrock_runner.save_session(session_id, [{"role": "assistant", "content": "Prior reply"}])
 
-                fake_client = _FakeClient("- Status: done\n- Summary: ok")
-                with mock.patch("boto3.client", return_value=fake_client):
+                usage_file = Path(td) / "langgraph-llm-usage.jsonl"
+                fake_client = _FakeClient("- Status: done\n- Summary: ok", {"inputTokens": 12, "outputTokens": 7})
+                with mock.patch("boto3.client", return_value=fake_client), mock.patch.dict("os.environ", {
+                    "LANGGRAPH_LLM_USAGE_FILE": str(usage_file),
+                }, clear=False):
                     text = bedrock_runner.run_bedrock(
+                        "agent-bedrock",
                         session_id,
                         "Prompt body",
                         model_id="test-model",
@@ -61,6 +68,13 @@ class TestBedrockRunner(unittest.TestCase):
                 saved = bedrock_runner.load_session(session_id)
                 self.assertEqual(saved[-2]["role"], "user")
                 self.assertEqual(saved[-1]["role"], "assistant")
+                usage_rows = [json.loads(line) for line in usage_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+                self.assertEqual(len(usage_rows), 1)
+                self.assertEqual(usage_rows[0]["backend"], "bedrock")
+                self.assertEqual(usage_rows[0]["agent_id"], "agent-bedrock")
+                self.assertEqual(usage_rows[0]["token_visibility"], "exact")
+                self.assertEqual(usage_rows[0]["exact_input_tokens"], 12)
+                self.assertEqual(usage_rows[0]["exact_output_tokens"], 7)
             finally:
                 bedrock_runner.REPO_ROOT = old_root
 
@@ -73,6 +87,7 @@ class TestBedrockRunner(unittest.TestCase):
                 with mock.patch("boto3.client", return_value=fake_client):
                     with self.assertRaisesRegex(RuntimeError, "empty response"):
                         bedrock_runner.run_bedrock(
+                            "agent-bedrock",
                             "test-session",
                             "Prompt body",
                             model_id="test-model",

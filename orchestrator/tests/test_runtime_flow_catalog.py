@@ -17,7 +17,7 @@ class TestRuntimeFlowCatalog(unittest.TestCase):
         self.assertGreaterEqual(len(flow["node_breakdown"]), 1)
 
     def test_export_flow_catalog_script_outputs_json(self):
-        script = Path("/home/ubuntu/forseti.life/orchestrator/runtime_graph/export_flow_catalog.py")
+        script = Path(__file__).resolve().parent.parent / "runtime_graph" / "export_flow_catalog.py"
         proc = subprocess.run(
             ["python3", str(script)],
             stdout=subprocess.PIPE,

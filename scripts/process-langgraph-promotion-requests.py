@@ -6,13 +6,21 @@ import fcntl
 import json
 import os
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_PRIVATE_ROOT = Path("/var/www/html/forseti/web/sites/default/files/private/drupal_langgraph")
-FALLBACK_CONTROL_ROOT = REPO_ROOT / "tmp" / "langgraph-control-requests"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from orchestrator.langgraph_request_paths import (
+    flow_versions_root,
+    promoted_versions_root,
+    release_requests_root,
+)
+
 LOCK_PATH = REPO_ROOT / "tmp" / ".langgraph-promotion-requests.lock"
 
 
@@ -20,37 +28,25 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def private_root() -> Path:
-    override = os.environ.get("DRUPAL_LANGGRAPH_PRIVATE_ROOT", "").strip()
-    if override:
-        return Path(override).expanduser()
-    if DEFAULT_PRIVATE_ROOT.exists():
-        return DEFAULT_PRIVATE_ROOT
-    return FALLBACK_CONTROL_ROOT
-
-
 def promotion_request_root() -> Path:
     override = os.environ.get("DRUPAL_LANGGRAPH_PROMOTION_REQUEST_DIR", "").strip()
     if override:
         return Path(override)
-    root = private_root()
-    return root / ("release-requests" if root == DEFAULT_PRIVATE_ROOT or str(root).endswith("drupal_langgraph") else "release-requests")
+    return release_requests_root()
 
 
 def version_snapshot_root() -> Path:
     override = os.environ.get("DRUPAL_LANGGRAPH_VERSION_DIR", "").strip()
     if override:
         return Path(override)
-    root = private_root()
-    return root / ("flow-versions" if root == DEFAULT_PRIVATE_ROOT or str(root).endswith("drupal_langgraph") else "versions")
+    return flow_versions_root()
 
 
 def promotion_state_root() -> Path:
     override = os.environ.get("DRUPAL_LANGGRAPH_PROMOTION_STATE_DIR", "").strip()
     if override:
         return Path(override)
-    root = private_root()
-    return root / ("promoted-versions" if root == DEFAULT_PRIVATE_ROOT or str(root).endswith("drupal_langgraph") else "promoted-versions")
+    return promoted_versions_root()
 
 
 def read_json(path: Path) -> dict[str, Any]:

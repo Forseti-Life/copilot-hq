@@ -154,7 +154,7 @@ Examples of things you must do directly (not escalate):
 - `bash scripts/site-audit-run.sh <site>` — run it directly
 - Edit any file in any repo — do it, commit, push
 - Clear stale locks in `tmp/` — do it
-- Re-enable org (`tmp/org-control.json`) — do it
+- Re-enable org automation **only when the Board has explicitly said to do so in the current thread or another recorded instruction**; otherwise keep the org paused and do not resume `scripts/org-control.sh` / orchestrator control on your own
 
 ### Forseti drush invocation (required)
 - Must run from: `/home/ubuntu/forseti.life/sites/forseti/`

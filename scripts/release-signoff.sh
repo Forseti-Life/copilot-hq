@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+SCRIPT_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)"
 cd "$ROOT_DIR"
 
 PRODUCT_TEAMS_JSON="org-chart/products/product-teams.json"
@@ -191,6 +192,74 @@ CERT
     echo "  If this release shipped zero features, re-run with --empty-release to self-certify." >&2
     echo "BLOCKED: PM signoff requires Gate 2 QA APPROVE before it can be issued." >&2
     exit 1
+  fi
+fi
+
+# Gate 1b guard: require completed code review evidence or an explicit same-release
+# risk acceptance before PM signoff can be recorded.
+if [ "$empty_release" -eq 1 ]; then
+  echo "INFO: Gate 1b self-certified for empty release '${release_id}'"
+else
+  gate1b_tmp="$(mktemp)"
+  set +e
+  python3 - "$ROOT_DIR" "$SCRIPT_LIB_DIR" "$release_id" "$pm_agent" <<'PY' >"$gate1b_tmp" 2>&1
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+fallback_lib = Path(sys.argv[2])
+release_id = sys.argv[3]
+pm_agent = sys.argv[4]
+
+for lib_dir in (root / "scripts" / "lib", fallback_lib):
+    if lib_dir.exists() and str(lib_dir) not in sys.path:
+        sys.path.insert(0, str(lib_dir))
+
+from gate1b_artifacts import latest_gate1b_artifact, latest_gate1b_risk_acceptance  # type: ignore
+
+gate1b_outbox = root / "sessions" / "agent-code-review" / "outbox"
+risk_dir = root / "sessions" / pm_agent / "artifacts" / "risk-acceptances"
+
+artifact = latest_gate1b_artifact(gate1b_outbox, release_id)
+risk = latest_gate1b_risk_acceptance(risk_dir, release_id)
+
+if risk is not None:
+    print(f"INFO: Gate 1b cleared by risk acceptance: {risk}")
+    if artifact is not None:
+        print(f"INFO: Latest Gate 1b artifact: {artifact.path} ({artifact.verdict})")
+    raise SystemExit(0)
+
+if artifact is None:
+    print(f"ERROR: Gate 1b evidence not found for release '{release_id}'", file=sys.stderr)
+    print(
+        f"  Searched: {gate1b_outbox}/ for release-scoped code-review/manual-cr artifacts and "
+        f"{risk_dir}/ for same-release Gate 1b risk acceptance",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+if artifact.verdict != "APPROVE":
+    print(
+        f"ERROR: Gate 1b latest artifact is not clear for release '{release_id}' "
+        f"({artifact.verdict}: {artifact.path})",
+        file=sys.stderr,
+    )
+    print("  Resolve the review findings or add an explicit same-release Gate 1b risk acceptance.", file=sys.stderr)
+    raise SystemExit(1)
+
+print(f"INFO: Gate 1b cleared by {artifact.path} ({artifact.verdict})")
+PY
+  gate1b_status=$?
+  set -e
+  gate1b_check="$(cat "$gate1b_tmp")"
+  rm -f "$gate1b_tmp"
+  if [ "$gate1b_status" -ne 0 ]; then
+    echo "$gate1b_check" >&2
+    echo "BLOCKED: PM signoff requires completed Gate 1b code review evidence or explicit same-release risk acceptance." >&2
+    exit 1
+  fi
+  if [ -n "$gate1b_check" ]; then
+    echo "$gate1b_check"
   fi
 fi
 

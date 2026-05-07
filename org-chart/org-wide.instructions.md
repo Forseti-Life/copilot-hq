@@ -17,6 +17,13 @@ This file is owned by the `ceo-copilot` seat.
 - In the HQ checkout, `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` are compatibility paths that resolve into that docs repository.
 - When updating shared HQ runbooks, lessons/proposals/scoreboards, or ownership metadata, treat the `forseti-docs` content as the source of truth even if you access it through those compatibility paths locally.
 
+## Repository workspace root (required)
+- The managed development workspace root is `/home/ubuntu/forseti.life`.
+- `copilot-hq` is rooted at `/home/ubuntu/forseti.life/copilot-hq`.
+- Product and module repositories under `/home/ubuntu/forseti.life/*` are canonical sibling repositories and are the source of truth for their own code.
+- Do **not** treat `copilot-hq` as the parent repository for those sibling repos; develop and commit in the owning canonical repo for the code you are changing.
+- Use `org-chart/ownership/repository-ownership.yaml` to determine which sibling repository is the authoritative development location for a given module or product surface.
+
 ## Instructions methodology (required)
 We use a layered instruction stack so the org, each role, each product/site, and each seat can evolve independently without conflicts.
 

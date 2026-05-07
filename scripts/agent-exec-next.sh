@@ -515,6 +515,74 @@ if [ ! -f "$SESSION_FILE" ] || [ -z "$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n
 fi
 SESSION_ID="$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')"
 
+_telemetry_python() {
+  if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
+    printf '%s\n' "$ROOT_DIR/llm/.venv/bin/python3"
+    return 0
+  fi
+  if [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "${LLM_PYTHON_BIN}" ]; then
+    printf '%s\n' "${LLM_PYTHON_BIN}"
+    return 0
+  fi
+  command -v python3 2>/dev/null || true
+}
+
+now_ms() {
+  local value
+  value="$(date +%s%3N 2>/dev/null || true)"
+  if [[ "$value" =~ ^[0-9]+$ ]]; then
+    printf '%s\n' "$value"
+    return 0
+  fi
+  printf '%s000\n' "$(date +%s)"
+}
+
+estimate_tokens_from_text() {
+  local text="$1"
+  local chars=${#text}
+  echo $(( (chars + 3) / 4 ))
+}
+
+record_langgraph_usage() {
+  local backend="$1"
+  local status="$2"
+  local success="$3"
+  local prompt="$4"
+  local response="$5"
+  local duration_ms="$6"
+  local model_id="$7"
+  local phase="$8"
+  local rate_limited="$9"
+  local error="${10:-}"
+  local token_visibility="${11:-estimated}"
+  local py prompt_chars response_chars prompt_tokens_est response_tokens_est
+  py="$(_telemetry_python)"
+  [ -n "$py" ] || return 0
+  prompt_chars=${#prompt}
+  response_chars=${#response}
+  prompt_tokens_est="$(estimate_tokens_from_text "$prompt")"
+  response_tokens_est="$(estimate_tokens_from_text "$response")"
+  "$py" -m orchestrator.langgraph_llm_usage \
+    --backend "$backend" \
+    --agent-id "$AGENT_ID" \
+    --session-id "$SESSION_ID" \
+    --source "scripts/agent-exec-next.sh" \
+    --phase "$phase" \
+    --status "$status" \
+    --success "$success" \
+    --model-id "$model_id" \
+    --duration-ms "$duration_ms" \
+    --prompt-chars "$prompt_chars" \
+    --response-chars "$response_chars" \
+    --prompt-tokens-est "$prompt_tokens_est" \
+    --response-tokens-est "$response_tokens_est" \
+    --token-visibility "$token_visibility" \
+    --rate-limited "$rate_limited" \
+    --error "$error" \
+    --operation "langgraph_agent_exec" \
+    >/dev/null 2>&1 || true
+}
+
 # ── Local LLM routing ────────────────────────────────────────────────────────
 # Check if this agent has a local model assigned via llm/routing.yaml.
 # If the model file is present on disk, invoke llm/runner.py instead of Copilot.
@@ -776,10 +844,11 @@ set_copilot_rate_limit_cooldown() {
 
 run_copilot() {
   local prompt="$1"
+  local _copilot_response _needs_followup _start_ms _duration_ms _rate_limited
   echo "DEBUG run_copilot: AGENT_ID=${AGENT_ID} SESSION_ID=${SESSION_ID}" >&2
+  _start_ms="$(now_ms)"
   # Enforce inter-call rate-limit delay before hitting the Copilot API.
   _throttle_copilot_api
-  local _copilot_response
   # Prevent orchestration hangs if the Copilot CLI stalls.
   # Default: 15 minutes; override via COPILOT_TIMEOUT_SEC.
   if command -v timeout >/dev/null 2>&1; then
@@ -791,7 +860,7 @@ run_copilot() {
   # If response is empty OR lacks the required "- Status:" header, the model finished
   # its tool work without emitting a properly structured text response.
   # Follow up in the same session (which retains tool context) to extract the outbox.
-  local _needs_followup=0
+  _needs_followup=0
   if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ]; then
     _needs_followup=1
     echo "WARN: empty first-pass response from ${AGENT_ID}; requesting text outbox via follow-up prompt" >&2
@@ -832,6 +901,18 @@ run_copilot() {
       fi
     fi
   fi
+  _duration_ms=$(( $(now_ms) - _start_ms ))
+  _rate_limited="false"
+  if copilot_rate_limited "$_copilot_response"; then
+    _rate_limited="true"
+  fi
+  if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ]; then
+    record_langgraph_usage "copilot" "empty" "false" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "Copilot returned an empty response" "unavailable"
+  elif ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
+    record_langgraph_usage "copilot" "unstructured" "false" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "Copilot response missing required - Status header" "unavailable"
+  else
+    record_langgraph_usage "copilot" "completed" "true" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "" "unavailable"
+  fi
   printf '%s\n' "$_copilot_response"
 }
 
@@ -858,6 +939,7 @@ run_bedrock_raw() {
   fi
   [ -n "$py" ] || return 0
   "$py" "$BEDROCK_RUNNER" \
+    --agent-id "$AGENT_ID" \
     --session "$SESSION_ID" \
     --prompt "$prompt" 2>&1 || true
 }
@@ -970,6 +1052,7 @@ backend_retry_delay_seconds() {
 
 if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
   # Prefer venv Python for the runner.
+  _local_start_ms="$(now_ms)"
   _LLM_PY="$(command -v python3)"
   [ -x "$ROOT_DIR/llm/.venv/bin/python3" ] && _LLM_PY="$ROOT_DIR/llm/.venv/bin/python3"
   [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ] && _LLM_PY="$LLM_PYTHON_BIN"
@@ -990,6 +1073,9 @@ if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
       fi
       response="$(run_primary_backend "$PROMPT")"
     fi
+  else
+    _local_duration_ms=$(( $(now_ms) - _local_start_ms ))
+    record_langgraph_usage "local" "completed" "true" "$PROMPT" "$response" "$_local_duration_ms" "$LOCAL_MODEL_FILE" "primary" "false" "" "estimated"
   fi
 else
   # Model: always pass --model auto so sessions use Copilot's multi-model routing

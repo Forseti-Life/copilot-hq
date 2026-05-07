@@ -13,15 +13,23 @@
 #   bash scripts/ceo-repo-health.sh
 #   bash scripts/ceo-repo-health.sh --json
 #   bash scripts/ceo-repo-health.sh --report-dir /tmp/dungeoncrawler-rca
-#   bash scripts/ceo-repo-health.sh --scan-root /home/ubuntu
+#   bash scripts/ceo-repo-health.sh --scan-root /home/ubuntu/forseti.life
+#   bash scripts/ceo-repo-health.sh --github-org Forseti-Life
 set -euo pipefail
 
 ROOT_DIR="${HQ_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT_DIR"
 
-SCAN_ROOT="/"
+DEFAULT_SCAN_ROOT="/"
+if [[ -d /home/ubuntu/forseti.life ]]; then
+  DEFAULT_SCAN_ROOT="/home/ubuntu/forseti.life"
+fi
+
+SCAN_ROOT="$DEFAULT_SCAN_ROOT"
 REPORT_DIR=""
 JSON_MODE=0
+GITHUB_ORG="Forseti-Life"
+GITHUB_INVENTORY=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -37,8 +45,16 @@ while [[ $# -gt 0 ]]; do
       JSON_MODE=1
       shift
       ;;
+    --github-org)
+      GITHUB_ORG="${2:?missing value for --github-org}"
+      shift 2
+      ;;
+    --github-inventory)
+      GITHUB_INVENTORY="${2:?missing value for --github-inventory}"
+      shift 2
+      ;;
     --help|-h)
-      sed -n '1,16p' "$0"
+      sed -n '1,20p' "$0"
       exit 0
       ;;
     *)
@@ -48,7 +64,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 - "$ROOT_DIR" "$SCAN_ROOT" "$REPORT_DIR" "$JSON_MODE" <<'PY'
+python3 - "$ROOT_DIR" "$SCAN_ROOT" "$REPORT_DIR" "$JSON_MODE" "$GITHUB_ORG" "$GITHUB_INVENTORY" <<'PY'
 from __future__ import annotations
 
 import csv
@@ -58,12 +74,16 @@ import pathlib
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from collections import Counter, defaultdict
 
 ROOT_DIR = pathlib.Path(sys.argv[1])
 SCAN_ROOT = pathlib.Path(sys.argv[2])
 REPORT_DIR = pathlib.Path(sys.argv[3]) if sys.argv[3] else None
 JSON_MODE = sys.argv[4] == "1"
+GITHUB_ORG = sys.argv[5]
+GITHUB_INVENTORY = pathlib.Path(sys.argv[6]) if sys.argv[6] else None
 
 SKIP_PREFIXES = (
     "/proc",
@@ -132,6 +152,52 @@ def parse_repository_ownership(path: pathlib.Path) -> dict[str, dict[str, str]]:
     return ownership
 
 
+def load_org_inventory(org: str, inventory_path: pathlib.Path | None) -> tuple[list[dict[str, object]], str | None]:
+    if inventory_path is not None:
+        raw = json.loads(inventory_path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict) and "items" in raw:
+            items = raw["items"]
+        elif isinstance(raw, list):
+            items = raw
+        else:
+            raise ValueError(f"Unsupported GitHub inventory format: {inventory_path}")
+        return list(items), None
+
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if not token:
+        token_file = pathlib.Path("/home/ubuntu/github.token")
+        if token_file.exists():
+            token = token_file.read_text(encoding="utf-8").strip()
+
+    items: list[dict[str, object]] = []
+    page = 1
+    try:
+        while True:
+            url = f"https://api.github.com/orgs/{org}/repos?per_page=100&type=all&page={page}"
+            req = urllib.request.Request(
+                url,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": "ceo-repo-health",
+                    **({"Authorization": f"Bearer {token}"} if token else {}),
+                },
+            )
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                batch = json.load(resp)
+            if not batch:
+                break
+            if not isinstance(batch, list):
+                raise ValueError("GitHub org repos API returned non-list payload")
+            items.extend(batch)
+            if len(batch) < 100:
+                break
+            page += 1
+    except (OSError, ValueError, urllib.error.HTTPError, urllib.error.URLError) as exc:
+        return [], f"{type(exc).__name__}: {exc}"
+
+    return items, None
+
+
 def classify_path(repo_path: str, ownership: dict[str, dict[str, str]]) -> tuple[str, str]:
     if repo_path in ownership:
         info = ownership[repo_path]
@@ -151,6 +217,7 @@ def classify_path(repo_path: str, ownership: dict[str, dict[str, str]]) -> tuple
 
 
 ownership_map = parse_repository_ownership(ROOT_DIR / "org-chart" / "ownership" / "repository-ownership.yaml")
+org_inventory, org_inventory_error = load_org_inventory(GITHUB_ORG, GITHUB_INVENTORY)
 
 found_repos: set[str] = set()
 scan_root_str = str(SCAN_ROOT)
@@ -242,10 +309,50 @@ duplicate_groups = {
     if len(entries) > 1
 }
 
+org_repo_rows = []
+org_repo_slugs: set[str] = set()
+org_active_repo_slugs: set[str] = set()
+org_archived_repo_slugs: set[str] = set()
+for item in org_inventory:
+    name = str(item.get("name", "")).strip()
+    if not name:
+        continue
+    slug = f"{GITHUB_ORG}/{name}"
+    archived = bool(item.get("archived", False))
+    org_repo_rows.append({"name": name, "slug": slug, "archived": archived})
+    org_repo_slugs.add(slug)
+    if archived:
+        org_archived_repo_slugs.add(slug)
+    else:
+        org_active_repo_slugs.add(slug)
+
 creep_rows = [
     row for row in rows
     if row["classification"] in {"temp-workspace", "session-artifact", "repo-work-copy", "root-push-copy", "unowned"}
 ]
+
+local_primary_repo_slugs = {row["primary_github_repo"] for row in rows if row["primary_github_repo"]}
+missing_local_active_org_repos = sorted(org_active_repo_slugs - local_primary_repo_slugs)
+missing_local_archived_org_repos = sorted(org_archived_repo_slugs - local_primary_repo_slugs)
+
+local_name_mismatches = []
+for row in rows:
+    slug = row["primary_github_repo"]
+    if not slug or slug not in org_repo_slugs:
+        continue
+    if row["path"] in ownership_map:
+        continue
+    expected_name = slug.split("/", 1)[1]
+    actual_name = pathlib.Path(row["path"]).name
+    if actual_name != expected_name:
+        local_name_mismatches.append(
+            {
+                "path": row["path"],
+                "actual_name": actual_name,
+                "expected_name": expected_name,
+                "slug": slug,
+            }
+        )
 
 summary = {
     "scan_root": str(SCAN_ROOT),
@@ -256,6 +363,14 @@ summary = {
     "creep_rows": len(creep_rows),
     "dirty_rows": sum(1 for row in rows if row["status"] == "dirty"),
     "classification_counts": dict(Counter(row["classification"] for row in rows)),
+    "github_org": GITHUB_ORG,
+    "github_org_repo_total": len(org_repo_rows),
+    "github_org_active_repo_total": len(org_active_repo_slugs),
+    "github_org_archived_repo_total": len(org_archived_repo_slugs),
+    "github_inventory_error": org_inventory_error,
+    "missing_local_active_org_repos": missing_local_active_org_repos,
+    "missing_local_archived_org_repos": missing_local_archived_org_repos,
+    "local_name_mismatch_rows": len(local_name_mismatches),
 }
 
 if REPORT_DIR:
@@ -291,6 +406,14 @@ if REPORT_DIR:
     lines.append(f"- Duplicate upstream groups: **{summary['duplicate_primary_repo_groups']}**")
     lines.append(f"- Likely creep rows: **{summary['creep_rows']}**")
     lines.append(f"- Dirty repos: **{summary['dirty_rows']}**")
+    if org_inventory_error:
+        lines.append(f"- GitHub org inventory: **unavailable** (`{org_inventory_error}`)")
+    else:
+        lines.append(f"- GitHub org: `{GITHUB_ORG}`")
+        lines.append(f"- GitHub org repos: **{summary['github_org_repo_total']}**")
+        lines.append(f"- Missing local active org repos: **{len(missing_local_active_org_repos)}**")
+        lines.append(f"- Missing local archived org repos: **{len(missing_local_archived_org_repos)}**")
+        lines.append(f"- Local name mismatches: **{len(local_name_mismatches)}**")
     lines.append("")
     lines.append("## Classification summary")
     lines.append("")
@@ -324,6 +447,23 @@ if REPORT_DIR:
         lines.append("No likely repo creep found.")
 
     lines.append("")
+    lines.append("## GitHub org reconciliation")
+    lines.append("")
+    if org_inventory_error:
+        lines.append(f"GitHub org inventory unavailable: `{org_inventory_error}`")
+    else:
+        mismatch_details = "<br>".join(
+            f"`{row['path']}` -> `{row['expected_name']}`"
+            for row in local_name_mismatches
+        ) or "None"
+        lines.append("| Category | Count | Details |")
+        lines.append("| --- | ---: | --- |")
+        lines.append(f"| GitHub org repos | {summary['github_org_repo_total']} | `{GITHUB_ORG}` |")
+        lines.append(f"| Active org repos missing locally | {len(missing_local_active_org_repos)} | {'<br>'.join(f'`{repo}`' for repo in missing_local_active_org_repos) or 'None'} |")
+        lines.append(f"| Archived org repos missing locally | {len(missing_local_archived_org_repos)} | {'<br>'.join(f'`{repo}`' for repo in missing_local_archived_org_repos) or 'None'} |")
+        lines.append(f"| Local name mismatches | {len(local_name_mismatches)} | {mismatch_details} |")
+
+    lines.append("")
     lines.append("## Full inventory")
     lines.append("")
     lines.append("| Path | Classification | Upstream | Branch/HEAD | Status |")
@@ -348,6 +488,14 @@ else:
     print(f"Duplicate upstream groups: {summary['duplicate_primary_repo_groups']}")
     print(f"Likely creep rows: {summary['creep_rows']}")
     print(f"Dirty repos: {summary['dirty_rows']}")
+    if org_inventory_error:
+        print(f"GitHub org inventory: unavailable ({org_inventory_error})")
+    else:
+        print(f"GitHub org: {GITHUB_ORG}")
+        print(f"GitHub org repos: {summary['github_org_repo_total']} ({summary['github_org_active_repo_total']} active, {summary['github_org_archived_repo_total']} archived)")
+        print(f"Missing local active org repos: {len(missing_local_active_org_repos)}")
+        print(f"Missing local archived org repos: {len(missing_local_archived_org_repos)}")
+        print(f"Local name mismatches: {len(local_name_mismatches)}")
     if REPORT_DIR:
         print(f"Report dir: {REPORT_DIR}")
     print("")
@@ -365,6 +513,31 @@ else:
             print(f"   - {row['classification']}: {row['path']} -> {upstream}")
     else:
         print("✅ PASS Likely repo creep: none")
+
+    print("")
+    if org_inventory_error:
+        print("⚠️  WARN GitHub org reconciliation: unavailable")
+    else:
+        if missing_local_active_org_repos:
+            print("⚠️  WARN Missing local active org repos:")
+            for repo in missing_local_active_org_repos[:20]:
+                print(f"   - {repo}")
+        else:
+            print("✅ PASS Missing local active org repos: none")
+
+        if missing_local_archived_org_repos:
+            print("ℹ️  INFO Missing local archived org repos:")
+            for repo in missing_local_archived_org_repos[:20]:
+                print(f"   - {repo}")
+
+        if local_name_mismatches:
+            print("⚠️  WARN Local directory name mismatches:")
+            for row in local_name_mismatches[:20]:
+                print(f"   - {row['path']} should be {row['expected_name']}")
+        else:
+            print("✅ PASS Local directory name mismatches: none")
+
+has_findings = bool(duplicate_groups or creep_rows or missing_local_active_org_repos or local_name_mismatches)
 
 raise SystemExit(1 if has_findings else 0)
 PY

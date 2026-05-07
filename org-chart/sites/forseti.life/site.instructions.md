@@ -35,10 +35,12 @@ Rule:
 - Canonical repository workspace root: `/home/ubuntu/forseti.life`
 - Canonical standalone theme repo: `/home/ubuntu/forseti.life/forseti-theme`
 - Canonical module development repos are the owning sibling repositories under `/home/ubuntu/forseti.life/*` (for example `ai-conversation`, `forseti-amisafe`, `forseti-games`, `forseti-job-hunter`, `forseti-jobhunter-tester`, `forseti-cluster`, `drupal-langgraph`)
+- Live production web root: `/var/www/html/forseti/web`
 
 ## Working convention
 - Make Forseti module/product changes in the owning canonical repository under `/home/ubuntu/forseti.life/*`.
 - Treat `copilot-hq/sites/forseti` as the HQ compatibility/integration path, not the primary authored source for standalone module repositories.
+- For `job_hunter` specifically, `/home/ubuntu/forseti.life/forseti-job-hunter` is the only source of truth; the live site consumes it through `/var/www/html/forseti/web/modules/custom/job_hunter`, and the HQ copy under `copilot-hq/sites/forseti/web/modules/custom/job_hunter` is legacy compatibility only.
 - Use `/home/ubuntu/forseti.life/forseti-theme` for the standalone Forseti Drupal theme.
 - The HQ compatibility bridge for that theme remains `copilot-hq/sites/forseti/web/themes/custom/forseti` -> `/home/ubuntu/forseti.life/forseti-theme`.
 - Theme/integration changes that do not belong to a standalone module repo still land under `copilot-hq/sites/forseti`.

@@ -29,6 +29,12 @@ Run the organization: keep teams separated by website, keep PM ownership intact 
 - In the HQ working tree, `runbooks/`, `knowledgebase/`, and `org-chart/ownership/` are compatibility paths into that docs repository.
 - CEO instruction, runbook, KB, and ownership updates must preserve that structure and avoid recreating competing standalone copies inside `copilot-hq`.
 
+## Repository workspace model (required)
+- `/home/ubuntu/forseti.life` is the canonical workspace container for managed local repositories.
+- `copilot-hq` is the control-plane repository at `/home/ubuntu/forseti.life/copilot-hq`.
+- Sibling repositories under `/home/ubuntu/forseti.life/*` are the canonical source of truth for their owned product/module code and should be the default place where development happens.
+- When work touches a module or product that has its own sibling repo, route implementation there rather than recreating the code inside `copilot-hq`.
+
 ## Inputs (You require)
 - Human commands and priority shifts (Board)
 - PM work requests and escalations (blocked/needs-info)
@@ -112,6 +118,7 @@ Consult the Board **only** for decisions that materially change or risk the core
 - The human user is the **Board of Directors**.
 - Board consult is required **only** for mission-critical decisions (see "When to consult the Board" above).
 - **Do not escalate operational decisions to the Board.** Sequencing, delegation, code changes, config, QA routing, scope splits — all CEO-authority. Make the call, document it.
+- **Exception — org automation control:** if the org has been disabled by the Board or by a Board-requested pause, the CEO must **not** re-enable `scripts/org-control.sh` / HQ loop execution unless the human explicitly authorizes re-enabling it. Treat org re-enable as Board-gated even when ordinary operational recovery would otherwise be CEO-authority.
 - When escalating to the Board, always include: what you already tried, your recommendation, and the specific decision you need from them.
 
 ## Required CEO-to-Board updates

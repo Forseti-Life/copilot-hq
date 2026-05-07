@@ -15,6 +15,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             active = root / "tmp" / "release-cycle-active"
             active.mkdir(parents=True, exist_ok=True)
             (root / "org-chart" / "products").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
             (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
             (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
             (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
@@ -49,6 +50,10 @@ class TestReleaseCycleControl(unittest.TestCase):
             (active / "dungeoncrawler.release_id").write_text("20260420-dungeoncrawler-release-s\n", encoding="utf-8")
             (root / "sessions" / "pm-forseti" / "artifacts" / "release-signoffs" / "20260420-forseti-release-q.md").write_text(
                 "# signoff\n",
+                encoding="utf-8",
+            )
+            (root / "sessions" / "agent-code-review" / "outbox" / "20260420-code-review-forseti-20260420-forseti-release-q.md").write_text(
+                "- Status: done\n- Release: 20260420-forseti-release-q\n- Verdict: APPROVE\n",
                 encoding="utf-8",
             )
 
@@ -127,6 +132,7 @@ class TestReleaseCycleControl(unittest.TestCase):
             active = root / "tmp" / "release-cycle-active"
             active.mkdir(parents=True, exist_ok=True)
             (root / "org-chart" / "products").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "agent-code-review" / "outbox").mkdir(parents=True, exist_ok=True)
             (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
             (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
 
@@ -152,6 +158,10 @@ class TestReleaseCycleControl(unittest.TestCase):
                 "# signoff\n",
                 encoding="utf-8",
             )
+            (root / "sessions" / "agent-code-review" / "outbox" / "20260420-code-review-dungeoncrawler-20260420-dungeoncrawler-release-s.md").write_text(
+                "- Status: done\n- Release: 20260420-dungeoncrawler-release-s\n- Verdict: APPROVE\n",
+                encoding="utf-8",
+            )
 
             old_root = run.REPO_ROOT
             old_run = run._run
@@ -170,6 +180,59 @@ class TestReleaseCycleControl(unittest.TestCase):
 
             assert not (root / "tmp" / "auto-push-dispatched" / "20260420-dungeoncrawler-release-s.pushed").exists()
             assert any(entry.get("status") == "push_failed" for entry in log), log
+
+    def test_coordinated_push_blocks_when_gate1b_missing(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            active = root / "tmp" / "release-cycle-active"
+            active.mkdir(parents=True, exist_ok=True)
+            (root / "org-chart" / "products").mkdir(parents=True, exist_ok=True)
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs").mkdir(parents=True, exist_ok=True)
+            (root / "tmp" / "auto-push-dispatched").mkdir(parents=True, exist_ok=True)
+
+            teams = {
+                "teams": [
+                    {
+                        "id": "dungeoncrawler",
+                        "site": "dungeoncrawler.forseti.life",
+                        "pm_agent": "pm-dungeoncrawler",
+                        "qa_agent": "qa-dungeoncrawler",
+                        "active": True,
+                        "release_preflight_enabled": True,
+                        "coordinated_release_default": True,
+                    },
+                ]
+            }
+            (root / "org-chart" / "products" / "product-teams.json").write_text(
+                json.dumps(teams),
+                encoding="utf-8",
+            )
+            (active / "dungeoncrawler.release_id").write_text("20260420-dungeoncrawler-release-w\n", encoding="utf-8")
+            (root / "sessions" / "pm-dungeoncrawler" / "artifacts" / "release-signoffs" / "20260420-dungeoncrawler-release-w.md").write_text(
+                "# signoff\n",
+                encoding="utf-8",
+            )
+
+            old_root = run.REPO_ROOT
+            old_run = run._run
+            run.REPO_ROOT = root
+            calls = []
+
+            def fake_run(cmd, timeout=0, env=None):
+                calls.append(cmd)
+                return 0, ""
+
+            run._run = fake_run
+            try:
+                log = []
+                run._coordinated_push_step(log)
+            finally:
+                run.REPO_ROOT = old_root
+                run._run = old_run
+
+            self.assertEqual(calls, [], "Gate 1b gap must block deploy dispatch")
+            self.assertFalse((root / "tmp" / "auto-push-dispatched" / "20260420-dungeoncrawler-release-w.pushed").exists())
+            self.assertTrue(any(entry.get("status") == "blocked_gate1b" for entry in log), log)
 
     def test_coordinated_push_skips_when_control_disabled(self):
         with tempfile.TemporaryDirectory() as td:
