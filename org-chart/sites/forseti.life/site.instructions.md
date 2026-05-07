@@ -22,7 +22,7 @@ All seats with `website_scope: ["forseti.life"]`.
 ## Environments
 - Production `BASE_URL`: `https://forseti.life`
 - There is no local/dev environment on this host. This server IS production (Apache 2.4 on ports 80/443, Let's Encrypt SSL).
-- **Code is always live**: `/var/www/html/forseti/web/modules/custom` is a live directory of symlinks that points module-by-module at canonical repositories under `/home/ubuntu/forseti.life/*`, while `/var/www/html/forseti/web/themes/custom` remains symlinked to `/home/ubuntu/forseti.life/copilot-hq/sites/forseti/web/themes/custom` and the `forseti` theme entry within that bridge now resolves to `/home/ubuntu/forseti.life/forseti-theme`. Any committed change in those canonical targets is immediately present in production — no rsync/deploy step is needed for module or theme changes.
+- **Code is always live**: `/var/www/html/forseti/web/modules/custom` is a live directory of symlinks that points module-by-module at canonical repositories under `/home/ubuntu/forseti.life/*`, and `/var/www/html/forseti/web/themes/custom/forseti` points directly at `/home/ubuntu/forseti.life/forseti-theme`. Any committed change in those canonical targets is immediately present in production — no rsync/deploy step is needed for module or theme changes.
 - **GitHub Actions deploy.yml** is therefore redundant for module/theme changes on this server. It still handles: config/sync updates via rsync, composer installs, and `drush cr`. If deploy.yml stops triggering (GitHub Actions), do NOT escalate as a code-deploy blocker — verify with `drush config:status` and a checksum diff instead. (Lesson: 2026-04-08 false alarm where pm-forseti halted release-b post-push steps because deploy.yml hadn't triggered since 2026-04-02; production was already current via symlinks.)
 
 Rule:
@@ -30,8 +30,6 @@ Rule:
 - Do NOT run recursive crawls or destructive probes against production unless explicitly authorized for a specific purpose.
 
 ## Code roots (on this host)
-- HQ compatibility site root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti`
-- HQ compatibility web root: `/home/ubuntu/forseti.life/copilot-hq/sites/forseti/web`
 - Canonical repository workspace root: `/home/ubuntu/forseti.life`
 - Canonical standalone theme repo: `/home/ubuntu/forseti.life/forseti-theme`
 - Canonical module development repos are the owning sibling repositories under `/home/ubuntu/forseti.life/*` (for example `ai-conversation`, `forseti-amisafe`, `forseti-games`, `forseti-job-hunter`, `forseti-jobhunter-tester`, `forseti-cluster`, `drupal-langgraph`)
@@ -39,11 +37,9 @@ Rule:
 
 ## Working convention
 - Make Forseti module/product changes in the owning canonical repository under `/home/ubuntu/forseti.life/*`.
-- Treat `copilot-hq/sites/forseti` as the HQ compatibility/integration path, not the primary authored source for standalone module repositories.
-- For `job_hunter` specifically, `/home/ubuntu/forseti.life/forseti-job-hunter` is the only source of truth; the live site consumes it through `/var/www/html/forseti/web/modules/custom/job_hunter`, and the HQ copy under `copilot-hq/sites/forseti/web/modules/custom/job_hunter` is legacy compatibility only.
+- For `job_hunter` specifically, `/home/ubuntu/forseti.life/forseti-job-hunter` is the only source of truth, and the live site consumes it through `/var/www/html/forseti/web/modules/custom/job_hunter`.
 - Use `/home/ubuntu/forseti.life/forseti-theme` for the standalone Forseti Drupal theme.
-- The HQ compatibility bridge for that theme remains `copilot-hq/sites/forseti/web/themes/custom/forseti` -> `/home/ubuntu/forseti.life/forseti-theme`.
-- Theme/integration changes that do not belong to a standalone module repo still land under `copilot-hq/sites/forseti`.
+- Theme and module changes should land in the owning sibling repository that backs the live symlink target.
 
 ## Product-wide rules
 - Keep work items logically separated from other websites.

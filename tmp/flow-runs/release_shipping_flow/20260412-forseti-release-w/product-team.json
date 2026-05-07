@@ -1,8 +1,0 @@
-{
-  "id": "forseti",
-  "label": "Forseti",
-  "site": "forseti.life",
-  "pm_agent": "pm-forseti",
-  "qa_agent": "qa-forseti",
-  "dev_agent": "dev-forseti"
-}

@@ -39,7 +39,7 @@ This repository is the canonical control plane for:
 
 - It is not the full Forseti product runtime by itself
 - It is not a public dump of live operational history
-- It is not the only code repo in the platform; product/runtime code also lives under the wider monorepo
+- It is not the only code repo in the platform; product/runtime code lives in sibling repositories under `/home/ubuntu/forseti.life/*`
 
 ## Principles
 - **Local sessions are not automatically committed here.** Only add/export what you intend to persist.
@@ -60,7 +60,7 @@ This repository is the canonical control plane for:
 ## Canonical development model
 - Use `copilot-hq` for orchestration, governance, instructions, dashboards, runtime automation, and shared control-plane assets.
 - Use the owning sibling repository under `/home/ubuntu/forseti.life/*` for product and module implementation work.
-- Live site `web/modules/custom` directories may point at those sibling repositories directly; those linked repos are the authoritative code locations.
+- Live site `web/modules/custom` directories and `web/themes/custom/*` entries may point at those sibling repositories directly; those linked repos are the authoritative code locations.
 
 ## Purpose and public positioning
 

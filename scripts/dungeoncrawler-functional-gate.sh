@@ -8,7 +8,7 @@ if [ "${1:-}" = "--dry-run" ]; then
   shift
 fi
 
-SITE_ROOT="${DUNGEONCRAWLER_SITE_ROOT:-/home/ubuntu/forseti.life/sites/dungeoncrawler}"
+SITE_ROOT="${DUNGEONCRAWLER_SITE_ROOT:-/var/www/html/dungeoncrawler}"
 ARTIFACTS_ROOT="${DUNGEONCRAWLER_QA_ARTIFACTS_ROOT:-/home/ubuntu/forseti.life/sessions/qa-dungeoncrawler/artifacts/phpunit-functional}"
 BASE_URL="${DUNGEONCRAWLER_SIMPLETEST_BASE_URL:-${SIMPLETEST_BASE_URL:-http://localhost:8080}}"
 DB_DSN="${DUNGEONCRAWLER_SIMPLETEST_DB:-${SIMPLETEST_DB:-}}"

@@ -155,12 +155,12 @@
         },
         {
           "label": "Job Hunter module README",
-          "path": "../sites/forseti/web/modules/custom/job_hunter/README.md",
+          "path": "/home/ubuntu/forseti.life/forseti-job-hunter/README.md",
           "type": "module-readme"
         },
         {
           "label": "Job Hunter tester README",
-          "path": "../sites/forseti/web/modules/custom/jobhunter_tester/README.md",
+          "path": "/home/ubuntu/forseti.life/forseti-jobhunter-tester/README.md",
           "type": "qa-readme"
         }
       ]
@@ -201,7 +201,7 @@
         },
         {
           "label": "Forseti core content README",
-          "path": "../sites/forseti/web/modules/custom/forseti_content/README.md",
+          "path": "/home/ubuntu/forseti.life/forseti-content/README.md",
           "type": "module-readme"
         }
       ]

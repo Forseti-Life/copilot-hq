@@ -28,7 +28,7 @@ def _env(name: str) -> str:
 
 
 def _auto_token_from_dungeoncrawler_drupal() -> str:
-    site_dir = "/home/ubuntu/forseti.life/sites/dungeoncrawler"
+    site_dir = "/var/www/html/dungeoncrawler"
     drush_bin = os.path.join(site_dir, "vendor", "bin", "drush")
     if not os.path.exists(drush_bin):
         return ""

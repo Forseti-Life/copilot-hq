@@ -486,9 +486,6 @@ echo "  Drupal Watchdog (forseti.life)"
 echo "$SEP"
 
 drupal_root="/var/www/html/forseti"
-if [ ! -f "$drupal_root/vendor/bin/drush" ]; then
-  drupal_root="/home/ubuntu/forseti.life/sites/forseti"
-fi
 if [ -f "$drupal_root/vendor/bin/drush" ]; then
   watchdog_out=$(cd "$drupal_root" && vendor/bin/drush sql:query "
     SELECT CONCAT(

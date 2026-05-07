@@ -77,11 +77,9 @@ resolve_drupal_root() {
 
   local local_candidates=()
   if [ -n "${HOME:-}" ]; then
-    local_candidates+=("$HOME/forseti.life/sites/forseti")
-    local_candidates+=("$HOME/forseti.life/sites/dungeoncrawler")
+    local_candidates+=("/var/www/html/forseti")
+    local_candidates+=("/var/www/html/dungeoncrawler")
   fi
-  local_candidates+=("$ROOT_DIR/../sites/forseti")
-  local_candidates+=("$ROOT_DIR/../sites/dungeoncrawler")
 
   case "$SITE" in
     forseti|forseti.life|forseti-life)
@@ -105,11 +103,9 @@ resolve_drupal_root() {
   case "$SITE" in
     forseti|forseti.life|forseti-life)
       if [ -d "/var/www/html/forseti" ]; then printf '%s\n' "/var/www/html/forseti"; return 0; fi
-      if [ -d "/home/ubuntu/forseti.life/sites/forseti" ]; then printf '%s\n' "/home/ubuntu/forseti.life/sites/forseti"; return 0; fi
       ;;
     dungeoncrawler|dungeoncrawler.forseti.life)
       if [ -d "/var/www/html/dungeoncrawler" ]; then printf '%s\n' "/var/www/html/dungeoncrawler"; return 0; fi
-      if [ -d "/home/ubuntu/forseti.life/sites/dungeoncrawler" ]; then printf '%s\n' "/home/ubuntu/forseti.life/sites/dungeoncrawler"; return 0; fi
       ;;
   esac
 

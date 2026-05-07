@@ -255,10 +255,8 @@ module_dir_for() {
 
   # Common Drupal custom module locations (fast checks)
   local candidates=(
-    "/home/ubuntu/forseti.life/sites/forseti/web/modules/custom/${module}"
-    "/home/ubuntu/forseti.life/web/modules/custom/${module}"
-    "/home/ubuntu/forseti.life/sites/forseti/modules/custom/${module}"
-    "/home/ubuntu/forseti.life/modules/custom/${module}"
+    "/var/www/html/forseti/web/modules/custom/${module}"
+    "/var/www/html/dungeoncrawler/web/modules/custom/${module}"
   )
   for c in "${candidates[@]}"; do
     if [ -d "$c" ]; then

@@ -24,7 +24,7 @@ Credentials mode (for production sites):
 Usage:
   # Local (OTL mode):
   python3 scripts/drupal-qa-sessions.py \\
-    --drupal-root /home/ubuntu/forseti.life/sites/dungeoncrawler \\
+    --drupal-root /var/www/html/dungeoncrawler \\
     --config org-chart/sites/dungeoncrawler/qa-permissions.json \\
     --base-url http://localhost \\
     --out /tmp/dungeoncrawler-qa-sessions.env

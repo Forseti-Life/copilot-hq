@@ -89,15 +89,11 @@ PY
     forseti)
       candidates+=(
         "/var/www/html/forseti"
-        "/home/ubuntu/forseti.life/sites/forseti"
-        "/home/ubuntu/forseti.life/sites/forseti"
       )
       ;;
     dungeoncrawler)
       candidates+=(
         "/var/www/html/dungeoncrawler"
-        "/home/ubuntu/forseti.life/sites/dungeoncrawler"
-        "/home/ubuntu/forseti.life/sites/dungeoncrawler"
       )
       ;;
     *)

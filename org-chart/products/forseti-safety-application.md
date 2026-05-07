@@ -13,9 +13,9 @@ The system is already materially implemented. What exists today is not a placeho
 ## Existing system in place
 
 ### Canonical implementation references
-- `../sites/forseti/web/modules/custom/forseti_content/README.md`
-- `../sites/forseti/web/modules/custom/forseti_content/forseti_content.routing.yml`
-- `../sites/forseti/web/modules/custom/forseti_content/src/Controller/SafetyController.php`
+- `/home/ubuntu/forseti.life/forseti-content/README.md`
+- `/home/ubuntu/forseti.life/forseti-content/forseti_content.routing.yml`
+- `/home/ubuntu/forseti.life/forseti-content/src/Controller/SafetyController.php`
 
 ### Existing user-facing scope
 - Homepage messaging centered on AI-powered community safety

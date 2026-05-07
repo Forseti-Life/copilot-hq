@@ -1,5 +1,5 @@
 {
-  "drupal_root": "/home/ubuntu/forseti.life/sites/dungeoncrawler",
+  "drupal_root": "/var/www/html/dungeoncrawler",
   "drush_qa_command_prefix": "dctr",
   "_schema_notes": [
     "Rules MAY include an optional 'feature_id' field when the rule was added for a specific groomed feature.",

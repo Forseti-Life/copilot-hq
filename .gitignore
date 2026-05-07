@@ -8,6 +8,11 @@
 *.log
 *.tmp
 node-identity.conf
+.pytest_cache/
+module-sources/
+database-exports/
+tmp/
+/sites/
 
 # Runtime state (do not commit)
 tmp/escalation-streaks/

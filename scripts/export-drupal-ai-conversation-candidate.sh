@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COPILOT_HQ_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MONOREPO_ROOT="$(cd "$COPILOT_HQ_ROOT/.." && pwd)"
-SOURCE_DIR="${2:-$MONOREPO_ROOT/sites/forseti/web/modules/custom/ai_conversation}"
+SOURCE_DIR="${2:-$MONOREPO_ROOT/ai-conversation}"
 TARGET_DIR="${1:-}"
 OVERLAY_DIR="$COPILOT_HQ_ROOT/templates/open-source/drupal-ai-conversation/overlay"
 

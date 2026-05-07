@@ -13,9 +13,9 @@ The core product intent is to help a job seeker move from resume/profile setup t
 ## Existing system in place
 
 ### Canonical implementation references
-- `../sites/forseti/web/modules/custom/job_hunter/README.md`
-- `../sites/forseti/web/modules/custom/jobhunter_tester/README.md`
-- `../sites/forseti/web/modules/custom/company_research/company_research.info.yml`
+- `/home/ubuntu/forseti.life/forseti-job-hunter/README.md`
+- `/home/ubuntu/forseti.life/forseti-jobhunter-tester/README.md`
+- `/home/ubuntu/forseti.life/forseti-company-research/company_research.info.yml`
 
 ### Existing user-facing scope
 - Resume upload, extraction, JSON parsing, and consolidated profile workflow
