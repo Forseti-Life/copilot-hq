@@ -41,6 +41,7 @@ COPILOT_BIN="${COPILOT_BIN:-$(command -v copilot 2>/dev/null || true)}"
 if [ -z "$COPILOT_BIN" ] && [ -x "$HOME/.npm-global/bin/copilot" ]; then
   COPILOT_BIN="$HOME/.npm-global/bin/copilot"
 fi
+GENAI_WRAPPER="${GENAI_WRAPPER:-$ROOT_DIR/scripts/genai-wrapper.sh}"
 
 BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/hq-bedrock-chat.sh}"
 BEDROCK_FALLBACK="${COPILOT_BEDROCK_FALLBACK:-1}"
@@ -218,37 +219,41 @@ fi
 
 run_prompt() {
   local prompt="$1"
-  local model_args=()
+  local wrapper_args=()
 
   if [ "$CLI_MODE" = "legacy" ]; then
     case "$PROMPT_MODE" in
-      shell) "$COPILOT_BIN" what-the-shell "$prompt" ;;
-      git) "$COPILOT_BIN" git-assist "$prompt" ;;
-      gh) "$COPILOT_BIN" gh-assist "$prompt" ;;
-      *) "$COPILOT_BIN" what-the-shell "$prompt" ;;
+      shell) "$GENAI_WRAPPER" --backend copilot-shell --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" ;;
+      git) "$GENAI_WRAPPER" --backend copilot-git --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" ;;
+      gh) "$GENAI_WRAPPER" --backend copilot-gh --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" ;;
+      *) "$GENAI_WRAPPER" --backend copilot-shell --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" ;;
     esac
     return 0
   fi
 
   if [ "$CLI_MODE" = "plugin" ]; then
     if [ "$PROMPT_MODE" = "explain" ]; then
-      "$COPILOT_BIN" explain "$prompt"
+      "$GENAI_WRAPPER" --backend copilot-explain --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}"
     else
-      "$COPILOT_BIN" suggest -t "${COPILOT_SUGGEST_TARGET:-shell}" "$prompt"
+      "$GENAI_WRAPPER" --backend copilot-suggest --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}"
     fi
     return 0
   fi
 
   if [ "$CLI_MODE" = "chat" ]; then
     if [ "$COPILOT_SUPPORTS_MODEL" = "1" ] && [ -n "$CHAT_MODEL" ]; then
-      model_args=(--model "$CHAT_MODEL")
+      wrapper_args+=(--model-id "$CHAT_MODEL")
     fi
-    if command -v timeout >/dev/null 2>&1; then
-      timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
-        "$COPILOT_BIN" --resume "$SESSION_ID" --silent --allow-all "${model_args[@]}" -p "$prompt"
-    else
-      "$COPILOT_BIN" --resume "$SESSION_ID" --silent --allow-all "${model_args[@]}" -p "$prompt"
-    fi
+    "$GENAI_WRAPPER" \
+      --backend copilot-chat \
+      --session "$SESSION_ID" \
+      --agent-id "manual-copilot-loop" \
+      --prompt "$prompt" \
+      --source "scripts/1-copilot.sh" \
+      --operation "hq_copilot_loop" \
+      --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" \
+      --allow-all \
+      "${wrapper_args[@]}"
     return 0
   fi
 
@@ -269,11 +274,11 @@ run_prompt() {
       HQ_BEDROCK_HISTORY_LINES="$BEDROCK_HISTORY_LINES" \
       BEDROCK_OPERATION="hq_copilot_loop" \
       BEDROCK_SYSTEM_PROMPT_NODE_ID="$BEDROCK_SYSTEM_PROMPT_NODE_ID" \
-      "$BEDROCK_ASSIST_SCRIPT" "$BEDROCK_SITE" "$bedrock_prompt"
+      "$GENAI_WRAPPER" --backend script --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$bedrock_prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --usage-backend "bedrock-script" --script-path "$BEDROCK_ASSIST_SCRIPT" --script-arg "$BEDROCK_SITE"
     else
       HQ_BEDROCK_HISTORY_FILE="$BEDROCK_HISTORY_FILE" \
       HQ_BEDROCK_HISTORY_LINES="$BEDROCK_HISTORY_LINES" \
-      BEDROCK_OPERATION="hq_copilot_loop" "$BEDROCK_ASSIST_SCRIPT" "$BEDROCK_SITE" "$bedrock_prompt"
+      BEDROCK_OPERATION="hq_copilot_loop" "$GENAI_WRAPPER" --backend script --session "$SESSION_ID" --agent-id "manual-copilot-loop" --prompt "$bedrock_prompt" --source "scripts/1-copilot.sh" --operation "hq_copilot_loop" --usage-backend "bedrock-script" --script-path "$BEDROCK_ASSIST_SCRIPT" --script-arg "$BEDROCK_SITE"
     fi
     return 0
   fi

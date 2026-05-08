@@ -14,10 +14,10 @@ agent-exec-next.sh
       ├─ check llm/routing.yaml for agent/role
       │
       ├─ model assigned + file present?
-      │     YES → python3 llm/runner.py --session ... --model ... --prompt ...
-      │     NO  → selected live backend via HQ runner path
-      │            - Copilot CLI
-      │            - python3 llm/bedrock_runner.py --session ... --prompt ...
+      │     YES → scripts/genai-wrapper.sh --backend local ...
+      │     NO  → selected live backend via shared wrapper
+      │            - scripts/genai-wrapper.sh --backend copilot-chat ...
+      │            - scripts/genai-wrapper.sh --backend bedrock ...
       │
       ▼
  outbox update written
@@ -72,6 +72,7 @@ llm/
   README.md              # This file
   model-manifest.yaml    # Available models: HF source, filename, size, task tags
   routing.yaml           # agent-id / role → model assignment
+  genai_wrapper.py       # Shared backend dispatcher + usage logging
   requirements.txt       # Python package requirements (pip install -r)
   runner.py              # Local-model inference shim: --session, --model, --prompt → stdout
   bedrock_runner.py      # Bedrock live runner using HQ session cache + direct API calls

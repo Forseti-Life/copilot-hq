@@ -74,6 +74,8 @@ def run_bedrock(
     max_tokens: int,
     no_history: bool,
     region_name: str,
+    source: str,
+    operation: str,
 ) -> str:
     try:
         import boto3
@@ -126,7 +128,7 @@ def run_bedrock(
             "backend": "bedrock",
             "agent_id": agent_id,
             "session_id": session_id,
-            "source": "llm/bedrock_runner.py",
+            "source": source,
             "phase": "primary",
             "status": "failed",
             "success": False,
@@ -140,7 +142,7 @@ def run_bedrock(
             "response_tokens_est": 0,
             "token_visibility": "estimated",
             "error": str(exc),
-            "operation": "langgraph_agent_exec",
+            "operation": operation,
         })
         raise RuntimeError(f"Bedrock inference failed: {exc}") from exc
 
@@ -154,7 +156,7 @@ def run_bedrock(
             "backend": "bedrock",
             "agent_id": agent_id,
             "session_id": session_id,
-            "source": "llm/bedrock_runner.py",
+            "source": source,
             "phase": "primary",
             "status": "empty",
             "success": False,
@@ -170,7 +172,7 @@ def run_bedrock(
             "exact_output_tokens": exact_output_tokens if isinstance(exact_output_tokens, int) else None,
             "token_visibility": token_visibility,
             "error": "Bedrock returned an empty response",
-            "operation": "langgraph_agent_exec",
+            "operation": operation,
         })
         raise RuntimeError("Bedrock returned an empty response")
 
@@ -178,7 +180,7 @@ def run_bedrock(
         "backend": "bedrock",
         "agent_id": agent_id,
         "session_id": session_id,
-        "source": "llm/bedrock_runner.py",
+        "source": source,
         "phase": "primary",
         "status": "completed",
         "success": True,
@@ -193,7 +195,7 @@ def run_bedrock(
         "exact_input_tokens": exact_input_tokens if isinstance(exact_input_tokens, int) else None,
         "exact_output_tokens": exact_output_tokens if isinstance(exact_output_tokens, int) else None,
         "token_visibility": token_visibility,
-        "operation": "langgraph_agent_exec",
+        "operation": operation,
     })
 
     if not no_history:
@@ -212,6 +214,8 @@ def main() -> None:
     parser.add_argument("--max-tokens", type=int, default=DEFAULT_MAX_TOKENS, help="Maximum output tokens.")
     parser.add_argument("--region", default=DEFAULT_REGION, help="AWS region for Bedrock runtime.")
     parser.add_argument("--no-history", action="store_true", help="Ignore and do not write session history.")
+    parser.add_argument("--source", default="llm/bedrock_runner.py", help="Telemetry source identifier.")
+    parser.add_argument("--operation", default="langgraph_agent_exec", help="Telemetry operation label.")
     args = parser.parse_args()
 
     prompt = args.prompt or sys.stdin.read()
@@ -228,6 +232,8 @@ def main() -> None:
             max_tokens=max(1, int(args.max_tokens)),
             no_history=bool(args.no_history),
             region_name=str(args.region),
+            source=str(args.source),
+            operation=str(args.operation),
         )
     except RuntimeError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

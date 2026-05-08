@@ -38,6 +38,7 @@ COPILOT_BIN="$(command -v copilot 2>/dev/null || true)"
 if [ -z "$COPILOT_BIN" ] && [ -x "$HOME/.npm-global/bin/copilot" ]; then
   COPILOT_BIN="$HOME/.npm-global/bin/copilot"
 fi
+GENAI_WRAPPER="${GENAI_WRAPPER:-$ROOT_DIR/scripts/genai-wrapper.sh}"
 BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/bedrock-assist.sh}"
 AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-copilot}"
 BEDROCK_RUNNER="$ROOT_DIR/llm/bedrock_runner.py"
@@ -680,24 +681,23 @@ PY
 
 ROUTED_ROUTE_ID="$(_llm_resolve_route_id "$AGENT_ID")"
 LOCAL_MODEL_FILE="$(_llm_resolve_model "$AGENT_ID")"
-LOCAL_RUNNER="$ROOT_DIR/llm/runner.py"
 
 resolve_backend() {
   case "${ROUTED_ROUTE_ID:-}" in
     copilot)
-      if [ -n "$COPILOT_BIN" ]; then
+      if [ -n "$COPILOT_BIN" ] && [ -x "$GENAI_WRAPPER" ]; then
         echo "copilot"
         return 0
       fi
-      echo "ERROR: routing requested copilot for ${AGENT_ID} but copilot CLI is not available." >&2
+      echo "ERROR: routing requested copilot for ${AGENT_ID} but Copilot or the GenAI wrapper is unavailable." >&2
       return 1
       ;;
     bedrock)
-      if [ -f "$BEDROCK_RUNNER" ]; then
+      if [ -x "$GENAI_WRAPPER" ] && [ -f "$BEDROCK_RUNNER" ]; then
         echo "bedrock"
         return 0
       fi
-      echo "ERROR: routing requested bedrock for ${AGENT_ID} but Bedrock runner is missing: $BEDROCK_RUNNER" >&2
+      echo "ERROR: routing requested bedrock for ${AGENT_ID} but the GenAI wrapper or Bedrock runner is missing." >&2
       return 1
       ;;
   esac
@@ -709,19 +709,19 @@ resolve_backend() {
 
   case "$AGENTIC_BACKEND" in
     copilot)
-      if [ -n "$COPILOT_BIN" ]; then
+      if [ -n "$COPILOT_BIN" ] && [ -x "$GENAI_WRAPPER" ]; then
         echo "copilot"
         return 0
       fi
-      echo "ERROR: HQ_AGENTIC_BACKEND=copilot but copilot CLI not found in PATH." >&2
+      echo "ERROR: HQ_AGENTIC_BACKEND=copilot but Copilot or the GenAI wrapper is unavailable." >&2
       return 1
       ;;
     bedrock)
-      if [ -f "$BEDROCK_RUNNER" ]; then
+      if [ -x "$GENAI_WRAPPER" ] && [ -f "$BEDROCK_RUNNER" ]; then
         echo "bedrock"
         return 0
       fi
-      echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but Bedrock runner is missing: $BEDROCK_RUNNER" >&2
+      echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but the GenAI wrapper or Bedrock runner is unavailable." >&2
       return 1
       ;;
     *)
@@ -844,19 +844,20 @@ set_copilot_rate_limit_cooldown() {
 
 run_copilot() {
   local prompt="$1"
-  local _copilot_response _needs_followup _start_ms _duration_ms _rate_limited
+  local _copilot_response _needs_followup _rate_limited
   echo "DEBUG run_copilot: AGENT_ID=${AGENT_ID} SESSION_ID=${SESSION_ID}" >&2
-  _start_ms="$(now_ms)"
   # Enforce inter-call rate-limit delay before hitting the Copilot API.
   _throttle_copilot_api
-  # Prevent orchestration hangs if the Copilot CLI stalls.
-  # Default: 15 minutes; override via COPILOT_TIMEOUT_SEC.
-  if command -v timeout >/dev/null 2>&1; then
-    _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
-      "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
-  else
-    _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
-  fi
+  _copilot_response="$("$GENAI_WRAPPER" \
+    --backend copilot-chat \
+    --agent-id "$AGENT_ID" \
+    --session "$SESSION_ID" \
+    --prompt "$prompt" \
+    --source "scripts/agent-exec-next.sh" \
+    --operation "langgraph_agent_exec" \
+    --model-id "auto" \
+    --allow-all \
+    --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" 2>&1 || true)"
   # If response is empty OR lacks the required "- Status:" header, the model finished
   # its tool work without emitting a properly structured text response.
   # Follow up in the same session (which retains tool context) to extract the outbox.
@@ -871,12 +872,15 @@ run_copilot() {
   if [ "$_needs_followup" -eq 1 ]; then
     _throttle_copilot_api
     local _followup="Your previous response did not start with '- Status:'. The executor requires your outbox to begin with that line. Output ONLY the outbox markdown now — no prose, no tool calls. First line MUST be exactly: - Status: done (or blocked/in_progress/needs-info)."
-    if command -v timeout >/dev/null 2>&1; then
-      _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "120" \
-        "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_followup" 2>&1 || true)"
-    else
-      _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_followup" 2>&1 || true)"
-    fi
+    _copilot_response="$("$GENAI_WRAPPER" \
+      --backend copilot-chat \
+      --agent-id "$AGENT_ID" \
+      --session "$SESSION_ID" \
+      --prompt "$_followup" \
+      --source "scripts/agent-exec-next.sh" \
+      --operation "langgraph_agent_exec" \
+      --model-id "auto" \
+      --timeout-sec "120" 2>&1 || true)"
   fi
   if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ] || ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
     echo "WARN: ${AGENT_ID} response still unusable after follow-up; rotating session and retrying once" >&2
@@ -884,34 +888,33 @@ run_copilot() {
     SESSION_ID="$(head -n1 "$SESSION_FILE" | tr -d ' \t\r\n')"
     echo "DEBUG run_copilot: AGENT_ID=${AGENT_ID} RETRY_SESSION_ID=${SESSION_ID}" >&2
     _throttle_copilot_api
-    if command -v timeout >/dev/null 2>&1; then
-      _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "${COPILOT_TIMEOUT_SEC:-900}" \
-        "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
-    else
-      _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent --allow-all -p "$prompt" 2>&1 || true)"
-    fi
+    _copilot_response="$("$GENAI_WRAPPER" \
+      --backend copilot-chat \
+      --agent-id "$AGENT_ID" \
+      --session "$SESSION_ID" \
+      --prompt "$prompt" \
+      --source "scripts/agent-exec-next.sh" \
+      --operation "langgraph_agent_exec" \
+      --model-id "auto" \
+      --allow-all \
+      --timeout-sec "${COPILOT_TIMEOUT_SEC:-900}" 2>&1 || true)"
     if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ] || ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
       _throttle_copilot_api
       local _retry_followup="Your previous response did not start with '- Status:'. The executor requires your outbox to begin with that line. Output ONLY the outbox markdown now — no prose, no tool calls. First line MUST be exactly: - Status: done (or blocked/in_progress/needs-info)."
-      if command -v timeout >/dev/null 2>&1; then
-        _copilot_response="$(timeout -k "${COPILOT_TIMEOUT_KILL_SEC:-10}" "120" \
-          "$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_retry_followup" 2>&1 || true)"
-      else
-        _copilot_response="$("$COPILOT_BIN" --resume "$SESSION_ID" --model auto --silent -p "$_retry_followup" 2>&1 || true)"
-      fi
+      _copilot_response="$("$GENAI_WRAPPER" \
+        --backend copilot-chat \
+        --agent-id "$AGENT_ID" \
+        --session "$SESSION_ID" \
+        --prompt "$_retry_followup" \
+        --source "scripts/agent-exec-next.sh" \
+        --operation "langgraph_agent_exec" \
+        --model-id "auto" \
+        --timeout-sec "120" 2>&1 || true)"
     fi
   fi
-  _duration_ms=$(( $(now_ms) - _start_ms ))
   _rate_limited="false"
   if copilot_rate_limited "$_copilot_response"; then
     _rate_limited="true"
-  fi
-  if [ -z "$(printf '%s' "$_copilot_response" | tr -d ' \t\r\n')" ]; then
-    record_langgraph_usage "copilot" "empty" "false" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "Copilot returned an empty response" "unavailable"
-  elif ! printf '%s\n' "$_copilot_response" | grep -qiE '^\- Status:'; then
-    record_langgraph_usage "copilot" "unstructured" "false" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "Copilot response missing required - Status header" "unavailable"
-  else
-    record_langgraph_usage "copilot" "completed" "true" "$prompt" "$_copilot_response" "$_duration_ms" "auto" "primary" "$_rate_limited" "" "unavailable"
   fi
   printf '%s\n' "$_copilot_response"
 }
@@ -929,19 +932,16 @@ bedrock_site_for_context() {
 
 run_bedrock_raw() {
   local prompt="$1"
-  local py
-  if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
-    py="$ROOT_DIR/llm/.venv/bin/python3"
-  elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ]; then
-    py="$LLM_PYTHON_BIN"
-  else
-    py="$(command -v python3 2>/dev/null || true)"
-  fi
-  [ -n "$py" ] || return 0
-  "$py" "$BEDROCK_RUNNER" \
+  "$GENAI_WRAPPER" \
+    --backend bedrock \
     --agent-id "$AGENT_ID" \
     --session "$SESSION_ID" \
-    --prompt "$prompt" 2>&1 || true
+    --prompt "$prompt" \
+    --source "scripts/agent-exec-next.sh" \
+    --operation "langgraph_agent_exec" \
+    --model-id "${BEDROCK_MODEL_ID:-}" \
+    --max-tokens "${BEDROCK_MAX_TOKENS:-2048}" \
+    --region "${AWS_REGION:-${AWS_DEFAULT_REGION:-us-east-1}}" 2>&1 || true
 }
 
 bedrock_extract_bash_request() {
@@ -1050,18 +1050,26 @@ backend_retry_delay_seconds() {
   esac
 }
 
-if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
-  # Prefer venv Python for the runner.
-  _local_start_ms="$(now_ms)"
-  _LLM_PY="$(command -v python3)"
-  [ -x "$ROOT_DIR/llm/.venv/bin/python3" ] && _LLM_PY="$ROOT_DIR/llm/.venv/bin/python3"
-  [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ] && _LLM_PY="$LLM_PYTHON_BIN"
-
+if [ -n "$LOCAL_MODEL_FILE" ]; then
   # Generate response via local model.
-  response="$("$_LLM_PY" "$LOCAL_RUNNER" --session "$SESSION_ID" --model "$LOCAL_MODEL_FILE" --prompt "$PROMPT" 2>/dev/null || true)"
+  response="$("$GENAI_WRAPPER" \
+    --backend local \
+    --agent-id "$AGENT_ID" \
+    --session "$SESSION_ID" \
+    --prompt "$PROMPT" \
+    --local-model "$LOCAL_MODEL_FILE" \
+    --source "scripts/agent-exec-next.sh" \
+    --operation "langgraph_agent_exec" 2>/dev/null || true)"
   # Retry once on empty.
   if [ -z "$(printf '%s' "$response" | tr -d ' \t\r\n')" ]; then
-    response="$("$_LLM_PY" "$LOCAL_RUNNER" --session "$SESSION_ID" --model "$LOCAL_MODEL_FILE" --prompt "$PROMPT" 2>/dev/null || true)"
+    response="$("$GENAI_WRAPPER" \
+      --backend local \
+      --agent-id "$AGENT_ID" \
+      --session "$SESSION_ID" \
+      --prompt "$PROMPT" \
+      --local-model "$LOCAL_MODEL_FILE" \
+      --source "scripts/agent-exec-next.sh" \
+      --operation "langgraph_agent_exec" 2>/dev/null || true)"
   fi
   # If local model still returns empty, fall back to the selected backend.
   if [ -z "$(printf '%s' "$response" | tr -d ' \t\r\n')" ]; then
@@ -1073,9 +1081,6 @@ if [ -n "$LOCAL_MODEL_FILE" ] && [ -f "$LOCAL_RUNNER" ]; then
       fi
       response="$(run_primary_backend "$PROMPT")"
     fi
-  else
-    _local_duration_ms=$(( $(now_ms) - _local_start_ms ))
-    record_langgraph_usage "local" "completed" "true" "$PROMPT" "$response" "$_local_duration_ms" "$LOCAL_MODEL_FILE" "primary" "false" "" "estimated"
   fi
 else
   # Model: always pass --model auto so sessions use Copilot's multi-model routing

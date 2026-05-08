@@ -7,14 +7,17 @@ ROUTING = Path(__file__).resolve().parents[2] / "llm" / "routing.yaml"
 
 
 class TestAgentExecBedrockWiring(unittest.TestCase):
-    def test_tester_routing_stays_on_bedrock(self):
+    def test_tester_routing_uses_current_default(self):
         source = ROUTING.read_text(encoding="utf-8")
-        self.assertIn("  tester: bedrock", source)
+        self.assertIn("  tester: copilot", source)
+        self.assertNotIn("  tester: bedrock", source)
 
-    def test_run_bedrock_uses_llm_bedrock_runner(self):
+    def test_run_bedrock_uses_shared_genai_wrapper(self):
         source = SCRIPT.read_text(encoding="utf-8")
+        self.assertIn('GENAI_WRAPPER="${GENAI_WRAPPER:-$ROOT_DIR/scripts/genai-wrapper.sh}"', source)
         self.assertIn('BEDROCK_RUNNER="$ROOT_DIR/llm/bedrock_runner.py"', source)
-        self.assertIn('"$py" "$BEDROCK_RUNNER"', source)
+        self.assertIn('"$GENAI_WRAPPER" \\', source)
+        self.assertIn('--backend bedrock', source)
         self.assertNotIn('"$BEDROCK_ASSIST_SCRIPT" "$site"', source)
 
     def test_prompt_does_not_unconditionally_promise_tool_access(self):
