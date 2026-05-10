@@ -40,7 +40,7 @@ if [ -z "$COPILOT_BIN" ] && [ -x "$HOME/.npm-global/bin/copilot" ]; then
 fi
 GENAI_WRAPPER="${GENAI_WRAPPER:-$ROOT_DIR/scripts/genai-wrapper.sh}"
 BEDROCK_ASSIST_SCRIPT="${BEDROCK_ASSIST_SCRIPT:-$ROOT_DIR/scripts/bedrock-assist.sh}"
-AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-copilot}"
+AGENTIC_BACKEND="${HQ_AGENTIC_BACKEND:-local-server}"
 BEDROCK_RUNNER="$ROOT_DIR/llm/bedrock_runner.py"
 
 INBOX_DIR="sessions/${AGENT_ID}/inbox"
@@ -528,6 +528,28 @@ _telemetry_python() {
   command -v python3 2>/dev/null || true
 }
 
+_yaml_python() {
+  local candidate
+  for candidate in "$ROOT_DIR/llm/.venv/bin/python3" "${LLM_PYTHON_BIN:-}" "$(command -v python3 2>/dev/null || true)"; do
+    [ -n "${candidate:-}" ] || continue
+    [ -x "$candidate" ] || continue
+    if "$candidate" - <<'PY' >/dev/null 2>&1
+import yaml
+PY
+    then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  for candidate in "$ROOT_DIR/llm/.venv/bin/python3" "${LLM_PYTHON_BIN:-}" "$(command -v python3 2>/dev/null || true)"; do
+    [ -n "${candidate:-}" ] || continue
+    [ -x "$candidate" ] || continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
+}
+
 now_ms() {
   local value
   value="$(date +%s%3N 2>/dev/null || true)"
@@ -602,15 +624,8 @@ _llm_resolve_model() {
   [ -f "$routing" ] || return 0
   [ -f "$manifest" ] || return 0
 
-  # Prefer venv Python; fall back to system python3.
   local py
-  if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
-    py="$ROOT_DIR/llm/.venv/bin/python3"
-  elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "${LLM_PYTHON_BIN}" ]; then
-    py="$LLM_PYTHON_BIN"
-  else
-    py="$(command -v python3 2>/dev/null || true)"
-  fi
+  py="$(_yaml_python)"
   [ -n "$py" ] || return 0
 
   "$py" - "$agent" "$routing" "$manifest" "$models_dir" 2>/dev/null <<'PY'
@@ -647,13 +662,7 @@ _llm_resolve_route_id() {
   [ -f "$routing" ] || return 0
 
   local py
-  if [ -x "$ROOT_DIR/llm/.venv/bin/python3" ]; then
-    py="$ROOT_DIR/llm/.venv/bin/python3"
-  elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "${LLM_PYTHON_BIN}" ]; then
-    py="$LLM_PYTHON_BIN"
-  else
-    py="$(command -v python3 2>/dev/null || true)"
-  fi
+  py="$(_yaml_python)"
   [ -n "$py" ] || return 0
 
   "$py" - "$agent" "$routing" 2>/dev/null <<'PY'
@@ -684,20 +693,20 @@ LOCAL_MODEL_FILE="$(_llm_resolve_model "$AGENT_ID")"
 
 resolve_backend() {
   case "${ROUTED_ROUTE_ID:-}" in
+    local-server)
+      if [ -x "$GENAI_WRAPPER" ]; then
+        echo "local-server"
+        return 0
+      fi
+      echo "ERROR: routing requested local-server for ${AGENT_ID} but the GenAI wrapper is unavailable." >&2
+      return 1
+      ;;
     copilot)
       if [ -n "$COPILOT_BIN" ] && [ -x "$GENAI_WRAPPER" ]; then
         echo "copilot"
         return 0
       fi
       echo "ERROR: routing requested copilot for ${AGENT_ID} but Copilot or the GenAI wrapper is unavailable." >&2
-      return 1
-      ;;
-    bedrock)
-      if [ -x "$GENAI_WRAPPER" ] && [ -f "$BEDROCK_RUNNER" ]; then
-        echo "bedrock"
-        return 0
-      fi
-      echo "ERROR: routing requested bedrock for ${AGENT_ID} but the GenAI wrapper or Bedrock runner is missing." >&2
       return 1
       ;;
   esac
@@ -708,6 +717,14 @@ resolve_backend() {
   fi
 
   case "$AGENTIC_BACKEND" in
+    local-server)
+      if [ -x "$GENAI_WRAPPER" ]; then
+        echo "local-server"
+        return 0
+      fi
+      echo "ERROR: HQ_AGENTIC_BACKEND=local-server but the GenAI wrapper is unavailable." >&2
+      return 1
+      ;;
     copilot)
       if [ -n "$COPILOT_BIN" ] && [ -x "$GENAI_WRAPPER" ]; then
         echo "copilot"
@@ -716,16 +733,8 @@ resolve_backend() {
       echo "ERROR: HQ_AGENTIC_BACKEND=copilot but Copilot or the GenAI wrapper is unavailable." >&2
       return 1
       ;;
-    bedrock)
-      if [ -x "$GENAI_WRAPPER" ] && [ -f "$BEDROCK_RUNNER" ]; then
-        echo "bedrock"
-        return 0
-      fi
-      echo "ERROR: HQ_AGENTIC_BACKEND=bedrock but the GenAI wrapper or Bedrock runner is unavailable." >&2
-      return 1
-      ;;
     *)
-      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: copilot|bedrock)" >&2
+      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: local-server|copilot)" >&2
       return 1
       ;;
   esac
@@ -734,12 +743,11 @@ resolve_backend() {
 GENAI_BACKEND="$(resolve_backend)" || exit 1
 
 # Global concurrency guard: limit total concurrent agent executions across ALL
-# loops/processes on this host. Copilot is the default runtime lane; Bedrock
-# keeps a smaller lane only when explicitly selected.
+# loops/processes on this host. The host-local llama-server is the default lane.
 if [ -n "${AGENT_EXEC_MAX_CONCURRENT:-}" ]; then
   MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT}"
-elif [ "$GENAI_BACKEND" = "bedrock" ]; then
-  MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT_BEDROCK:-4}"
+elif [ "$GENAI_BACKEND" = "local-server" ]; then
+  MAX_CONCURRENT_EXECUTIONS="${AGENT_EXEC_MAX_CONCURRENT_LOCAL_SERVER:-4}"
 else
   MAX_CONCURRENT_EXECUTIONS=6
 fi
@@ -1033,19 +1041,33 @@ run_bedrock() {
   done
 }
 
+run_local_server() {
+  local prompt="$1"
+  "$GENAI_WRAPPER" \
+    --backend local-server \
+    --agent-id "$AGENT_ID" \
+    --session "$SESSION_ID" \
+    --prompt "$prompt" \
+    --source "scripts/agent-exec-next.sh" \
+    --operation "langgraph_agent_exec" \
+    --model-id "${LOCAL_LLM_MODEL:-}" \
+    --max-tokens "${LOCAL_LLM_MAX_TOKENS:-2048}" \
+    --timeout-sec "${LOCAL_LLM_TIMEOUT_SEC:-900}" 2>&1 || true
+}
+
 run_primary_backend() {
   local prompt="$1"
   case "$GENAI_BACKEND" in
     local) echo "" ;;
+    local-server) run_local_server "$prompt" ;;
     copilot) run_copilot "$prompt" ;;
-    bedrock) run_bedrock "$prompt" ;;
     *) echo "" ;;
   esac
 }
 
 backend_retry_delay_seconds() {
   case "$GENAI_BACKEND" in
-    bedrock) echo "${BEDROCK_RETRY_DELAY_SECONDS:-15}" ;;
+    local-server) echo "${LOCAL_LLM_RETRY_DELAY_SECONDS:-5}" ;;
     *) echo 0 ;;
   esac
 }

@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Sequence
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -202,6 +205,124 @@ def _run_local(args: argparse.Namespace) -> int:
     return rc
 
 
+def _local_llm_base_url() -> str:
+    return (os.environ.get("LOCAL_LLM_BASE_URL") or "http://127.0.0.1:8080").rstrip("/")
+
+
+def _discover_local_server_model(base_url: str, timeout_sec: int) -> str:
+    req = urllib_request.Request(f"{base_url}/v1/models", headers={"Accept": "application/json"})
+    with urllib_request.urlopen(req, timeout=timeout_sec) as resp:
+        payload = json.loads(resp.read().decode("utf-8", errors="replace") or "{}")
+
+    for item in payload.get("data", []):
+        model_id = str(item.get("id") or "").strip()
+        if model_id:
+            return model_id
+    for item in payload.get("models", []):
+        model_id = str(item.get("id") or item.get("model") or item.get("name") or "").strip()
+        if model_id:
+            return model_id
+    return ""
+
+
+def _run_local_server(args: argparse.Namespace) -> int:
+    from llm.runner import load_session, save_session
+
+    base_url = _local_llm_base_url()
+    model_id = (args.model_id or os.environ.get("LOCAL_LLM_MODEL") or "").strip()
+
+    start = time.time()
+    try:
+        if not model_id:
+            model_id = _discover_local_server_model(base_url, min(args.timeout_sec, 30))
+
+        history = [] if args.no_history else load_session(args.session)
+        messages = history + [{"role": "user", "content": args.prompt}]
+        payload = {
+            "messages": messages,
+            "temperature": float(os.environ.get("LOCAL_LLM_TEMPERATURE") or "0"),
+            "max_tokens": args.max_tokens,
+            "stream": False,
+        }
+        if model_id:
+            payload["model"] = model_id
+
+        req = urllib_request.Request(
+            f"{base_url}/v1/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+        )
+        with urllib_request.urlopen(req, timeout=args.timeout_sec) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            parsed = json.loads(body or "{}")
+    except urllib_error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        duration_ms = int((time.time() - start) * 1000)
+        _log_usage(
+            backend="local-server",
+            agent_id=args.agent_id,
+            session_id=args.session,
+            source=args.source,
+            operation=args.operation,
+            model_id=model_id or "auto",
+            duration_ms=duration_ms,
+            prompt=args.prompt,
+            response=body,
+            rc=exc.code,
+            timeout=False,
+        )
+        print(f"ERROR: local llama-server HTTP {exc.code}: {body}".strip(), file=sys.stderr)
+        return 2
+    except Exception as exc:
+        duration_ms = int((time.time() - start) * 1000)
+        _log_usage(
+            backend="local-server",
+            agent_id=args.agent_id,
+            session_id=args.session,
+            source=args.source,
+            operation=args.operation,
+            model_id=model_id or "auto",
+            duration_ms=duration_ms,
+            prompt=args.prompt,
+            response=str(exc),
+            rc=2,
+            timeout=isinstance(exc, TimeoutError),
+        )
+        print(f"ERROR: local llama-server request failed: {exc}", file=sys.stderr)
+        return 2
+
+    response = ""
+    choices = parsed.get("choices") or []
+    if choices:
+        message = choices[0].get("message") or {}
+        response = str(message.get("content") or "").strip()
+    resolved_model = str(parsed.get("model") or model_id or "auto")
+
+    if not args.no_history and response:
+        save_session(args.session, messages + [{"role": "assistant", "content": response}])
+
+    duration_ms = int((time.time() - start) * 1000)
+    _log_usage(
+        backend="local-server",
+        agent_id=args.agent_id,
+        session_id=args.session,
+        source=args.source,
+        operation=args.operation,
+        model_id=resolved_model,
+        duration_ms=duration_ms,
+        prompt=args.prompt,
+        response=response,
+        rc=0 if response else 2,
+        timeout=False,
+    )
+    if not response:
+        print("ERROR: local llama-server returned an empty response", file=sys.stderr)
+        return 2
+
+    sys.stdout.write(response)
+    return 0
+
+
 def _run_bedrock(args: argparse.Namespace) -> int:
     runner = REPO_ROOT / "llm" / "bedrock_runner.py"
     model_id = args.model_id or os.environ.get("BEDROCK_MODEL_ID") or "us.amazon.nova-lite-v1:0"
@@ -262,6 +383,7 @@ def _run_script(args: argparse.Namespace) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Unified GenAI invocation wrapper for HQ backends.")
     parser.add_argument("--backend", required=True, choices=[
+        "local-server",
         "copilot-chat",
         "copilot-shell",
         "copilot-git",
@@ -309,6 +431,8 @@ def main() -> int:
         return _run_copilot_subcommand(args, "suggest", ["-t", target])
     if args.backend == "copilot-explain":
         return _run_copilot_subcommand(args, "explain")
+    if args.backend == "local-server":
+        return _run_local_server(args)
     if args.backend == "local":
         return _run_local(args)
     if args.backend == "bedrock":

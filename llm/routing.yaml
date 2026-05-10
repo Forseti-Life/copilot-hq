@@ -6,41 +6,32 @@
 #   2. roles.<role>        — role-based default
 #   3. default             — org-wide fallback
 #
-# Supported live backends here are:
-#   - copilot
-#   - bedrock
+# Supported route targets here are:
+#   - local-server  (host-local llama.cpp server; primary runtime)
+#   - copilot       (explicit fallback/manual override)
+#   - <model-id>    (GGUF model from llm/model-manifest.yaml for on-disk runner)
 #
-# Local model routing remains available in the codebase, but HQ runtime policy
-# is to route seats to Copilot by default. Bedrock remains an explicit/manual
-# override only and should not be selected automatically by orchestration.
+# HQ runtime policy is to prefer the host-local llama-server for normal seat
+# execution. Copilot remains the only automation fallback backend. On-disk GGUF
+# model IDs are still supported but are no longer the default production path.
 
 version: "1"
 
 # Org-wide fallback if no role or agent match.
-default: copilot
+default: local-server
 
 # Role-based defaults.
-# HQ orchestration should route all seats to Copilot unless a human/operator
-# explicitly selects another backend.
+# These resolve to the host-local llama.cpp server unless explicitly overridden.
 roles:
-  ceo: copilot
-  product-manager: copilot
-  software-developer: copilot
-  tester: copilot
-  business-analyst: copilot
-  security-analyst: copilot
+  ceo: local-server
+  architect: local-server
+  product-manager: local-server
+  project-manager: local-server
+  software-developer: local-server
+  tester: local-server
+  business-analyst: local-server
+  security-analyst: local-server
 
 # Agent-specific overrides.
-# Only list agents that need a DIFFERENT backend than their role default above.
-# (qa-*, ba-*, sec-analyst-*, dev-*, pm-*, ceo-* are all handled by role defaults.)
-agents:
-  # Code review needs the strongest instruction following plus executor-side
-  # follow-up recovery when the first draft is not a canonical outbox.
-  agent-code-review: copilot
-
-  # Explore agents do summarization/reading, but should still use the default
-  # Copilot backend unless explicitly overridden by an operator.
-  agent-explore: copilot
-  agent-explore-forseti: copilot
-  agent-explore-dungeoncrawler: copilot
-  agent-explore-infra: copilot
+# Only list agents that need a DIFFERENT model/backend than their role default above.
+agents: {}

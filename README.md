@@ -138,14 +138,13 @@ Legacy/disabled loops (`auto-checkpoint-loop`, `ceo-inbox-loop`, `inbox-loop`, `
 - Deploy workflow behavior is idempotent: first deploy runs `scripts/setup.sh`; existing deploys run `scripts/verify-hq-runtime.sh --strict` and auto-run `scripts/setup.sh` only if verification fails.
 - Run `./scripts/verify-hq-runtime.sh --strict` after deploy.
 - Select agentic backend via `HQ_AGENTIC_BACKEND`:
-	- `copilot` (default): require chat-capable Copilot CLI (`--resume` support)
-	- `bedrock`: explicit/manual override only
+	- `local-server` (default): host-local `llama-server` at `http://127.0.0.1:8080`
+	- `copilot`: require chat-capable Copilot CLI (`--resume` support)
 - LangGraph executor path:
 	- backend selection lives in `scripts/agent-exec-next.sh`
-	- Bedrock execution path is `scripts/agent-exec-next.sh` → `llm/bedrock_runner.py`
-	- direct AWS Bedrock calls live in `llm/bedrock_runner.py` (`bedrock-runtime`, `converse`, `invoke_model`)
-	- `scripts/bedrock-assist.sh` is separate Drupal/operator tooling, not the LangGraph executor path
-- HQ orchestration no longer auto-falls back to Bedrock; if Copilot is unavailable, fix the Copilot runtime or set an explicit override.
+	- host-local llama.cpp server execution goes through `scripts/agent-exec-next.sh` → `scripts/genai-wrapper.sh --backend local-server`
+	- `scripts/bedrock-assist.sh` remains separate Drupal/operator tooling, not the LangGraph executor path
+- HQ automation fallback is now Copilot-only. If the local server is unavailable, fix the local llama runtime or temporarily set `HQ_AGENTIC_BACKEND=copilot`.
 - Validate org state with `./scripts/org-control.sh status --one-line` and runtime state with `./scripts/hq-automation.sh status`.
 
 ## How incidents are handled

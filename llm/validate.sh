@@ -18,14 +18,30 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LLM_DIR="$ROOT_DIR/llm"
 
-if [ -x "$LLM_DIR/.venv/bin/python3" ]; then
-  PYTHON_BIN="$LLM_DIR/.venv/bin/python3"
-elif [ -n "${LLM_PYTHON_BIN:-}" ] && [ -x "$LLM_PYTHON_BIN" ]; then
-  PYTHON_BIN="$LLM_PYTHON_BIN"
-else
-  PYTHON_BIN="$(command -v python3 2>/dev/null || true)"
-  [ -n "$PYTHON_BIN" ] || { echo "ERROR: python3 not found. Run: llm/setup.sh" >&2; exit 1; }
-fi
+pick_python() {
+  local candidate
+  for candidate in "$LLM_DIR/.venv/bin/python3" "${LLM_PYTHON_BIN:-}" "$(command -v python3 2>/dev/null || true)"; do
+    [ -n "${candidate:-}" ] || continue
+    [ -x "$candidate" ] || continue
+    if "$candidate" - <<'PY' >/dev/null 2>&1
+import yaml
+PY
+    then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  for candidate in "$LLM_DIR/.venv/bin/python3" "${LLM_PYTHON_BIN:-}" "$(command -v python3 2>/dev/null || true)"; do
+    [ -n "${candidate:-}" ] || continue
+    [ -x "$candidate" ] || continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
+}
+
+PYTHON_BIN="$(pick_python)"
+[ -n "$PYTHON_BIN" ] || { echo "ERROR: python3 not found. Run: llm/setup.sh" >&2; exit 1; }
 
 cd "$ROOT_DIR"
 
@@ -69,6 +85,13 @@ print(f"Model ID:   {model_id}")
 print(f"Resolution: {resolution}")
 if model_id == "copilot":
     print("Backend:    GitHub Copilot CLI (external)")
+elif model_id == "bedrock":
+    print("Backend:    AWS Bedrock (external)")
+elif model_id == "local-server":
+    import os
+    base_url = os.environ.get("LOCAL_LLM_BASE_URL", "http://127.0.0.1:8080")
+    print("Backend:    host-local llama.cpp server")
+    print(f"Base URL:   {base_url}")
 elif model_info:
     filename = model_info.get("filename", "")
     local    = models_dir / filename
@@ -77,7 +100,7 @@ elif model_info:
     print(f"Status:     {status}")
     if not local.exists():
         print(f"\n  To download: ./llm/download-models.sh {model_id}")
-        print("  (Will fall back to Copilot CLI until downloaded)")
+        print("  (Will fall back to the selected backend until downloaded)")
 else:
     print(f"  WARNING: model '{model_id}' not found in model-manifest.yaml")
 print()
@@ -121,6 +144,10 @@ for agent_id, info in sorted(agents.items()):
 
     if model_id == "copilot":
         status = "copilot (external)"
+    elif model_id == "bedrock":
+        status = "bedrock (external)"
+    elif model_id == "local-server":
+        status = "local-server [default]"
     else:
         fname = model_files.get(model_id, "")
         status = "local [ready]" if fname and (models_dir / fname).exists() else "local [not downloaded]"

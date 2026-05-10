@@ -1,7 +1,9 @@
 # llm/ — Local LLM Integration Layer
 
-This directory manages local LLM inference for copilot-sessions-hq agents, reducing
-dependence on the external GitHub Copilot CLI for repetitive, structured tasks.
+This directory manages local LLM inference for copilot-sessions-hq agents. The
+primary production runtime is the host-local `llama-server` at
+`http://127.0.0.1:8080`, currently serving `mistral-7b-instruct-v0.2.Q4_K_M.gguf`.
+GitHub Copilot CLI is retained as a fallback when local inference is unavailable.
 
 ## Architecture
 
@@ -13,13 +15,16 @@ agent-exec-next.sh
       │
       ├─ check llm/routing.yaml for agent/role
       │
-      ├─ model assigned + file present?
-      │     YES → scripts/genai-wrapper.sh --backend local ...
-      │     NO  → selected live backend via shared wrapper
-      │            - scripts/genai-wrapper.sh --backend copilot-chat ...
-      │            - scripts/genai-wrapper.sh --backend bedrock ...
+      ├─ route = local-server?
+      │     YES → scripts/genai-wrapper.sh --backend local-server ...
       │
-      ▼
+       ├─ route = local GGUF model + file present?
+       │     YES → scripts/genai-wrapper.sh --backend local ...
+       │
+       └─ otherwise selected fallback backend via shared wrapper
+                  - scripts/genai-wrapper.sh --backend copilot-chat ...
+       │
+       ▼
  outbox update written
 ```
 
@@ -27,19 +32,12 @@ agent-exec-next.sh
 
 | Role / Agent | Model | Rationale |
 |---|---|---|
-| `ceo-copilot` | Copilot | Complex orchestration, high judgment |
-| `pm-*` | Copilot | Product decisions, acceptance criteria |
-| `dev-*` | Copilot | Implementation requires frontier reasoning |
-| `ba-*` | mistral-7b-instruct | Structured requirements, documentation |
-| `qa-*` | phi-3-mini | Checklist evaluation, APPROVE/BLOCK |
-| `sec-analyst-*` | mistral-7b-instruct | Security checklists, structured findings |
-| `agent-code-review` | Copilot | Code review needs stronger repo reasoning and more reliable canonical outbox recovery |
-| `agent-explore-*` | Copilot | Summarization, reading, exploration |
-| `agent-task-runner` | phi-3-mini | Structured output for build/test runs |
+| `all seats` | `local-server` | Host-local llama.cpp server on `127.0.0.1:8080` |
 
-Routing is defined in `routing.yaml`. If a local model is assigned but not yet
-downloaded, execution falls back to the selected live backend (`HQ_AGENTIC_BACKEND`)
-through the HQ executor/runtime path.
+Routing is defined in `routing.yaml`. The current default route is `local-server`,
+which uses the host-local llama.cpp server. If that backend is unavailable, execution
+falls back to the selected live backend (`HQ_AGENTIC_BACKEND`, currently `local-server`
+by default but overrideable to `copilot`) through the HQ executor/runtime path.
 
 ## Setup (new machine / fresh clone)
 
@@ -47,15 +45,15 @@ through the HQ executor/runtime path.
 # 1. Install Python dependencies and create venv
 ./llm/setup.sh
 
-# 2. Check what models are available and their download sizes
+# 2. Check what optional on-disk models are available and their download sizes
 ./llm/download-models.sh
 
-# 3. Download the models you want (ensure sufficient disk space first)
+# 3. (Optional) Download on-disk GGUF models if you want file-based local routing
 ./llm/download-models.sh phi-3-mini          # 2.2 GB — QA/explore agents
 ./llm/download-models.sh mistral-7b-instruct # 4.1 GB — BA/security agents
 ./llm/download-models.sh deepseek-coder      # 3.8 GB — code review
 
-# Or download everything referenced in routing.yaml:
+# Or download everything referenced in routing.yaml if routing uses manifest model IDs:
 ./llm/download-models.sh --routing
 
 # 4. Validate the environment
@@ -75,7 +73,6 @@ llm/
   genai_wrapper.py       # Shared backend dispatcher + usage logging
   requirements.txt       # Python package requirements (pip install -r)
   runner.py              # Local-model inference shim: --session, --model, --prompt → stdout
-  bedrock_runner.py      # Bedrock live runner using HQ session cache + direct API calls
   setup.sh               # Install deps, create venv, validate
   download-models.sh     # Pull GGUF models from Hugging Face Hub
   validate.sh            # Check environment, show routing table, optional test run
@@ -91,6 +88,8 @@ llm/
 
 | Variable | Default | Description |
 |---|---|---|
+| `LOCAL_LLM_BASE_URL` | `http://127.0.0.1:8080` | Host-local llama.cpp server endpoint used by `local-server` |
+| `LOCAL_LLM_MODEL` | auto-detected | Optional explicit model ID for the local server |
 | `LLM_PYTHON_BIN` | auto-detected | Override Python binary path (used by scripts) |
 | `LLM_DISABLE` | unset | Set to `1` to force all agents to use Copilot CLI |
 
@@ -103,8 +102,9 @@ llm/
 ## Updating Agent Routing
 
 Edit `routing.yaml` directly. Changes take effect on the next agent execution cycle —
-no restart required. If a model is unassigned or its file is missing, that agent
-automatically routes to the selected backend (`HQ_AGENTIC_BACKEND`: `copilot|bedrock`).
+no restart required. Route values may be `local-server`, `copilot`, or a manifest
+model ID. If a routed local backend is unavailable, that agent falls back to the
+selected live backend (`HQ_AGENTIC_BACKEND`: `local-server|copilot`).
 
 ## Session History
 
@@ -123,6 +123,7 @@ To clear a session: `rm llm/cache/sessions/<SESSION_ID>.json`
 | deepseek-coder-6.7b (Q4_K_M) | ~3.8 GB |
 | codellama-7b (Q4_K_M) | ~3.8 GB |
 
-A minimal setup (phi-3-mini + mistral-7b) requires ~7 GB. Plan storage accordingly
-before running `download-models.sh`. Models are stored in `llm/models/` which is
+A standard routed setup (phi-3-mini + mistral-7b + deepseek-coder) requires
+~10 GB. Plan storage accordingly before running `download-models.sh`. Models are
+stored in `llm/models/` which is
 `.gitignored` — they are **not committed to the repo**.

@@ -24,6 +24,12 @@ This file is owned by the `ceo-copilot` seat.
 - Do **not** treat `copilot-hq` as the parent repository for those sibling repos; develop and commit in the owning canonical repo for the code you are changing.
 - Use `org-chart/ownership/repository-ownership.yaml` to determine which sibling repository is the authoritative development location for a given module or product surface.
 
+## Primary automation LLM runtime (required)
+- HQ automation defaults to the host-local `llama-server` at `http://127.0.0.1:8080`.
+- The current local-server model is `mistral-7b-instruct-v0.2.Q4_K_M.gguf`.
+- GitHub Copilot CLI is the only automation fallback backend; Bedrock is not part of the HQ automation executor path.
+- When documenting or changing backend selection, keep `llm/routing.yaml`, `scripts/agent-exec-next.sh`, and the HQ runbooks in sync.
+
 ## Instructions methodology (required)
 We use a layered instruction stack so the org, each role, each product/site, and each seat can evolve independently without conflicts.
 
