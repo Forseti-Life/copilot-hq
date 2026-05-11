@@ -35,6 +35,9 @@ now_iso=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 date_prefix=$(date -u +"%Y%m%d")
 APACHE_LOG_DIR="${APACHE_LOG_DIR:-/var/log/apache2}"
 APACHE_FATAL_QUIET_MINUTES="${APACHE_FATAL_QUIET_MINUTES:-30}"
+LOCAL_LLM_BASE_URL="${LOCAL_LLM_BASE_URL:-http://127.0.0.1:8080}"
+LOCAL_LLM_HEALTH_TIMEOUT_SECONDS="${LOCAL_LLM_HEALTH_TIMEOUT_SECONDS:-15}"
+LOCAL_LLM_HEALTH_WARN_MS="${LOCAL_LLM_HEALTH_WARN_MS:-8000}"
 
 SEP="────────────────────────────────────────────────────────"
 
@@ -42,6 +45,112 @@ pass()  { echo "✅ PASS $*"; RESULTS+=("PASS|$*"); }
 fail()  { echo "❌ FAIL $*"; RESULTS+=("FAIL|$*"); FAIL_COUNT=$(( FAIL_COUNT + 1 )); }
 warn()  { echo "⚠️  WARN $*"; RESULTS+=("WARN|$*"); WARN_COUNT=$(( WARN_COUNT + 1 )); }
 info()  { echo "   ℹ️  $*"; }
+
+local_llm_models_probe() {
+  local response_file
+  local error_file
+  response_file="$(mktemp)"
+  error_file="$(mktemp)"
+
+  local http_code=""
+  local time_total=""
+  if ! read -r http_code time_total < <(
+    curl -sS -o "$response_file" -w '%{http_code} %{time_total}\n' \
+      -m 5 \
+      "$LOCAL_LLM_BASE_URL/v1/models" \
+      2>"$error_file"
+  ); then
+    echo "success=0"
+    echo "error=$(tr '\n' ' ' <"$error_file" | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+    rm -f "$response_file" "$error_file"
+    return
+  fi
+
+  local model_count
+  model_count="$(python3 - "$response_file" <<'PY'
+import json, sys
+try:
+    payload = json.load(open(sys.argv[1], encoding='utf-8'))
+except Exception:
+    print("")
+    raise SystemExit(0)
+models = payload.get("data")
+if isinstance(models, list):
+    print(len(models))
+    raise SystemExit(0)
+models = payload.get("models")
+if isinstance(models, list):
+    print(len(models))
+    raise SystemExit(0)
+print("")
+PY
+)"
+
+  echo "success=1"
+  echo "http_code=$http_code"
+  echo "time_total=$time_total"
+  echo "model_count=${model_count:-0}"
+
+  rm -f "$response_file" "$error_file"
+}
+
+local_llm_chat_probe() {
+  local response_file
+  local error_file
+  response_file="$(mktemp)"
+  error_file="$(mktemp)"
+
+  local http_code=""
+  local time_total=""
+  if ! read -r http_code time_total < <(
+    curl -sS -o "$response_file" -w '%{http_code} %{time_total}\n' \
+      -m "$LOCAL_LLM_HEALTH_TIMEOUT_SECONDS" \
+      -H 'Content-Type: application/json' \
+      -d '{"model":"mistral-7b-instruct-v0.2.Q4_K_M.gguf","messages":[{"role":"user","content":"Reply with exactly: OK"}],"max_tokens":8,"stream":false}' \
+      "$LOCAL_LLM_BASE_URL/v1/chat/completions" \
+      2>"$error_file"
+  ); then
+    echo "success=0"
+    echo "error=$(tr '\n' ' ' <"$error_file" | sed 's/[[:space:]]\+/ /g; s/^ //; s/ $//')"
+    rm -f "$response_file" "$error_file"
+    return
+  fi
+
+  local parse_out
+  parse_out="$(python3 - "$response_file" <<'PY'
+import json, sys
+try:
+    payload = json.load(open(sys.argv[1], encoding='utf-8'))
+except Exception as exc:
+    print(f"parse_error={exc}")
+    raise SystemExit(0)
+
+choices = payload.get("choices")
+if not isinstance(choices, list) or not choices:
+    print("parse_error=missing choices array")
+    raise SystemExit(0)
+
+message = choices[0].get("message") or {}
+content = message.get("content", "")
+if isinstance(content, list):
+    content = "".join(
+        part.get("text", "")
+        for part in content
+        if isinstance(part, dict)
+    )
+content = str(content).strip()
+print(f"content={content}")
+print(f"finish_reason={choices[0].get('finish_reason', '')}")
+PY
+)"
+
+  echo "success=1"
+  echo "http_code=$http_code"
+  echo "time_total=$time_total"
+  echo "$parse_out"
+
+  rm -f "$response_file" "$error_file"
+}
 
 apache_recent_matching_lines() {
   local log_path="$1"
@@ -282,7 +391,72 @@ else
   warn "Orchestrator: no last-autoexec health file"
 fi
 
-# ─── 2A. AUTOMATION DUPLICATION / COPILOT PRESSURE ──────────────────────────
+# ─── 2A. LOCAL LLM HEALTH ─────────────────────────────────────────────────────
+echo ""
+echo "$SEP"
+echo "  Local LLM Health"
+echo "$SEP"
+
+declare -A local_llm_models=()
+while IFS='=' read -r key value; do
+  [ -n "${key:-}" ] || continue
+  local_llm_models["$key"]="$value"
+done < <(local_llm_models_probe)
+
+declare -A local_llm_chat=()
+while IFS='=' read -r key value; do
+  [ -n "${key:-}" ] || continue
+  local_llm_chat["$key"]="$value"
+done < <(local_llm_chat_probe)
+
+if [ "${local_llm_chat[success]:-0}" != "1" ]; then
+  fail "Local LLM chat probe failed: ${local_llm_chat[error]:-unknown error}"
+  info "Base URL: ${LOCAL_LLM_BASE_URL}"
+  if [ "${local_llm_models[success]:-0}" = "1" ]; then
+    info "Models endpoint still responds: HTTP ${local_llm_models[http_code]:-?}, models=${local_llm_models[model_count]:-0}"
+  fi
+  queue_dispatch "dev-infra" "local-llm-chat-unhealthy" "9" "FAIL" \
+    "Local LLM chat completion health check failed" \
+    "CEO health check could not complete a local LLM chat probe against ${LOCAL_LLM_BASE_URL}/v1/chat/completions.\n\nObserved error: ${local_llm_chat[error]:-unknown error}\n\nIf /v1/models still responds, the listener is up but completions are unhealthy or timing out. Restore chat completions and re-run:\n\`\`\`bash\nbash scripts/ceo-system-health.sh\n\`\`\`"
+elif [ "${local_llm_chat[http_code]:-000}" != "200" ]; then
+  fail "Local LLM chat probe returned HTTP ${local_llm_chat[http_code]}"
+  info "Base URL: ${LOCAL_LLM_BASE_URL}"
+  queue_dispatch "dev-infra" "local-llm-chat-http" "9" "FAIL" \
+    "Local LLM chat completion probe returned HTTP ${local_llm_chat[http_code]}" \
+    "CEO health check received HTTP ${local_llm_chat[http_code]} from ${LOCAL_LLM_BASE_URL}/v1/chat/completions.\n\nInvestigate the host-local llama-server and restore normal chat completion responses."
+elif [ -z "${local_llm_chat[content]:-}" ]; then
+  fail "Local LLM chat probe returned an empty completion"
+  info "Base URL: ${LOCAL_LLM_BASE_URL}"
+  queue_dispatch "dev-infra" "local-llm-chat-empty" "8" "FAIL" \
+    "Local LLM chat completion probe returned empty content" \
+    "CEO health check reached ${LOCAL_LLM_BASE_URL}/v1/chat/completions but the completion content was empty.\n\nInvestigate model health, prompt handling, and recent runtime regressions."
+else
+  local_llm_chat_ms="$(python3 - "${local_llm_chat[time_total]:-0}" <<'PY'
+import sys
+try:
+    print(int(round(float(sys.argv[1]) * 1000)))
+except Exception:
+    print(0)
+PY
+)"
+  local_llm_models_summary="models probe unavailable"
+  if [ "${local_llm_models[success]:-0}" = "1" ]; then
+    local_llm_models_summary="models=${local_llm_models[model_count]:-0}, http=${local_llm_models[http_code]:-?}"
+  fi
+
+  if [ "$local_llm_chat_ms" -gt "$LOCAL_LLM_HEALTH_WARN_MS" ]; then
+    warn "Local LLM chat probe slow: ${local_llm_chat_ms}ms (${local_llm_models_summary})"
+    info "Base URL: ${LOCAL_LLM_BASE_URL}"
+    info "Response sample: ${local_llm_chat[content]}"
+    queue_dispatch "dev-infra" "local-llm-chat-slow" "6" "WARN" \
+      "Local LLM chat completion probe is slow (${local_llm_chat_ms}ms)" \
+      "CEO health check completed a local LLM chat probe, but latency was ${local_llm_chat_ms}ms (warn threshold: ${LOCAL_LLM_HEALTH_WARN_MS}ms).\n\nBase URL: ${LOCAL_LLM_BASE_URL}\nModels summary: ${local_llm_models_summary}\nSample response: ${local_llm_chat[content]}\n\nInvestigate CPU saturation, model sizing, and prompt budgets."
+  else
+    pass "Local LLM chat probe healthy: ${local_llm_chat_ms}ms (${local_llm_models_summary})"
+  fi
+fi
+
+# ─── 2B. AUTOMATION DUPLICATION / COPILOT PRESSURE ──────────────────────────
 echo ""
 echo "$SEP"
 echo "  Automation Duplication / Copilot Pressure"
