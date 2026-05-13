@@ -3,7 +3,7 @@
 - Work item id: dc-arch-spell-feat-library-canon
 - Website: dungeoncrawler
 - Module: dungeoncrawler_content
-- Status: in_progress
+- Status: ready
 - Release:
 - Feature type: architecture
 - PM owner: pm-dungeoncrawler
@@ -171,3 +171,6 @@ Do not attempt to flip every reader/writer in one pass.
 - 2026-05-05: Handed off to QA for test generation (pm-qa-handoff.sh)
 
 - 2026-05-05: Created planned migration feature after architecture review confirmed spells are split across DB + service layers and feats remain code-constant-backed.
+- 2026-05-13: Returned to `ready` during stale in-progress cleanup. Current code still relies on `CharacterManager::ANCESTRY_FEATS`, `CLASS_FEATS`, and `GENERAL_FEATS` across character creation, leveling, views, and feat catalog paths, while rich spell resolution still depends on `SpellCatalogService`. The planned canonical registry migration has not yet been cut over, so `in_progress` was no longer accurate.
+- 2026-05-13: Ordinary spell-definition reads were narrowed toward the intended DB-only model: `/api/spells` now treats `dungeoncrawler_content_registry` as the runtime source of truth and fails explicitly when the registry is unavailable or empty instead of silently falling back to bundled spell JSON. Focus-spell and feat canonicalization remain pending follow-on work.
+- 2026-05-13: Focus spell catalog reads were moved onto the same registry-backed spell library. `/api/focus-spells` now filters canonical focus rows from `dungeoncrawler_content_registry`, the seed data gained a dedicated wizard-school focus override file for missing canonical rows, and the APG/SoM placeholder focus rows were normalized to unique canonical spell IDs so the temporary generic-ID exclusions are no longer needed.
