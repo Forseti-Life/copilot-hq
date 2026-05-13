@@ -41,6 +41,11 @@ if [ -n "$copilot_bin" ]; then
 fi
 
 case "$backend_mode" in
+  deepseek)
+    [ -x "$ROOT_DIR/scripts/genai-wrapper.sh" ] || fail "backend(deepseek): GenAI wrapper missing"
+    [ -n "${DEEPSEEK_API_KEY:-}" ] || fail "backend(deepseek): DEEPSEEK_API_KEY is not set"
+    pass "backend(deepseek): DeepSeek wrapper configured"
+    ;;
   copilot)
     [ -n "$copilot_bin" ] || fail "backend(copilot): copilot CLI not found"
     [ "$copilot_chat_capable" -eq 1 ] || fail "backend(copilot): copilot CLI found but not chat-capable (--resume missing)"
@@ -52,7 +57,7 @@ case "$backend_mode" in
     pass "backend(bedrock): assistant script available"
     ;;
   *)
-    fail "invalid HQ_AGENTIC_BACKEND='$backend_mode' (expected copilot|bedrock)"
+    fail "invalid HQ_AGENTIC_BACKEND='$backend_mode' (expected deepseek|copilot|bedrock)"
     ;;
 esac
 

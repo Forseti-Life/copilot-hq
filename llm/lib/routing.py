@@ -75,7 +75,7 @@ def resolve_model_id(
       3. routing["default"]
       4. "copilot"  (hard fallback)
 
-    Returns a route string (e.g. "copilot", "bedrock", "phi-3-mini").
+    Returns a route string (e.g. "deepseek", "copilot", "bedrock", "phi-3-mini").
     """
     # 1. Per-agent override
     model_id = (routing.get("agents") or {}).get(agent_id)
@@ -107,7 +107,7 @@ def resolve_model_file(
     or None if the route points to a live backend such as Copilot/Bedrock.
     """
     model_id = resolve_model_id(agent_id, routing, agents_yaml_path)
-    if not model_id or model_id == "copilot":
+    if not model_id or model_id in ("copilot", "deepseek", "local-server", "bedrock"):
         return None
 
     for m in manifest.get("models", []):

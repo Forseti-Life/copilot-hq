@@ -30,16 +30,9 @@ ls -t sessions/architect-copilot/outbox/ 2>/dev/null | head -3
 ```
 
 **Step 2b --- Check for interrupted sessions:**
-```bash
-cd /home/ubuntu/forseti.life
-find sessions/architect-copilot/artifacts -name ".inwork" 2>/dev/null | while read f; do
-  base=$(basename "$(dirname "$f")")
-  if ! ls sessions/architect-copilot/outbox/ 2>/dev/null | grep -q "$base"; then
-    echo "INTERRUPTED: $base"
-  fi
-done
-```
-Any `INTERRUPTED:` output means a task was started but never completed. Surface this to the user: "⚠️ Interrupted since last session: <task-name>".
+- Review `sessions/architect-copilot/current-session-state.md` for the last `## Currently Working On` entry and compare it with the most recent outbox context.
+- Do **not** treat `sessions/architect-copilot/artifacts/**/.inwork` as interrupted work; those files are legacy queue-lock residue from archived inbox items.
+- Only surface an interrupted task when the session state shows in-flight work that has no corresponding completion in the recent outbox.
 
 **Step 3 --- Brief the user:**
 - Last completed work (most recent outbox or session state)

@@ -105,7 +105,7 @@ This is the canonical execution order for every autonomous CEO session. Do not r
 ### Phase 1 — Orient (mandatory first; takes <2 min)
 1. Read instruction stack: `org-wide → role → this file`
 2. Read `sessions/ceo-copilot-2/current-session-state.md` — recover active context
-3. Check for interrupted tasks: `find sessions/ceo-copilot-2/artifacts -name ".inwork" 2>/dev/null` — surface any `.inwork` with no matching outbox entry as ⚠️ interrupted
+3. Check for interrupted tasks from `sessions/ceo-copilot-2/current-session-state.md` and the most recent outbox context; do **not** treat `sessions/ceo-copilot-2/artifacts/**/.inwork` as interrupted work, because those files are legacy queue-lock residue from archived inbox items
 4. Run `bash scripts/ceo-release-health.sh` — pipeline snapshot; exit 1 = action required
 5. Run `bash scripts/ceo-system-health.sh` — systemic health snapshot (error logs, orchestrator, scoreboards, queue, dead letters); exit 1 = action required
 6. Check CEO inbox: `ls sessions/ceo-copilot-2/inbox/` — Board commands and escalations take priority over all other phases
@@ -122,7 +122,7 @@ Priority order within this phase:
 Do not move to Phase 3 while any Phase 2 item is actionable.
 
 ### Phase 3 — Housekeeping (clean before driving forward)
-1. Archive stale `.inwork` artifact directories: if the parent dir has no matching outbox file and the item is >1 session old, remove the `.inwork` marker or archive the dir
+1. Remove legacy `.inwork` / `.exec-lock` residue from artifact directories when found; those files are archived inbox lock markers, not authoritative interrupted-task state
 2. Archive phantom/duplicate inbox items (e.g. repeated stagnation-full-analysis dispatches for the same root cause)
 3. Run `bash scripts/sla-report.sh` — confirm no SLA breaches; triage any real ones
 4. Run `python3 scripts/project-progress-audit.py` — confirm every active `PROJ-*` is progressing within the 7-day SLA and that PM roadmap fields are current

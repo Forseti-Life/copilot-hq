@@ -323,6 +323,112 @@ def _run_local_server(args: argparse.Namespace) -> int:
     return 0
 
 
+def _deepseek_base_url() -> str:
+    return (os.environ.get("DEEPSEEK_BASE_URL") or "https://api.deepseek.com/v1").rstrip("/")
+
+
+def _run_deepseek(args: argparse.Namespace) -> int:
+    from llm.runner import load_session, save_session
+
+    api_key = (os.environ.get("DEEPSEEK_API_KEY") or "").strip()
+    if not api_key:
+        print("ERROR: DEEPSEEK_API_KEY is not configured", file=sys.stderr)
+        return 2
+
+    base_url = _deepseek_base_url()
+    model_id = (args.model_id or os.environ.get("DEEPSEEK_MODEL") or "deepseek-chat").strip()
+
+    start = time.time()
+    try:
+        history = [] if args.no_history else load_session(args.session)
+        messages = history + [{"role": "user", "content": args.prompt}]
+        payload = {
+            "model": model_id,
+            "messages": messages,
+            "temperature": float(os.environ.get("DEEPSEEK_TEMPERATURE") or "0"),
+            "max_tokens": args.max_tokens,
+            "stream": False,
+        }
+        req = urllib_request.Request(
+            f"{base_url}/chat/completions",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+        )
+        with urllib_request.urlopen(req, timeout=args.timeout_sec) as resp:
+            body = resp.read().decode("utf-8", errors="replace")
+            parsed = json.loads(body or "{}")
+    except urllib_error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        duration_ms = int((time.time() - start) * 1000)
+        _log_usage(
+            backend="deepseek",
+            agent_id=args.agent_id,
+            session_id=args.session,
+            source=args.source,
+            operation=args.operation,
+            model_id=model_id,
+            duration_ms=duration_ms,
+            prompt=args.prompt,
+            response=body,
+            rc=exc.code,
+            timeout=False,
+        )
+        print(f"ERROR: DeepSeek HTTP {exc.code}: {body}".strip(), file=sys.stderr)
+        return 2
+    except Exception as exc:
+        duration_ms = int((time.time() - start) * 1000)
+        _log_usage(
+            backend="deepseek",
+            agent_id=args.agent_id,
+            session_id=args.session,
+            source=args.source,
+            operation=args.operation,
+            model_id=model_id,
+            duration_ms=duration_ms,
+            prompt=args.prompt,
+            response=str(exc),
+            rc=2,
+            timeout=isinstance(exc, TimeoutError),
+        )
+        print(f"ERROR: DeepSeek request failed: {exc}", file=sys.stderr)
+        return 2
+
+    response = ""
+    choices = parsed.get("choices") or []
+    if choices:
+        message = choices[0].get("message") or {}
+        response = str(message.get("content") or "").strip()
+    resolved_model = str(parsed.get("model") or model_id or "deepseek-chat")
+
+    if not args.no_history and response:
+        save_session(args.session, messages + [{"role": "assistant", "content": response}])
+
+    duration_ms = int((time.time() - start) * 1000)
+    _log_usage(
+        backend="deepseek",
+        agent_id=args.agent_id,
+        session_id=args.session,
+        source=args.source,
+        operation=args.operation,
+        model_id=resolved_model,
+        duration_ms=duration_ms,
+        prompt=args.prompt,
+        response=response,
+        rc=0 if response else 2,
+        timeout=False,
+    )
+    if not response:
+        print("ERROR: DeepSeek returned an empty response", file=sys.stderr)
+        return 2
+
+    sys.stdout.write(response)
+    return 0
+
+
 def _run_bedrock(args: argparse.Namespace) -> int:
     runner = REPO_ROOT / "llm" / "bedrock_runner.py"
     model_id = args.model_id or os.environ.get("BEDROCK_MODEL_ID") or "us.amazon.nova-lite-v1:0"
@@ -384,6 +490,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Unified GenAI invocation wrapper for HQ backends.")
     parser.add_argument("--backend", required=True, choices=[
         "local-server",
+        "deepseek",
         "copilot-chat",
         "copilot-shell",
         "copilot-git",
@@ -433,6 +540,8 @@ def main() -> int:
         return _run_copilot_subcommand(args, "explain")
     if args.backend == "local-server":
         return _run_local_server(args)
+    if args.backend == "deepseek":
+        return _run_deepseek(args)
     if args.backend == "local":
         return _run_local(args)
     if args.backend == "bedrock":

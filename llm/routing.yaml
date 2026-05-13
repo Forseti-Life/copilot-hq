@@ -7,30 +7,32 @@
 #   3. default             — org-wide fallback
 #
 # Supported route targets here are:
-#   - local-server  (host-local llama.cpp server; primary runtime)
+#   - deepseek      (DeepSeek API; primary runtime when configured)
+#   - local-server  (host-local llama.cpp server; automatic fallback runtime)
 #   - copilot       (explicit fallback/manual override)
 #   - <model-id>    (GGUF model from llm/model-manifest.yaml for on-disk runner)
 #
-# HQ runtime policy is to prefer the host-local llama-server for normal seat
-# execution. Copilot remains the only automation fallback backend. On-disk GGUF
-# model IDs are still supported but are no longer the default production path.
+# HQ runtime policy is to prefer DeepSeek for normal seat execution, then fall
+# back to the host-local llama-server when DeepSeek is unavailable. Copilot
+# remains the explicit manual fallback backend. On-disk GGUF model IDs are still
+# supported but are no longer the default production path.
 
 version: "1"
 
 # Org-wide fallback if no role or agent match.
-default: local-server
+default: deepseek
 
 # Role-based defaults.
-# These resolve to the host-local llama.cpp server unless explicitly overridden.
+# These resolve to DeepSeek unless explicitly overridden.
 roles:
-  ceo: local-server
-  architect: local-server
-  product-manager: local-server
-  project-manager: local-server
-  software-developer: local-server
-  tester: local-server
-  business-analyst: local-server
-  security-analyst: local-server
+  ceo: deepseek
+  architect: deepseek
+  product-manager: deepseek
+  project-manager: deepseek
+  software-developer: deepseek
+  tester: deepseek
+  business-analyst: deepseek
+  security-analyst: deepseek
 
 # Agent-specific overrides.
 # Only list agents that need a DIFFERENT model/backend than their role default above.

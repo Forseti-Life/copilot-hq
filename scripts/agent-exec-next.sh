@@ -83,6 +83,10 @@ archive_inbox_item() {
   local src="$1" name="$2" dest_dir="$3"
   [ -d "$src" ] || return 0
   mkdir -p "$dest_dir"
+  # Queue lock markers only coordinate active inbox execution. If we archive the
+  # raw inbox directory, those markers become misleading artifact residue.
+  rm -f "$src/.inwork" 2>/dev/null || true
+  rm -rf "$src/.exec-lock" 2>/dev/null || true
   local dest="$dest_dir/$name"
   if [ -e "$dest" ]; then
     dest="${dest}-$(date +%s)"
@@ -692,7 +696,15 @@ ROUTED_ROUTE_ID="$(_llm_resolve_route_id "$AGENT_ID")"
 LOCAL_MODEL_FILE="$(_llm_resolve_model "$AGENT_ID")"
 
 resolve_backend() {
-  case "${ROUTED_ROUTE_ID:-}" in
+    case "${ROUTED_ROUTE_ID:-}" in
+    deepseek)
+      if [ -x "$GENAI_WRAPPER" ]; then
+        echo "deepseek"
+        return 0
+      fi
+      echo "ERROR: routing requested deepseek for ${AGENT_ID} but the GenAI wrapper is unavailable." >&2
+      return 1
+      ;;
     local-server)
       if [ -x "$GENAI_WRAPPER" ]; then
         echo "local-server"
@@ -717,6 +729,14 @@ resolve_backend() {
   fi
 
   case "$AGENTIC_BACKEND" in
+    deepseek)
+      if [ -x "$GENAI_WRAPPER" ]; then
+        echo "deepseek"
+        return 0
+      fi
+      echo "ERROR: HQ_AGENTIC_BACKEND=deepseek but the GenAI wrapper is unavailable." >&2
+      return 1
+      ;;
     local-server)
       if [ -x "$GENAI_WRAPPER" ]; then
         echo "local-server"
@@ -734,7 +754,7 @@ resolve_backend() {
       return 1
       ;;
     *)
-      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: local-server|copilot)" >&2
+      echo "ERROR: invalid HQ_AGENTIC_BACKEND='$AGENTIC_BACKEND' (expected: deepseek|local-server|copilot)" >&2
       return 1
       ;;
   esac
@@ -1043,7 +1063,8 @@ run_bedrock() {
 
 run_local_server() {
   local prompt="$1"
-  "$GENAI_WRAPPER" \
+  local output
+  if output="$("$GENAI_WRAPPER" \
     --backend local-server \
     --agent-id "$AGENT_ID" \
     --session "$SESSION_ID" \
@@ -1052,7 +1073,32 @@ run_local_server() {
     --operation "langgraph_agent_exec" \
     --model-id "${LOCAL_LLM_MODEL:-}" \
     --max-tokens "${LOCAL_LLM_MAX_TOKENS:-2048}" \
-    --timeout-sec "${LOCAL_LLM_TIMEOUT_SEC:-900}" 2>&1 || true
+    --timeout-sec "${LOCAL_LLM_TIMEOUT_SEC:-900}" 2>&1)"; then
+    printf '%s' "$output"
+    return 0
+  fi
+  printf '%s\n' "$output" >&2
+  return 1
+}
+
+run_deepseek() {
+  local prompt="$1"
+  local output
+  if output="$("$GENAI_WRAPPER" \
+    --backend deepseek \
+    --agent-id "$AGENT_ID" \
+    --session "$SESSION_ID" \
+    --prompt "$prompt" \
+    --source "scripts/agent-exec-next.sh" \
+    --operation "langgraph_agent_exec" \
+    --model-id "${DEEPSEEK_MODEL:-deepseek-chat}" \
+    --max-tokens "${DEEPSEEK_MAX_TOKENS:-2048}" \
+    --timeout-sec "${DEEPSEEK_TIMEOUT_SEC:-900}" 2>&1)"; then
+    printf '%s' "$output"
+    return 0
+  fi
+  printf '%s\n' "$output" >&2
+  return 1
 }
 
 run_primary_backend() {
@@ -1060,6 +1106,12 @@ run_primary_backend() {
   case "$GENAI_BACKEND" in
     local) echo "" ;;
     local-server) run_local_server "$prompt" ;;
+    deepseek)
+      if run_deepseek "$prompt"; then
+        return 0
+      fi
+      run_local_server "$prompt"
+      ;;
     copilot) run_copilot "$prompt" ;;
     *) echo "" ;;
   esac
@@ -1068,6 +1120,7 @@ run_primary_backend() {
 backend_retry_delay_seconds() {
   case "$GENAI_BACKEND" in
     local-server) echo "${LOCAL_LLM_RETRY_DELAY_SECONDS:-5}" ;;
+    deepseek) echo "${DEEPSEEK_RETRY_DELAY_SECONDS:-2}" ;;
     *) echo 0 ;;
   esac
 }

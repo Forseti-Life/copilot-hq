@@ -249,6 +249,16 @@ def archive_inbox_dir(item_dir: Path) -> None:
     target = archive_root / item_dir.name
     if target.exists():
         shutil.rmtree(target)
+    # Queue lock markers should not survive archival; they only coordinate
+    # active inbox execution and become misleading once the item is archived.
+    try:
+        (item_dir / ".inwork").unlink(missing_ok=True)
+    except Exception:
+        pass
+    try:
+        shutil.rmtree(item_dir / ".exec-lock", ignore_errors=True)
+    except Exception:
+        pass
     item_dir.rename(target)
 
 
