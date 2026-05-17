@@ -61,12 +61,14 @@
 - Suite: playwright/character-creation
 - Expected: eldritch_trickster selection → free_multiclass_dedication at L1; Magical Trickster appears at L2
 - AC: Rogue-1–2
+- Developer verification: 2026-05-15 targeted PHPUnit passed for `EldritchTrickster`, `Mastermind`, `NimbleDodge`, `TrapFinder`, `TwinFeint`, and `YoureNext` (8 tests / 56 assertions combined rogue APG racket slice).
 
 ## TC-EXP-10 — Rogue: Mastermind racket
 - Description: Int as key ability; gains Society + one knowledge Lore; successful Recall Knowledge → flat-footed until next turn; crit success = 1 minute
 - Suite: playwright/encounter
 - Expected: key_ability = Int; skills.society trained; recall_knowledge.success → target.flat_footed until next turn; crit_success → 1 minute
 - AC: Rogue-3–4, Edge-2, Integration-6
+- Developer verification: 2026-05-15 targeted PHPUnit passed for `EldritchTrickster`, `Mastermind`, `NimbleDodge`, `TrapFinder`, `TwinFeint`, and `YoureNext` (8 tests / 56 assertions combined rogue APG racket slice).
 
 ## TC-EXP-11 — Sorcerer: Genie bloodline
 - Description: Arcane spell list; subtype selection at L1 (Janni/Djinni/Efreeti/Marid/Shaitan); determines granted spells

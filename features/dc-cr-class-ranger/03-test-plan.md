@@ -252,7 +252,7 @@
 |---|---|---|
 | None | — | All 32 TCs are immediately activatable at Stage 0. |
 
-No TCs in this plan depend on unshipped features. Ranger has no spellcasting, no animal companion, and no conditions dependencies beyond standard MAP/hit tracking already covered by `dc-cr-character-class`.
+No TCs in this plan depend on unshipped features. Ranger has no spellcasting dependency in this plan, and companion-dependent behavior relies on the shipped `dc-cr-animal-companion` subsystem rather than any deferred blocker.
 
 ---
 

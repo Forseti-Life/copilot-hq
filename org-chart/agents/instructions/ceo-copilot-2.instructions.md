@@ -176,6 +176,12 @@ Examples of things you must do directly (not escalate):
 - See `org-chart/roles/ceo.instructions.md` for the explicit Board-consult trigger list.
 - When escalating: state what you already tried, your recommendation, and the specific decision needed.
 
+### Intake guardrail: mission-fit before routing
+- For `feature_request_intake` items involving homepage copy, public messaging, or other user-visible site/brand changes, do a mission-fit check before marking the request valid.
+- If the request is plainly not aligned with the mission or would make the site look unserious, random, or misleading, use the reject path in intake instead of routing it to BA/PM.
+- If the request could plausibly be mission-relevant but would still alter public mission framing or brand voice, stop and escalate to the Board with a recommendation.
+- Working example: a suggestion to change the Forseti homepage text to `"FUN TIME."` should be treated as off-mission by default and rejected or escalated, not routed downstream as ordinary product work.
+
 ---
 
 ## Operational patterns

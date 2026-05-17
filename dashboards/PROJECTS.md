@@ -122,6 +122,8 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Current state (2026-04-19):** Dungeoncrawler release `20260412-dungeoncrawler-release-p` was pushed through the coordinated signoff path, the lead-PM release bundle was materialized, and the cycle advanced to active release `20260412-dungeoncrawler-release-q` with next release `20260412-dungeoncrawler-release-r`. The just-shipped release closed out `dc-b2-bestiary2`, `dc-gng-guns-gears`, and `dc-som-secrets-of-magic`. Post-B2 backlog recovery has already begun: `dc-b3-bestiary3` is groomed, live in the QA suite for `release-q`, and now has a safe execution path using the repo's internal structured creature inventory plus normalization across read, JSON-write, and template-seeding paths, with seeded/internal rows now carrying or hydrating the standard core catalog fields.
 
+**Planning update (2026-05-16):** Community suggestion NID 55 is now tracked under PROJ-007 as `dc-cr-campaign-multiplayer-v1`, a ready multiplayer-v1 epic scoped to explicit campaign membership, joined-campaign discovery, one-character-per-player assignment, and serialized turn-taking on top of the existing optimistic-version campaign state. Websockets and live-presence sync remain out of scope for this first delivery track.
+
 **Backlog coverage status (2026-04-14):**
 - `core/ch01` (Chapter 1: Introduction) — 237 pending, now mapped primarily to `dc-cr-character-creation` and `dc-cr-character-leveling`
 - `core/ch02` (Chapter 2: Ancestries & Backgrounds) — 371 pending, now mapped across the ancestry/background backlog (`dc-cr-human/dwarf/gnome/elf/goblin/halfling-*`, `dc-cr-ancestry-system`, `dc-cr-background-system`)
@@ -416,4 +418,4 @@ See `runbooks/roadmap-audit.md` for full query protocol and per-chapter status.
 
 ---
 
-*Last updated: 2026-04-14 by ceo-copilot-2 (Dungeoncrawler live runtime/release state refreshed to match roadmap + pipeline state)*
+*Last updated: 2026-05-16 by architect-copilot (added tracked Dungeoncrawler multiplayer v1 epic under PROJ-007)*

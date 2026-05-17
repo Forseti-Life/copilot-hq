@@ -9,7 +9,7 @@
 ## KB references
 - KB: no prior lessons found for Druid class logic; first druid implementation.
 - Dependency note: `dc-cr-spellcasting` is **deferred** — all TCs relying on prepared-slot mechanics, spell advancement table, slot validation, and slot-manipulation restrictions must be flagged `pending-dev-confirmation` at Stage 0 until `dc-cr-spellcasting` ships.
-- Dependency note: `dc-cr-animal-companion` is **planned** — Wild Shape form TCs and Animal Order animal companion TCs must be flagged `pending-dev-confirmation` until that feature ships.
+- Dependency note: `dc-cr-animal-companion` is **shipped** — Animal Order companion coverage can rely on the shared companion subsystem. Only druid-specific Wild Shape and deferred spellcasting surfaces remain pending where noted below.
 - `dc-cr-character-class` ✓ and `dc-cr-character-creation` ✓ — no blocker on those.
 - Cross-class pattern: Cleric also uses WIS + prepared divine spellcasting + a 10th-level slot at level 19 with slot-manipulation restrictions; same regression risk applies here for primal. Verify stat resolver returns WIS for Druid, not CHA (Champion risk).
 
@@ -233,6 +233,8 @@
 - **Setup:** Druid (Animal primary) with Order Explorer feat adding Leaf secondary order; trigger secondary order anathema violation; inspect primary primal_spellcasting and primary order benefits vs secondary order feats
 - **Expected:** Secondary order feats = suspended; primary primal_spellcasting = still active; primary order benefits = still active
 - **Roles:** authenticated player
+- **Developer verification:** Runtime wiring verified in `FeatEffectManagerTest::testOrderExplorerRequestsSecondOrderSelectionWhenMissing()`, `FeatEffectManagerTest::testOrderExplorerRequestsSelectionWhenPrimaryOrderIsMissing()`, and `FeatEffectManagerTest::testOrderExplorerPersistsSecondOrderBenefitsAndAnathemaScope()`; live targeted PHPUnit pass confirmed chooser, persistence, focus bonus metadata, prerequisite unlocks, and partial-anathema scope metadata.
+- **Dependency note:** Full scenario suspension still depends on the later consumer that applies recorded anathema-violation state against the `order-explorer` runtime metadata.
 
 ### TC-DRU-26 — Wild Shape: attempting an unlocked form that hasn't been taken is blocked
 - **AC:** `[NEW]` Wild Shape forms: each unlock feat adds specific forms; attempting unlocked forms that aren't taken yet is blocked
@@ -241,7 +243,7 @@
 - **Setup:** Druid with base Wild Shape but without a specific form unlock feat (e.g., Ferocious Shape); attempt to wild shape into a ferocious form
 - **Expected:** Transformation blocked; error references missing form unlock feat
 - **Roles:** authenticated player
-- **Dependency note:** Depends on `dc-cr-animal-companion` / Wild Shape implementation. Flag `pending-dev-confirmation` at Stage 0 until that feature ships.
+- **Dependency note:** Depends on Wild Shape form catalog/runtime wiring. Flag `pending-dev-confirmation` at Stage 0 until that druid-specific surface ships.
 
 ### TC-DRU-27 — Form Control: duration extended; spell level –2 (min 1) applied when metamagic used
 - **AC:** `[NEW]` Form Control: duration extends correctly; spell level reduction (–2, min 1) applied when metamagic is used
@@ -250,7 +252,7 @@
 - **Setup:** Druid with Form Control feat; activate Wild Shape with metamagic; inspect resulting spell level and duration
 - **Expected:** Duration = extended (per Form Control rules); effective_spell_level = original_level – 2, minimum 1
 - **Roles:** authenticated player
-- **Dependency note:** Depends on `dc-cr-animal-companion` / Wild Shape and `dc-cr-spellcasting` (metamagic). Flag `pending-dev-confirmation` at Stage 0.
+- **Dependency note:** Depends on Wild Shape form-control wiring and `dc-cr-spellcasting` (metamagic). Flag `pending-dev-confirmation` at Stage 0.
 
 ### TC-DRU-28 — Metal armor blocked (failure mode explicit check)
 - **AC:** `[TEST-ONLY]` Metal armor equipment blocked for druid characters
@@ -299,8 +301,8 @@
 | TC-DRU-18 | Slot limit enforcement | `dc-cr-spellcasting` |
 | TC-DRU-19 | 10th-level slot (Primal Hierophant) | `dc-cr-spellcasting` |
 | TC-DRU-20 | Slot-manipulation restriction | `dc-cr-spellcasting` |
-| TC-DRU-26 | Wild Shape form unlock/block | `dc-cr-animal-companion` |
-| TC-DRU-27 | Form Control duration + metamagic spell level | `dc-cr-animal-companion`, `dc-cr-spellcasting` |
+| TC-DRU-26 | Wild Shape form unlock/block | Wild Shape form catalog/runtime wiring |
+| TC-DRU-27 | Form Control duration + metamagic spell level | Wild Shape form-control wiring, `dc-cr-spellcasting` |
 
 TCs with no deferred dependencies (immediately activatable at Stage 0): TC-DRU-01 through TC-DRU-14, TC-DRU-21 through TC-DRU-25, TC-DRU-28, TC-DRU-29, TC-DRU-30.
 

@@ -10,16 +10,18 @@
 ## Happy Path
 
 ### Identity & Base Statistics
-- [ ] `[NEW]` Rogue exists as a selectable playable class with DEX as default key ability boost at level 1 (racket may allow STR or CHA instead).
+- [ ] `[NEW]` Rogue exists as a selectable playable class with DEX as default key ability boost at level 1 (racket may allow STR, CHA, or INT instead).
 - [ ] `[NEW]` Rogue HP = 8 + CON modifier per level.
 - [ ] `[NEW]` Initial proficiencies: Trained Perception; Expert Reflex AND Expert Will at level 1 (unique double Expert saves), Trained Fortitude; Stealth + racket skills + 7 + INT additional skills; Trained simple weapons, hand crossbow, rapier, sap, shortbow, shortsword; Trained light armor.
 - [ ] `[NEW]` Rogue gains a skill feat every level (not just every 2 levels); skill increases every level from 2nd onward.
 
 ### Rogue's Racket (Level 1 Subclass)
-- [ ] `[NEW]` At level 1, player selects one Racket: Ruffian, Scoundrel, or Thief.
+- [ ] `[NEW]` At level 1, player selects one Racket: Ruffian, Scoundrel, Thief, Eldritch Trickster, or Mastermind.
 - [ ] `[NEW]` Ruffian: sneak attack with any simple weapon (not just agile/finesse); crit hit + flat-footed target also applies weapon critical specialization (simple weapons with die ≤ d8); Trained Intimidation and medium armor; can choose STR as key ability.
 - [ ] `[NEW]` Scoundrel: successful Feint → target flat-footed against your melee attacks until end of next turn (critical success: flat-footed to ALL melee); Trained Deception and Diplomacy; can choose CHA as key ability.
 - [ ] `[NEW]` Thief: finesse melee weapon attacks can use DEX modifier for damage instead of STR; Trained Thievery.
+- [x] `[APG]` Eldritch Trickster: grants a free multiclass spellcasting dedication at level 1; can choose INT as key ability; Magical Trickster is available at level 2.
+- [x] `[APG]` Mastermind: can choose INT as key ability; gains Society plus one knowledge skill; successful Recall Knowledge makes the target flat-footed to your attacks until the start of your next turn (critical success: 1 minute).
 
 ### Sneak Attack (Level 1)
 - [ ] `[NEW]` Sneak attack adds precision damage only when the target is flat-footed.

@@ -3,6 +3,7 @@
 #
 # Usage:
 #   ./scripts/suggestion-intake.sh [site]      # site defaults to "forseti"
+#   FORCE_RESEED_NIDS=7 ./scripts/suggestion-intake.sh forseti
 #
 # What it does:
 #   1. Queries Drupal for community_suggestion nodes with status = "new"
@@ -15,6 +16,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 SITE="${1:-forseti}"
+FORCE_RESEED_NIDS="${FORCE_RESEED_NIDS:-}"
 LOCK_FILE="/var/tmp/suggestion-intake-${SITE}.lock"
 
 mkdir -p "$(dirname "$LOCK_FILE")"
@@ -242,7 +244,7 @@ fi
 
 echo "[suggestion-intake] Found $COUNT new suggestion(s). Seeding feature_request_intake items..."
 
-SEED_RESULT_JSON="$(python3 - "$SUGGESTIONS_JSON" "$INBOX_DIR" "$SITE" "$DATE_TAG" "$FLOW_OWNER" <<'PY'
+SEED_RESULT_JSON="$(python3 - "$SUGGESTIONS_JSON" "$INBOX_DIR" "$SITE" "$DATE_TAG" "$FLOW_OWNER" "$FORCE_RESEED_NIDS" <<'PY'
 import json
 import pathlib
 import re
@@ -254,6 +256,8 @@ inbox_root = pathlib.Path(sys.argv[2])
 site = sys.argv[3]
 date_tag = sys.argv[4]
 flow_owner = sys.argv[5]
+force_reseed_raw = sys.argv[6]
+force_reseed_nids = {value.strip() for value in force_reseed_raw.split(",") if value.strip()}
 
 category_labels = {
     "safety_feature": "Safety Feature",
@@ -322,9 +326,33 @@ def item_exists(marker: str) -> bool:
                 return True
     return False
 
+def next_rerun_suffix(site_id: str, nid: str) -> int:
+    pattern = re.compile(rf"\bSuggestion NID:\s*{re.escape(nid)}\b")
+    run_id_pattern = re.compile(rf"- Flow run id:\s*suggestion-{re.escape(site_id)}-nid-{re.escape(nid)}(?:-r([0-9]+))?\b")
+    seat_root = pathlib.Path.cwd() / "sessions" / flow_owner
+    max_suffix = 1
+    for bucket in ("inbox", "outbox", "artifacts"):
+        root = seat_root / bucket
+        if not root.exists():
+            continue
+        for path in root.rglob("command.md"):
+            try:
+                text = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            if not pattern.search(text):
+                continue
+            match = run_id_pattern.search(text)
+            if not match:
+                continue
+            suffix = int(match.group(1) or "1")
+            max_suffix = max(max_suffix, suffix)
+    return max_suffix + 1
+
 cross_site_keywords = load_cross_site_keywords(site)
 created = 0
 skipped = 0
+forced = 0
 
 for suggestion in suggestions:
     nid = str(suggestion.get("nid") or "").strip()
@@ -336,11 +364,14 @@ for suggestion in suggestions:
     created_at = str(suggestion.get("created") or "").strip()
 
     marker = f"feature-request-intake-{site}-nid-{nid}"
+    force_reseed = nid in force_reseed_nids
     item_name = f"{date_tag}-flow-{marker}-{slugify(title)[:40]}".rstrip("-")
     item_dir = inbox_root / item_name
-    if item_exists(marker) or item_dir.exists():
+    if not force_reseed and (item_exists(marker) or item_dir.exists()):
         skipped += 1
         continue
+    if force_reseed:
+        forced += 1
 
     combined_text = " ".join([title, summary, original])
     cross_site_mentions = detect_cross_site_mentions(combined_text, cross_site_keywords)
@@ -353,11 +384,22 @@ for suggestion in suggestions:
             f"{mentions}\n"
         )
 
+    run_id = f"suggestion-{site}-nid-{nid}"
+    reseed_note = ""
+    if force_reseed:
+        rerun_suffix = next_rerun_suffix(site, nid)
+        run_id = f"{run_id}-r{rerun_suffix}"
+        reseed_note = (
+            "\n## Reseed note\n\n"
+            f"- This item was force-reseeded from Drupal `new` state after an earlier intake run for suggestion NID {nid} produced stale or incorrect flow context.\n"
+            f"- Use this run (`{run_id}`) as the authoritative retry. Do not inherit scope or assumptions from prior `suggestion-{site}-nid-{nid}` runs without re-reading the original user message.\n"
+        )
+
     conv_line = f"- Source conversation node: {conv_nid}" if conv_nid is not None else "- Source conversation node: n/a"
     item_dir.mkdir(parents=True, exist_ok=True)
     command = (
         f"- Flow id: feature_request_intake\n"
-        f"- Flow run id: suggestion-{site}-nid-{nid}\n"
+        f"- Flow run id: {run_id}\n"
         f"- Flow node: Receive Feature Request\n"
         f"- Flow owner seat: {flow_owner}\n"
         f"\n"
@@ -384,13 +426,14 @@ for suggestion in suggestions:
         f"- Legacy PM-only suggestion triage has been retired; use the `feature_request_intake` flow to review, clarify, defer, reject, or approve this request.\n"
         f"- If approved, the intake flow should decide whether to materialize or update a backlog feature artifact before launching delivery.\n"
         f"- Drupal node edit URL: /node/{nid}/edit\n"
+        f"{reseed_note}"
         f"{cross_site_section}"
     )
     (item_dir / "command.md").write_text(command, encoding="utf-8")
     (item_dir / "roi.txt").write_text("30\n", encoding="utf-8")
     created += 1
 
-print(json.dumps({"created": created, "skipped": skipped, "total": len(suggestions)}))
+print(json.dumps({"created": created, "skipped": skipped, "forced": forced, "total": len(suggestions)}))
 PY
 )"
 

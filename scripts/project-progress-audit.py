@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 import re
 import sys
@@ -10,7 +11,10 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 
-PROJECTS_PATH = pathlib.Path("/home/ubuntu/forseti.life/dashboards/PROJECTS.md")
+HQ_ROOT = pathlib.Path(
+    os.environ.get("HQ_ROOT_DIR", pathlib.Path(__file__).resolve().parents[1])
+).resolve()
+PROJECTS_PATH = HQ_ROOT / "dashboards" / "PROJECTS.md"
 SECTION_RE = re.compile(r"^## (PROJ-\d+) — (.+)$", re.MULTILINE)
 @dataclass
 class ProjectSection:

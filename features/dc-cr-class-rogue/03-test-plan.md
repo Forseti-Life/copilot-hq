@@ -2,7 +2,7 @@
 
 **Owner:** qa-dungeoncrawler
 **Date:** 2026-04-07
-**Feature:** Rogue Class — identity/stats, Racket (Ruffian/Scoundrel/Thief), Sneak Attack, Surprise Attack, Debilitations, feat progression
+**Feature:** Rogue Class — identity/stats, Racket (Ruffian/Scoundrel/Thief/Eldritch Trickster/Mastermind), Sneak Attack, Surprise Attack, Debilitations, feat progression
 **KB reference:** none found (first Rogue class feature)
 **Dependency note:** dc-cr-conditions (in-progress Release B) — 3 TCs deferred (flat-footed condition state management)
 
@@ -99,7 +99,7 @@
 
 ### TC-ROG-12 — Racket selection required at level 1
 - **Suite:** module-test-suite
-- **Description:** Player must select exactly one Racket from {Ruffian, Scoundrel, Thief} at level 1; no Rogue advances without a Racket.
+- **Description:** Player must select exactly one Racket from {Ruffian, Scoundrel, Thief, Eldritch Trickster, Mastermind} at level 1; no Rogue advances without a Racket.
 - **Expected:** Exactly one Racket recorded on character; level advancement gated on selection.
 - **Roles covered:** authenticated player
 - **Status:** immediately activatable
@@ -291,6 +291,20 @@
 - **Roles covered:** anonymous, authenticated player, admin
 - **Status:** immediately activatable
 
+### TC-ROG-39 — Eldritch Trickster: free spellcasting dedication and INT key ability option
+- **Suite:** module-test-suite
+- **Description:** Selecting Eldritch Trickster exposes the free spellcasting dedication chooser, persists the selected dedication, mirrors it into canonical feat state, and allows INT as a rogue key ability option.
+- **Expected:** Eldritch Trickster selection requires a valid spellcasting multiclass dedication, stores it in character state, adds the granted dedication to canonical feat state, and offers DEX/INT as valid key abilities.
+- **Roles covered:** authenticated player
+- **Status:** implemented and developer-verified on 2026-05-15 via targeted PHPUnit (`EldritchTrickster`, `NimbleDodge`, `TrapFinder`, `TwinFeint`, `YoureNext`)
+
+### TC-ROG-40 — Mastermind: knowledge skill chooser and Recall Knowledge combat rider
+- **Suite:** module-test-suite
+- **Description:** Selecting Mastermind exposes the extra knowledge-skill chooser, grants Society plus the selected knowledge skill, and emits the Recall Knowledge flat-footed runtime rider with correct durations.
+- **Expected:** Mastermind selection requires one of Arcana/Nature/Occultism/Religion, grants Society plus that skill, offers DEX/INT as valid key abilities, and records Recall Knowledge flat-footed metadata for success and critical success outcomes.
+- **Roles covered:** authenticated player
+- **Status:** implemented and developer-verified on 2026-05-15 via targeted PHPUnit (`Mastermind`, `NimbleDodge`, `TrapFinder`, `TwinFeint`, `YoureNext`)
+
 ---
 
 ## Deferred dependency summary
@@ -301,7 +315,7 @@
 | TC-ROG-19 | `dc-cr-conditions` (Release B) | Critical Feint flat-footed (all melee) requires condition system |
 | TC-ROG-20 | `dc-cr-conditions` (Release B) | Feint flat-footed expiry requires condition turn tracking |
 
-35 TCs are immediately activatable at Stage 0. 3 TCs (TC-ROG-18/19/20) wait for `dc-cr-conditions`.
+37 TCs are immediately activatable at Stage 0. 3 TCs (TC-ROG-18/19/20) wait for `dc-cr-conditions`.
 
 ---
 

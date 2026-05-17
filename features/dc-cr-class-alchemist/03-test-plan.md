@@ -375,6 +375,15 @@
 - **Expected:** 0 violations, 0 failures; no new unexpected 403/404 regressions
 - **Roles:** all configured roles
 
+### TC-ALC-45 — Improbable Elixirs: selected potion formulas are persisted and treated as alchemical elixirs
+- **AC:** `[NEW]` Improbable Elixirs: chooser persists eligible potion formulas and exposes them as alchemical elixir formulas for formula-book/runtime consumers
+- **Suite:** `module-test-suite`
+- **Test class/method:** `FeatEffectManagerTest::testImprobableElixirsRequestsFormulaSelectionWhenMissing()`, `FeatEffectManagerTest::testImprobableElixirsIgnoresInvalidSelectionsAndKeepsChoiceOpen()`, `FeatEffectManagerTest::testImprobableElixirsPersistsConvertedPotionFormulaMetadata()`
+- **Setup:** Level-16 Alchemist with Improbable Elixirs and Intelligence modifier >= 1; inspect missing selection, invalid non-potion selection, and valid selected potion-formula persistence
+- **Expected:** Missing/invalid selections keep the chooser open; valid potion formula ids are granted to the formula book and marked as alchemical-elixir conversions with explicit source/display metadata
+- **Roles:** authenticated player
+- **Dependency note:** Full crafting/display enforcement still depends on downstream formula-book consumers reading the recorded conversion metadata.
+
 ---
 
 ## Items not expressable as automation (PM note)

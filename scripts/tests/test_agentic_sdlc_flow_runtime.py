@@ -109,6 +109,7 @@ def test_build_command_hardcodes_allowed_statuses_and_write_test_case_artifacts(
         product_team_selection_required=False,
         available_product_teams=["dungeoncrawler"],
         direct_route_available=True,
+        source_context={},
     )
 
     assert "## Accepted status values" in command
@@ -141,6 +142,7 @@ def test_build_command_code_review_requires_review_artifact_citations():
         product_team_selection_required=False,
         available_product_teams=["dungeoncrawler"],
         direct_route_available=False,
+        source_context={},
     )
 
     assert "Treat the upstream dev outbox as a handoff receipt" in command
@@ -169,6 +171,7 @@ def test_validate_flow_done_outbox_requires_review_artifact_citation_for_code_re
         product_team_selection_required=False,
         available_product_teams=["dungeoncrawler"],
         direct_route_available=False,
+        source_context={},
     )
     command_meta = module.parse_simple_metadata(command_text)
 

@@ -45,11 +45,11 @@
 
 ## Rogue — New Rackets
 
-- [ ] Eldritch Trickster: free multiclass spellcasting archetype dedication at L1
-- [ ] Eldritch Trickster: Magical Trickster feat available at L2 (down from L4)
-- [ ] Mastermind: Intelligence as key ability; gains Society + one knowledge skill
-- [ ] Mastermind: successful Recall Knowledge renders target flat-footed until next turn; critical success = 1 minute
-- [ ] Both rackets allow Intelligence as the key ability score choice
+- [x] Eldritch Trickster: free multiclass spellcasting archetype dedication at L1
+- [x] Eldritch Trickster: Magical Trickster feat available at L2 (down from L4)
+- [x] Mastermind: Intelligence as key ability; gains Society + one knowledge skill
+- [x] Mastermind: successful Recall Knowledge renders target flat-footed until next turn; critical success = 1 minute
+- [x] Both rackets allow Intelligence as the key ability score choice
 
 ---
 
@@ -80,7 +80,7 @@
 - [ ] Superstition anathema triggers a warning/tracking flag when relevant (GM tool)
 - [ ] Warrior muse Martial Performance feat granted automatically at bard creation
 - [ ] Evil champion options gated behind GM unlock / Uncommon access flag
-- [ ] Mastermind flat-footed state from Recall Knowledge correctly linked to timing (until next turn / 1 minute)
+- [x] Mastermind flat-footed state from Recall Knowledge correctly linked to timing (until next turn / 1 minute)
 - [ ] Staff Nexus makeshift staff charge rules use expended-slot logic, not passive daily recharge
 
 ## Edge Cases

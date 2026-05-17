@@ -4,7 +4,7 @@
 
 **Maintained by:** `ba-dungeoncrawler` — update this file at the end of every scan chunk (same commit as new feature stubs). Include `Category` and `Depends on` for every new row (`Depends on` may be blank if no dependencies).
 
-**Last updated:** 2026-04-18 | Active release: `20260412-dungeoncrawler-release-n` | Runtime next release pointer: `20260412-dungeoncrawler-release-o` | Total: 86
+**Last updated:** 2026-05-16 | Active release: `20260412-dungeoncrawler-release-n` | Runtime next release pointer: `20260412-dungeoncrawler-release-o` | Total: 87
 
 **Release sync note:** Treat this index as backlog/duplicate-detection inventory. Live per-feature status and release progress come from each feature's `feature.md`, `dashboards/FEATURE_PROGRESS.md`, and the runtime pointers under `tmp/release-cycle-active/`.
 
@@ -23,6 +23,7 @@
 | dc-cr-animal-companion | game-mechanic |  | Animal companions for druids/rangers with own stat blocks and advancement |
 | dc-cr-background-system | game-mechanic |  | Background selection granting ability boosts, skill training, and a skill feat |
 | dc-cr-burrow-elocutionist | game-mechanic | dc-cr-gnome-ancestry, dc-cr-ancestry-feat-schedule | Gnome Feat 1: comprehend and speak with burrowing creatures |
+| dc-cr-campaign-multiplayer-v1 | campaign-system | dc-cr-session-structure, dc-cr-encounter-rules, dc-cr-exploration-mode | Shared campaign membership, one-character-per-player access, and serialized multiplayer turns without websockets |
 | dc-cr-character-class | game-mechanic |  | 12 character classes (fighter, cleric, wizard, alchemist, etc.) with advancement tables |
 | dc-cr-character-creation | rule-system |  | End-to-end character creation workflow (ancestry → class → background → stats) |
 | dc-cr-character-leveling | rule-system |  | Level-up flow applying class features, ability boosts, and feats at each level |
@@ -122,8 +123,9 @@
 - `dc-cr-ancestry-feat-schedule` — Ancestry Feat Schedule [deferred]
 - `dc-cr-ancestry-system` — Ancestry System [done]
 - `dc-cr-ancestry-traits` — Ancestry Traits System [ready]
-- `dc-cr-animal-companion` — Animal Companion System [deferred]
+- `dc-cr-animal-companion` — Animal Companion System [shipped]
 - `dc-cr-background-system` — Background System [done]
+- `dc-cr-campaign-multiplayer-v1` — Campaign Multiplayer v1 (shared membership, one-character-per-player, turn-taking) [ready]
 - `dc-cr-character-class` — Character Class System [done]
 - `dc-cr-character-creation` — Character Creation Workflow [done]
 - `dc-cr-character-leveling` — Character Leveling and Advancement [ready]

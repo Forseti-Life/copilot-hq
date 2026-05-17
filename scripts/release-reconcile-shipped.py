@@ -13,6 +13,13 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
+ROOT = Path(__file__).resolve().parent.parent
+LIB_DIR = ROOT / "scripts" / "lib"
+if str(LIB_DIR) not in sys.path:
+    sys.path.insert(0, str(LIB_DIR))
+
+from suggestion_status_sync import extract_feature_source_suggestion_nid, update_suggestion_status
+
 
 RELEASE_ID_RE = re.compile(r"^[0-9]{8}-[a-zA-Z][a-zA-Z0-9-]+-release-[a-z][a-z0-9]*$")
 FEATURE_HEADING_RE = re.compile(r"^###\s+([A-Za-z0-9._-]+)\s*$")
@@ -237,6 +244,41 @@ print json_encode($result, JSON_UNESCAPED_SLASHES);
     return result
 
 
+def reconcile_suggestions(root: Path, team_id: str, feature_ids: list[str]) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "matched_total": 0,
+        "updated_total": 0,
+        "per_feature": {},
+        "skipped_reason": "",
+    }
+    if not feature_ids:
+        result["skipped_reason"] = "no shipped features to reconcile"
+        return result
+
+    for feature_id in feature_ids:
+        feature_md = root / "features" / feature_id / "feature.md"
+        if not feature_md.exists():
+            continue
+        suggestion_nid = extract_feature_source_suggestion_nid(feature_md.read_text(encoding="utf-8"))
+        if not suggestion_nid:
+            continue
+
+        result["matched_total"] += 1
+        sync_result = update_suggestion_status(root, team_id, suggestion_nid, "implemented")
+        result["per_feature"][feature_id] = {
+            "nid": suggestion_nid,
+            "ok": bool(sync_result.get("ok")),
+            "updated": 1 if sync_result.get("updated") else 0,
+            "previous_status": sync_result.get("previous_status", ""),
+            "reason": sync_result.get("reason", ""),
+        }
+        result["updated_total"] += int(result["per_feature"][feature_id]["updated"])
+
+    if result["matched_total"] == 0:
+        result["skipped_reason"] = "no shipped features linked to community suggestions"
+    return result
+
+
 def write_artifact(
     root: Path,
     pm_agent: str,
@@ -249,6 +291,7 @@ def write_artifact(
     unexpected_status: list[tuple[str, str]],
     metadata_mismatches: list[tuple[str, str]],
     requirement_result: dict[str, Any],
+    suggestion_result: dict[str, Any],
 ) -> Path:
     artifact_dir = root / "sessions" / pm_agent / "artifacts" / "release-reconciliation"
     artifact_dir.mkdir(parents=True, exist_ok=True)
@@ -309,6 +352,28 @@ def write_artifact(
             detail = per_feature[feature_id]
             lines.append(
                 f"- {feature_id}: matched={detail.get('matched', 0)} updated={detail.get('updated', 0)}"
+            )
+    else:
+        lines.append("- None")
+    lines.extend(
+        [
+            "",
+            "## Suggestion reconciliation",
+            f"- Suggestion-linked shipped features: {suggestion_result.get('matched_total', 0)}",
+            f"- Suggestion nodes updated to `implemented`: {suggestion_result.get('updated_total', 0)}",
+            f"- Notes: {suggestion_result.get('skipped_reason') or 'ok'}",
+            "",
+            "### Per-feature suggestion updates",
+        ]
+    )
+    suggestion_per_feature = suggestion_result.get("per_feature") or {}
+    if suggestion_per_feature:
+        for feature_id in sorted(suggestion_per_feature):
+            detail = suggestion_per_feature[feature_id]
+            lines.append(
+                f"- {feature_id}: nid={detail.get('nid')} updated={detail.get('updated', 0)} "
+                f"previous_status={detail.get('previous_status') or '(blank)'} "
+                f"result={'ok' if detail.get('ok') else detail.get('reason') or 'error'}"
             )
     else:
         lines.append("- None")
@@ -374,6 +439,7 @@ def main(argv: list[str]) -> int:
 
     requirement_feature_ids = sorted(set(shipped_now + already_shipped))
     requirement_result = reconcile_requirements(derive_drupal_root(team.drupal_web_root), requirement_feature_ids)
+    suggestion_result = reconcile_suggestions(root, team.team_id, requirement_feature_ids)
 
     artifact = write_artifact(
         root=root,
@@ -387,11 +453,13 @@ def main(argv: list[str]) -> int:
         unexpected_status=unexpected_status,
         metadata_mismatches=metadata_mismatches,
         requirement_result=requirement_result,
+        suggestion_result=suggestion_result,
     )
 
     print(f"RECONCILED {team.team_id}: {release_id}")
     print(f"  promoted={len(shipped_now)} already_shipped={len(already_shipped)}")
     print(f"  requirements_updated={requirement_result.get('updated_total', 0)}")
+    print(f"  suggestions_updated={suggestion_result.get('updated_total', 0)}")
     print(f"  artifact={artifact.relative_to(root)}")
     if unexpected_status:
         print(

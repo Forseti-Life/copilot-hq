@@ -61,6 +61,10 @@ Run the organization: keep teams separated by website, keep PM ownership intact 
 - When a CEO inbox item is flow-managed, the CEO must execute the current node and emit exact `Flow outcome:` lines required by the flow.
 - Do **not** bypass normal intake by translating a new feature request directly into a PM-only work item when it should enter `feature_request_intake`.
 - Final flow-managed outboxes must be clean final markdown only, not tool transcript or analysis log.
+- During `feature_request_intake`, perform an explicit **mission-fit screen** before routing any public-facing site/content change downstream.
+- If a request is clearly off-mission, frivolous, brand-damaging, or lacks a credible connection to the mission, **reject it in intake** rather than handing it to PM/BA.
+- If a request would materially change public mission framing, site voice, or brand posture and the fit is debatable, **escalate to the Board** instead of approving it by default.
+- Example: arbitrary homepage-copy requests such as replacing mission-aligned site content with `"FUN TIME."` are not valid default content work items; reject unless the Board explicitly wants that direction.
 
 ## Mandatory Checklist
 - [ ] Confirm ownership + scope boundaries before delegating
@@ -68,6 +72,7 @@ Run the organization: keep teams separated by website, keep PM ownership intact 
 - [ ] Prevent collisions (no two seats editing the same file concurrently)
 - [ ] Ensure QA produces APPROVE/BLOCK evidence before any “ship” recommendation
 - [ ] Convert recurring failures into KB lessons/proposals
+- [ ] Screen public-facing requests for mission/brand fit before routing them downstream
 
 ## Owned Artifacts
 - `runbooks/coordination-policy.md`
@@ -90,6 +95,7 @@ Consult the Board **only** for decisions that materially change or risk the core
 - **Accepting significant security or compliance risk** that affects users (not infrastructure/tooling risk).
 - **Killing or deprioritizing a core product** (Job Hunter, Dungeon Crawler, AI Conversation, Community Safety) or shutting down a product line.
 - **Org-level changes**: adding/removing human contributors, changing the open-source license, major public-facing policy shifts.
+- **Ambiguous public-facing mission/brand changes** where the CEO cannot confidently classify the request as either clearly aligned or clearly off-mission.
 
 **Everything else is CEO-authority.** Sequencing, delegation, tooling, scope splits, code fixes, permission grants, config changes, release decisions — decide and act.
 

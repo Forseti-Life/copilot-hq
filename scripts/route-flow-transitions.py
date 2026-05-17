@@ -12,6 +12,12 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent.parent
+LIB_DIR = ROOT / "scripts" / "lib"
+if str(LIB_DIR) not in sys.path:
+    sys.path.insert(0, str(LIB_DIR))
+
+from suggestion_status_sync import update_suggestion_status
+
 DRUSH_ROOT = Path("/var/www/html/forseti")
 PRODUCT_TEAMS_PATH = ROOT / "org-chart" / "products" / "product-teams.json"
 BUILTIN_FLOW_FALLBACKS: dict[str, dict[str, Any]] = {
@@ -118,6 +124,12 @@ STOPWORDS = {
     "when", "where", "which", "while", "with", "would", "your",
 }
 ACCEPTED_STATUS_VALUES = "done | in_progress | blocked | needs-info"
+SOURCE_CONTEXT_KEYS = (
+    "Source system",
+    "Source site",
+    "Suggestion NID",
+    "Source conversation node",
+)
 
 
 def log(message: str) -> None:
@@ -242,6 +254,88 @@ def load_command_source_context(command_meta: dict[str, str]) -> str:
         if value:
             parts.append(value)
     return "\n".join(part for part in parts if part.strip())
+
+
+def extract_source_context(command_meta: dict[str, str]) -> dict[str, str]:
+    context: dict[str, str] = {}
+    for key in SOURCE_CONTEXT_KEYS:
+        value = command_meta.get(key, "").strip()
+        if value:
+            context[key] = value
+    return context
+
+
+def load_saved_source_context(run_dir: Path) -> dict[str, str]:
+    path = run_dir / "source-context.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    return {str(key): str(value) for key, value in payload.items() if str(value).strip()}
+
+
+def save_source_context(run_dir: Path, source_context: dict[str, str]) -> None:
+    if not source_context:
+        return
+    path = run_dir / "source-context.json"
+    path.write_text(json.dumps(source_context, indent=2) + "\n", encoding="utf-8")
+
+
+def current_source_context(run_dir: Path, command_meta: dict[str, str]) -> dict[str, str]:
+    saved = load_saved_source_context(run_dir)
+    current = extract_source_context(command_meta)
+    merged = dict(saved)
+    merged.update(current)
+    if merged != saved:
+        save_source_context(run_dir, merged)
+    return merged
+
+
+def feature_request_intake_status_for_transition(current_node: str, target_node: str, condition: str) -> str:
+    if current_node == "PM Scope Decision":
+        return {
+            "Approved for delivery": "in_progress",
+            "Changes requested": "under_review",
+            "Parked in backlog": "deferred",
+        }.get(condition, "")
+    if condition in {"Rejected / duplicate / not a feature", "Rejected as non-actionable"}:
+        return "declined"
+    if current_node == "Prepare Delivery Handoff":
+        return "in_progress"
+    if target_node and target_node not in {"END", "__end__"}:
+        return "under_review"
+    return ""
+
+
+def sync_feature_request_intake_status(
+    *,
+    flow_id: str,
+    current_node: str,
+    target_node: str,
+    condition: str,
+    source_context: dict[str, str],
+) -> None:
+    if flow_id != "feature_request_intake":
+        return
+    if "community_suggestion" not in source_context.get("Source system", "").lower():
+        return
+
+    site = source_context.get("Source site", "").strip()
+    nid = source_context.get("Suggestion NID", "").strip()
+    status = feature_request_intake_status_for_transition(current_node, target_node, condition)
+    if not site or not nid or not status:
+        return
+
+    result = update_suggestion_status(ROOT, site, nid, status)
+    if not result.get("ok"):
+        log(
+            "suggestion status sync failed for "
+            f"{flow_id}/{current_node} nid={nid} -> {status}: {result.get('reason', 'unknown error')}"
+        )
 
 
 def validate_flow_done_outbox(command_meta: dict[str, str], command_text: str, outbox_text: str) -> list[str]:
@@ -670,6 +764,7 @@ def build_command(
     product_team_selection_required: bool,
     available_product_teams: list[str],
     direct_route_available: bool,
+    source_context: dict[str, str],
 ) -> str:
     metadata = [
         f"- Flow id: {flow_id}",
@@ -694,6 +789,10 @@ def build_command(
         metadata.append(f"- Available flow outcomes: {' | '.join(available_outcomes)}")
     if direct_route_available:
         metadata.append("- Flow direct route available: yes")
+    for key in SOURCE_CONTEXT_KEYS:
+        value = source_context.get(key, "").strip()
+        if value:
+            metadata.append(f"- {key}: {value}")
 
     required_artifacts = node_required_artifacts(
         flow_id=flow_id,
@@ -786,6 +885,7 @@ def route_to_node(
     node_details: dict[str, dict[str, str]],
     roi: int,
     run_dir: Path,
+    source_context: dict[str, str],
 ) -> bool:
     target_owner, target_owner_binding = resolve_owner(node_details.get(target_node, {}), product_team)
     if not target_owner:
@@ -816,6 +916,7 @@ def route_to_node(
         product_team_selection_required=product_team_selection_required,
         available_product_teams=[str(team.get("id", "")).strip() for team in teams if str(team.get("id", "")).strip()],
         direct_route_available=direct_route_available,
+        source_context=source_context,
     )
     create_inbox_item(target_owner, item_name_out, roi, command_content)
     return True
@@ -832,6 +933,7 @@ def route_downstream_flow(
     product_team: dict[str, Any] | None,
     teams: list[dict[str, Any]],
     roi: int,
+    source_context: dict[str, str],
 ) -> bool:
     downstream_flow = load_flow(handoff_flow_id)
     if downstream_flow is None:
@@ -861,6 +963,7 @@ def route_downstream_flow(
         node_details=downstream_details,
         roi=roi,
         run_dir=downstream_run_dir,
+        source_context=source_context,
     )
     if routed:
         log(f"launched downstream flow {handoff_flow_id}/{run_id} at {entry_node}")
@@ -992,6 +1095,7 @@ def main() -> int:
     run_id = command_meta.get("Flow run id", "").strip() or item_name
     run_dir = flow_runtime_dir(flow_id, run_id)
     run_dir.mkdir(parents=True, exist_ok=True)
+    source_context = current_source_context(run_dir, command_meta)
 
     teams = load_product_teams()
     outbox_meta = parse_simple_metadata(outbox_text)
@@ -1037,6 +1141,13 @@ def main() -> int:
 
     for transition in transitions:
         target_node = transition["to_node"]
+        sync_feature_request_intake_status(
+            flow_id=flow_id,
+            current_node=current_node,
+            target_node=target_node,
+            condition=transition["condition"],
+            source_context=source_context,
+        )
         if not target_node or target_node in {"END", "__end__"}:
             (run_dir / "completed.json").write_text(
                 json.dumps({"completed_from": current_node, "source_outbox": str(outbox_file)}, indent=2) + "\n",
@@ -1054,6 +1165,7 @@ def main() -> int:
                     product_team=product_team,
                     teams=teams,
                     roi=roi,
+                    source_context=source_context,
                 )
             log(f"flow {flow_id}/{run_id} completed at {current_node}")
             continue
@@ -1086,6 +1198,7 @@ def main() -> int:
             node_details=node_details,
             roi=roi,
             run_dir=run_dir,
+            source_context=source_context,
         )
         clear_merge_receipts(run_dir, target_node)
 

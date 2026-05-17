@@ -3,7 +3,7 @@
 ## Gap analysis reference
 - DB sections: core/ch03/Druid (REQs 1116–1171)
 - Track B: no existing DruidService; all implementation is [NEW]
-- Depends on: dc-cr-character-class ✓, dc-cr-spellcasting (deferred — groom now, activate when spellcasting ships), dc-cr-animal-companion (planned)
+- Depends on: dc-cr-character-class ✓, dc-cr-spellcasting (deferred — groom now, activate when spellcasting ships), dc-cr-animal-companion ✓
 
 ---
 

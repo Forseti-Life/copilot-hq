@@ -354,6 +354,34 @@
 - **Expected:** 0 violations, 0 failures; no new unexpected 403/404 regressions
 - **Roles:** all configured roles
 
+### TC-BRD-40 — Esoteric Polymath persists a distinct cross-tradition signature spell with daily swap state
+- **Suite:** `unit-phpunit`
+- **Test class/method:** `FeatEffectManagerTest::testEsotericPolymathPersistsSelectedSpellAndDailySwap()`
+- **Description:** `esoteric-polymath` records one selected common spell from another tradition as a special repertoire entry that stays identifiable as the feat-granted signature spell and exposes the once-per-day daily-preparations swap flow.
+- **Expected:** The feat override includes the selected spell, marks it as the Esoteric Polymath signature spell, records a distinct repertoire-entry key/source, and exposes a per-long-rest swap action.
+- **Status:** complete — covered by targeted live PHPUnit verification on 2026-05-15.
+
+### TC-BRD-41 — Eclectic Polymath upgrades the persisted Esoteric Polymath spell across all available ranks
+- **Suite:** `unit-phpunit`
+- **Test class/method:** `FeatEffectManagerTest::testEclecticPolymathUsesPersistedEsotericSpellSelection()`
+- **Description:** `eclectic-polymath` resolves the spell chosen for `esoteric-polymath` and upgrades that same spell so it can be cast at any available rank without the normal spontaneous-repertoire restriction.
+- **Expected:** The feat override points at the persisted Esoteric Polymath spell, preserves its special-signature identity, and marks the spell as treated like a prepared spell at any available rank.
+- **Status:** complete — covered by targeted live PHPUnit verification on 2026-05-15.
+
+### TC-BRD-42 — True Facets requests a distinct second muse when none is persisted
+- **Suite:** `unit-phpunit`
+- **Test class/method:** `FeatEffectManagerTest::testTrueFacetsRequestsSecondMuseSelectionWhenMissing()`
+- **Description:** `true-facets` exposes a dedicated second-muse chooser and does not silently reuse the bard's primary muse.
+- **Expected:** Missing or invalid second-muse state produces a `bard_second_muse_choice` selection grant rather than a partial grant.
+- **Status:** complete — covered by targeted live PHPUnit verification on 2026-05-15.
+
+### TC-BRD-43 — True Facets grants second-muse feat/spell benefits and unlocks its prerequisite graph
+- **Suite:** `unit-phpunit`
+- **Test class/method:** `FeatEffectManagerTest::testTrueFacetsPersistsSecondMuseBenefitsAndUnlocks()`
+- **Description:** `true-facets` persists a distinct second muse, grants that muse's feat and bonus spell, and exposes the selected muse as unlocked prerequisite access for later feat systems.
+- **Expected:** The feat override records primary and second muse ids, grants the second muse's feat and bonus spell, and includes explicit prerequisite-unlock metadata keyed by muse id.
+- **Status:** complete — covered by targeted live PHPUnit verification on 2026-05-15.
+
 ---
 
 ## Items not expressable as automation (PM note)
@@ -364,6 +392,8 @@
 | Spell repertoire advancement table completeness (one spell per new slot tier) | TC-BRD-33 tests specific levels; full table coverage requires parameterized tests against all 20 levels once `dc-cr-spellcasting` is implemented |
 | Muse bonus feats (Bardic Lore, Lingering Composition, Versatile Performance) — full feat behavior | TCs BRD-06/07/08 verify feats are granted; the actual feat mechanics (what Bardic Lore does, how Lingering Composition extends compositions) are not automatable until those feats are implemented |
 | Instrument component replacement UX | TC-BRD-10 tests the logic; whether the instrument is properly surfaced in the UI (held-in-hand state tracking) may require Playwright once a UI is built |
+| Cross-tradition spell legality for Esoteric Polymath | TC-BRD-40/41 verify the persisted/runtime metadata path; validating the full spell-catalog eligibility filter requires `dc-cr-spellcasting` / spell source enforcement to be fully wired |
+| Second-muse feat-graph consumption beyond runtime metadata | TC-BRD-43 verifies the unlock metadata is emitted; later feat pickers still need to consume that metadata when bard secondary-muse prerequisite gating is implemented in UI/service flows |
 
 ---
 

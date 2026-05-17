@@ -132,3 +132,40 @@ def test_validate_flow_done_outbox_accepts_ready_for_push_with_existing_signoff_
     errors = MODULE.validate_flow_done_outbox(command_meta, "", outbox_text)
 
     assert errors == []
+
+
+def test_current_source_context_persists_suggestion_metadata(tmp_path):
+    run_dir = tmp_path / "flow-run"
+    run_dir.mkdir()
+
+    initial = MODULE.current_source_context(
+        run_dir,
+        {
+            "Source system": "Drupal community_suggestion",
+            "Source site": "forseti",
+            "Suggestion NID": "42",
+        },
+    )
+    followup = MODULE.current_source_context(run_dir, {})
+
+    assert initial["Suggestion NID"] == "42"
+    assert followup["Source system"] == "Drupal community_suggestion"
+    assert followup["Source site"] == "forseti"
+
+
+def test_feature_request_intake_status_mapping_covers_terminal_and_delivery_states():
+    assert MODULE.feature_request_intake_status_for_transition(
+        "PM Scope Decision",
+        "Prepare Delivery Handoff",
+        "Approved for delivery",
+    ) == "in_progress"
+    assert MODULE.feature_request_intake_status_for_transition(
+        "PM Scope Decision",
+        "END",
+        "Parked in backlog",
+    ) == "deferred"
+    assert MODULE.feature_request_intake_status_for_transition(
+        "BA Requirements Review",
+        "END",
+        "Rejected as non-actionable",
+    ) == "declined"

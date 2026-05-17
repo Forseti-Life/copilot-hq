@@ -80,6 +80,7 @@ def _make_root(tmp_path: Path) -> tuple[Path, str]:
                 - Release: {feature_release}
                 - Dev owner: dev-dungeoncrawler
                 - QA owner: qa-dungeoncrawler
+                - Source: community_suggestion NID {2 if feature_id == 'dc-b2-bestiary2' else 3} (Talk to Forseti intake)
 
                 ## Latest updates
 
@@ -96,13 +97,29 @@ def _make_root(tmp_path: Path) -> tuple[Path, str]:
         textwrap.dedent(
             """\
             #!/usr/bin/env python3
+            import json
             import os
             from pathlib import Path
 
             capture = os.environ.get("DRUSH_CAPTURE_PATH", "").strip()
-            if capture:
+            suggestion_capture = os.environ.get("SUGGESTION_STATUS_CAPTURE_PATH", "").strip()
+            if capture and os.environ.get("FEATURE_IDS_JSON"):
                 Path(capture).write_text(os.environ.get("FEATURE_IDS_JSON", ""), encoding="utf-8")
-            print(os.environ.get("DRUSH_RESPONSE_JSON", '{"table_exists": true, "updated_total": 0, "per_feature": {}, "skipped_reason": ""}'))
+                print(os.environ.get("DRUSH_RESPONSE_JSON", '{"table_exists": true, "updated_total": 0, "per_feature": {}, "skipped_reason": ""}'))
+            elif suggestion_capture and os.environ.get("SUGGESTION_NID"):
+                Path(suggestion_capture).write_text(json.dumps({
+                    "nid": os.environ.get("SUGGESTION_NID", ""),
+                    "status": os.environ.get("SUGGESTION_STATUS", ""),
+                }), encoding="utf-8")
+                print(json.dumps({
+                    "ok": True,
+                    "nid": os.environ.get("SUGGESTION_NID", ""),
+                    "status": os.environ.get("SUGGESTION_STATUS", ""),
+                    "previous_status": "in_progress",
+                    "updated": True,
+                }))
+            else:
+                print('{"table_exists": true, "updated_total": 0, "per_feature": {}, "skipped_reason": ""}')
             """
         ),
         encoding="utf-8",
@@ -129,6 +146,7 @@ def _run(root: Path, release_id: str, extra_env: dict[str, str] | None = None) -
 def test_reconciles_done_features_and_requirements(tmp_path):
     root, release_id = _make_root(tmp_path)
     capture = root / "drush-capture.json"
+    suggestion_capture = root / "suggestion-capture.json"
     response = {
         "table_exists": True,
         "updated_total": 7,
@@ -144,6 +162,7 @@ def test_reconciles_done_features_and_requirements(tmp_path):
         release_id,
         {
             "DRUSH_CAPTURE_PATH": str(capture),
+            "SUGGESTION_STATUS_CAPTURE_PATH": str(suggestion_capture),
             "DRUSH_RESPONSE_JSON": json.dumps(response),
         },
     )
@@ -151,6 +170,7 @@ def test_reconciles_done_features_and_requirements(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     assert "RECONCILED dungeoncrawler" in result.stdout
     assert "requirements_updated=7" in result.stdout
+    assert "suggestions_updated=2" in result.stdout
 
     shipped_feature = (root / "features" / "dc-b2-bestiary2" / "feature.md").read_text(encoding="utf-8")
     assert "- Status: shipped" in shipped_feature
@@ -161,6 +181,8 @@ def test_reconciles_done_features_and_requirements(tmp_path):
 
     captured_ids = json.loads(capture.read_text(encoding="utf-8"))
     assert captured_ids == ["dc-b2-bestiary2", "dc-gng-guns-gears"]
+    captured_suggestion = json.loads(suggestion_capture.read_text(encoding="utf-8"))
+    assert captured_suggestion == {"nid": "3", "status": "implemented"}
 
     artifact = (
         root
@@ -175,6 +197,7 @@ def test_reconciles_done_features_and_requirements(tmp_path):
     assert "Promoted `done -> shipped`: 1" in text
     assert "Already shipped in release: 1" in text
     assert "Requirement rows updated: 7" in text
+    assert "Suggestion nodes updated to `implemented`: 2" in text
     assert "- dc-b2-bestiary2: matched=5 updated=5" in text
 
 

@@ -298,6 +298,12 @@
 - **Dependency note:** Partially testable at schema level (TC-SOR-12 covers the schema lock); this TC validates enforcement at the service/API layer, which requires dc-cr-spellcasting.
 - **Status:** deferred — pending `dc-cr-spellcasting` (schema lock covered by TC-SOR-12)
 
+### TC-SOR-40 — Bloodline Resistance resolves the canonical blood-magic damage type for every supported bloodline
+- **Suite:** unit-phpunit
+- **Description:** `bloodline-resistance` resolves resistance 10 from the canonical blood-magic damage mapping for each supported bloodline, including subtype-driven draconic, elemental, and genie cases.
+- **Expected:** Every supported bloodline returns a stable `resistance.damage_type` from the shared sorcerer bloodline metadata; draconic and elemental lines use the persisted subtype selection instead of a generic fallback.
+- **Status:** complete — covered by `FeatEffectManagerTest::testBloodlineResistanceResolvesDamageTypeForEverySupportedBloodline` and targeted live PHPUnit verification on 2026-05-15.
+
 ---
 
 ## Deferred dependency summary
@@ -324,14 +330,14 @@
 | TC-SOR-38 | `dc-cr-spellcasting` + `dc-cr-focus-spells` | Focus pool management |
 | TC-SOR-39 | `dc-cr-spellcasting` | API-layer bloodline lock enforcement |
 
-17 TCs immediately activatable at Stage 0.
+18 TCs immediately activatable at Stage 0.
 19 TCs deferred pending `dc-cr-spellcasting` (and 2 of those also pending `dc-cr-focus-spells`).
 
 ---
 
 ## Notes to PM
 
-1. **TC-SOR-08 (bloodline catalog):** AC explicitly covers Draconic and Elemental; the full bloodline list for dc-cr scope (Angelic, Demonic, Fey, Imperial, Nymph, Undead, etc.) needs enumeration in AC or the data model before TC-SOR-08 can be fully parameterized.
-2. **TC-SOR-09 (tradition mapping):** Confirm bloodline → tradition mapping table (e.g., Draconic = arcane; Angelic = divine; Fey = primal/occult). This drives TC-SOR-09 parameterization and is needed before dev implements the bloodline data model.
-3. **Activation sequencing:** Sorcerer's 19 deferred TCs make it a poor candidate for early Stage 0 activation without `dc-cr-spellcasting`. Recommend: activate 17 identity/stat/bloodline-selection TCs immediately, defer remaining 19 until spellcasting ships. Do NOT add Sorcerer to release scope until at least TC-SOR-21 through TC-SOR-26 are activatable.
+1. **TC-SOR-08 (bloodline catalog):** The live data model now enumerates the currently supported bloodlines for dc-cr scope, but AC still only calls out Draconic and Elemental explicitly. Update AC copy if PM wants TC-SOR-08 to be parameterized directly from HQ requirements rather than the shipped rules data.
+2. **TC-SOR-09 (tradition mapping):** The live bloodline metadata now carries the tradition mapping used by runtime consumers. Update AC copy if PM wants the tradition table documented explicitly in HQ instead of inferred from implementation.
+3. **Activation sequencing:** Sorcerer's 19 deferred TCs still make it a poor candidate for early Stage 0 activation without `dc-cr-spellcasting`. Recommend: activate 18 identity/stat/bloodline-selection/runtime-metadata TCs immediately, defer remaining 19 until spellcasting ships. Do NOT add Sorcerer to release scope until at least TC-SOR-21 through TC-SOR-26 are activatable.
 4. **Focus pool (TC-SOR-34/38):** Sorcerer's bloodline focus spells share the dc-cr-focus-spells dependency pattern seen in Cleric and Druid. These 2 TCs require both spellcasting and focus spell systems.
