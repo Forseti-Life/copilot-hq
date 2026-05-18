@@ -56,15 +56,15 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 |---|---|---|---|---|---|---|---|
 | PROJ-007 | Dungeoncrawler Product Track | product line | dungeoncrawler | separate_product_site | **P0** | pm-dungeoncrawler | 2026-04-13 |
 | PROJ-003 | DungeonCrawler Roadmap Completion | delivery project | dungeoncrawler | in_progress | **P0** | pm-dungeoncrawler | 2026-03-01 |
-| PROJ-004 | Job Hunter | product line | forseti.life | active_buildout | P1 — worker node | pm-forseti | 2026-04-12 |
-| PROJ-005 | AI Conversation | product line | forseti.life | foundation_in_place | P1 | pm-forseti | 2026-04-12 |
-| PROJ-006 | Community Safety | product line | forseti.life | public_platform_track | P2 | pm-forseti | 2026-04-12 |
-| PROJ-008 | Forseti Accounting Pipeline | delivery project | forseti.life | in_progress | P1 | accountant-forseti | 2026-04-13 |
-| PROJ-009 | Forseti Open Source Initiative | delivery project | org-wide | in_progress | P1 | pm-open-source | 2026-04-13 |
-| PROJ-010 | External Integration Configuration Audit | delivery project | org-wide | in_progress | P1 | pm-integrations | 2026-04-13 |
-| PROJ-011 | Forseti Community Resource Mesh | delivery project | forseti.life | in_progress | P1 | pm-forseti | 2026-04-13 |
-| PROJ-001 | LangGraph Console UI | delivery project | forseti.life | in_progress | P1 | pm-forseti | 2026-04-05 |
-| PROJ-002 | QA Suite Completeness | delivery project | forseti.life | in_progress | P2 | pm-forseti / qa-forseti | 2026-04-09 |
+| PROJ-004 | Job Hunter | product line | forseti.life | paused | P1 — worker node | pm-forseti | 2026-04-12 |
+| PROJ-005 | AI Conversation | product line | forseti.life | paused | P1 | pm-forseti | 2026-04-12 |
+| PROJ-006 | Community Safety | product line | forseti.life | paused | P2 | pm-forseti | 2026-04-12 |
+| PROJ-008 | Forseti Accounting Pipeline | delivery project | forseti.life | paused | P1 | accountant-forseti | 2026-04-13 |
+| PROJ-009 | Forseti Open Source Initiative | delivery project | org-wide | paused | P1 | pm-open-source | 2026-04-13 |
+| PROJ-010 | External Integration Configuration Audit | delivery project | org-wide | paused | P1 | pm-integrations | 2026-04-13 |
+| PROJ-011 | Forseti Community Resource Mesh | delivery project | forseti.life | paused | P1 | pm-forseti | 2026-04-13 |
+| PROJ-001 | LangGraph Console UI | delivery project | forseti.life | paused | P1 | pm-forseti | 2026-04-05 |
+| PROJ-002 | QA Suite Completeness | delivery project | forseti.life | paused | P2 | pm-forseti / qa-forseti | 2026-04-09 |
 
 ---
 
@@ -72,15 +72,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Forseti's job-seeking platform covering resume intake, discovery, application prep, submission support, and tracking.
 
-**Current state (2026-04-13):** Active buildout. Release-h carries 4 features in_progress: `forseti-jobhunter-interview-outcome-tracker` (high), `forseti-jobhunter-offer-tracker` (high), `forseti-jobhunter-application-analytics` (medium), `forseti-jobhunter-follow-up-reminders` (medium). Seven additional groomed features re-baselined to `ready` for future releases: `contact-tracker`, `company-interest-tracker`, `company-research-tracker`, `contact-referral-tracker`, `job-board-preferences`, `resume-version-labeling`, `resume-version-tracker`.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. Prior active buildout and queued release-h context remain historical reference only and should not drive new work while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h`
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** Await dev-forseti completion + Gate 2 QA on 4 active release-h features. After coordinated push, activate next slice from 7 queued ready features by priority.
+**Next step:** Hold. Do not activate, dispatch, or continue Job Hunter work until the Board/user explicitly resumes PROJ-004.
 
-**Queue status:** 4 features in_progress for `20260412-forseti-release-h`. Dev + QA inbox items dispatched 2026-04-13.
+**Queue status:** Paused on 2026-05-18. Older Job Hunter queue references are historical only.
 
 ---
 
@@ -88,15 +90,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Persistent assistant experience, conversation memory, model integration, and shared AI capability across Forseti products.
 
-**Current state (2026-04-13):** All foundation features shipped. Next slice fully groomed: **Local LLM / Provider Selection** (`forseti-ai-local-llm-provider-selection`, Status: ready, Release: 20260412-forseti-release-h). AC, impl notes stub, and test plan created 2026-04-13. BA dispatched to complete impl notes (5 outstanding items). Feature is activation-ready once BA elaboration is complete and release-h in_progress count allows.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. Prior foundation work and the ready Local LLM / Provider Selection slice remain historical reference only while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h` (targeted; not yet activated — pending BA impl notes + release slot)
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** ba-forseti to complete `02-implementation-notes.md` (confirm AIApiService constructor, streaming approach, config keys, user field type, OpenAI model options). PM activates in release-h or next cycle based on slot availability.
+**Next step:** Hold. Do not activate, dispatch, or continue AI Conversation work until the Board/user explicitly resumes PROJ-005.
 
-**Queue status:** ba-forseti grooming dispatch: `sessions/ba-forseti/inbox/20260413-groom-forseti-ai-local-llm-provider-selection/` (ROI 30)
+**Queue status:** Paused on 2026-05-18. Older AI Conversation queue references are historical only.
 
 ---
 
@@ -104,15 +108,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Public safety content, maps, alerts, community participation, and member-support tooling.
 
-**Current state (2026-04-13):** Foundation modules `amisafe` and `safety_calculator` are production-complete. Next slice fully groomed: **Community Incident Report** (`forseti-community-incident-report`, Status: ready, Release: 20260412-forseti-release-h targeted). AC, impl notes stub, and test plan created 2026-04-13. BA dispatched to complete impl notes (6 outstanding items including AmISafe JS integration approach). Feature is not yet activated in release-h (4 features already in_progress; will activate in next cycle unless slot opens).
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. Prior Community Incident Report grooming and release-slot planning remain historical reference only while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h` (targeted; not yet activated — pending BA impl notes + release slot)
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** ba-forseti to complete `02-implementation-notes.md` (AmISafe JS integration, taxonomy terms, form class approach). PM activates in next available release cycle after BA grooming is complete.
+**Next step:** Hold. Do not activate, dispatch, or continue Community Safety work until the Board/user explicitly resumes PROJ-006.
 
-**Queue status:** ba-forseti grooming dispatch: `sessions/ba-forseti/inbox/20260413-groom-forseti-community-incident-report/` (ROI 25)
+**Queue status:** Paused on 2026-05-18. Older Community Safety queue references are historical only.
 
 ---
 
@@ -148,15 +154,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Owner / primary developer:** `accountant-forseti`
 
-**Current state (2026-04-13):** Foundation documentation is in place and the active April 2026 finance workspace is open under `dashboards/finance/`, including `daily-p-and-l-2026-04.md`, `income-ledger-2026-04.md`, `expense-ledger-2026-04.md`, and `vendor-reconciliation-2026-04.md`. Expense sources are now confirmed as AWS Billing and GitHub billing, and live pull attempts have been made. GitHub org billing usage for `Forseti-Life` is now reachable and returned no April usage items. The project remains blocked because AWS denied `ce:GetCostAndUsage`, GitHub fixed-charge completeness is still unconfirmed, and income/cash sources are still not confirmed. A new backlog feature, `forseti-financial-health-home`, now captures the Drupal-side institutional finance home as the next productization layer for this project.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. The finance workspace and prior blocker analysis remain historical reference only while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h` (operations/process foundation defined; no product feature activation yet)
 
 **Progress SLA:** 7 days without a CEO/accountant update, source-system hookup decision, or April artifact population from live sources = breach
 
-**Next step:** CEO should unblock AWS Cost Explorer access and confirm both the GitHub fixed-charge path and the income/cash sources so `accountant-forseti` can replace the April placeholders with source-backed entries and begin daily reconciliation. In parallel, `pm-forseti` can pick up `features/forseti-financial-health-home/feature.md` from the backlog to scope the internal Drupal financial-health home.
+**Next step:** Hold. Do not advance accounting-pipeline work until the Board/user explicitly resumes PROJ-008.
 
-**Queue status:** Process docs and active April finance artifacts exist; AWS and GitHub expense sources are selected; GitHub usage report is live and empty for April; current blockers are AWS Cost Explorer permission, GitHub fixed-charge completeness, and missing income/cash source confirmation. Backlog now includes `forseti-financial-health-home` as the Drupal financial-health surface for PROJ-008.
+**Queue status:** Paused on 2026-05-18. Older accounting-pipeline queue references are historical only.
 
 ---
 
@@ -164,15 +172,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Publish the Forseti autonomous Drupal development platform as open source under the `Forseti-Life` GitHub organization, including the platform overview repo, selected reusable component repos, contributor docs, and the release/security process needed to publish safely.
 
-**Current state (2026-04-17):** The effort is active and the `Forseti-Life` GitHub org now exists, so the governance prerequisite is no longer the blocker. Readiness assets already exist: `PUBLIC_REPO_PREP.md`, publication-readiness runbooks, public positioning docs, mirror/export scripts, and community/legal files (`LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`). Publication model is now explicit: use curated mirrors / extracted repos and keep live operational artifacts private. Current-tree AWS credentials have been stripped from the tracked Drupal config sync files, and open-source now has a dedicated publication-security lane via `sec-analyst-open-source`. The remaining critical blocker is publication security in history and candidate packaging: credential rotation, full history scrub / sensitive-data audit, candidate freeze, and validation evidence still remain.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. Prior publication-readiness work, candidate selection, and security remediation context remain historical reference only while the project is paused.
 
 **Last scoped release:** none yet (portfolio initiative; not release-scoped to a product release)
 
 **Progress SLA:** 7 days without a PM-open-source re-baseline, dev-open-source publication audit, or Board/org-setup step = breach
 
-**Next step:** `drupal-ai-conversation` is now the explicit first publication candidate and the PM publication-candidate gate is written. `dev-open-source` should clear the candidate-local NO-GO findings from the Phase 1 audit (HQ/session coupling, stale absolute path, site-specific logging reference, Forseti-specific default prompt), `sec-analyst-open-source` should record the publication-security review, and CEO should confirm external AWS credential rotation; once those are done, `pm-open-source` freezes the sanitized extract and hands it to `qa-open-source`.
+**Next step:** Hold. Do not dispatch or continue open-source publication work until the Board/user explicitly resumes PROJ-009.
 
-**Queue status:** Governance unblock is complete (`Forseti-Life` org verified) and publication scope is now explicit (curated mirror / extracted repos; operational artifacts remain private). Publication is still blocked on credential rotation + history rewrite/scrub, candidate freeze, packaging, and final validation evidence.
+**Queue status:** Paused on 2026-05-18. Older open-source queue references are historical only.
 
 ---
 
@@ -180,15 +190,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Inventory and audit how the org stores, resolves, and governs configuration for external systems used by the server stack and adjacent production operations, including APIs, cloud providers, billing systems, deploy workflows, token files, and Drupal-backed integration settings.
 
-**Current state (2026-04-17):** Project opened and first-pass inventory completed at `dashboards/integrations/server-integration-inventory-2026-04.md`. The Phase 1 operator entrypoint now exists at `dashboards/integrations/README.md`, and the first machine-readable registry now exists at `dashboards/integrations/integration-registry.yaml`. The centralization plan remains at `dashboards/integrations/centralized-integration-management-plan.md`. A dedicated integrations team now owns the lane: `pm-integrations`, `ba-integrations`, `dev-integrations`, `qa-integrations`, and `sec-analyst-integrations`. The current baseline confirms multiple integration storage planes already in use: Drupal sync config, active Drupal config, environment variables, local token files, and GitHub Actions secrets. Verified integration surfaces include AWS Bedrock, AWS Cost Explorer billing, GitHub billing APIs, GitHub deploy/push workflows, SerpAPI, Google Cloud Talent Solution config, Adzuna, USAJobs, Google Tag, Google social auth, reCAPTCHA, USFA NERIS, and Hugging Face model downloads. The first critical finding remains a tracked `serpapi_api_key` in `sites/forseti/config/sync/job_hunter.settings.yml`.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. The Phase 1 inventory, integration registry, and remediation backlog remain historical reference only while the project is paused.
 
 **Last scoped release:** none yet (org-wide audit project)
 
 **Progress SLA:** 7 days without a `pm-integrations` update, inventory expansion, or remediation dispatch = breach
 
-**Next step:** `pm-integrations` should treat Phase 1 as established and dispatch the runtime truth audit next: confirm live active Drupal config, server env vars, token-file consumers, and workflow secret usage for every registry entry, route product-specific fixes to the owning product teams, and prioritize remediation starting with the tracked SerpAPI secret.
+**Next step:** Hold. Do not dispatch or continue integration-audit work until the Board/user explicitly resumes PROJ-010.
 
-**Queue status:** Inventory, centralization plan, operator hub, first registry, and dedicated team ownership are now in place. Project is ready for integrations-team-managed runtime truth audit and remediation prioritization.
+**Queue status:** Paused on 2026-05-18. Older integrations queue references are historical only.
 
 ---
 
@@ -196,15 +208,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Build a community resource mesh between independent Forseti installations so any installation can identify peer installations, establish trust, exchange signed messages, advertise needs and capabilities, and initially share **agent expertise** and **institutional-management services**. Compute and storage remain future-state extensions.
 
-**Current state (2026-04-13):** Project created and initial delivery feature stub opened as `forseti-installation-cluster-communication`. MVP architecture, daemon/runtime design, protocol schemas, state machines, pseudocode, and a sequenced roadmap now exist. No implementation is active yet. The intended MVP is autonomous-peer communication plus resource-mesh primitives, not full multi-primary data replication: each installation should have a stable installation identity, a peer registry, a trust/auth model, signed request handling, capability/need advertisement, cluster message logging, a standalone `forseti-meshd` backend, and a Drupal admin interface for peer status and operator decisions. Initial value focus is shared agent capacity and institutional-management workflows; compute and storage are intentionally deferred.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. The MVP architecture, roadmap, and ready feature stub remain historical reference only while the project is paused.
 
 **Last scoped release:** none yet (new strategic delivery project)
 
 **Progress SLA:** 7 days without PM/BA decomposition, MVP scope refinement, or release-slot planning = breach
 
-**Next step:** `pm-forseti` and `ba-forseti` should execute `90-roadmap.md` beginning with the open-source stack validation and Release A daemon-foundation slices, then dispatch dev on `forseti-meshd` scaffold, identity/key loading, and peer discovery.
+**Next step:** Hold. Do not dispatch or continue Community Resource Mesh work until the Board/user explicitly resumes PROJ-011.
 
-**Queue status:** Project registered under the CEO portfolio and paired with an initial ready feature stub. Awaiting BA elaboration and release-slot selection.
+**Queue status:** Paused on 2026-05-18. Older mesh queue references are historical only.
 
 ---
 
@@ -213,15 +227,17 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 **Roadmap:** `features/forseti-langgraph-ui/roadmap.md`  
 **Scope:** Build the full Copilot HQ control-plane console UI on forseti.life — telemetry, agent monitoring, session management, release controls, and eval scorecards wired to live orchestrator tick data.
 
-**Current state (2026-04-13):** All foundation slices are shipped: telemetry foundation, console stubs (7 routes), context enrichment, Agent Tracker Core, Console Build/Test sections, and Release Control Panel (read-only). Active release `20260412-forseti-release-h` carries the next slice: Run + Session panel wiring (`features/forseti-langgraph-console-run-session/`, Status: ready). Artifact naming corrected (renamed to standard `01-acceptance-criteria.md`, `02-implementation-notes.md`); `03-test-plan.md` created by PM 2026-04-13. BA dispatched to confirm 4 implementation details before dev activation.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. The shipped foundation and next-slice planning remain historical reference only while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h` (targeted; not yet activated — pending BA confirmation)
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** ba-forseti to confirm AC-3 glob pattern, AC-2 truncation placement, AC-7 warning banner condition, and AC-5 Session Health placement. PM activates after BA confirmation.
+**Next step:** Hold. Do not activate, dispatch, or continue LangGraph Console UI work until the Board/user explicitly resumes PROJ-001.
 
-**Queue status:** ba-forseti grooming dispatch: `sessions/ba-forseti/inbox/20260413-groom-forseti-langgraph-console-run-session/` (ROI 40)
+**Queue status:** Paused on 2026-05-18. Older LangGraph Console UI queue references are historical only.
 
 ---
 
@@ -229,21 +245,21 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** Build repeatable, executable QA coverage for shipped Forseti features and clean up stale suite shells so release verification is durable, automatable, and auditable.
 
-**Status:** in_progress  
+**Status:** paused  
 **Priority:** P2  
 **Lead:** pm-forseti (dispatch), qa-forseti (execution)  
 **Scope product:** forseti.life  
 **Suite manifest:** `qa-suites/products/forseti/suite.json`
 
-**Current state (2026-04-13):** Phase 1 (triage) complete. Phase 2 (suite fill) dispatched to qa-forseti inbox `20260413-004107-suite-activate-*` items (4 release-h suites activated) and Phase 2 fill dispatch confirmed as `20260412-proj002-phase2-suite-fill` (check qa-forseti inbox — if not present, re-dispatch is needed). `suite.json` has 252 suites with 2 populated. Core problem (no executable regression tests) persists; Phase 2 fill work is the active priority.
+**Current state (2026-05-18):** Paused by Board/user direction. The suite-triage and Phase 2 fill plan remain historical reference only while the project is paused.
 
 **Last scoped release:** `20260412-forseti-release-h`
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** qa-forseti to execute Phase 2 fill for the 52 priority suites from the triage report (`sessions/qa-forseti/artifacts/proj002-suite-triage/triage-report.md`). Target ≥2 test_cases per fill suite.
+**Next step:** Hold. Do not dispatch or continue QA Suite Completeness work until the Board/user explicitly resumes PROJ-002.
 
-**Queue status:** Phase 2 dispatch: `sessions/qa-forseti/inbox/20260412-proj002-phase2-suite-fill/` (verify exists)
+**Queue status:** Paused on 2026-05-18. Older QA Suite Completeness queue references are historical only.
 
 ### Problem
 

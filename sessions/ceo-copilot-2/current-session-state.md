@@ -1,6 +1,6 @@
 ## Currently Working On
 
-No active CEO execution in progress at this moment. Most recent completed action: converted the 11 live `PROJ-*` progression breaches into owner-routed recovery work for `pm-forseti`, `pm-dungeoncrawler`, `pm-open-source`, `pm-integrations`, and `accountant-forseti`.
+No active CEO execution in progress at this moment. Most recent completed action: applied a Board/user-directed pause to PROJ-001, PROJ-002, PROJ-004, PROJ-005, PROJ-006, PROJ-008, PROJ-009, PROJ-010, and PROJ-011.
 
 ## Active releases
 
@@ -9,20 +9,20 @@ No active CEO execution in progress at this moment. Most recent completed action
 
 ## What was just worked on
 
-Assumed the canonical CEO seat, completed the required orientation, and then acted on the highest-value remaining portfolio issue: the corrected `scripts/project-progress-audit.py` output still showed 11 breached projects with stale roadmap state and no fresh queue evidence. Instead of leaving the audit as report-only output, I created direct inbox items for the owning seats so the portfolio can be re-baselined where necessary and moved back into active execution where the work is still real. The new work items are `20260518-project-progression-forseti-portfolio`, `20260518-project-progression-dungeoncrawler-portfolio`, `20260518-project-progression-open-source`, `20260518-project-progression-integrations`, and `20260518-project-progression-accounting-pipeline`. Each item instructs the owner to refresh `dashboards/PROJECTS.md` to runtime truth, update next-step and queue-status metadata, and create any missing downstream dispatches needed to restore forward motion.
+After the earlier portfolio-recovery dispatches, the Board/user directed that PROJ-001, PROJ-002, PROJ-004, PROJ-005, PROJ-006, PROJ-008, PROJ-009, PROJ-010, and PROJ-011 be paused. I updated `dashboards/PROJECTS.md` so those registry rows now read `paused`, added explicit paused status/hold language to each affected project section, and archived the live non-archived inbox items that would have advanced paused work (`pm-forseti`, `pm-open-source`, `pm-integrations`, `accountant-forseti`, and the `dev-forseti` stale-feature follow-up for the open-source initiative). The remaining active project lane in the live queue is Dungeoncrawler: PROJ-003 and PROJ-007 still point at `pm-dungeoncrawler`, while unrelated infra and QA audit hygiene items remain open.
 
 ## Current queue state
 
 | Seat | Inbox count | Status |
 |---|---:|---|
-| ceo-copilot-2 | 0 | CEO startup and portfolio triage complete |
-| pm-forseti | 1 | New portfolio progression recovery item for PROJ-001/002/004/005/006/011 |
+| ceo-copilot-2 | 0 | CEO pause action complete |
+| pm-forseti | 0 | Paused-project progression item archived |
 | pm-dungeoncrawler | 1 | New portfolio progression recovery item for PROJ-003/007 |
-| pm-open-source | 1 | New PROJ-009 progression recovery item |
-| pm-integrations | 1 | New PROJ-010 progression recovery item |
-| accountant-forseti | 1 | New PROJ-008 progression recovery item |
+| pm-open-source | 0 | Paused-project progression item archived |
+| pm-integrations | 0 | Paused-project progression item archived |
+| accountant-forseti | 0 | Paused-project progression item archived |
 | dev-infra | 2 | Prior syshealth dispatches still pending |
-| dev-forseti | 1 | Prior stale-feature syshealth dispatch still pending |
+| dev-forseti | 0 | Paused-project stale-feature follow-up archived |
 | qa-forseti | 1 | Prior stale-audit syshealth dispatch still pending |
 | qa-dungeoncrawler | 1 | Prior stale-audit syshealth dispatch still pending |
 
@@ -32,23 +32,23 @@ Assumed the canonical CEO seat, completed the required orientation, and then act
 |---|---|---|
 | Org automation paused | intentional | Board/user direction is still to leave automation disabled; do not restart orchestrator or legacy loops without explicit authorization |
 | Release-cycle state files | pending | `ceo-release-health.sh` still reports no active release-cycle files for Forseti or Dungeoncrawler |
-| Portfolio progression recovery | dispatched | PM/accountant owners now have direct inbox items to refresh all 11 breached `PROJ-*` entries |
+| Portfolio pause set | applied | PROJ-001/002/004/005/006/008/009/010/011 are now marked paused in `dashboards/PROJECTS.md` and their live progression inbox items were archived |
 | Stale QA audits | pending | `qa-forseti` and `qa-dungeoncrawler` still each have one stale-audit syshealth item |
-| Stale syshealth owner items | pending | `dev-infra` and `dev-forseti` still have 20260516 dispatches aging in inbox |
+| Stale syshealth owner items | pending | `dev-infra` still has 20260516 dispatches aging in inbox |
 | Board escalation | none | No mission-level or risk-acceptance decision currently requires Board input |
 
 ## Key decisions made
 
-- Treated the project progression audit breaches as the next highest-ROI CEO action after orientation because they cut across the whole portfolio and already had a verified diagnostic source.
-- Dispatched grouped owner work by portfolio/seat instead of editing roadmap entries directly, preserving PM/accountant ownership of project truth while still unblocking the queue.
-- Created the missing `sessions/accountant-forseti/` queue structure so PROJ-008 can be routed to its named owner instead of remaining orphaned.
+- Applied the Board/user-directed pause directly in the project registry instead of leaving paused state implicit.
+- Archived the live inbox items that would have restarted paused projects so queue state now matches roadmap state.
+- Left PROJ-003 and PROJ-007 active because they were not included in the pause directive.
 - Kept org automation paused per Board direction and avoided using `inbox/commands/` because direct seat inbox routing is the only reliable path while automation is disabled.
 
 ## Next priority actions
 
-1. Watch for outbox responses to the five new progression-recovery items and re-escalate any that stagnate.
+1. Support only the unpaused Dungeoncrawler portfolio lane (PROJ-003 and PROJ-007) plus unrelated infra/QA hygiene items.
 2. Follow up on the older 20260516 syshealth items if they remain untouched for another cycle.
-3. Start the next release cycle only when a PM has refreshed roadmap truth and a release-scoped slice is ready to activate.
+3. Leave the paused projects dormant until the Board/user explicitly resumes them.
 
 ## Pipeline health snapshot
 
@@ -56,5 +56,5 @@ Assumed the canonical CEO seat, completed the required orientation, and then act
 - Orchestrator: not running by Board direction
 - CEO `.inwork` markers: 0
 - Active CEO inbox items: 0
-- Newly dispatched portfolio recovery inbox items this session: 5
+- Newly paused projects this session: 9
 - Blocked count: 0 (`bash scripts/hq-blockers.sh count`)
