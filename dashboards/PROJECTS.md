@@ -54,8 +54,8 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 | ID | Name | Type | Product | Status | Priority | Lead | Started |
 |---|---|---|---|---|---|---|---|
-| PROJ-007 | Dungeoncrawler Product Track | product line | dungeoncrawler | separate_product_site | **P0** | pm-dungeoncrawler | 2026-04-13 |
-| PROJ-003 | DungeonCrawler Roadmap Completion | delivery project | dungeoncrawler | in_progress | **P0** | pm-dungeoncrawler | 2026-03-01 |
+| PROJ-007 | Dungeoncrawler Product Track | product line | dungeoncrawler | paused | **P0** | pm-dungeoncrawler | 2026-04-13 |
+| PROJ-003 | DungeonCrawler Roadmap Completion | delivery project | dungeoncrawler | completed | **P0** | pm-dungeoncrawler | 2026-03-01 |
 | PROJ-004 | Job Hunter | product line | forseti.life | paused | P1 — worker node | pm-forseti | 2026-04-12 |
 | PROJ-005 | AI Conversation | product line | forseti.life | paused | P1 | pm-forseti | 2026-04-12 |
 | PROJ-006 | Community Safety | product line | forseti.life | paused | P2 | pm-forseti | 2026-04-12 |
@@ -126,7 +126,9 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Scope:** The dedicated Dungeoncrawler product line, separate site, and its long-lived PF2E implementation program. Long-term mission: implement all PF2E rulebook requirements currently tracked in `dc_requirements` MySQL table (2033 implemented, 674 in_progress, 698 pending as of 2026-04-13).
 
-**Current state (2026-04-19):** Dungeoncrawler release `20260412-dungeoncrawler-release-p` was pushed through the coordinated signoff path, the lead-PM release bundle was materialized, and the cycle advanced to active release `20260412-dungeoncrawler-release-q` with next release `20260412-dungeoncrawler-release-r`. The just-shipped release closed out `dc-b2-bestiary2`, `dc-gng-guns-gears`, and `dc-som-secrets-of-magic`. Post-B2 backlog recovery has already begun: `dc-b3-bestiary3` is groomed, live in the QA suite for `release-q`, and now has a safe execution path using the repo's internal structured creature inventory plus normalization across read, JSON-write, and template-seeding paths, with seeded/internal rows now carrying or hydrating the standard core catalog fields.
+**Status:** paused
+
+**Current state (2026-05-18):** Paused by Board/user direction. Prior release-q/release-r planning, backlog coverage notes, and the `dc-cr-campaign-multiplayer-v1` planning update remain historical reference only while the product track is paused.
 
 **Planning update (2026-05-16):** Community suggestion NID 55 is now tracked under PROJ-007 as `dc-cr-campaign-multiplayer-v1`, a ready multiplayer-v1 epic scoped to explicit campaign membership, joined-campaign discovery, one-character-per-player assignment, and serialized turn-taking on top of the existing optimistic-version campaign state. Websockets and live-presence sync remain out of scope for this first delivery track.
 
@@ -142,9 +144,9 @@ Which node/agent handles each project. CEO edits this to reassign work between n
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** `dev-dungeoncrawler` extends the internal structured Bestiary 3 inventory into the richer shared creature schema for `release-q`, while `pm-dungeoncrawler` keeps `release-r` grooming ahead of the live cycle.
+**Next step:** Hold. Do not dispatch or continue Dungeoncrawler Product Track work until the Board/user explicitly resumes PROJ-007.
 
-**Queue status:** active release `20260412-dungeoncrawler-release-q` still carries `dc-b3-bestiary3` in progress. QA testgen and live suite activation are complete; Dev now has a safe-source path using internal structured inventory data plus landed normalization across read, write, and template-import flows for legacy `source_book`-backed rows, with seeded/internal rows now carrying or hydrating the core catalog fields; next release `20260412-dungeoncrawler-release-r` already has PM grooming coverage queued.
+**Queue status:** Paused on 2026-05-18. Older Dungeoncrawler product-track queue references are historical only.
 
 ---
 
@@ -420,15 +422,17 @@ Root cause: `FORSETI_COOKIE_AUTHENTICATED` env var is never set in automation be
 **Roadmap audit runbook:** `runbooks/roadmap-audit.md`  
 **Scope:** Systematically implement all `pending` requirements in `dc_requirements` table until every requirement is either `implemented` or has a `feature_id` pointing to an active pipeline feature.
 
-Current status: The public roadmap still derives requirement state from the live pipeline, and the sync path remains intact. Coordinated release `20260412-dungeoncrawler-release-p` has now been signoff-cleared and cycled forward; active runtime release is `20260412-dungeoncrawler-release-q` with `20260412-dungeoncrawler-release-r` queued next. The post-B2 follow-on path is no longer just groomed - `dc-b3-bestiary3` is actively scoped into `release-q`, with QA suite activation complete and the first safe code slice landed against the repo's internal structured B3 inventory.
+**Status:** completed
+
+**Current state (2026-05-18):** Closed out as completed. The roadmap-audit objective is now satisfied: the public roadmap still derives requirement state from the live pipeline, the sync path remains intact, and the remaining ongoing delivery work is better tracked under the broader active product lane in PROJ-007 rather than as a separate standalone project.
 
 **Last scoped release:** `20260412-dungeoncrawler-release-p`
 
 **Progress SLA:** 7 days without release-scoped work or a PM re-baseline/grooming update = breach
 
-**Next step:** execute the remaining `dc-b3-bestiary3` schema-ingestion work in `20260412-dungeoncrawler-release-q`, while continuing PM grooming for `20260412-dungeoncrawler-release-r`.
+**Next step:** No further standalone work. Track ongoing Dungeoncrawler delivery under PROJ-007.
 
-**Queue status:** the coordinated push is complete and the cycle advanced. The current operational gap is no longer release signoff or backlog recovery; it is finishing the richer shared-schema implementation for `dc-b3-bestiary3` in `release-q` while PM keeps `release-r` groomed ahead of it.
+**Queue status:** Closed on 2026-05-18. No active queue should target PROJ-003 separately from PROJ-007.
 
 See `runbooks/roadmap-audit.md` for full query protocol and per-chapter status.
 
