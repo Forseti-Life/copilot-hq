@@ -1,6 +1,7 @@
 ## Currently Working On
 
-No active CEO execution in progress at this moment. Most recent completed action: applied the Board/user-directed pause to PROJ-007 and archived its live PM review item.
+Reviewing the live Dungeoncrawler turn-management failures in campaign 85 and continuing the encounter-framework stabilization thread.
+Current focus: keep exploration mode out of the live room-entry path, reuse/clean duplicate encounter rows, and stop room-chat turn status from treating system turn-order markers as actors.
 
 ## Active releases
 
